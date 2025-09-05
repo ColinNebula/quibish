@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, Suspense } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import './App.css';
 import './AppProfessional.css';
 
@@ -14,6 +14,11 @@ import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 const App = () => {
   const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
   const [view, setView] = useState('login');
+  const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash screen once per session
+    const hasSeenSplash = sessionStorage.getItem('quibish-splash-seen');
+    return !hasSeenSplash;
+  });
   const [darkMode, setDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('quibish-dark-mode');
     return savedMode ? JSON.parse(savedMode) : false;
@@ -106,8 +111,23 @@ const App = () => {
   const handleRegister = () => setView('register');
   const handleBackToLogin = () => setView('login');
   const toggleDarkMode = () => setDarkMode(prev => !prev);
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    sessionStorage.setItem('quibish-splash-seen', 'true');
+  };
   
   if (authLoading) return <LoadingSpinner size="large" message="Loading..." />;
+  
+  // Show splash screen on first load
+  if (showSplash) {
+    return (
+      <DynamicSplashScreen 
+        darkMode={darkMode}
+        appVersion="1.0.0"
+        onComplete={handleSplashComplete}
+      />
+    );
+  }
   
   return (
     <ErrorBoundary>
