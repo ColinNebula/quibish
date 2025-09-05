@@ -26,6 +26,17 @@ const ProChat = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   
+  // Reaction system state
+  const [showReactionPicker, setShowReactionPicker] = useState(null); // messageId or null
+  const [reactionPickerPosition, setReactionPickerPosition] = useState({ x: 0, y: 0 });
+  const [messageReactions, setMessageReactions] = useState(new Map());
+  
+  // Available emoji reactions
+  const availableReactions = [
+    '❤️', '😂', '😮', '😢', '😡', '👍', '👎', '🎉', 
+    '🔥', '✨', '👏', '🤔', '😍', '🙄', '💯', '👀'
+  ];
+  
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
   }, []);
@@ -166,6 +177,78 @@ const ProChat = ({
       handleSendMessage();
     }
   }, [handleSendMessage]);
+
+  // Reaction handlers
+  const handleMessageClick = useCallback((e, messageId) => {
+    e.stopPropagation();
+    
+    if (showReactionPicker === messageId) {
+      setShowReactionPicker(null);
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    setReactionPickerPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+    setShowReactionPicker(messageId);
+  }, [showReactionPicker]);
+
+  const handleReactionSelect = useCallback((messageId, emoji) => {
+    setMessageReactions(prev => {
+      const newReactions = new Map(prev);
+      const messageReactionsData = newReactions.get(messageId) || {};
+      
+      if (messageReactionsData[emoji]) {
+        // Check if current user already reacted with this emoji
+        const userReacted = messageReactionsData[emoji].users.some(u => u.id === user.id);
+        
+        if (userReacted) {
+          // Remove user's reaction
+          messageReactionsData[emoji].users = messageReactionsData[emoji].users.filter(u => u.id !== user.id);
+          messageReactionsData[emoji].count = messageReactionsData[emoji].users.length;
+          
+          if (messageReactionsData[emoji].count === 0) {
+            delete messageReactionsData[emoji];
+          }
+        } else {
+          // Add user's reaction
+          messageReactionsData[emoji].users.push(user);
+          messageReactionsData[emoji].count++;
+        }
+      } else {
+        // Create new reaction
+        messageReactionsData[emoji] = {
+          count: 1,
+          users: [user]
+        };
+      }
+      
+      newReactions.set(messageId, messageReactionsData);
+      return newReactions;
+    });
+    
+    setShowReactionPicker(null);
+  }, [user]);
+
+  const closeReactionPicker = useCallback(() => {
+    setShowReactionPicker(null);
+  }, []);
+
+  // Close reaction picker when clicking outside
+  const handleOutsideClick = useCallback((e) => {
+    if (showReactionPicker && !e.target.closest('.reaction-picker') && !e.target.closest('.pro-message-blurb')) {
+      closeReactionPicker();
+    }
+  }, [showReactionPicker, closeReactionPicker]);
+
+  React.useEffect(() => {
+    if (showReactionPicker) {
+      document.addEventListener('click', handleOutsideClick);
+      return () => document.removeEventListener('click', handleOutsideClick);
+    }
+  }, [showReactionPicker, handleOutsideClick]);
 
   // Modal handlers
   const handleViewUserProfile = useCallback((userId, username) => {
@@ -445,32 +528,81 @@ const ProChat = ({
 
         {/* Messages */}
         <div className="pro-message-list">
-          {chatMessages.map(message => (
-            <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
-              <div className="message-avatar">
-                <img 
-                  src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
-                  alt={message.user.name}
-                  onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
-                />
-              </div>
-              <div className="message-content">
-                <div className="message-header">
-                  <span className="user-name">{message.user.name}</span>
-                  <span className="timestamp">
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </span>
+          {chatMessages.map(message => {
+            const reactions = messageReactions.get(message.id) || {};
+            return (
+              <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
+                <div className="message-avatar">
+                  <img 
+                    src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
+                    alt={message.user.name}
+                    onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
+                  />
                 </div>
-                <div 
-                  className="message-text" 
-                  data-length={getMessageLengthCategory(message.text)}
-                >
-                  {message.text}
+                <div className="message-content">
+                  <div className="message-header">
+                    <span className="user-name">{message.user.name}</span>
+                    <span className="timestamp">
+                      {new Date(message.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div 
+                    className="message-text" 
+                    data-length={getMessageLengthCategory(message.text)}
+                    onClick={(e) => handleMessageClick(e, message.id)}
+                  >
+                    {message.text}
+                  </div>
+                  
+                  {/* Display reactions */}
+                  {Object.keys(reactions).length > 0 && (
+                    <div className="message-reactions">
+                      {Object.entries(reactions).map(([emoji, reactionData]) => (
+                        <button
+                          key={emoji}
+                          className={`reaction-button ${reactionData.users.some(u => u.id === user.id) ? 'user-reacted' : ''}`}
+                          onClick={() => handleReactionSelect(message.id, emoji)}
+                          title={`${reactionData.users.map(u => u.name).join(', ')}`}
+                        >
+                          <span className="reaction-emoji">{emoji}</span>
+                          <span className="reaction-count">{reactionData.count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        {/* Reaction Picker */}
+        {showReactionPicker && (
+          <div 
+            className="reaction-picker"
+            style={{
+              position: 'fixed',
+              left: `${reactionPickerPosition.x}px`,
+              top: `${reactionPickerPosition.y}px`,
+              transform: 'translate(-50%, -100%)',
+              zIndex: 1000
+            }}
+          >
+            <div className="reaction-picker-arrow"></div>
+            <div className="reaction-picker-content">
+              {availableReactions.map(emoji => (
+                <button
+                  key={emoji}
+                  className="reaction-option"
+                  onClick={() => handleReactionSelect(showReactionPicker, emoji)}
+                  title={`React with ${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Input Area */}
         <div className="pro-chat-input-container">
