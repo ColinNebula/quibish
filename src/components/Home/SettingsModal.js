@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import EnhancedProfile from '../Profile/EnhancedProfile';
 import UserAnalytics from './UserAnalytics';
+import TwoFactorSettings from '../TwoFactorAuth/TwoFactorSettings';
 import './SettingsModal.css';
 
 const SettingsModal = ({ 
@@ -77,9 +78,7 @@ const SettingsModal = ({
       case 'privacy':
         return (
           <div className="settings-section">
-            <h2>Privacy & Security</h2>
-            <p>Privacy and security settings will be shown here.</p>
-            {/* Privacy settings would go here */}
+            <TwoFactorSettings />
           </div>
         );
       default:

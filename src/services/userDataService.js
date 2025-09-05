@@ -904,7 +904,150 @@ const userDataService = {
     uploadAvatar: uploadAvatarAPI,
     uploadMedia: uploadMediaAPI,
     getUserMedia: getUserMediaAPI,
-    deleteMedia: deleteMediaAPI
+    deleteMedia: deleteMediaAPI,
+    
+    // Two-Factor Authentication API methods
+    setupTwoFactor: async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/setup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to setup 2FA');
+        return data;
+      } catch (error) {
+        console.error('Setup 2FA error:', error);
+        throw error;
+      }
+    },
+    
+    verifyTwoFactorSetup: async (verificationToken) => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/verify-setup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ token: verificationToken })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to verify 2FA setup');
+        return data;
+      } catch (error) {
+        console.error('Verify 2FA setup error:', error);
+        throw error;
+      }
+    },
+    
+    verifyTwoFactor: async (userId, verificationToken, isBackupCode = false) => {
+      try {
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            userId, 
+            token: verificationToken, 
+            isBackupCode 
+          })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to verify 2FA');
+        return data;
+      } catch (error) {
+        console.error('Verify 2FA error:', error);
+        throw error;
+      }
+    },
+    
+    completeTwoFactorLogin: async (userId) => {
+      try {
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/complete-login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ userId })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to complete login');
+        return data;
+      } catch (error) {
+        console.error('Complete 2FA login error:', error);
+        throw error;
+      }
+    },
+    
+    disableTwoFactor: async (password, twoFactorToken) => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/disable`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ password, token: twoFactorToken })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to disable 2FA');
+        return data;
+      } catch (error) {
+        console.error('Disable 2FA error:', error);
+        throw error;
+      }
+    },
+    
+    getTwoFactorStatus: async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/status`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to get 2FA status');
+        return data;
+      } catch (error) {
+        console.error('Get 2FA status error:', error);
+        throw error;
+      }
+    },
+    
+    generateBackupCodes: async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/backup-codes`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to generate backup codes');
+        return data;
+      } catch (error) {
+        console.error('Generate backup codes error:', error);
+        throw error;
+      }
+    }
   },
   
   // Utility functions

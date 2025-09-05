@@ -136,6 +136,17 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    // Check if 2FA is enabled
+    if (user.twoFactorAuth && user.twoFactorAuth.enabled) {
+      // Return special response indicating 2FA is required
+      return res.json({
+        success: true,
+        requiresTwoFactor: true,
+        userId: user.id,
+        message: '2FA verification required'
+      });
+    }
+
     // Update user's online status and last active time
     user.isOnline = true;
     user.lastActive = new Date();
@@ -184,6 +195,86 @@ router.post('/login', async (req, res) => {
 
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// POST /api/auth/complete-login - Complete login after 2FA verification
+router.post('/complete-login', async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID is required'
+      });
+    }
+
+    // Find user by ID instead of username/email
+    let user;
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      user = global.inMemoryStorage.users.find(u => u.id === userId);
+    } else {
+      user = await User.findOne({ id: userId });
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Update user's online status and last active time
+    user.isOnline = true;
+    user.lastActive = new Date();
+    user.status = 'online';
+    
+    // Handle in-memory vs MongoDB
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      // Update in-memory user
+      const userIndex = global.inMemoryStorage.users.findIndex(u => u.id === user.id);
+      if (userIndex !== -1) {
+        global.inMemoryStorage.users[userIndex] = {
+          ...global.inMemoryStorage.users[userIndex],
+          isOnline: true,
+          lastActive: new Date(),
+          status: 'online'
+        };
+      }
+    } else {
+      // Save to MongoDB
+      await user.save();
+    }
+
+    // Generate token
+    const token = generateToken(user);
+
+    // Return user data (excluding password)
+    let userObject;
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      userObject = { ...user };
+      delete userObject.password;
+    } else {
+      userObject = user.toObject();
+      delete userObject.password;
+    }
+    
+    console.log('Login completed with 2FA for user:', user.username);
+    
+    res.json({
+      success: true,
+      user: userObject,
+      token: token,
+      message: 'Login successful'
+    });
+
+  } catch (error) {
+    console.error('Complete login error:', error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'
