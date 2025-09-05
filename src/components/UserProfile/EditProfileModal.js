@@ -145,20 +145,13 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
       // Upload avatar if changed
       let avatarUrl = userProfile?.avatar;
       if (avatarFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append('avatar', avatarFile);
-        
-        const uploadResponse = await fetch('/api/upload/avatar', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: uploadFormData
-        });
-
-        if (uploadResponse.ok) {
-          const uploadResult = await uploadResponse.json();
-          avatarUrl = uploadResult.url;
+        try {
+          const uploadResult = await userDataService.api.uploadAvatar(avatarFile);
+          avatarUrl = uploadResult.avatarUrl;
+          console.log('✅ Avatar uploaded successfully in EditProfileModal:', uploadResult);
+        } catch (uploadError) {
+          console.error('❌ Avatar upload failed in EditProfileModal:', uploadError);
+          // Continue with profile update even if avatar upload fails
         }
       }
 

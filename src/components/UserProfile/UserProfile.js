@@ -19,8 +19,43 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
 
   // Check if this is the current user's profile
-  const currentUserId = localStorage.getItem('userId');
+  const getCurrentUserId = () => {
+    // Try to get user ID from localStorage first (remember me)
+    const localUser = localStorage.getItem('user');
+    if (localUser) {
+      try {
+        const userData = JSON.parse(localUser);
+        return userData.id || userData.username;
+      } catch (error) {
+        console.error('Error parsing localStorage user data:', error);
+      }
+    }
+    
+    // Fallback to sessionStorage (current session)
+    const sessionUser = sessionStorage.getItem('user');
+    if (sessionUser) {
+      try {
+        const userData = JSON.parse(sessionUser);
+        return userData.id || userData.username;
+      } catch (error) {
+        console.error('Error parsing sessionStorage user data:', error);
+      }
+    }
+    
+    return null;
+  };
+  
+  const currentUserId = getCurrentUserId();
   const isOwnProfile = userId === currentUserId;
+  
+  // Debug logging for authentication
+  console.log('UserProfile authentication check:', {
+    userId,
+    currentUserId,
+    isOwnProfile,
+    localStorageUser: localStorage.getItem('user'),
+    sessionStorageUser: sessionStorage.getItem('user')
+  });
 
   useEffect(() => {
     const loadUserData = async () => {

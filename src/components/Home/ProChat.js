@@ -656,7 +656,7 @@ const ProChat = ({
           {!sidebarCollapsed && (
             <div className="user-actions">
               <button className="action-btn" title="Settings">⚙️</button>
-              <button className="action-btn" title="Profile">👤</button>
+              <button className="action-btn" title="Profile" onClick={() => handleViewUserProfile(user?.id, user?.name)}>👤</button>
             </div>
           )}
         </div>
