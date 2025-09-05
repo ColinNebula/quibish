@@ -45,7 +45,78 @@ const ProChat = ({
   // Refs
   const fileInputRef = useRef(null);
   const recordingTimerRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+
+  // Chat messages state - moved here to be available for useEffect
+  const [chatMessages, setChatMessages] = useState([
+    {
+      id: 1,
+      text: "Hey! 👋",
+      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 300000).toISOString(),
+      reactions: [
+        { emoji: '👋', count: 2, userId: 'user2' },
+        { emoji: '😊', count: 1, userId: 'user3' }
+      ]
+    },
+    {
+      id: 2,
+      text: "Welcome to the enhanced chat application! This is a medium-length message to demonstrate how the message cards scale based on content length.",
+      user: { id: 'system', name: 'System', avatar: null },
+      timestamp: new Date(Date.now() - 240000).toISOString(),
+      reactions: [
+        { emoji: '👍', count: 3, userId: 'user1' },
+        { emoji: '🎉', count: 1, userId: 'user2' }
+      ]
+    },
+    {
+      id: 3,
+      text: "This is a longer message that demonstrates the chat application's ability to handle various message lengths gracefully. The card automatically adjusts its height and the content flows naturally within the card boundaries.",
+      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 180000).toISOString(),
+      reactions: [
+        { emoji: '💯', count: 1, userId: 'user1' }
+      ]
+    },
+    {
+      id: 4,
+      text: "Short one! 😄",
+      user: { id: 'user3', name: 'Charlie Brown', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 120000).toISOString(),
+      reactions: [
+        { emoji: '😄', count: 2, userId: 'user1' },
+        { emoji: '❤️', count: 1, userId: 'user2' }
+      ]
+    },
+    {
+      id: 5,
+      text: "The chat interface supports real-time messaging, file uploads, voice messages, and many other features that make communication seamless and enjoyable.",
+      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 60000).toISOString(),
+      reactions: []
+    }
+  ]);
   
+  // Reaction system state - moved here to be available for functions
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  
+  // Auto-scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }
+  }, []);
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, scrollToBottom]);
+
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
   }, []);
@@ -103,6 +174,10 @@ const ProChat = ({
               }
             };
             setChatMessages(prev => [...prev, newMessage]);
+            // Auto-scroll to the new message
+            setTimeout(() => {
+              scrollToBottom();
+            }, 100);
           };
           reader.onerror = (error) => {
             console.error('Error reading file:', error);
@@ -124,16 +199,62 @@ const ProChat = ({
             }
           };
           setChatMessages(prev => [...prev, newMessage]);
+          // Auto-scroll to the new message
+          setTimeout(() => {
+            scrollToBottom();
+          }, 100);
         }
       });
       
       // Reset file input
       e.target.value = '';
     }
-  }, [user]);
+  }, [user, scrollToBottom]);
+
+  // Handle adding reactions to messages
+  const handleReactionAdd = useCallback((messageId, emoji) => {
+    setChatMessages(prev => prev.map(message => {
+      if (message.id === messageId) {
+        const existingReaction = message.reactions.find(r => r.emoji === emoji);
+        if (existingReaction) {
+          // Toggle existing reaction
+          return {
+            ...message,
+            reactions: message.reactions.map(r => 
+              r.emoji === emoji 
+                ? { ...r, count: r.count + 1 }
+                : r
+            )
+          };
+        } else {
+          // Add new reaction
+          return {
+            ...message,
+            reactions: [...message.reactions, { emoji, count: 1, userId: user.id }]
+          };
+        }
+      }
+      return message;
+    }));
+  }, [user.id]);
 
   const handleEmojiClick = useCallback((emoji) => {
-    setInputText(prev => prev + emoji);
+    if (selectedMessageId) {
+      // Add reaction to specific message
+      handleReactionAdd(selectedMessageId, emoji);
+    } else {
+      // Add emoji to input text (existing functionality)
+      setInputText(prev => prev + emoji);
+    }
+    setShowEmojiPicker(false);
+    setShowReactionPicker(false);
+    setSelectedMessageId(null);
+  }, [selectedMessageId, handleReactionAdd]);
+
+  // Handle message click for reactions
+  const handleMessageClick = useCallback((messageId) => {
+    setSelectedMessageId(messageId);
+    setShowReactionPicker(true);
     setShowEmojiPicker(false);
   }, []);
 
@@ -170,10 +291,14 @@ const ProChat = ({
         duration: recordingDuration
       };
       setChatMessages(prev => [...prev, newMessage]);
+      // Auto-scroll to the new message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
     }
     
     setRecordingDuration(0);
-  }, [recordingDuration, formatRecordingTime, user]);
+  }, [recordingDuration, formatRecordingTime, user, scrollToBottom]);
 
   // Cleanup recording timer
   useEffect(() => {
@@ -222,43 +347,7 @@ const ProChat = ({
     return conversations.reduce((total, conv) => total + conv.unreadCount, 0);
   }, [conversations]);
 
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 1,
-      text: "Hey! 👋",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 300000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 2,
-      text: "Welcome to the enhanced chat application! This is a medium-length message to demonstrate how the message cards scale based on content length.",
-      user: { id: 'system', name: 'System', avatar: null },
-      timestamp: new Date(Date.now() - 240000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 3,
-      text: "This is a much longer message that demonstrates how the chat interface adapts to longer content. When users write extensive messages with detailed explanations, multiple sentences, and comprehensive information, the message cards automatically expand to accommodate the content while maintaining readability and visual hierarchy. The system intelligently adjusts padding, background styling, and maximum width to ensure optimal presentation regardless of message length.",
-      user: { id: 'user2', name: 'Bob Wilson', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 180000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 4,
-      text: "Perfect! 🎉",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 120000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 5,
-      text: "This is an extremely long message that serves as an example of how the chat interface handles very extensive content. In real-world applications, users often need to share detailed information, comprehensive explanations, lengthy instructions, or elaborate discussions that span multiple paragraphs. The dynamic scaling system ensures that such messages are presented in an optimal format with appropriate styling, enhanced readability features, distinctive visual treatment, and proper spacing that maintains the overall chat flow while giving long-form content the space and attention it deserves. The system automatically detects content length and applies the most suitable styling approach to ensure excellent user experience across all message types and lengths.",
-      user: { id: 'user3', name: 'Charlie Brown', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 60000).toISOString(),
-      reactions: []
-    }
-  ]);
+  // chatMessages state already defined above
 
   const [inputText, setInputText] = useState('');
 
@@ -270,6 +359,8 @@ const ProChat = ({
     minimized: false, 
     audioOnly: false 
   });
+  
+  // Reaction system state already defined above
 
   // Message input handlers
   const handleSendMessage = useCallback(() => {
@@ -285,7 +376,12 @@ const ProChat = ({
     
     setChatMessages(prev => [...prev, newMessage]);
     setInputText('');
-  }, [inputText, user]);
+    
+    // Auto-scroll to the new message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+  }, [inputText, user, scrollToBottom]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -459,6 +555,9 @@ const ProChat = ({
           case '0':
             event.preventDefault();
             handleZoomReset();
+            break;
+          default:
+            // No action for other keys
             break;
         }
       }
@@ -752,7 +851,7 @@ const ProChat = ({
         </div>
 
         {/* Messages */}
-        <div className="pro-message-list">
+        <div className="pro-message-list" ref={messagesContainerRef}>
           {chatMessages.map(message => (
             <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
               <div className="message-avatar">
@@ -762,7 +861,7 @@ const ProChat = ({
                   onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
                 />
               </div>
-              <div className="message-content">
+              <div className="message-content" onClick={() => handleMessageClick(message.id)}>
                 <div className="message-header">
                   <span className="user-name">{message.user.name}</span>
                   <span className="timestamp">
@@ -835,9 +934,30 @@ const ProChat = ({
                     <button className="play-voice-btn">▶️</button>
                   </div>
                 )}
+                
+                {/* Reactions Display */}
+                {message.reactions && message.reactions.length > 0 && (
+                  <div className="message-reactions">
+                    {message.reactions.map((reaction, index) => (
+                      <button
+                        key={index}
+                        className="reaction-bubble"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReactionAdd(message.id, reaction.emoji);
+                        }}
+                      >
+                        <span className="reaction-emoji">{reaction.emoji}</span>
+                        <span className="reaction-count">{reaction.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
+          {/* Auto-scroll anchor element */}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Enhanced Input Area with Voice and File Upload */}
@@ -947,6 +1067,40 @@ const ProChat = ({
                   <button 
                     className="emoji-close"
                     onClick={() => setShowEmojiPicker(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="emoji-grid">
+                  {['😊', '😂', '🥰', '😍', '🤔', '😮', '😅', '👍', '👎', '❤️', '🔥', '🎉', '👏', '🙌', '✨', '💯', '🚀', '💡', '🎯', '✅', '❌', '⚡', '🌟', '🤝', '💪', '🌈', '☀️', '🌙', '⭐', '💝', '🎈'].map(emoji => (
+                    <button
+                      key={emoji}
+                      className="emoji-item"
+                      onClick={() => handleEmojiClick(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reaction Picker for Messages */}
+          {showReactionPicker && selectedMessageId && (
+            <div className="emoji-picker-overlay" onClick={() => {
+              setShowReactionPicker(false);
+              setSelectedMessageId(null);
+            }}>
+              <div className="emoji-picker" onClick={(e) => e.stopPropagation()}>
+                <div className="emoji-picker-header">
+                  <span>Add Reaction</span>
+                  <button 
+                    className="emoji-close"
+                    onClick={() => {
+                      setShowReactionPicker(false);
+                      setSelectedMessageId(null);
+                    }}
                   >
                     ✕
                   </button>

@@ -87,7 +87,7 @@ const initDB = () => {
 
 // API utility functions
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken') || localStorage.getItem('token');
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -95,9 +95,10 @@ const getAuthHeaders = () => {
 };
 
 const getFileUploadHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken') || localStorage.getItem('token');
   return {
     'Authorization': `Bearer ${token}`
+    // Note: Don't set Content-Type for file uploads, let browser set it with boundary
   };
 };
 
@@ -159,7 +160,7 @@ const uploadAvatarAPI = async (file) => {
   const formData = new FormData();
   formData.append('avatar', file);
   
-  return await apiCall('/upload/avatar', {
+  return await apiCall('/users/avatar', {
     method: 'POST',
     headers: getFileUploadHeaders(),
     body: formData

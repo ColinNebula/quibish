@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import userDataService from '../../services/userDataService';
 import './AvatarUpload.css';
 
 const AvatarUpload = ({ currentAvatar, onAvatarChange, isOwnProfile }) => {
@@ -44,11 +45,14 @@ const AvatarUpload = ({ currentAvatar, onAvatarChange, isOwnProfile }) => {
       };
       reader.readAsDataURL(file);
 
-      // Check if we have authentication token
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      console.log('🔑 Auth token check:', { hasToken: !!token });
-      
-      if (!token) {
+    // Check if we have authentication token
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    console.log('🔑 Auth token check:', { 
+      hasToken: !!token, 
+      tokenLength: token ? token.length : 0,
+      localStorage: !!localStorage.getItem('authToken'),
+      sessionStorage: !!sessionStorage.getItem('authToken')
+    });      if (!token) {
         // Demo mode - just use the data URL from file reader
         console.log('🎭 No auth token found, running in demo mode');
         const reader = new FileReader();
@@ -64,36 +68,33 @@ const AvatarUpload = ({ currentAvatar, onAvatarChange, isOwnProfile }) => {
 
       // Upload to server
       console.log('🌐 Uploading to server...');
-      const formData = new FormData();
-      formData.append('avatar', file);
-
-      const response = await fetch('http://localhost:5001/api/users/avatar', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${token}`
+      
+      try {
+        const result = await userDataService.api.uploadAvatar(file);
+        console.log('✅ Upload successful via userDataService:', result);
+        
+        // Make sure we have a valid avatar URL
+        if (result && result.avatarUrl) {
+          console.log('🖼️ Setting new avatar URL:', result.avatarUrl);
+          onAvatarChange(result.avatarUrl);
+        } else {
+          console.error('❌ No avatar URL in response:', result);
+          throw new Error('Invalid response: no avatar URL returned');
         }
-      });
-
-      console.log('📡 Server response:', { 
-        status: response.status, 
-        statusText: response.statusText 
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Upload successful:', result);
-        onAvatarChange(result.avatarUrl);
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
-        console.error('❌ Server error:', errorData);
-        throw new Error(errorData.error || 'Upload failed');
+      } catch (apiError) {
+        console.error('❌ API upload failed:', apiError);
+        throw new Error(apiError.message || 'Upload failed');
       }
     } catch (error) {
       console.error('💥 Avatar upload error:', error);
+      console.error('💥 Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       
       // Fallback to demo mode
-      if (error.message.includes('Network Error') || error.message.includes('fetch')) {
+      if (error.message.includes('Network Error') || error.message.includes('fetch') || error.message.includes('API call failed')) {
         console.log('🔄 Network error, falling back to demo mode');
         const reader = new FileReader();
         reader.onload = (e) => {
