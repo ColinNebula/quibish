@@ -1778,6 +1778,43 @@
    ENHANCED MESSAGE INPUT CONTAINER
    ================================ */
 
+/* Main Content Area Layout */
+.pro-main {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  /* Ensure proper grid placement */
+  grid-column: 2;
+}
+
+.pro-main.collapsed {
+  /* Grid layout automatically handles this in ProLayout.css */
+  width: 100%;
+}
+
+/* Message List Container */
+.pro-message-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: visible; /* Allow horizontal expansion */
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: transparent;
+  /* Ensure proper scrolling */
+  min-height: 0;
+  width: 100%;
+  box-sizing: border-box;
+  /* Allow messages to size naturally */
+  align-items: flex-start; /* Align messages to start */
+}
+
+/* Input Container Styles */
+.pro-chat-input-container,
 .message-input-container {
   padding: 20px 32px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -1797,16 +1834,210 @@
   /* Prevent layout shifts */
   box-sizing: border-box;
   /* Elegant glassmorphism background */
-  background: transparent;
+  background: rgba(255, 255, 255, 0.95);
   /* Enhanced shadow for depth */
   box-shadow: 
     0 -8px 32px rgba(0, 0, 0, 0.1),
     0 -2px 8px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  /* Maximum width for elegance */
-  max-width: 1200px;
-  margin: 0 auto;
+  /* Full width within container */
   width: 100%;
+  margin: 0;
+  /* Grid placement for proper layout */
+  grid-row: 2;
+}
+
+/* Responsive Layout Fixes */
+@media (max-width: 768px) {
+  .pro-main {
+    grid-column: 1;
+    height: calc(100vh - 80px);
+    height: calc(100dvh - 80px);
+  }
+  
+  .pro-chat-input-container,
+  .message-input-container {
+    padding: 16px 20px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  
+  .input-wrapper {
+    gap: 8px;
+  }
+  
+  /* Ensure messages conform to content on mobile but don't exceed screen */
+  .pro-message-blurb {
+    max-width: calc(100% - 20px); /* Prevent overflow on mobile */
+    width: fit-content; /* Conform to content */
+    padding: 8px 12px;
+  }
+  
+  .message-text {
+    max-width: calc(100vw - 120px); /* Account for avatar and padding */
+  }
+  
+  .message-text[data-length="short"] {
+    max-width: 250px; /* Smaller max for mobile */
+  }
+  
+  .message-text[data-length="medium"] {
+    max-width: 350px; /* Smaller max for mobile */
+  }
+  
+  .message-text[data-length="long"] {
+    max-width: calc(100vw - 120px); /* Full mobile width */
+  }
+  
+  .message-text[data-length="very-long"] {
+    max-width: calc(100vw - 120px); /* Full mobile width */
+  }
+  
+  .pro-message-list {
+    padding: 12px 16px;
+    overflow-x: visible;
+  }
+}
+
+@media (max-width: 480px) {
+  .pro-main {
+    height: calc(100vh - 70px);
+    height: calc(100dvh - 70px);
+  }
+  
+  .pro-chat-input-container,
+  .message-input-container {
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  
+  /* Extra responsive considerations for small screens */
+  .pro-message-blurb {
+    padding: 6px 10px;
+    margin: 4px 0;
+    max-width: calc(100% - 16px); /* Tighter constraint for small screens */
+  }
+  
+  .message-text {
+    font-size: 13px;
+    padding: 8px 12px;
+    max-width: calc(100vw - 100px); /* Account for smaller avatars */
+  }
+  
+  .message-text[data-length="short"] {
+    padding: 4px 6px;
+    max-width: 200px; /* Even smaller for tiny screens */
+  }
+  
+  .message-text[data-length="medium"] {
+    padding: 6px 10px;
+    max-width: 280px; /* Smaller max for tiny screens */
+  }
+  
+  .message-text[data-length="long"] {
+    padding: 10px 14px;
+    max-width: calc(100vw - 100px); /* Full tiny screen width */
+  }
+  
+  .message-text[data-length="very-long"] {
+    padding: 12px 16px;
+    max-width: calc(100vw - 100px); /* Full tiny screen width */
+  }
+}
+
+/* Mobile-specific content-conforming overrides */
+@media (max-width: 768px) {
+  .pro-message-blurb {
+    width: fit-content !important;
+    max-width: calc(100% - 20px) !important;
+  }
+  
+  .pro-message-blurb:has(.message-text[data-length="short"]) {
+    max-width: 250px !important;
+    width: fit-content !important;
+  }
+  
+  .pro-message-blurb:has(.message-text[data-length="medium"]) {
+    max-width: 350px !important;
+    width: fit-content !important;
+  }
+  
+  .pro-message-blurb:has(.message-text[data-length="long"]),
+  .pro-message-blurb:has(.message-text[data-length="very-long"]) {
+    max-width: calc(100vw - 120px) !important;
+    width: fit-content !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .pro-message-blurb {
+    width: fit-content !important;
+    max-width: calc(100% - 16px) !important;
+  }
+  
+  .pro-message-blurb:has(.message-text[data-length="short"]) {
+    max-width: 200px !important;
+    width: fit-content !important;
+  }
+  
+  .pro-message-blurb:has(.message-text[data-length="medium"]) {
+    max-width: 280px !important;
+    width: fit-content !important;
+  }
+  
+  .pro-message-blurb:has(.message-text[data-length="long"]),
+  .pro-message-blurb:has(.message-text[data-length="very-long"]) {
+    max-width: calc(100vw - 100px) !important;
+    width: fit-content !important;
+  }
+}
+
+.dark-mode .pro-chat-input-container,
+.dark-mode .message-input-container {
+  background: rgba(30, 30, 46, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Final override to ensure message cards conform to content size */
+.pro-message-blurb {
+  width: fit-content !important; /* Force content-conforming width */
+  max-width: 85% !important; /* Ensure reasonable maximum */
+  align-self: flex-start !important; /* Align to container start */
+  min-width: auto !important; /* Allow natural minimum width */
+  flex-shrink: 0 !important; /* Prevent shrinking */
+}
+
+/* Ensure message content adapts naturally */
+.pro-message-blurb .message-content {
+  width: auto !important; /* Natural width */
+  flex: 1 1 auto !important; /* Flexible but natural sizing */
+  min-width: 0 !important; /* Allow shrinking for text wrapping */
+}
+
+/* Ensure text elements conform to content */
+.pro-message-blurb .message-text {
+  width: fit-content !important; /* Content-based sizing */
+  min-width: auto !important; /* Natural minimum */
+}
+
+/* Container-specific overrides for different message lengths */
+.pro-message-blurb:has(.message-text[data-length="short"]) {
+  max-width: 350px !important;
+  width: fit-content !important;
+}
+
+.pro-message-blurb:has(.message-text[data-length="medium"]) {
+  max-width: 550px !important;
+  width: fit-content !important;
+}
+
+.pro-message-blurb:has(.message-text[data-length="long"]) {
+  max-width: 700px !important;
+  width: fit-content !important;
+}
+
+.pro-message-blurb:has(.message-text[data-length="very-long"]) {
+  max-width: 85% !important;
+  width: fit-content !important;
 }
 
 /* ================================
@@ -6798,16 +7029,17 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   /* Dynamic sizing based on content */
   min-height: 60px;
-  max-width: 100%;
-  width: fit-content;
-  align-self: flex-start;
+  max-width: 85%; /* Limit maximum width but allow natural sizing */
+  width: fit-content; /* Conform to content size */
+  align-self: flex-start; /* Align to start of container */
+  overflow: visible; /* Prevent cutoff */
 }
 
 /* Message content container with flexible sizing */
 .message-content {
   flex: 1;
   min-width: 0;
-  width: auto; /* Allow natural width expansion */
+  width: auto; /* Allow natural width based on content */
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -6844,10 +7076,11 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   overflow: visible; /* Ensure text is not cut off */
-  width: auto;
+  width: auto; /* Conform to content width */
   /* Dynamic scaling based on content */
   padding: 0;
   margin: 0;
+  box-sizing: border-box;
 }
 
 /* Short messages (1-50 characters) - Compact style */
@@ -6857,9 +7090,9 @@
   padding: 4px 8px;
   background: rgba(59, 130, 246, 0.05);
   border-radius: 8px;
-  display: inline-block;
-  width: fit-content;
-  max-width: 300px;
+  display: inline-block; /* Conform to content size */
+  width: fit-content; /* Size to content */
+  max-width: 300px; /* Reasonable maximum for short messages */
 }
 
 /* Medium messages (51-200 characters) - Standard style */
@@ -6869,7 +7102,8 @@
   padding: 6px 12px;
   background: rgba(255, 255, 255, 0.5);
   border-radius: 10px;
-  max-width: 500px;
+  max-width: 500px; /* Reasonable width for medium messages */
+  width: fit-content; /* Size to content */
 }
 
 /* Long messages (201-500 characters) - Expanded style */
@@ -6880,7 +7114,8 @@
   background: rgba(249, 250, 251, 0.8);
   border-radius: 12px;
   border-left: 3px solid rgba(59, 130, 246, 0.3);
-  max-width: 700px;
+  max-width: 650px; /* Allow more width for long messages */
+  width: fit-content; /* Size to content */
 }
 
 /* Very long messages (500+ characters) - Full width with better formatting */
@@ -6891,7 +7126,8 @@
   background: rgba(248, 249, 250, 0.9);
   border-radius: 12px;
   border-left: 4px solid rgba(59, 130, 246, 0.4);
-  max-width: 90%;
+  max-width: 80%; /* Use most of available width for very long messages */
+  width: fit-content; /* Size to content */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -6925,15 +7161,29 @@
   height: 40px;
 }
 
-/* Container scaling based on content */
+/* Container scaling based on content - Adaptive sizing */
 .pro-message-blurb:has(.message-text[data-length="short"]) {
-  max-width: 350px;
+  max-width: 350px; /* Compact for short messages */
+  width: fit-content; /* Size to content */
   padding: 8px 12px;
 }
 
 .pro-message-blurb:has(.message-text[data-length="medium"]) {
-  max-width: 550px;
+  max-width: 550px; /* Medium width for medium messages */
+  width: fit-content; /* Size to content */
   padding: 10px 14px;
+}
+
+.pro-message-blurb:has(.message-text[data-length="long"]) {
+  max-width: 700px; /* Larger width for long messages */
+  width: fit-content; /* Size to content */
+  padding: 12px 16px;
+}
+
+.pro-message-blurb:has(.message-text[data-length="very-long"]) {
+  max-width: 85%; /* Use most of available width */
+  width: fit-content; /* Size to content */
+  padding: 14px 18px;
 }
 
 .pro-message-blurb:has(.message-text[data-length="long"]) {

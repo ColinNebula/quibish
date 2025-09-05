@@ -593,7 +593,7 @@
 .pro-message-area {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: visible; /* Allow horizontal content expansion */
   padding: 16px;
   background-color: var(--pro-bg);
   background-image: 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import UserProfileModal from '../UserProfile';
 import VideoCall from './VideoCall';
 import PropTypes from 'prop-types';
@@ -94,6 +94,7 @@ const ProChat = ({
   const totalUnreadCount = useMemo(() => {
     return conversations.reduce((total, conv) => total + conv.unreadCount, 0);
   }, [conversations]);
+
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
@@ -131,6 +132,7 @@ const ProChat = ({
       reactions: []
     }
   ]);
+
   const [inputText, setInputText] = useState('');
 
   // Enhanced features state
