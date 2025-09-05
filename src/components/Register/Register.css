@@ -1,0 +1,140 @@
+.register-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: var(--background-color);
+}
+
+.register-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  background-color: var(--card-background);
+  transition: all 0.3s ease;
+}
+
+.register-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.register-header h2 {
+  margin-bottom: 8px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--heading-color);
+}
+
+.register-header p {
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-background);
+  color: var(--text-primary);
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.register-button {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.register-button:hover {
+  background-color: var(--primary-hover);
+}
+
+.register-button:disabled,
+.register-button.loading {
+  background-color: var(--disabled-color);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.register-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.text-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.text-button:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  background-color: var(--error-light);
+  color: var(--error-text);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* Dark mode adjustments */
+.dark-theme .register-card {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .register-card {
+    padding: 20px;
+  }
+}

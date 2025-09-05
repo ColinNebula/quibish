@@ -1,0 +1,44 @@
+/* Z-Index System - Standardized layer management */
+:root {
+  /* Base layer - default content */
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 20;
+  --z-sticky: 30;
+  --z-fixed: 40;
+  --z-modal-backdrop: 1000;
+  --z-modal: 1010;
+  --z-popover: 1020;
+  --z-tooltip: 1030;
+  --z-notification: 9000;
+  --z-max: 9999;
+}
+
+/* Apply standardized z-index values */
+.pro-sidebar {
+  z-index: var(--z-fixed) !important;
+}
+
+.pro-context-menu,
+.settings-modal-backdrop {
+  z-index: var(--z-modal-backdrop) !important;
+}
+
+.settings-modal,
+.pro-sidebar-mobile-overlay {
+  z-index: var(--z-modal) !important;
+}
+
+.emoji-picker,
+.pro-input-area .suggestions {
+  z-index: var(--z-popover) !important;
+}
+
+.notification-container {
+  z-index: var(--z-notification) !important;
+}
+
+.jump-to-latest,
+.pro-header-dropdown {
+  z-index: var(--z-dropdown) !important;
+}

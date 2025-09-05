@@ -1,0 +1,132 @@
+/**
+ * InputFocusFix.css
+ * Comprehensive CSS fixes for input focus issues
+ * Enhanced to prevent focus loss during typing
+ */
+
+/* Ensure input has proper styling when focused */
+.message-input:focus {
+  outline: none !important;
+  border-color: var(--pro-accent-color, #4080ff) !important;
+  box-shadow: 0 0 0 1px rgba(64, 128, 255, 0.2) !important;
+  opacity: 1 !important;
+  /* Ensure cursor is visible */
+  caret-color: var(--pro-accent-color, #4080ff) !important;
+}
+
+/* Prevent input from being visually hidden or inaccessible */
+.message-input {
+  z-index: 10 !important; /* Ensure input is above other elements */
+  opacity: 1 !important; /* Never hide the input */
+  pointer-events: auto !important; /* Always allow interaction */
+  user-select: text !important; /* Always allow text selection */
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  touch-action: manipulation; /* Improve touch handling */
+  /* Ensure proper cursor */
+  cursor: text !important;
+  /* Ensure visibility */
+  visibility: visible !important;
+  display: block !important;
+  /* Prevent element morphing */
+  transform: translateZ(0) !important;
+  /* Better interaction handling */
+  -webkit-tap-highlight-color: rgba(64, 128, 255, 0.2);
+}
+
+/* Enhanced styling for active typing state */
+.message-input[data-typing="true"] {
+  border-color: var(--pro-accent-color, #4080ff) !important;
+  box-shadow: 0 0 0 2px rgba(64, 128, 255, 0.3) !important;
+  /* Show that typing is happening */
+  animation: typing-pulse 2s infinite;
+}
+
+@keyframes typing-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(64, 128, 255, 0.3); }
+  50% { box-shadow: 0 0 0 3px rgba(64, 128, 255, 0.4); }
+}
+
+/* Enhanced input with data attribute */
+.message-input[data-enhanced-input="true"] {
+  /* Additional enhancements for inputs that have been processed by our code */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* Fix for Firefox focus issues */
+@-moz-document url-prefix() {
+  .message-input:focus {
+    box-shadow: 0 0 0 2px rgba(64, 128, 255, 0.3) !important;
+  }
+}
+
+/* Ensure message form doesn't interfere with input focus */
+.message-input-container {
+  position: relative !important;
+  z-index: 5 !important;
+  isolation: isolate !important; /* Create stacking context */
+}
+
+/* Fix iOS focus issues */
+@supports (-webkit-touch-callout: none) {
+  .message-input {
+    -webkit-tap-highlight-color: rgba(64, 128, 255, 0.2);
+    /* iOS specific cursor visibility */
+    -webkit-user-modify: read-write !important;
+  }
+}
+
+/* Ensure emoji picker doesn't steal focus */
+.pro-emoji-picker {
+  pointer-events: auto;
+  touch-action: manipulation;
+  z-index: 4; /* Below input but above other elements */
+}
+
+/* Prevent preview card from interfering with input */
+.pro-message-blurb.dynamic-preview {
+  pointer-events: none !important; /* Don't intercept clicks/taps */
+}
+
+/* Prevent other elements from intercepting focus */
+.pro-input-area * {
+  pointer-events: auto;
+}
+
+/* Ensure the textarea has priority in hit testing */
+textarea.message-input {
+  position: relative;
+  z-index: 10;
+}
+
+/* Critical focus fix for specific event handling */
+.message-input:active,
+.message-input:focus-visible {
+  outline: none !important;
+  border-color: var(--pro-accent-color, #4080ff) !important;
+  box-shadow: 0 0 0 2px rgba(64, 128, 255, 0.3) !important;
+}
+
+/* Handle programmatic focus states */
+.message-input[data-focused="true"] {
+  border-color: var(--pro-accent-color, #4080ff) !important;
+  box-shadow: 0 0 0 2px rgba(64, 128, 255, 0.3) !important;
+}
+
+/* Fix potential stacking context issues */
+.pro-input-area,
+.message-input-container,
+.pro-send-button {
+  isolation: isolate;
+  position: relative;
+}
+
+/* Ensure input is tappable on mobile */
+@media (max-width: 768px) {
+  .message-input {
+    -webkit-tap-highlight-color: rgba(64, 128, 255, 0.2);
+    touch-action: manipulation !important;
+    /* Prevent zoom on focus */
+    font-size: 16px !important;
+  }
+}

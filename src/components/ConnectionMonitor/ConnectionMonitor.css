@@ -1,0 +1,250 @@
+/**
+ * ConnectionMonitor.css
+ * Styling for the ConnectionMonitor component
+ */
+
+.connection-monitor {
+  width: 300px;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 10px;
+}
+
+.dark-theme .connection-monitor {
+  background-color: #2a2a2a;
+  border-color: #444;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.connection-monitor.expanded {
+  height: auto;
+}
+
+.connection-monitor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+}
+
+.dark-theme .connection-monitor-header {
+  border-color: #444;
+}
+
+.connection-monitor-header:hover {
+  background-color: #f9f9f9;
+}
+
+.dark-theme .connection-monitor-header:hover {
+  background-color: #333;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.connection-status.status-excellent .status-indicator {
+  background-color: #4CAF50;
+  box-shadow: 0 0 5px #4CAF50;
+}
+
+.connection-status.status-good .status-indicator {
+  background-color: #8BC34A;
+  box-shadow: 0 0 5px #8BC34A;
+}
+
+.connection-status.status-fair .status-indicator {
+  background-color: #FFC107;
+  box-shadow: 0 0 5px #FFC107;
+}
+
+.connection-status.status-poor .status-indicator {
+  background-color: #FF9800;
+  box-shadow: 0 0 5px #FF9800;
+}
+
+.connection-status.status-critical .status-indicator {
+  background-color: #f44336;
+  box-shadow: 0 0 5px #f44336;
+}
+
+.connection-status.status-offline .status-indicator {
+  background-color: #9E9E9E;
+  box-shadow: 0 0 5px #9E9E9E;
+}
+
+.connection-phase {
+  font-size: 0.85rem;
+  color: #757575;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.dark-theme .connection-phase {
+  color: #bdbdbd;
+}
+
+.reconnect-button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #2196F3;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.reconnect-button:hover:not(:disabled) {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+}
+
+.dark-theme .reconnect-button {
+  color: #64B5F6;
+}
+
+.dark-theme .reconnect-button:hover:not(:disabled) {
+  background-color: #1a237e;
+  color: #90CAF9;
+}
+
+.reconnect-button:disabled {
+  color: #bdbdbd;
+  cursor: not-allowed;
+}
+
+.dark-theme .reconnect-button:disabled {
+  color: #616161;
+}
+
+.connection-details {
+  padding: 15px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.dark-theme .connection-details {
+  border-color: #444;
+}
+
+.metrics-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #757575;
+  margin-bottom: 3px;
+}
+
+.dark-theme .metric-label {
+  color: #bdbdbd;
+}
+
+.metric-value {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.connection-history {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.dark-theme .connection-history {
+  border-color: #444;
+}
+
+.latency-history {
+  margin-top: 10px;
+}
+
+.latency-history h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: #757575;
+}
+
+.dark-theme .latency-history h4 {
+  color: #bdbdbd;
+}
+
+.history-bars {
+  display: flex;
+  align-items: flex-end;
+  height: 40px;
+  gap: 3px;
+}
+
+.latency-bar {
+  flex: 1;
+  background-color: #2196F3;
+  transition: height 0.3s ease;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+
+.dark-theme .latency-bar {
+  background-color: #64B5F6;
+}
+
+.update-info {
+  margin-top: 15px;
+  font-size: 0.75rem;
+  color: #9E9E9E;
+  text-align: right;
+}
+
+.dark-theme .update-info {
+  color: #757575;
+}
+
+/* Compact version */
+.connection-status.compact {
+  width: auto;
+  height: auto;
+  padding: 5px;
+  border-radius: 50%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.connection-status.compact .status-indicator {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+}

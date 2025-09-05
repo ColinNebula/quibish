@@ -1,0 +1,1233 @@
+/* Enhanced Pro Input Area Styles - Responsive Edition */
+
+.pro-input-form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 16px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.pro-input-form:focus-within {
+  border-color: var(--pro-accent);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 2px rgba(59, 130, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Connection Warning Responsive */
+.pro-connection-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 8px;
+  color: var(--pro-warning);
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-align: center;
+  animation: warning-pulse 2s infinite;
+}
+
+@keyframes warning-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Typing Indicator Responsive */
+.pro-typing-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--pro-accent);
+}
+
+.pro-typing-bubble {
+  width: 8px;
+  height: 8px;
+  background: var(--pro-accent);
+  border-radius: 50%;
+  animation: typing-bounce 1.4s infinite ease-in-out;
+}
+
+.pro-typing-bubble:nth-child(1) { animation-delay: -0.32s; }
+.pro-typing-bubble:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing-bounce {
+  0%, 80%, 100% { 
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Input Field Container Responsive */
+.pro-input-field-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* Allows shrinking */
+}
+
+.pro-input-field {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--pro-text);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  resize: none;
+  min-height: 44px;
+  max-height: 150px;
+  line-height: 1.5;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.pro-input-field:focus {
+  border-color: var(--pro-accent);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.pro-input-field::placeholder {
+  color: var(--pro-text-tertiary);
+}
+
+/* Input Actions Responsive */
+.pro-input-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pro-input-actions.left {
+  justify-content: flex-start;
+}
+
+.pro-input-actions.right {
+  justify-content: flex-end;
+}
+
+/* Reply Preview */
+.pro-reply-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.reply-indicator {
+  width: 3px;
+  height: 40px;
+  background: var(--pro-accent);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.reply-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.reply-author {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pro-accent);
+}
+
+.reply-cancel {
+  background: none;
+  border: none;
+  color: var(--pro-text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.reply-cancel:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--pro-error);
+}
+
+.reply-text {
+  font-size: 13px;
+  color: var(--pro-text-secondary);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Attachment Previews */
+.pro-attachment-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.attachment-preview {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.preview-image {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.preview-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  min-width: 200px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+}
+
+.file-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pro-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  font-size: 11px;
+  color: var(--pro-text-tertiary);
+}
+
+.remove-attachment {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.attachment-preview:hover .remove-attachment {
+  opacity: 1;
+}
+
+.remove-attachment:hover {
+  background: var(--pro-error);
+  transform: scale(1.1);
+}
+
+/* Input Field Container */
+.pro-input-field-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.pro-input-field {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--pro-text);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  resize: none;
+  min-height: 44px;
+  max-height: 150px;
+  line-height: 1.5;
+}
+
+.pro-input-field:focus {
+  border-color: var(--pro-accent);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.pro-input-field::placeholder {
+  color: var(--pro-text-tertiary);
+}
+
+/* Enhanced Message Suggestions */
+.pro-message-suggestions {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  z-index: 100;
+  animation: suggestions-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.pro-suggestion-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--pro-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.pro-suggestion-button:last-child {
+  margin-bottom: 0;
+}
+
+.pro-suggestion-button:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--pro-accent);
+  transform: translateY(-1px);
+}
+
+/* Input Actions */
+.pro-input-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pro-input-actions.left {
+  justify-content: flex-start;
+}
+
+.pro-input-actions.right {
+  justify-content: flex-end;
+}
+
+.pro-input-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--pro-text-secondary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pro-input-button:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--pro-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.pro-input-button.active {
+  background: var(--pro-accent);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.pro-input-button.voice-record:active {
+  background: var(--pro-error);
+  color: white;
+  transform: scale(0.95);
+}
+
+/* Enhanced Send Button */
+.pro-send-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--pro-text-tertiary);
+  cursor: not-allowed;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pro-send-button.active {
+  background: linear-gradient(135deg, var(--pro-accent), var(--pro-primary));
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
+.pro-send-button.active:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+
+.pro-send-button.active:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.pro-send-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--pro-text-tertiary);
+}
+
+.pro-send-button.processing {
+  background: var(--pro-accent);
+  color: white;
+  cursor: wait;
+}
+
+.send-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Enhanced Emoji Picker */
+.pro-emoji-picker {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  z-index: 100;
+  animation: emoji-picker-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  min-width: 200px;
+}
+
+.pro-emoji-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.pro-emoji-button:hover {
+  background: rgba(59, 130, 246, 0.1);
+  transform: scale(1.2);
+}
+
+.pro-emoji-footer {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pro-emoji-more {
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--pro-accent);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pro-emoji-more:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Recording Interface */
+.pro-recording-interface {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--pro-error), #ef4444);
+  color: white;
+  border-radius: 16px;
+  animation: recording-pulse 2s infinite;
+}
+
+.pro-recording-time {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.pro-recording-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.pro-recording-cancel,
+.pro-recording-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.pro-recording-cancel {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.pro-recording-cancel:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.pro-recording-send {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--pro-error);
+}
+
+.pro-recording-send:hover {
+  background: white;
+  transform: scale(1.1);
+}
+
+/* Animations */
+@keyframes suggestions-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes emoji-picker-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes recording-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dark Mode */
+.dark-mode .pro-input-form {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .pro-input-field {
+  color: var(--pro-text);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .pro-input-field:focus {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .pro-message-suggestions {
+  background: rgba(30, 30, 30, 0.98);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .pro-emoji-picker {
+  background: rgba(30, 30, 30, 0.98);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .pro-input-button {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .preview-file {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced Responsive Design with Device Type Support */
+
+/* Device Type Classes */
+.pro-input-area.mobile-small {
+  --input-spacing: 4px;
+  --button-spacing: 3px;
+  --border-radius: 12px;
+}
+
+.pro-input-area.mobile {
+  --input-spacing: 6px;
+  --button-spacing: 4px;
+  --border-radius: 14px;
+}
+
+.pro-input-area.tablet {
+  --input-spacing: 8px;
+  --button-spacing: 6px;
+  --border-radius: 16px;
+}
+
+.pro-input-area.desktop,
+.pro-input-area.desktop-large {
+  --input-spacing: 12px;
+  --button-spacing: 8px;
+  --border-radius: 18px;
+}
+
+/* Adaptive Input Styling */
+.pro-input-field {
+  font-size: var(--input-font-size, 14px);
+  max-height: var(--max-textarea-height, 150px);
+  transition: all var(--animation-duration, 300ms) ease;
+  padding: var(--input-spacing, 12px) calc(var(--input-spacing, 12px) + 4px);
+  border-radius: var(--border-radius, 12px);
+}
+
+.pro-input-form {
+  padding: var(--input-spacing, 16px);
+  margin: calc(var(--input-spacing, 16px) / 2);
+  gap: var(--button-spacing, 8px);
+  border-radius: var(--border-radius, 16px);
+}
+
+/* Enhanced Touch Interactions */
+.pro-input-button,
+.pro-send-button,
+.pro-emoji-button,
+.pro-suggestion-button {
+  transition: all var(--animation-duration, 300ms) cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Swipe Gesture Support */
+.pro-input-field[data-swipe-enabled="true"] {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Enhanced Mobile States */
+.pro-input-area.mobile-small .pro-connection-warning {
+  font-size: 10px;
+  padding: 4px 6px;
+  margin: 2px 4px;
+}
+
+.pro-input-area.mobile .pro-connection-warning {
+  font-size: 11px;
+  padding: 6px 8px;
+  margin: 4px 6px;
+}
+
+/* Base Mobile Adaptations */
+.pro-input-area.mobile,
+.pro-input-area.mobile-small {
+  position: relative;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.pro-input-area.keyboard-visible {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Progressive Enhancement for Larger Screens */
+.pro-input-area.desktop .pro-input-form,
+.pro-input-area.desktop-large .pro-input-form {
+  max-width: 1200px;
+  margin: 16px auto;
+}
+
+.pro-input-form.compact-layout {
+  padding: 8px 12px;
+  margin: 8px;
+  gap: 8px;
+  border-radius: 20px;
+}
+
+.pro-input-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.pro-input-container.compact {
+  gap: 6px;
+}
+
+/* Button Size Variations */
+.pro-input-button.size-small {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.pro-input-button.size-medium {
+  width: 36px;
+  height: 36px;
+  font-size: 15px;
+  border-radius: 9px;
+}
+
+.pro-input-button.size-large {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  border-radius: 10px;
+}
+
+.pro-send-button.size-small {
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  border-radius: 10px;
+}
+
+.pro-send-button.size-medium {
+  width: 40px;
+  height: 40px;
+  font-size: 17px;
+  border-radius: 11px;
+}
+
+.pro-send-button.size-large {
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+  border-radius: 12px;
+}
+
+/* Enhanced Input Field Responsiveness */
+.pro-input-field.compact {
+  padding: 8px 12px;
+  min-height: 36px;
+  font-size: 16px; /* Prevents zoom on iOS */
+  border-radius: 18px;
+}
+
+/* Responsive Attachment Grid */
+.pro-attachment-previews.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.pro-attachment-previews.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.pro-attachment-previews.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+/* Enhanced Message Suggestions */
+.pro-message-suggestions.compact {
+  padding: 8px;
+  max-height: 120px;
+  border-radius: 12px;
+  bottom: calc(100% + 4px);
+}
+
+.pro-message-suggestions.compact .pro-suggestion-button {
+  padding: 6px 8px;
+  font-size: 12px;
+  margin-bottom: 3px;
+}
+
+/* Recording Interface Responsive */
+.pro-recording-interface {
+  padding: 12px 16px;
+  border-radius: 20px;
+  margin: 8px;
+}
+
+/* Touch Target Improvements */
+.pro-input-button,
+.pro-send-button,
+.pro-emoji-button,
+.pro-suggestion-button,
+.reply-cancel,
+.remove-attachment {
+  min-height: 44px; /* iOS accessibility guideline */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Small Mobile Devices (up to 480px) */
+@media (max-width: 480px) {
+  .pro-input-form {
+    margin: 6px;
+    padding: 8px;
+    border-radius: 16px;
+    gap: 6px;
+  }
+  
+  .pro-input-actions {
+    gap: 4px;
+  }
+  
+  .pro-input-field {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 10px 12px;
+    min-height: 36px;
+    max-height: 80px;
+  }
+  
+  .pro-attachment-previews {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+  
+  .preview-image {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .preview-file {
+    min-width: 120px;
+    padding: 6px;
+    font-size: 11px;
+  }
+  
+  .file-name {
+    font-size: 11px;
+  }
+  
+  .file-size {
+    font-size: 9px;
+  }
+  
+  .pro-message-suggestions {
+    max-height: 100px;
+    padding: 6px;
+    font-size: 11px;
+  }
+  
+  .pro-suggestion-button {
+    padding: 6px 8px;
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+  
+  .pro-emoji-picker {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    padding: 8px;
+  }
+  
+  .pro-emoji-button {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  
+  .reply-text {
+    font-size: 11px;
+  }
+  
+  .pro-connection-warning {
+    font-size: 11px;
+    padding: 4px 8px;
+    margin: 4px;
+  }
+}
+
+/* Medium Mobile Devices (481px to 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .pro-input-form {
+    margin: 8px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+  
+  .pro-input-field {
+    font-size: 15px;
+    padding: 11px 14px;
+    min-height: 40px;
+    max-height: 100px;
+  }
+  
+  .pro-attachment-previews {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  
+  .preview-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .preview-file {
+    min-width: 140px;
+    padding: 8px;
+  }
+  
+  .pro-message-suggestions {
+    max-height: 130px;
+    font-size: 12px;
+  }
+  
+  .pro-suggestion-button {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  
+  .pro-emoji-picker {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  
+  .pro-emoji-button {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+}
+
+/* Tablet Devices (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .pro-input-form {
+    margin: 12px;
+    padding: 14px;
+  }
+  
+  .pro-input-field {
+    font-size: 14px;
+    padding: 12px 16px;
+    max-height: 120px;
+  }
+  
+  .pro-attachment-previews {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  
+  .preview-image {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .preview-file {
+    min-width: 160px;
+    padding: 10px;
+  }
+  
+  .pro-message-suggestions {
+    max-height: 160px;
+  }
+  
+  .pro-emoji-picker {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Landscape Orientation */
+@media (orientation: landscape) and (max-height: 500px) {
+  .pro-input-form {
+    padding: 6px 10px;
+    margin: 4px 8px;
+    border-radius: 12px;
+  }
+  
+  .pro-input-field {
+    max-height: 60px;
+    min-height: 32px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  
+  .pro-message-suggestions {
+    max-height: 80px;
+    bottom: calc(100% + 2px);
+  }
+  
+  .pro-suggestion-button {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  
+  .pro-emoji-picker {
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  
+  .pro-attachment-previews {
+    gap: 4px;
+  }
+  
+  .preview-image {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .reply-text {
+    display: none; /* Hide reply text in landscape to save space */
+  }
+}
+
+/* High DPI/Retina Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .pro-input-button,
+  .pro-send-button {
+    border-width: 0.5px;
+  }
+  
+  .pro-input-field {
+    border-width: 0.5px;
+  }
+}
+
+/* Dark Mode Responsive Adjustments */
+@media (prefers-color-scheme: dark) {
+  .pro-input-area.keyboard-visible {
+    background: rgba(30, 30, 30, 0.98);
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .pro-input-button,
+  .pro-send-button,
+  .pro-suggestion-button,
+  .pro-emoji-button {
+    transition: none;
+  }
+  
+  .suggestions-slide-up,
+  .emoji-picker-slide-up,
+  .recording-pulse {
+    animation: none;
+  }
+}
+
+/* High Contrast */
+@media (prefers-contrast: high) {
+  .pro-input-form {
+    border-width: 2px;
+    border-color: currentColor;
+  }
+  
+  .pro-input-field {
+    border-width: 2px;
+    border-color: currentColor;
+  }
+  
+  .pro-input-button,
+  .pro-send-button {
+    border-width: 2px;
+    border-color: currentColor;
+  }
+}
+
+/* Hover Support Detection */
+@media (hover: hover) and (pointer: fine) {
+  .pro-input-button:hover {
+    transform: translateY(-2px);
+  }
+  
+  .pro-send-button.active:hover {
+    transform: translateY(-2px) scale(1.05);
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .pro-input-button:active {
+    transform: scale(0.95);
+    background: rgba(59, 130, 246, 0.2);
+  }
+  
+  .pro-send-button.active:active {
+    transform: scale(0.95);
+  }
+  
+  .pro-suggestion-button:active {
+    background: rgba(59, 130, 246, 0.2);
+  }
+  
+  .pro-emoji-button:active {
+    background: rgba(59, 130, 246, 0.1);
+    transform: scale(1.1);
+  }
+}
+
+/* Safe Area Support for iOS */
+@supports (padding: max(0px)) {
+  .pro-input-area.mobile {
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  
+  .pro-input-area.keyboard-visible {
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+}
+
+/* High Contrast Mode */
+.high-contrast-mode .pro-input-form {
+  background: black;
+  border: 2px solid white;
+}
+
+.high-contrast-mode .pro-input-field {
+  background: black;
+  color: white;
+  border: 1px solid white;
+}
+
+.high-contrast-mode .pro-send-button.active {
+  background: white;
+  color: black;
+}
+
+.high-contrast-mode .pro-input-button {
+  background: black;
+  color: white;
+  border: 1px solid white;
+}

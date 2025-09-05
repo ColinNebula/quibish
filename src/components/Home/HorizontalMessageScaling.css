@@ -1,0 +1,94 @@
+/**
+ * HorizontalMessageScaling.css
+ * Additional styles for horizontal scaling of message cards
+ */
+
+/* Custom properties for dynamic width calculation */
+.pro-message-blurb.horizontal-scale {
+  --dynamic-width: auto;
+  --min-content-width: 180px;
+  --max-content-width: 80%;
+  
+  /* Apply responsive width - fixed values help reduce flicker */
+  width: var(--dynamic-width, auto);
+  min-width: var(--min-content-width, 180px);
+  max-width: var(--max-content-width, 80%);
+  
+  /* Remove transition to avoid flickering */
+  transition: none;
+}
+
+/* Different width calculations based on text length */
+.pro-message-blurb.horizontal-scale[data-text-length="short"] {
+  width: auto;
+  min-width: 180px;
+  max-width: 40%;
+  /* Set a fixed width to reduce calculation-based flickering */
+  width: var(--dynamic-width, 200px);
+}
+
+.pro-message-blurb.horizontal-scale[data-text-length="medium"] {
+  min-width: 220px;
+  max-width: 60%;
+  /* Set a fixed width to reduce calculation-based flickering */
+  width: var(--dynamic-width, 300px);
+}
+
+.pro-message-blurb.horizontal-scale[data-text-length="long"] {
+  min-width: 280px;
+  max-width: 80%;
+  width: auto;
+}
+
+/* Handle very short messages */
+.pro-message-blurb.horizontal-scale .pro-blurb-text:empty::before {
+  content: 'Type a message...';
+  color: rgba(100, 100, 100, 0.5);
+}
+
+/* Handle line breaks */
+.pro-message-blurb.horizontal-scale .pro-blurb-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Ensure proper wrapping for very long words */
+.pro-message-blurb.horizontal-scale .pro-blurb-text:has(span.long-word) {
+  word-break: break-all;
+  hyphens: auto;
+}
+
+/* Special handling for extremely long words */
+.pro-message-blurb.horizontal-scale .pro-blurb-text:has(span.long-word) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Handle extremely long continuous strings with no spaces */
+.pro-message-blurb.horizontal-scale .pro-blurb-text:has(span.long-word) span.long-word {
+  display: inline;
+  visibility: hidden;
+  position: relative;
+}
+
+/* Style long text with more than 500 characters */
+.pro-message-blurb.horizontal-scale[data-text-length="long"] .pro-blurb-text {
+  max-width: 100%;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pro-message-blurb.horizontal-scale {
+    --max-content-width: 90%;
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .pro-message-blurb.horizontal-scale {
+    --max-content-width: 95%;
+    max-width: 95%;
+  }
+}

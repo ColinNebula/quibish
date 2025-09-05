@@ -1,0 +1,142 @@
+/**
+ * DynamicMessageCard.css
+ * Provides smooth resizing and transitions for message cards as content changes
+ * Optimized to prevent flickering during dynamic updates
+ */
+
+/* Base properties for message cards - minimal transitions to reduce flickering */
+.pro-message-blurb {
+  /* Only transition properties that won't cause layout thrashing */
+  transition: transform 180ms ease-out, 
+              box-shadow 180ms ease-out, 
+              background-color 180ms ease-out, 
+              opacity 200ms ease-out;
+  /* Fixed sizing properties */
+  width: fit-content;
+  max-width: calc(100% - 24px); /* Leave some space on the sides */
+  /* No will-change to prevent rendering issues */
+  transform: translateZ(0); /* Force GPU acceleration */
+  backface-visibility: hidden; /* Reduce flickering */
+}
+
+/* Text content within messages with minimal transitions */
+.pro-blurb-text {
+  /* Only apply transitions to non-layout properties */
+  transition: color 180ms ease, background-color 180ms ease;
+  /* Fixed layout properties */
+  width: fit-content;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  contain: content; /* Improve performance by containing layout changes */
+}
+
+/* Dynamic message preview specific styling */
+.pro-message-blurb.dynamic-preview {
+  /* Use hardware acceleration for smoother rendering */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Set initial opacity to 0 and fade in via JS for smoother appearance */
+  opacity: 0;
+}
+
+/* Dynamic sizing class with stable dimensions */
+.pro-message-blurb.dynamic-resize {
+  /* No transitions on dimensions to prevent flickering */
+  transition: opacity 250ms ease-out, transform 250ms ease-out;
+  width: fit-content;
+  min-width: 200px; /* Ensure a minimum width for short messages */
+  max-width: calc(80% - 24px); /* Keep some space on the sides */
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  /* Prevent unnecessary recalculations */
+  contain: layout style;
+}
+
+/* Active typing indicator with non-layout transitions */
+.pro-message-blurb.active-typing {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
+}
+
+/* Horizontal scaling for message bubbles with fixed dimensions */
+.pro-message-blurb.horizontal-scale {
+  /* Use CSS custom properties for controlled width adjustments */
+  width: var(--dynamic-width, auto);
+  max-width: 80%;
+  /* No transitions on width/height to prevent flickering */
+  transition: none;
+  /* Fixed category-based sizing */
+}
+
+/* Category-based message sizing to minimize recalculations */
+.pro-message-blurb.horizontal-scale[data-text-length="short"] {
+  width: var(--dynamic-width, 240px);
+  min-width: 180px;
+  max-width: 40%;
+}
+
+.pro-message-blurb.horizontal-scale[data-text-length="medium"] {
+  width: var(--dynamic-width, 320px);
+  min-width: 220px;
+  max-width: 60%;
+}
+
+.pro-message-blurb.horizontal-scale[data-text-length="long"] {
+  width: var(--dynamic-width, 450px);
+  min-width: 280px;
+  max-width: 80%;
+}
+
+/* Dynamic body content with stable layout */
+.pro-message-blurb.dynamic-resize .pro-blurb-body {
+  width: auto;
+  min-width: 180px;
+  max-width: calc(100% - 90px); /* Account for avatar and other elements */
+  flex-grow: 1;
+  /* No transitions to prevent flickering */
+}
+
+/* Simplified animation for text being typed */
+.pro-blurb-text.typing {
+  min-height: 2em;
+  /* Remove the letter-spacing animation that causes layout shifts */
+  white-space: pre-wrap; /* Preserve whitespace including newlines */
+  word-break: break-word;
+  overflow-wrap: break-word;
+  width: 100%; /* Use full width of parent container */
+}
+
+/* Long text handling with stable layout */
+.pro-message-blurb.dynamic-resize .pro-blurb-text {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  text-overflow: ellipsis;
+  padding-right: 4px; /* Ensure text doesn't touch the edge */
+}
+
+/* Mobile-optimized styles with minimal transitions */
+@media (max-width: 768px) {
+  .pro-message-blurb {
+    /* Simpler transitions for mobile */
+    transition: transform 150ms ease-out, opacity 200ms ease-out;
+    max-width: 95%; /* Allow more width on mobile */
+  }
+  
+  .pro-message-blurb.dynamic-resize {
+    min-width: 120px;
+    max-width: 90%;
+  }
+}
+
+/* Optimize for reduced motion and better performance */
+@media (prefers-reduced-motion) {
+  .pro-message-blurb,
+  .pro-blurb-text,
+  .pro-message-blurb.dynamic-resize {
+    transition: opacity 200ms ease-out !important;
+    animation: none !important;
+  }
+}

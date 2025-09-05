@@ -1,0 +1,225 @@
+/* Message Threads Styling */
+.pro-message-thread {
+  margin: 6px 0;
+  border-left: 2px solid var(--pro-border, #e0e0e0);
+  padding-left: 12px;
+}
+
+.pro-thread-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.pro-thread-line {
+  height: 1px;
+  background-color: var(--pro-border, #e0e0e0);
+  flex-grow: 1;
+  margin-right: 8px;
+}
+
+.pro-thread-summary {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--pro-text-secondary, rgba(0, 0, 0, 0.6));
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background-color: var(--pro-surface-light, #f5f5f5);
+  transition: all 0.2s ease;
+}
+
+.pro-thread-summary svg {
+  margin-right: 6px;
+  width: 14px;
+  height: 14px;
+}
+
+.pro-thread-chevron {
+  margin-left: 6px;
+  transition: transform 0.2s ease;
+}
+
+.pro-thread-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.pro-thread-header:hover .pro-thread-summary {
+  background-color: var(--pro-hover, #eeeeee);
+  color: var(--pro-text, #000000);
+}
+
+.pro-thread-content {
+  margin: 8px 0 8px 8px;
+  padding-top: 4px;
+}
+
+.pro-thread-message {
+  display: flex;
+  margin-bottom: 12px;
+  padding: 4px 0;
+}
+
+.pro-thread-message-avatar {
+  margin-right: 8px;
+}
+
+.pro-thread-message-avatar img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.pro-thread-message-content {
+  flex-grow: 1;
+}
+
+.pro-thread-message-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.pro-thread-message-name {
+  font-weight: 500;
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+.pro-thread-message-time {
+  font-size: 11px;
+  color: var(--pro-text-tertiary, rgba(0, 0, 0, 0.4));
+}
+
+.pro-thread-message-text {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--pro-text, rgba(0, 0, 0, 0.87));
+}
+
+.pro-thread-more {
+  font-size: 12px;
+  color: var(--pro-accent, #007bff);
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 8px;
+}
+
+.pro-thread-more:hover {
+  text-decoration: underline;
+}
+
+.pro-thread-reply-button {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: var(--pro-accent, #007bff);
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.pro-thread-reply-button svg {
+  margin-right: 6px;
+  width: 14px;
+  height: 14px;
+}
+
+.pro-thread-reply-button:hover {
+  text-decoration: underline;
+}
+
+.pro-thread-reply-form {
+  margin-top: 8px;
+}
+
+.pro-thread-reply-form input {
+  width: 100%;
+  border: 1px solid var(--pro-border, #e0e0e0);
+  border-radius: 16px;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.pro-thread-reply-form input:focus {
+  border-color: var(--pro-accent, #007bff);
+}
+
+.pro-thread-reply-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pro-thread-reply-cancel {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--pro-text-secondary, rgba(0, 0, 0, 0.6));
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.pro-thread-reply-cancel:hover {
+  background-color: var(--pro-hover, #eeeeee);
+}
+
+.pro-thread-reply-submit {
+  background-color: var(--pro-accent, #007bff);
+  color: white;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.pro-thread-reply-submit:hover {
+  background-color: var(--pro-accent-dark, #0069d9);
+}
+
+.pro-thread-reply-submit:disabled {
+  background-color: var(--pro-disabled, #cccccc);
+  cursor: not-allowed;
+}
+
+/* Thread in own message */
+.pro-thread-message-own .pro-thread-message-content {
+  text-align: right;
+}
+
+/* Dark mode adjustments */
+.dark-theme .pro-thread-summary {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dark-theme .pro-thread-header:hover .pro-thread-summary {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dark-theme .pro-thread-message-text {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.dark-theme .pro-thread-reply-form input {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.dark-theme .pro-thread-reply-form input:focus {
+  border-color: var(--pro-accent, #007bff);
+}
+
+.dark-theme .pro-thread-reply-cancel:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}

@@ -1,0 +1,89 @@
+/* Add styles for the storage button in the user info section */
+.storage-button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  padding: 5px 10px;
+  border-radius: 5px;
+  margin-right: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.storage-button:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-2px);
+}
+
+/* Update the media item hover style */
+.media-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.media-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Add animations for loading states */
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.loading {
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+/* Storage usage styles */
+.storage-usage {
+  transition: all 0.3s ease;
+}
+
+.storage-usage:hover {
+  transform: scale(1.02);
+}
+
+.usage-fill {
+  transition: width 1s ease;
+}
+
+/* Media type indicators */
+.media-type {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background-color: #e5e7eb;
+  color: #4b5563;
+}
+
+.media-type.photo {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.media-type.video {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.media-type.audio {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+.media-type.file {
+  background-color: #e0e7ff;
+  color: #4338ca;
+}

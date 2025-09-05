@@ -1,0 +1,399 @@
+/* Comprehensive Responsive Fix for ProChat Message List */
+
+/* Base responsive container fixes */
+.pro-layout {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Main message area responsive improvements */
+.pro-message-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  height: 100%;
+  max-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  position: relative;
+}
+
+/* Message container responsive fixes */
+.pro-message-blurb {
+  max-width: 100%;
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Message content responsive handling */
+.pro-message-content {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.message-text {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* Avatar responsive sizing */
+.message-avatar,
+.pro-blurb-avatar-container {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  flex-shrink: 0;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .pro-layout {
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+
+  .pro-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    height: 100dvh;
+    width: 280px;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .pro-sidebar:not(.collapsed) {
+    transform: translateX(0);
+  }
+
+  .pro-main {
+    flex: 1;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .pro-message-list {
+    padding: 12px 8px;
+    height: calc(100vh - 120px); /* Account for header and input */
+    height: calc(100dvh - 120px);
+    max-height: calc(100vh - 120px);
+    max-height: calc(100dvh - 120px);
+  }
+
+  .pro-message-blurb {
+    margin-bottom: 12px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .message-avatar,
+  .pro-blurb-avatar-container {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  /* Input area mobile fixes */
+  .pro-chat-input-container {
+    padding: 8px;
+    background: var(--pro-surface);
+    border-top: 1px solid var(--pro-border);
+  }
+
+  .message-input {
+    font-size: 16px; /* Prevent zoom on iOS */
+    max-height: 120px;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .pro-message-list {
+    padding: 8px 4px;
+    height: calc(100vh - 110px);
+    height: calc(100dvh - 110px);
+    max-height: calc(100vh - 110px);
+    max-height: calc(100dvh - 110px);
+  }
+
+  .pro-message-blurb {
+    margin-bottom: 8px;
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  .message-avatar,
+  .pro-blurb-avatar-container {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .message-text {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+}
+
+/* Very small devices */
+@media (max-width: 360px) {
+  .pro-message-list {
+    padding: 6px 2px;
+  }
+
+  .pro-message-blurb {
+    margin-bottom: 6px;
+    padding: 4px;
+  }
+
+  .message-avatar,
+  .pro-blurb-avatar-container {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+}
+
+/* Tablet responsive adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .pro-layout {
+    display: grid;
+    grid-template-columns: var(--pro-sidebar-width) 1fr;
+    height: 100vh;
+  }
+
+  .pro-message-list {
+    padding: 16px 12px;
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
+  }
+
+  .pro-message-blurb {
+    max-width: calc(100% - 40px);
+    margin-bottom: 14px;
+  }
+}
+
+/* Large desktop responsive adjustments */
+@media (min-width: 1025px) {
+  .pro-layout {
+    display: grid;
+    grid-template-columns: var(--pro-sidebar-width) 1fr;
+    height: 100vh;
+    max-width: 100%;
+  }
+
+  .pro-main {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .pro-message-list {
+    padding: 20px 16px;
+    height: calc(100vh - 130px);
+    max-height: calc(100vh - 130px);
+    max-width: 100%;
+  }
+
+  .pro-message-blurb {
+    max-width: calc(100% - 60px);
+    margin-bottom: 16px;
+  }
+}
+
+/* Ultra-wide screen adjustments */
+@media (min-width: 1440px) {
+  .pro-message-list {
+    padding: 24px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .pro-message-blurb {
+    max-width: calc(100% - 80px);
+  }
+}
+
+/* Landscape mobile orientation fixes */
+@media (max-width: 768px) and (orientation: landscape) {
+  .pro-message-list {
+    height: calc(100vh - 100px);
+    height: calc(100dvh - 100px);
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
+  }
+}
+
+/* Dark mode responsive adjustments */
+.dark-mode .pro-message-list,
+.dark-theme .pro-message-list {
+  background: var(--pro-surface-dark, #1e1e2e);
+}
+
+/* High contrast mode responsive adjustments */
+.high-contrast-mode .pro-message-blurb {
+  border: 2px solid var(--pro-border);
+}
+
+/* Ensure content doesn't overflow horizontally */
+.pro-content {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Scroll performance optimizations */
+.pro-message-list {
+  transform: translateZ(0); /* Force hardware acceleration */
+  will-change: scroll-position;
+  contain: content;
+}
+
+/* Fix for sidebar overlay on mobile */
+@media (max-width: 768px) {
+  .pro-sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .pro-sidebar:not(.collapsed) + .pro-sidebar-overlay {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* Safe area adjustments for mobile devices with notches */
+@supports (padding: max(0px)) {
+  @media (max-width: 768px) {
+    .pro-message-list {
+      padding-left: max(8px, env(safe-area-inset-left));
+      padding-right: max(8px, env(safe-area-inset-right));
+    }
+
+    .pro-chat-input-container {
+      padding-left: max(8px, env(safe-area-inset-left));
+      padding-right: max(8px, env(safe-area-inset-right));
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* Flexible grid for message layout */
+.pro-message-container {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.pro-message-container.own-message {
+  flex-direction: row-reverse;
+}
+
+/* Ensure avatars don't shrink */
+.pro-message-container .message-avatar {
+  flex-shrink: 0;
+}
+
+/* Message content area flexibility */
+.pro-message-container .message-content {
+  flex: 1;
+  min-width: 0; /* Allow content to shrink */
+  max-width: 100%;
+}
+
+/* Fix for long URLs and links */
+.message-text a {
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+/* Ensure images are responsive */
+.message-text img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* Code blocks responsive */
+.message-text pre,
+.message-text code {
+  max-width: 100%;
+  overflow-x: auto;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+/* Fix for emoji sizing */
+.message-text .emoji {
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: middle;
+}
+
+/* Loading and error states responsive */
+.pro-loading-spinner,
+.pro-error-message {
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Smooth scrolling behavior for all devices */
+@media (prefers-reduced-motion: no-preference) {
+  .pro-message-list {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Disable smooth scrolling for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pro-message-list {
+    scroll-behavior: auto;
+  }
+}

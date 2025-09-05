@@ -1,0 +1,233 @@
+/* Message Group Styles */
+.message-group {
+  display: flex;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.sender-avatar {
+  width: 36px;
+  height: 36px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.messages-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sender-name {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+  color: var(--pro-text);
+}
+
+.grouped-messages {
+  display: flex;
+  flex-direction: column;
+}
+
+.message-wrapper {
+  position: relative;
+  margin-bottom: 2px;
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100% - 40px);
+}
+
+.message-bubble {
+  padding: 8px 12px;
+  background-color: var(--pro-message-bg);
+  border-radius: 16px;
+  position: relative;
+  color: var(--pro-text);
+  word-break: break-word;
+  transition: background-color 0.2s ease;
+}
+
+.message-bubble:hover {
+  background-color: var(--pro-message-hover);
+}
+
+.message-text {
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.message-timestamp {
+  font-size: 11px;
+  color: var(--pro-text-tertiary);
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+/* Thread indicator */
+.thread-indicator {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--pro-text-secondary);
+  cursor: pointer;
+  margin-top: 4px;
+  border-radius: 12px;
+  width: fit-content;
+  background-color: var(--pro-surface-light);
+  transition: all 0.2s ease;
+}
+
+.thread-indicator:hover {
+  background-color: var(--pro-hover);
+  color: var(--pro-text);
+}
+
+.thread-indicator svg {
+  margin-right: 4px;
+}
+
+/* Message actions */
+.message-actions {
+  position: absolute;
+  top: -16px;
+  right: 0;
+  display: flex;
+  background-color: var(--pro-surface);
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--pro-border);
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.message-wrapper:hover .message-actions {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--pro-text-secondary);
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.action-button:hover {
+  background-color: var(--pro-hover);
+  color: var(--pro-text);
+}
+
+/* Own message styling */
+.message-group.own {
+  flex-direction: row-reverse;
+}
+
+.message-group.own .sender-avatar {
+  margin-right: 0;
+  margin-left: 12px;
+}
+
+.message-group.own .messages-content {
+  align-items: flex-end;
+}
+
+.message-group.own .message-bubble {
+  background-color: var(--pro-accent-light);
+  color: var(--pro-accent-text);
+}
+
+.message-group.own .message-bubble:hover {
+  background-color: var(--pro-accent-light-hover);
+}
+
+.message-group.own .sender-name {
+  align-self: flex-end;
+}
+
+.message-group.own .message-wrapper {
+  align-items: flex-end;
+}
+
+.message-group.own .message-actions {
+  right: auto;
+  left: 0;
+}
+
+.message-group.own .thread-indicator {
+  align-self: flex-end;
+  background-color: rgba(var(--pro-accent-rgb), 0.1);
+}
+
+/* Dark theme adjustments */
+.dark-theme .message-bubble {
+  background-color: var(--pro-message-bg-dark);
+}
+
+.dark-theme .message-bubble:hover {
+  background-color: var(--pro-message-hover-dark);
+}
+
+.dark-theme.own .message-bubble {
+  background-color: var(--pro-accent-dark);
+}
+
+.dark-theme .thread-indicator {
+  background-color: var(--pro-surface-dark);
+}
+
+/* High contrast mode */
+.high-contrast-mode .message-bubble {
+  background-color: #222;
+  border: 1px solid white;
+}
+
+.high-contrast-mode.own .message-bubble {
+  background-color: #444;
+  border: 1px solid white;
+}
+
+.high-contrast-mode .message-actions {
+  background-color: black;
+  border-color: white;
+}
+
+.high-contrast-mode .thread-indicator {
+  background-color: #333;
+  border: 1px solid white;
+}
+
+/* Font scaling */
+.sender-name {
+  font-size: calc(15px * var(--font-size-scale) / 100);
+}
+
+.message-text {
+  font-size: calc(15px * var(--font-size-scale) / 100);
+}
+
+.message-timestamp {
+  font-size: calc(11px * var(--font-size-scale) / 100);
+}
+
+.thread-indicator {
+  font-size: calc(12px * var(--font-size-scale) / 100);
+}

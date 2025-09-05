@@ -1,0 +1,155 @@
+/* Message reactions styling */
+.message-reactions-container {
+  display: flex !important;
+  align-items: center;
+  margin-top: 8px;
+  position: relative;
+  min-height: 20px;
+  z-index: 1;
+  /* Debug: temporary background to ensure visibility */
+  /* border: 1px dashed rgba(255, 0, 0, 0.3); */
+}
+
+.message-reactions-container:not(:empty) {
+  margin-bottom: 4px;
+}
+
+.reactions-display {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reaction-badge {
+  display: flex !important;
+  align-items: center;
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--pro-border, rgba(255, 255, 255, 0.2));
+  user-select: none;
+  backdrop-filter: blur(10px);
+  color: var(--pro-text-primary, #ffffff);
+}
+
+.reaction-badge:hover {
+  background-color: var(--pro-hover, rgba(255, 255, 255, 0.2));
+  transform: scale(1.05);
+}
+
+.reaction-emoji {
+  font-size: 16px;
+  margin-right: 4px;
+  line-height: 1;
+}
+
+.reaction-count {
+  font-size: 13px;
+  color: var(--pro-text-secondary, rgba(255, 255, 255, 0.8));
+  font-weight: 600;
+  min-width: 12px;
+  text-align: center;
+}
+
+.add-reaction-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--pro-surface-light, rgba(255, 255, 255, 0.1));
+  color: var(--pro-text-tertiary, rgba(255, 255, 255, 0.6));
+  border: 1px solid var(--pro-border, rgba(255, 255, 255, 0.2));
+  cursor: pointer;
+  margin-left: 8px;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.pro-message-container:hover .add-reaction-button,
+.message-reactions-container:hover .add-reaction-button {
+  opacity: 1;
+}
+
+.add-reaction-button:hover {
+  background-color: var(--pro-hover, rgba(255, 255, 255, 0.2));
+  color: var(--pro-text, #ffffff);
+  transform: scale(1.1);
+}
+
+/* Emoji picker styling */
+.reaction-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background-color: var(--pro-surface);
+  border-radius: 8px;
+  box-shadow: var(--pro-shadow-md);
+  border: 1px solid var(--pro-border);
+  padding: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  z-index: 10;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.emoji-button {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.emoji-button:hover {
+  background-color: var(--pro-hover);
+  transform: scale(1.1);
+}
+
+/* High contrast support */
+.high-contrast-mode .reaction-badge {
+  background-color: black;
+  border: 1px solid white;
+}
+
+.high-contrast-mode .reaction-count {
+  color: white;
+}
+
+.high-contrast-mode .reaction-picker {
+  background-color: black;
+  border: 1px solid white;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Font scaling */
+.reaction-emoji {
+  font-size: calc(14px * var(--font-size-scale) / 100);
+}
+
+.reaction-count {
+  font-size: calc(12px * var(--font-size-scale) / 100);
+}

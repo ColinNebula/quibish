@@ -1,0 +1,242 @@
+/* Header Actions Styles */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-toggle {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0;
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.theme-toggle:active {
+  transform: translateY(0);
+}
+
+/* Enhanced message styling */
+.message-container {
+  animation: fadeInSlide 0.3s ease-out forwards;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-container:nth-child(1) { animation-delay: 0.05s; }
+.message-container:nth-child(2) { animation-delay: 0.1s; }
+.message-container:nth-child(3) { animation-delay: 0.15s; }
+.message-container:nth-child(4) { animation-delay: 0.2s; }
+.message-container:nth-child(5) { animation-delay: 0.25s; }
+
+/* Improved message container spacing and appearance */
+.message-content-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-sender {
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 2px;
+  color: var(--primary-dark);
+  padding: 0 4px;
+}
+
+/* Reply reference styling */
+.reply-reference {
+  background: rgba(0, 0, 0, 0.05);
+  border-left: 3px solid var(--primary-color);
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  max-width: 250px;
+  overflow: hidden;
+}
+
+.reply-reference:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.reply-sender {
+  font-weight: 500;
+  color: var(--primary-dark);
+  margin-bottom: 2px;
+}
+
+.reply-preview {
+  color: var(--neutral-600);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Enhanced message status */
+.message-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: var(--neutral-500);
+  margin-top: 4px;
+}
+
+.delivery-status {
+  transition: color 0.3s ease;
+}
+
+.delivery-status.sent {
+  color: var(--neutral-400);
+}
+
+.delivery-status.delivered {
+  color: var(--primary-color);
+}
+
+.delivery-status.read {
+  color: var(--success-color);
+}
+
+.delivery-status.pending {
+  color: var(--warning-color);
+}
+
+.delivery-status.error {
+  color: var(--error-color);
+}
+
+/* Message actions */
+.message-actions {
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.message-actions-toggle {
+  background: transparent;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--neutral-500);
+  opacity: 0;
+  transition: all 0.2s ease;
+  transform: rotate(90deg);
+}
+
+.message:hover .message-actions-toggle {
+  opacity: 0.7;
+}
+
+.message-actions-toggle:hover {
+  background: rgba(0, 0, 0, 0.05);
+  opacity: 1;
+}
+
+.message-actions-dropdown {
+  position: absolute;
+  right: 28px;
+  top: 0;
+  background: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  width: 160px;
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.9);
+  transform-origin: top right;
+  transition: all 0.2s ease;
+}
+
+.message-actions-dropdown.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+.dropdown-action {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-color);
+}
+
+.dropdown-action:hover {
+  background: var(--neutral-100);
+}
+
+.dropdown-action::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.reply-action::before {
+  content: "↩️";
+}
+
+.copy-action::before {
+  content: "📋";
+}
+
+.forward-action::before {
+  content: "↪️";
+}
+
+/* Search match highlight */
+.search-match {
+  background: var(--accent-light);
+  color: white;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-top: 6px;
+  text-align: center;
+}

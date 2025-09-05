@@ -1,0 +1,130 @@
+.splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-color, #f9fafb);
+  color: var(--text-color, #1f2937);
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+.splash-screen.dark {
+  background-color: var(--bg-color, #111827);
+  color: var(--text-color, #f9fafb);
+}
+
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.splash-logo {
+  margin-bottom: 1.5rem;
+  animation: logoAnimation 2s infinite alternate ease-in-out;
+}
+
+.splash-logo-svg {
+  width: 80px;
+  height: 80px;
+}
+
+.logo-path-1 {
+  animation: colorPulse 3s infinite;
+}
+
+.logo-path-2 {
+  animation: colorPulse 3s infinite 0.5s;
+}
+
+.logo-path-3 {
+  animation: colorPulse 3s infinite 1s;
+}
+
+.splash-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.splash-tagline {
+  font-size: 1rem;
+  opacity: 0.8;
+  margin-top: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.loading-indicator {
+  margin-bottom: 2rem;
+}
+
+.loading-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary-color, #4f46e5);
+  animation: dotPulse 1.4s infinite ease-in-out;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.splash-version {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.splash-exit {
+  opacity: 0;
+  transform: scale(1.1);
+}
+
+@keyframes logoAnimation {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes colorPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+}

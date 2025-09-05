@@ -1,0 +1,90 @@
+/* ProSidebarUserNames.css - Style overrides for user names display in sidebar */
+
+/* Hide user names by default */
+.pro-conversation-details .pro-conversation-name {
+  opacity: 0 !important; /* Force hide with !important */
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  color: white !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s ease !important;
+  z-index: 10 !important;
+  font-size: 12px !important;
+}
+
+/* Add border to avatars */
+.pro-conversation-avatar {
+  transition: transform 0.3s ease !important;
+  position: relative !important;
+}
+
+.pro-conversation-avatar img {
+  border: 2px solid var(--pro-border) !important;
+  border-radius: 50% !important;
+  transition: border-color 0.3s ease !important;
+  width: var(--pro-avatar-size, 44px) !important;
+  height: var(--pro-avatar-size, 44px) !important;
+}
+
+/* Hover effects */
+.pro-conversation-item:hover .pro-conversation-avatar {
+  transform: scale(1.05) !important;
+}
+
+.pro-conversation-item:hover .pro-conversation-avatar img {
+  border-color: var(--pro-accent, #3b82f6) !important;
+}
+
+.pro-conversation-item:hover .pro-conversation-name {
+  opacity: 1 !important;
+  display: block !important;
+}
+
+/* Active conversation styling */
+.pro-conversation-item.active .pro-conversation-avatar img {
+  border-color: var(--pro-accent, #3b82f6) !important;
+  border-width: 2px !important;
+}
+
+/* Dark mode adjustments */
+.dark-mode .pro-conversation-details .pro-conversation-name,
+.dark-theme .pro-conversation-details .pro-conversation-name {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+/* Accessibility - for screen readers */
+@media (prefers-reduced-motion: reduce) {
+  .pro-conversation-avatar,
+  .pro-conversation-name {
+    transition: none !important;
+  }
+}
+
+/* Additional override to completely hide details except on hover */
+.pro-conversation-details {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Force conversation items to layout correctly with hidden names */
+.pro-conversation-item {
+  display: flex !important;
+  align-items: center !important;
+  position: relative !important;
+}
+
+/* This ensures our CSS is loaded and not being overridden */
+.pro-sidebar-root .pro-conversation-header .pro-conversation-name {
+  display: none !important;
+}
+
+.pro-sidebar-root .pro-conversation-item:hover .pro-conversation-header .pro-conversation-name {
+  display: block !important;
+}

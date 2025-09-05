@@ -1,0 +1,67 @@
+/* Responsive styles for ProSidebar */
+@media screen and (max-width: 768px) {
+  .pro-sidebar {
+    min-width: 280px;
+    max-width: 280px;
+  }
+  
+  .pro-sidebar.collapsed {
+    min-width: 0;
+    max-width: 0;
+    overflow: hidden;
+  }
+  
+  .pro-conversation-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .pro-conversation-name {
+    font-size: 14px;
+  }
+  
+  .pro-conversation-message {
+    max-width: 160px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .pro-sidebar {
+    min-width: 100%;
+    max-width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1000;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+  
+  .pro-sidebar.collapsed {
+    transform: translateX(-100%);
+    min-width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Touch optimized styles */
+@media (pointer: coarse) {
+  .pro-conversation-item {
+    padding: 14px 10px;
+  }
+  
+  .pro-filter-button {
+    padding: 10px 4px;
+  }
+  
+  .pro-conversation-actions {
+    opacity: 0.8;
+  }
+  
+  .pro-pin-button,
+  .pro-options-button {
+    width: 30px;
+    height: 30px;
+  }
+}

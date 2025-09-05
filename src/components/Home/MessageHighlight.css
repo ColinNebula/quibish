@@ -1,0 +1,31 @@
+/* Message Highlight Animation */
+.pro-message-container.message-highlight {
+  animation: highlight-pulse 2s ease;
+  position: relative;
+}
+
+.pro-message-container.message-highlight::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--pro-accent);
+  opacity: 0.1;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--pro-accent-rgb), 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(var(--pro-accent-rgb), 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--pro-accent-rgb), 0);
+  }
+}

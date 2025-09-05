@@ -1,0 +1,339 @@
+/* Connection Notifications Styles */
+
+.connection-notifications {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+}
+
+.connection-notification {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: notification-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
+}
+
+.connection-notification:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.connection-notification.success {
+  border-left: 4px solid var(--pro-success);
+}
+
+.connection-notification.error {
+  border-left: 4px solid var(--pro-error);
+}
+
+.connection-notification.warning {
+  border-left: 4px solid var(--pro-warning);
+}
+
+.notification-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.success .notification-icon {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--pro-success);
+}
+
+.error .notification-icon {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--pro-error);
+}
+
+.warning .notification-icon {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--pro-warning);
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pro-text);
+  margin-bottom: 4px;
+}
+
+.notification-message {
+  font-size: 13px;
+  color: var(--pro-text-secondary);
+  line-height: 1.4;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: var(--pro-text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.notification-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--pro-text-secondary);
+}
+
+/* Message Queue Status */
+.message-queue-status {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: queue-status-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 300px;
+}
+
+.queue-status-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.queue-icon,
+.queue-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--pro-accent);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.queue-spinner svg {
+  animation: spin 1s linear infinite;
+}
+
+.queue-status-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.queue-status-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pro-text);
+  margin-bottom: 2px;
+}
+
+.queue-status-subtitle {
+  font-size: 12px;
+  color: var(--pro-text-secondary);
+}
+
+.queue-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.queue-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-btn {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--pro-success);
+}
+
+.retry-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  transform: scale(1.05);
+}
+
+.clear-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--pro-error);
+}
+
+.clear-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.05);
+}
+
+.queue-progress-bar {
+  margin-top: 12px;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.queue-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--pro-accent), var(--pro-primary));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  animation: progress-shimmer 2s infinite;
+}
+
+/* Animations */
+@keyframes notification-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes queue-status-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes progress-shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Dark mode support */
+.dark-mode .connection-notification {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .message-queue-status {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .notification-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .queue-progress-bar {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .connection-notifications {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+  
+  .connection-notification {
+    padding: 12px;
+  }
+  
+  .message-queue-status {
+    right: 10px;
+    left: 10px;
+    bottom: 10px;
+    padding: 12px 16px;
+    min-width: auto;
+  }
+  
+  .queue-status-content {
+    gap: 8px;
+  }
+  
+  .notification-title {
+    font-size: 13px;
+  }
+  
+  .notification-message {
+    font-size: 12px;
+  }
+}
+
+/* High contrast mode */
+.high-contrast-mode .connection-notification {
+  background: black;
+  border: 2px solid white;
+  color: white;
+}
+
+.high-contrast-mode .message-queue-status {
+  background: black;
+  border: 2px solid white;
+  color: white;
+}
+
+.high-contrast-mode .success .notification-icon {
+  background: #00ff00;
+  color: black;
+}
+
+.high-contrast-mode .error .notification-icon {
+  background: #ff0000;
+  color: white;
+}
+
+.high-contrast-mode .warning .notification-icon {
+  background: #ffff00;
+  color: black;
+}
