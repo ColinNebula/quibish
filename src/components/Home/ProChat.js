@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import UserProfileModal from '../UserProfile';
 import VideoCall from './VideoCall';
 import PropTypes from 'prop-types';
@@ -25,6 +25,26 @@ const ProChat = ({
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  
+  // Enhanced input state
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [lightboxModal, setLightboxModal] = useState({ 
+    open: false, 
+    imageUrl: null, 
+    imageName: null,
+    zoom: 1,
+    pan: { x: 0, y: 0 },
+    isDragging: false,
+    currentIndex: 0,
+    images: [],
+    isLoading: false
+  });
+  
+  // Refs
+  const fileInputRef = useRef(null);
+  const recordingTimerRef = useRef(null);
   
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
@@ -55,6 +75,113 @@ const ProChat = ({
   const handleQuickSettings = useCallback(() => {
     // TODO: Implement quick settings
     console.log('Quick settings clicked');
+  }, []);
+
+  // Enhanced input functions
+  const handleFileChange = useCallback((e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => {
+        console.log('Processing file:', file.name, file.type); // Debug log
+        
+        if (file.type.startsWith('image/')) {
+          // Handle image files
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            console.log('Image loaded, creating message with URL:', event.target.result?.substring(0, 50) + '...'); // Debug log
+            const newMessage = {
+              id: Date.now() + Math.random(),
+              text: `� ${file.name}`,
+              user: user,
+              timestamp: new Date().toISOString(),
+              reactions: [],
+              file: {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                url: event.target.result
+              }
+            };
+            setChatMessages(prev => [...prev, newMessage]);
+          };
+          reader.onerror = (error) => {
+            console.error('Error reading file:', error);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          // Handle non-image files
+          const newMessage = {
+            id: Date.now() + Math.random(),
+            text: `📎 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
+            user: user,
+            timestamp: new Date().toISOString(),
+            reactions: [],
+            file: {
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              url: URL.createObjectURL(file) // Create object URL for download
+            }
+          };
+          setChatMessages(prev => [...prev, newMessage]);
+        }
+      });
+      
+      // Reset file input
+      e.target.value = '';
+    }
+  }, [user]);
+
+  const handleEmojiClick = useCallback((emoji) => {
+    setInputText(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  }, []);
+
+  const formatRecordingTime = useCallback((seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  const startRecording = useCallback(() => {
+    setIsRecording(true);
+    setRecordingDuration(0);
+    setShowEmojiPicker(false);
+    
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingDuration(prev => prev + 1);
+    }, 1000);
+    
+    console.log('Voice recording started');
+  }, []);
+
+  const stopRecording = useCallback((send = true) => {
+    clearInterval(recordingTimerRef.current);
+    setIsRecording(false);
+    
+    if (send && recordingDuration > 0) {
+      const newMessage = {
+        id: Date.now(),
+        text: `🎤 Voice message (${formatRecordingTime(recordingDuration)})`,
+        user: user,
+        timestamp: new Date().toISOString(),
+        reactions: [],
+        type: 'voice',
+        duration: recordingDuration
+      };
+      setChatMessages(prev => [...prev, newMessage]);
+    }
+    
+    setRecordingDuration(0);
+  }, [recordingDuration, formatRecordingTime, user]);
+
+  // Cleanup recording timer
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    };
   }, []);
 
   // Filter conversations based on search and active filter
@@ -175,6 +302,187 @@ const ProChat = ({
   const handleCloseProfileModal = useCallback(() => {
     setProfileModal({ open: false, userId: null, username: null });
   }, []);
+
+  // Lightbox handlers
+  const getAllImages = useCallback(() => {
+    return chatMessages
+      .filter(msg => msg.file && msg.file.type.startsWith('image/'))
+      .map(msg => ({
+        url: msg.file.url,
+        name: msg.file.name,
+        messageId: msg.id
+      }));
+  }, [chatMessages]);
+
+  const handleOpenLightbox = useCallback((imageUrl, imageName) => {
+    const allImages = getAllImages();
+    const currentIndex = allImages.findIndex(img => img.url === imageUrl);
+    
+    setLightboxModal({ 
+      open: true, 
+      imageUrl, 
+      imageName,
+      zoom: 1,
+      pan: { x: 0, y: 0 },
+      isDragging: false,
+      currentIndex: Math.max(0, currentIndex),
+      images: allImages
+    });
+  }, [getAllImages]);
+
+  const handleNavigateImage = useCallback((direction) => {
+    setLightboxModal(prev => {
+      const newIndex = direction === 'next' 
+        ? Math.min(prev.currentIndex + 1, prev.images.length - 1)
+        : Math.max(prev.currentIndex - 1, 0);
+      
+      const newImage = prev.images[newIndex];
+      if (newImage) {
+        return {
+          ...prev,
+          currentIndex: newIndex,
+          imageUrl: newImage.url,
+          imageName: newImage.name,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+          isLoading: true
+        };
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleImageLoad = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      isLoading: false
+    }));
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      isLoading: false
+    }));
+  }, []);
+
+  const handleCloseLightbox = useCallback(() => {
+    setLightboxModal({ 
+      open: false, 
+      imageUrl: null, 
+      imageName: null,
+      zoom: 1,
+      pan: { x: 0, y: 0 },
+      isDragging: false,
+      currentIndex: 0,
+      images: [],
+      isLoading: false
+    });
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      zoom: Math.min(prev.zoom * 1.2, 3)
+    }));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      zoom: Math.max(prev.zoom / 1.2, 0.5),
+      pan: prev.zoom <= 1 ? { x: 0, y: 0 } : prev.pan
+    }));
+  }, []);
+
+  const handleZoomReset = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      zoom: 1,
+      pan: { x: 0, y: 0 }
+    }));
+  }, []);
+
+  const handleMouseDown = useCallback((e) => {
+    if (lightboxModal.zoom > 1) {
+      setLightboxModal(prev => ({
+        ...prev,
+        isDragging: true
+      }));
+    }
+  }, [lightboxModal.zoom]);
+
+  const handleMouseMove = useCallback((e) => {
+    if (lightboxModal.isDragging && lightboxModal.zoom > 1) {
+      setLightboxModal(prev => ({
+        ...prev,
+        pan: {
+          x: prev.pan.x + e.movementX,
+          y: prev.pan.y + e.movementY
+        }
+      }));
+    }
+  }, [lightboxModal.isDragging, lightboxModal.zoom]);
+
+  const handleMouseUp = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      isDragging: false
+    }));
+  }, []);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (lightboxModal.open) {
+        switch (event.key) {
+          case 'Escape':
+            handleCloseLightbox();
+            break;
+          case 'ArrowLeft':
+            event.preventDefault();
+            handleNavigateImage('prev');
+            break;
+          case 'ArrowRight':
+            event.preventDefault();
+            handleNavigateImage('next');
+            break;
+          case '+':
+          case '=':
+            event.preventDefault();
+            handleZoomIn();
+            break;
+          case '-':
+            event.preventDefault();
+            handleZoomOut();
+            break;
+          case '0':
+            event.preventDefault();
+            handleZoomReset();
+            break;
+        }
+      }
+    };
+
+    const handleWheel = (event) => {
+      if (lightboxModal.open) {
+        event.preventDefault();
+        if (event.deltaY < 0) {
+          handleZoomIn();
+        } else {
+          handleZoomOut();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('wheel', handleWheel);
+    };
+  }, [lightboxModal.open, handleCloseLightbox, handleNavigateImage, handleZoomIn, handleZoomOut, handleZoomReset]);
 
   // Video call handlers
   const handleEndCall = useCallback(() => {
@@ -461,36 +769,202 @@ const ProChat = ({
                     {new Date(message.timestamp).toLocaleTimeString()}
                   </span>
                 </div>
+                
+                {/* Message Text */}
                 <div 
                   className="message-text" 
                   data-length={getMessageLengthCategory(message.text)}
                 >
                   {message.text}
                 </div>
+                
+                {/* File/Image Display */}
+                {message.file && (
+                  <div className="message-attachment">
+                    {message.file.type.startsWith('image/') ? (
+                      <div className="image-attachment">
+                        <img 
+                          src={message.file.url} 
+                          alt={message.file.name}
+                          className="attached-image"
+                          onClick={() => {
+                            // Open image in lightbox/modal
+                            handleOpenLightbox(message.file.url, message.file.name);
+                          }}
+                          style={{
+                            maxWidth: '300px',
+                            maxHeight: '200px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            objectFit: 'cover'
+                          }}
+                        />
+                        <div className="image-caption">
+                          {message.file.name} ({(message.file.size / 1024).toFixed(1)} KB)
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="file-attachment">
+                        <div className="file-icon">📄</div>
+                        <div className="file-info">
+                          <div className="file-name">{message.file.name}</div>
+                          <div className="file-size">{(message.file.size / 1024).toFixed(1)} KB</div>
+                        </div>
+                        <button 
+                          className="download-btn"
+                          onClick={() => {
+                            // Trigger download
+                            const link = document.createElement('a');
+                            link.href = message.file.url;
+                            link.download = message.file.name;
+                            link.click();
+                          }}
+                        >
+                          Download
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Voice Message Display */}
+                {message.type === 'voice' && (
+                  <div className="voice-message">
+                    <div className="voice-icon">🎤</div>
+                    <div className="voice-duration">{formatRecordingTime(message.duration || 0)}</div>
+                    <button className="play-voice-btn">▶️</button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Input Area */}
-        <div className="pro-chat-input-container">
-          <div className="input-wrapper">
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              className="message-input"
-              rows="1"
-            />
-            <button 
-              onClick={handleSendMessage}
-              disabled={!inputText.trim()}
-              className="send-button"
-            >
-              Send
-            </button>
+        {/* Enhanced Input Area with Voice and File Upload */}
+        <div className="pro-chat-input-container enhanced">
+          <div className="input-wrapper enhanced">
+            {/* Voice Recording Interface */}
+            {isRecording && (
+              <div className="recording-interface">
+                <div className="recording-indicator">
+                  <div className="recording-dot"></div>
+                  <span>Recording... {formatRecordingTime(recordingDuration)}</span>
+                </div>
+                <div className="recording-actions">
+                  <button 
+                    className="recording-btn cancel"
+                    onClick={() => stopRecording(false)}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="recording-btn send"
+                    onClick={() => stopRecording(true)}
+                    type="button"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Regular Input Interface */}
+            {!isRecording && (
+              <>
+                {/* File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                  style={{ display: 'none' }}
+                  multiple
+                  onChange={handleFileChange}
+                />
+
+                {/* Input Actions - Left Side */}
+                <div className="input-actions left">
+                  {/* File Attachment Button */}
+                  <button 
+                    className="input-btn attachment-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    type="button"
+                    title="Attach files"
+                  >
+                    📎
+                  </button>
+
+                  {/* Voice Input Button */}
+                  <button 
+                    className="input-btn voice-btn"
+                    onClick={startRecording}
+                    type="button"
+                    title="Voice message"
+                  >
+                    🎤
+                  </button>
+
+                  {/* Emoji Button */}
+                  <button 
+                    className="input-btn emoji-btn"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    type="button"
+                    title="Add emoji"
+                  >
+                    😊
+                  </button>
+                </div>
+
+                {/* Text Input */}
+                <textarea
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  className="message-input enhanced"
+                  rows="1"
+                />
+
+                {/* Send Button */}
+                <button 
+                  onClick={handleSendMessage}
+                  disabled={!inputText.trim()}
+                  className="send-button enhanced"
+                  type="button"
+                >
+                  <span className="send-icon">➤</span>
+                </button>
+              </>
+            )}
           </div>
+
+          {/* Emoji Picker */}
+          {showEmojiPicker && (
+            <div className="emoji-picker-overlay" onClick={() => setShowEmojiPicker(false)}>
+              <div className="emoji-picker" onClick={(e) => e.stopPropagation()}>
+                <div className="emoji-picker-header">
+                  <span>Choose an emoji</span>
+                  <button 
+                    className="emoji-close"
+                    onClick={() => setShowEmojiPicker(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="emoji-grid">
+                  {['😊', '😂', '🥰', '😍', '🤔', '😮', '😅', '👍', '👎', '❤️', '🔥', '🎉', '👏', '🙌', '✨', '💯', '🚀', '💡', '🎯', '✅', '❌', '⚡', '🌟', '🤝', '💪', '🌈', '☀️', '🌙', '⭐', '💝', '🎈'].map(emoji => (
+                    <button
+                      key={emoji}
+                      className="emoji-item"
+                      onClick={() => handleEmojiClick(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -501,6 +975,131 @@ const ProChat = ({
           username={profileModal.username}
           onClose={handleCloseProfileModal}
         />
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxModal.open && (
+        <div className="pro-lightbox-overlay" onClick={handleCloseLightbox}>
+          <div className="pro-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <div className="pro-lightbox-header">
+              <div className="pro-lightbox-info">
+                <div className="pro-lightbox-title">{lightboxModal.imageName}</div>
+                <div className="pro-lightbox-meta">
+                  <span className="pro-lightbox-zoom-info">
+                    {Math.round(lightboxModal.zoom * 100)}%
+                  </span>
+                  {lightboxModal.images.length > 1 && (
+                    <span className="pro-lightbox-counter">
+                      {lightboxModal.currentIndex + 1} / {lightboxModal.images.length}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="pro-lightbox-controls">
+                <button 
+                  className="pro-lightbox-btn" 
+                  onClick={handleZoomOut}
+                  title="Zoom out (-)"
+                >
+                  🔍-
+                </button>
+                <button 
+                  className="pro-lightbox-btn" 
+                  onClick={handleZoomReset}
+                  title="Reset zoom (0)"
+                >
+                  ⊡
+                </button>
+                <button 
+                  className="pro-lightbox-btn" 
+                  onClick={handleZoomIn}
+                  title="Zoom in (+)"
+                >
+                  🔍+
+                </button>
+                <button 
+                  className="pro-lightbox-btn pro-lightbox-download" 
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = lightboxModal.imageUrl;
+                    link.download = lightboxModal.imageName;
+                    link.click();
+                  }}
+                  title="Download image"
+                >
+                  💾
+                </button>
+              </div>
+              <button className="pro-lightbox-close" onClick={handleCloseLightbox}>
+                ×
+              </button>
+            </div>
+            <div 
+              className="pro-lightbox-image-container"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              style={{
+                cursor: lightboxModal.zoom > 1 ? (lightboxModal.isDragging ? 'grabbing' : 'grab') : 'zoom-in'
+              }}
+            >
+              {/* Navigation Arrows */}
+              {lightboxModal.images.length > 1 && (
+                <>
+                  <button 
+                    className="pro-lightbox-nav pro-lightbox-nav-prev"
+                    onClick={() => handleNavigateImage('prev')}
+                    disabled={lightboxModal.currentIndex === 0}
+                    title="Previous image (←)"
+                  >
+                    ←
+                  </button>
+                  <button 
+                    className="pro-lightbox-nav pro-lightbox-nav-next"
+                    onClick={() => handleNavigateImage('next')}
+                    disabled={lightboxModal.currentIndex === lightboxModal.images.length - 1}
+                    title="Next image (→)"
+                  >
+                    →
+                  </button>
+                </>
+              )}
+              
+              <img 
+                src={lightboxModal.imageUrl} 
+                alt={lightboxModal.imageName}
+                className={`pro-lightbox-image ${lightboxModal.isLoading ? 'loading' : 'loaded'}`}
+                style={{
+                  transform: `scale(${lightboxModal.zoom}) translate(${lightboxModal.pan.x}px, ${lightboxModal.pan.y}px)`,
+                  transition: lightboxModal.isDragging ? 'none' : 'transform 0.3s ease',
+                  opacity: lightboxModal.isLoading ? 0.3 : 1
+                }}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                onDoubleClick={() => {
+                  if (lightboxModal.zoom === 1) {
+                    handleZoomIn();
+                  } else {
+                    handleZoomReset();
+                  }
+                }}
+                draggable={false}
+              />
+              
+              {/* Loading Indicator */}
+              {lightboxModal.isLoading && (
+                <div className="pro-lightbox-loading">
+                  <div className="pro-lightbox-spinner"></div>
+                  <span>Loading...</span>
+                </div>
+              )}
+            </div>
+            <div className="pro-lightbox-help">
+              <span>ESC to close • Arrow keys to navigate • Mouse wheel to zoom • Drag to pan • Double-click to zoom</span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

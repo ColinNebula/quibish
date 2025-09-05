@@ -22,7 +22,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-  "smoke-check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/smoke-check.ps1",
+    "smoke-check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/smoke-check.ps1",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

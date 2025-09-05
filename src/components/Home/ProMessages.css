@@ -61,42 +61,186 @@
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scroll-behavior: smooth;
-  background: linear-gradient(to bottom, 
-    rgba(255, 255, 255, 0.02) 0%,
-    transparent 40%,
-    transparent 60%,
-    rgba(0, 0, 0, 0.01) 100%);
   position: relative;
   will-change: scroll-position;
   contain: content;
   scroll-padding-bottom: 16px;
   box-sizing: border-box;
+  
+  /* Elegant glassmorphism background */
+  background: 
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.03) 25%,
+      transparent 50%,
+      rgba(102, 126, 234, 0.02) 75%,
+      rgba(118, 75, 162, 0.03) 100%
+    ),
+    radial-gradient(ellipse at top, 
+      rgba(102, 126, 234, 0.05) 0%,
+      transparent 70%
+    ),
+    radial-gradient(ellipse at bottom, 
+      rgba(118, 75, 162, 0.04) 0%,
+      transparent 70%
+    );
+  
+  /* Subtle backdrop blur effect */
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+  
+  /* Elegant border with gradient */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  margin: 8px;
+  
+  /* Sophisticated shadow system */
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05),
+    0 4px 32px rgba(0, 0, 0, 0.1),
+    0 1px 8px rgba(0, 0, 0, 0.15);
+  
+  /* Smooth transitions */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Add class for external reference */
 .pro-message-list-container {
   /* These styles ensure the container maintains proper scroll behavior */
   scrollbar-gutter: stable; /* Prevents layout shifts when scrollbar appears/disappears */
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
 }
 
-/* Scrollbar styling for modern look */
+/* Elegant interaction states */
+.pro-message-list:hover {
+  border-color: rgba(102, 126, 234, 0.15);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 8px 40px rgba(102, 126, 234, 0.15),
+    0 2px 16px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.pro-message-list:focus-within {
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 12px 48px rgba(102, 126, 234, 0.2),
+    0 4px 24px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(102, 126, 234, 0.2);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+/* Floating particles effect */
+.pro-message-list::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(79, 172, 254, 0.02) 0%, transparent 50%);
+  animation: floatingParticles 20s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes floatingParticles {
+  0% {
+    transform: rotate(0deg) translate(0, 0);
+  }
+  33% {
+    transform: rotate(120deg) translate(10px, -5px);
+  }
+  66% {
+    transform: rotate(240deg) translate(-5px, 10px);
+  }
+  100% {
+    transform: rotate(360deg) translate(0, 0);
+  }
+}
+
+/* Subtle inner glow */
+.pro-message-list::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  background: linear-gradient(45deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    transparent 30%,
+    transparent 70%,
+    rgba(102, 126, 234, 0.02) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: -1;
+}
+
+.pro-message-list:hover::after {
+  opacity: 1;
+}
+
+/* Modern elegant scrollbar styling */
 .pro-message-list::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  border-radius: 4px;
 }
 
 .pro-message-list::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin: 4px 0;
+  border: 1px solid rgba(255, 255, 255, 0.02);
 }
 
 .pro-message-list::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--pro-primary), var(--pro-accent));
-  border-radius: 3px;
-  opacity: 0.7;
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.6) 0%,
+    rgba(118, 75, 162, 0.8) 50%,
+    rgba(79, 172, 254, 0.6) 100%
+  );
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 2px 8px rgba(102, 126, 234, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .pro-message-list::-webkit-scrollbar-thumb:hover {
-  opacity: 1;
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.8) 0%,
+    rgba(118, 75, 162, 1) 50%,
+    rgba(79, 172, 254, 0.8) 100%
+  );
+  transform: scaleY(1.05);
+  box-shadow: 
+    0 4px 16px rgba(102, 126, 234, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.pro-message-list::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, 
+    rgba(102, 126, 234, 0.9) 0%,
+    rgba(118, 75, 162, 1) 50%,
+    rgba(79, 172, 254, 0.9) 100%
+  );
+  transform: scaleY(0.95);
 }
 
 /* Avatar styles */
@@ -1937,6 +2081,131 @@
   background: var(--pro-gray-100);
   color: var(--pro-text-secondary);
   font-weight: 600;
+}
+
+/* Actions (reply, react, more) shown on hover/focus */
+/* Mobile responsiveness for elegant message list */
+@media (max-width: 768px) {
+  .pro-message-list {
+    margin: 10px;
+    border-radius: 12px;
+    border-width: 1px;
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.05),
+      0 4px 20px rgba(102, 126, 234, 0.08),
+      0 1px 8px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .pro-message-list:hover {
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+      0 6px 24px rgba(102, 126, 234, 0.12),
+      0 2px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Simplified scrollbar for mobile */
+  .pro-message-list::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .pro-message-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg,
+      rgba(102, 126, 234, 0.6) 0%,
+      rgba(118, 75, 162, 0.6) 50%,
+      rgba(79, 172, 254, 0.6) 100%
+    );
+    border-radius: 2px;
+  }
+}
+
+/* Tablet responsiveness */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .pro-message-list {
+    margin: 15px;
+    border-radius: 14px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .pro-message-list::-webkit-scrollbar {
+    width: 6px;
+  }
+}
+
+/* Desktop and large screens */
+@media (min-width: 1025px) {
+  .pro-message-list {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Enhanced scrollbar for desktop */
+  .pro-message-list::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .pro-message-list::-webkit-scrollbar-track {
+    background: linear-gradient(to bottom,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(102, 126, 234, 0.02) 50%,
+      rgba(0, 0, 0, 0.03) 100%
+    );
+  }
+}
+
+/* High-resolution displays */
+@media (min-resolution: 2dppx) {
+  .pro-message-list {
+    border-width: 0.5px;
+  }
+  
+  .pro-message-list::-webkit-scrollbar {
+    width: 6px;
+  }
+}
+
+/* Dark theme optimizations */
+@media (prefers-color-scheme: dark) {
+  .pro-message-list {
+    background: 
+      radial-gradient(ellipse at top left, rgba(102, 126, 234, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(118, 75, 162, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at center, rgba(79, 172, 254, 0.04) 0%, transparent 70%),
+      linear-gradient(135deg, rgba(30, 30, 50, 0.9) 0%, rgba(20, 20, 40, 0.95) 100%);
+    
+    border-color: rgba(102, 126, 234, 0.15);
+    
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+      0 8px 32px rgba(102, 126, 234, 0.15),
+      0 2px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  .pro-message-list::before {
+    background: 
+      radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.06) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, rgba(79, 172, 254, 0.04) 0%, transparent 50%);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .pro-message-list,
+  .pro-message-list::before,
+  .pro-message-list::after {
+    animation: none;
+    transition: none;
+  }
+  
+  .pro-message-list::-webkit-scrollbar-thumb {
+    transition: none;
+  }
 }
 
 /* Actions (reply, react, more) shown on hover/focus */

@@ -785,6 +785,89 @@ const fetchUserViewHistory = async (userId) => {
   }
 };
 
+/**
+ * Fetch user analytics by user ID
+ * @param {string} userId - The ID of the user
+ * @param {string} timeframe - The timeframe for analytics ('week', 'month', 'quarter', 'year')
+ * @returns {Promise<Object>} - User analytics data
+ */
+const fetchUserAnalytics = async (userId, timeframe = 'month') => {
+  try {
+    // In a real application, this would call the API
+    // For now, returning mock data based on timeframe
+    await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate API delay
+    
+    const baseMultiplier = timeframe === 'week' ? 0.3 : timeframe === 'month' ? 1 : timeframe === 'quarter' ? 3 : 12;
+    
+    return {
+      profileViews: Math.floor((200 + Math.random() * 800) * baseMultiplier),
+      monthlyViews: Math.floor((50 + Math.random() * 200) * baseMultiplier),
+      topViewers: Array.from({ length: 5 }, (_, i) => ({
+        id: `viewer_${i}`,
+        name: `Viewer ${i + 1}`,
+        avatar: `https://randomuser.me/api/portraits/${i % 2 === 0 ? 'men' : 'women'}/${i + 5}.jpg`,
+        viewCount: Math.floor((5 + Math.random() * 20) * baseMultiplier)
+      })).sort((a, b) => b.viewCount - a.viewCount),
+      uploadStats: {
+        totalUploads: Math.floor((10 + Math.random() * 40) * baseMultiplier),
+        totalViews: Math.floor((500 + Math.random() * 2000) * baseMultiplier),
+        totalLikes: Math.floor((100 + Math.random() * 500) * baseMultiplier),
+        mostViewedContent: {
+          name: 'summer_vacation_2024.jpg',
+          views: Math.floor((50 + Math.random() * 200) * baseMultiplier),
+          thumbnail: `https://picsum.photos/seed/${userId}_popular/300/300`
+        }
+      },
+      activityStats: {
+        messagesCount: Math.floor((100 + Math.random() * 400) * baseMultiplier),
+        reactionsGiven: Math.floor((50 + Math.random() * 200) * baseMultiplier),
+        connectionsCount: Math.floor(20 + Math.random() * 80),
+        joinDate: new Date(Date.now() - (Math.random() * 31536000000)).toISOString() // Random date within last year
+      }
+    };
+  } catch (error) {
+    console.error(`Error fetching analytics for user ${userId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Update user profile via API or local storage
+ * @param {string} userId - The ID of the user
+ * @param {Object} profileData - The profile data to update
+ * @returns {Promise<Object>} - Updated profile data
+ */
+const updateUserProfile = async (userId, profileData) => {
+  try {
+    // Try to update via API first
+    if (localStorage.getItem('token')) {
+      try {
+        const result = await updateUserProfileAPI(profileData);
+        // Also update local storage with the result
+        await saveUserProfile({ ...result, userId });
+        return result;
+      } catch (apiError) {
+        console.warn('API update failed, falling back to local storage:', apiError);
+      }
+    }
+    
+    // Fallback to local storage update
+    const currentProfile = await getUserProfile(profileData.username || userId);
+    const updatedProfile = {
+      ...currentProfile,
+      ...profileData,
+      userId,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    await saveUserProfile(updatedProfile);
+    return updatedProfile;
+  } catch (error) {
+    console.error(`Error updating profile for user ${userId}:`, error);
+    throw error;
+  }
+};
+
 // Export the service functions
 const userDataService = {
   // Profile management (local storage)
@@ -809,6 +892,8 @@ const userDataService = {
   fetchUserProfile,
   fetchUserUploads,
   fetchUserViewHistory,
+  fetchUserAnalytics,
+  updateUserProfile,
   
   // Backend API integration
   api: {
