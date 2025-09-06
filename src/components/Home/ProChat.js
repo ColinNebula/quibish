@@ -29,14 +29,6 @@ const ProChat = ({
   const [activeFilter, setActiveFilter] = useState('all');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
-  // Check for debug mode
-  const isDebugMode = new URLSearchParams(window.location.search).get('debug') === 'video';
-  
-  // If debug mode is enabled, show debug component
-  if (isDebugMode) {
-    return <VideoDebugTest />;
-  }
-  
   // Enhanced input state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -863,6 +855,14 @@ const ProChat = ({
     if (length <= 500) return 'long';
     return 'very-long';
   };
+
+  // Check for debug mode
+  const isDebugMode = new URLSearchParams(window.location.search).get('debug') === 'video';
+  
+  // If debug mode is enabled, show debug component
+  if (isDebugMode) {
+    return <VideoDebugTest />;
+  }
 
   return (
     <div className="pro-layout">
