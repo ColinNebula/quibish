@@ -2742,6 +2742,346 @@
 }
 
 /* ================================
+   ENHANCED MESSAGE ANIMATIONS
+   ================================ */
+
+/* Enhanced message baseline */
+.pro-message-blurb.message-enhanced {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: messageSlideInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Base animation setup for all messages */
+.pro-message-blurb {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+/* Message entrance animations */
+.pro-message-blurb.message-entering {
+  animation: messageSlideInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Staggered animation delays */
+.pro-message-blurb.message-delay-0 {
+  animation-delay: 0s;
+}
+.pro-message-blurb.message-delay-1 {
+  animation-delay: 0.1s;
+}
+.pro-message-blurb.message-delay-2 {
+  animation-delay: 0.2s;
+}
+.pro-message-blurb.message-delay-3 {
+  animation-delay: 0.3s;
+}
+.pro-message-blurb.message-delay-4 {
+  animation-delay: 0.4s;
+}
+
+/* Enhanced hover effects */
+.pro-message-blurb:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(99, 102, 241, 0.1),
+    0 0 20px rgba(99, 102, 241, 0.05);
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+/* Enhanced hover with color-based glow */
+.pro-message-blurb:hover::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, 
+    rgba(99, 102, 241, 0.1) 0%,
+    rgba(168, 85, 247, 0.1) 50%,
+    rgba(236, 72, 153, 0.1) 100%);
+  border-radius: inherit;
+  z-index: -1;
+  animation: borderGlow 2s ease-in-out infinite;
+}
+
+@keyframes borderGlow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+/* Message content enhancement */
+.pro-message-blurb:hover .message-content {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(248, 250, 252, 0.95) 100%);
+}
+
+/* Avatar animation enhancement */
+.pro-message-blurb .message-avatar-container {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.pro-message-blurb:hover .message-avatar {
+  animation: avatarPulse 1.5s ease-in-out;
+}
+
+.pro-message-blurb .avatar-status-ring {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.pro-message-blurb:hover .avatar-status-ring {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+/* Text content animations */
+.pro-message-blurb .message-text-content {
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.pro-message-blurb.message-entering .message-text-content {
+  animation: textReveal 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s both;
+}
+
+/* Background glow effect */
+.pro-message-blurb .message-background-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(99, 102, 241, 0.1) 0%, 
+    rgba(168, 85, 247, 0.1) 100%);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.pro-message-blurb:hover .message-background-glow {
+  opacity: 1;
+  animation: backgroundGlowPulse 2s ease-in-out infinite;
+}
+
+/* Sparkle effect on hover */
+.pro-message-blurb:hover::before {
+  animation: sparkleRotate 3s linear infinite;
+}
+
+@keyframes sparkleRotate {
+  0% { 
+    transform: rotate(0deg); 
+    background-position: 0% 0%, 25% 25%, 50% 50%, 75% 75%;
+  }
+  100% { 
+    transform: rotate(360deg); 
+    background-position: 100% 100%, 75% 75%, 50% 50%, 25% 25%;
+  }
+}
+
+/* Message text shimmer effect */
+.pro-message-blurb:hover .message-text-content {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(99, 102, 241, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: textShimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes textShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Enhanced message length-based animations */
+.pro-message-blurb[data-length="short"] {
+  animation-duration: 0.4s;
+}
+
+.pro-message-blurb[data-length="short"]:hover {
+  animation: shortMessageBounce 0.6s ease-in-out;
+}
+
+.pro-message-blurb[data-length="medium"] {
+  animation-duration: 0.5s;
+}
+
+.pro-message-blurb[data-length="medium"]:hover {
+  animation: mediumMessageWave 0.8s ease-in-out;
+}
+
+.pro-message-blurb[data-length="long"] {
+  animation-duration: 0.6s;
+}
+
+.pro-message-blurb[data-length="long"]:hover {
+  animation: longMessagePulse 1s ease-in-out;
+}
+
+.pro-message-blurb[data-length="very-long"] {
+  animation-duration: 0.7s;
+}
+
+.pro-message-blurb[data-length="very-long"]:hover {
+  animation: veryLongMessageFlow 1.2s ease-in-out;
+}
+
+/* Length-specific hover animations */
+@keyframes shortMessageBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.05); }
+}
+
+@keyframes mediumMessageWave {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-2px) rotate(-1deg); }
+  75% { transform: translateX(2px) rotate(1deg); }
+}
+
+@keyframes longMessagePulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  50% { 
+    transform: scale(1.02);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+  }
+}
+
+@keyframes veryLongMessageFlow {
+  0%, 100% { 
+    background-position: 0% 50%;
+    transform: scale(1);
+  }
+  50% { 
+    background-position: 100% 50%;
+    transform: scale(1.01);
+  }
+}
+
+/* Message appearing from different directions based on index */
+.pro-message-blurb:nth-child(even).message-entering {
+  animation-name: messageSlideInLeft;
+}
+
+.pro-message-blurb:nth-child(3n).message-entering {
+  animation-name: messageBounceIn;
+}
+
+/* Focus and active states */
+.pro-message-blurb:focus-within {
+  outline: 2px solid rgba(99, 102, 241, 0.5);
+  outline-offset: 2px;
+}
+
+.pro-message-blurb.message-active {
+  animation: messageGlow 2s ease-in-out infinite;
+}
+
+/* Click/Active animation */
+.pro-message-blurb:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Message click ripple effect */
+.pro-message-blurb::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.pro-message-blurb:active::after {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
+
+/* Smooth transitions for all child elements */
+.pro-message-blurb * {
+  transition: inherit;
+}
+
+/* Accessibility: Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .pro-message-blurb,
+  .pro-message-blurb * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Typing indicator animation for new messages */
+.pro-message-blurb.typing-indicator .message-text-content::after {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  background: rgba(99, 102, 241, 0.8);
+  margin-left: 2px;
+  animation: typingCursor 1s ease-in-out infinite;
+}
+
+@keyframes typingCursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Message appearance sequence */
+.pro-message-blurb.message-enhanced:nth-child(1) { animation-delay: 0.1s; }
+.pro-message-blurb.message-enhanced:nth-child(2) { animation-delay: 0.2s; }
+.pro-message-blurb.message-enhanced:nth-child(3) { animation-delay: 0.3s; }
+.pro-message-blurb.message-enhanced:nth-child(4) { animation-delay: 0.4s; }
+.pro-message-blurb.message-enhanced:nth-child(5) { animation-delay: 0.5s; }
+
+/* Floating action on scroll */
+.pro-message-list.scrolling .pro-message-blurb {
+  animation: floatOnScroll 0.3s ease-out;
+}
+
+@keyframes floatOnScroll {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-1px) scale(1.005); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* ================================
    INPUT WRAPPER - CENTERING
    ================================ */
 
@@ -8102,12 +8442,118 @@
   }
 }
 
+/* Enhanced Message Entrance Animations */
+@keyframes messageSlideInUp {
+  0% {
+    transform: translateY(30px) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes messageSlideInLeft {
+  0% {
+    transform: translateX(-50px) scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes messageBounceIn {
+  0% {
+    transform: scale(0.3) translateY(20px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05) translateY(-5px);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(0.95) translateY(2px);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes messageGlow {
+  0% {
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.0);
+  }
+  50% {
+    box-shadow: 0 2px 20px rgba(99, 102, 241, 0.3);
+  }
+  100% {
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.0);
+  }
+}
+
+@keyframes avatarPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+@keyframes textReveal {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes backgroundGlowPulse {
+  0% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+}
+
 /* Animated Background Particles */
 .pro-message-list {
   position: relative;
   overflow: visible; /* Allow messages to extend naturally */
   width: 100%;
   padding: 0;
+  scroll-behavior: smooth; /* Enhanced smooth scrolling */
+  scroll-padding-top: 20px; /* Space for new messages */
+}
+
+/* Enhanced scroll behavior for new messages */
+.pro-message-list.scrolling-to-new {
+  scroll-behavior: auto; /* Immediate scroll for new messages */
+}
+
+.pro-message-list.scrolling-to-new:after {
+  scroll-behavior: smooth; /* Restore smooth scrolling */
 }
 
 .pro-message-list::before {

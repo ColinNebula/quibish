@@ -852,14 +852,26 @@ const ProChat = ({
 
         {/* Messages */}
         <div className="pro-message-list" ref={messagesContainerRef}>
-          {chatMessages.map(message => (
-            <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
-              <div className="message-avatar">
-                <img 
-                  src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
-                  alt={message.user.name}
-                  onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
-                />
+          {chatMessages.map((message, index) => (
+            <div 
+              key={message.id} 
+              className={`pro-message-blurb message-enhanced`}
+              data-message-id={message.id}
+              data-length={getMessageLengthCategory(message.text)}
+              style={{
+                '--message-index': index,
+                animationDelay: `${Math.min(index * 0.1, 1)}s`
+              }}
+            >
+              <div className="message-avatar-container">
+                <div className="message-avatar">
+                  <img 
+                    src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
+                    alt={message.user.name}
+                    onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
+                  />
+                  <div className="avatar-status-ring"></div>
+                </div>
               </div>
               <div className="message-content" onClick={() => handleMessageClick(message.id)}>
                 <div className="message-header">
