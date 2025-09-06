@@ -96,7 +96,7 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
   };
 
   // Handle avatar upload
-  const handleAvatarChange = (e) => {
+  const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -112,20 +112,78 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result);
-      setFormData(prev => ({ ...prev, avatar: reader.result }));
-    };
-    reader.readAsDataURL(file);
+    // Set loading state for avatar upload
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Create preview first
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload avatar to server
+      const result = await authService.uploadAvatar(file);
+      
+      if (result.success) {
+        // Update form data with the server URL
+        setFormData(prev => ({ ...prev, avatar: result.avatarUrl }));
+        setSuccess('Avatar uploaded successfully!');
+        
+        // Update user data in storage
+        const currentUser = authService.getUser();
+        if (currentUser) {
+          const updatedUser = { ...currentUser, avatar: result.avatarUrl };
+          const token = authService.getToken();
+          authService.saveUserSession(updatedUser, token, true);
+        }
+      } else {
+        throw new Error(result.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      setError(`Failed to upload avatar: ${error.message}`);
+      // Reset preview on error
+      setAvatarPreview(user?.avatar || null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Remove avatar
-  const removeAvatar = () => {
-    setAvatarPreview(null);
-    setFormData(prev => ({ ...prev, avatar: null }));
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const removeAvatar = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Call remove avatar API
+      await authService.removeAvatar();
+      
+      // Clear preview and form data
+      setAvatarPreview(null);
+      setFormData(prev => ({ ...prev, avatar: null }));
+      
+      // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      // Update user data in storage
+      const currentUser = authService.getUser();
+      if (currentUser) {
+        const updatedUser = { ...currentUser, avatar: null };
+        const token = authService.getToken();
+        authService.saveUserSession(updatedUser, token, true);
+      }
+
+      setSuccess('Avatar removed successfully!');
+    } catch (error) {
+      console.error('Remove avatar error:', error);
+      setError(`Failed to remove avatar: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -137,7 +195,7 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
     setSuccess(null);
 
     try {
-      // Prepare update data
+      // Prepare update data (exclude avatar since it's handled separately)
       const updateData = {
         name: formData.name,
         displayName: formData.displayName,
@@ -148,6 +206,7 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
         company: formData.company,
         jobTitle: formData.jobTitle,
         statusMessage: formData.statusMessage,
+        avatarColor: formData.avatarColor,
         socialLinks: {
           twitter: formData.twitter,
           linkedin: formData.linkedin,
@@ -347,19 +406,25 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
                 )}
               </div>
               <div className="avatar-controls">
-                <label className="upload-button">
+                <label className={`upload-button ${loading ? 'loading' : ''}`}>
                   <input 
                     type="file" 
                     accept="image/*" 
                     onChange={handleAvatarChange}
                     ref={fileInputRef}
                     hidden 
+                    disabled={loading}
                   />
-                  Upload Photo
+                  {loading ? 'Uploading...' : 'Upload Photo'}
                 </label>
                 {avatarPreview && (
-                  <button type="button" className="remove-button" onClick={removeAvatar}>
-                    Remove
+                  <button 
+                    type="button" 
+                    className="remove-button" 
+                    onClick={removeAvatar}
+                    disabled={loading}
+                  >
+                    {loading ? 'Removing...' : 'Remove'}
                   </button>
                 )}
                 <div className="avatar-color-picker">

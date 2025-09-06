@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import UserProfileModal from '../UserProfile/UserProfileModal';
 import SettingsModal from './SettingsModal';
 import VideoCall from './VideoCall';
+import GifPicker from '../GifPicker/GifPicker';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -46,8 +47,6 @@ const ProChat = ({
 
   // GIF picker state
   const [showGifPicker, setShowGifPicker] = useState(false);
-
-  // Mobile upload menu state
   const [showMobileUploadMenu, setShowMobileUploadMenu] = useState(false);
 
   // Upload progress state
@@ -248,6 +247,62 @@ const ProChat = ({
       e.target.value = '';
     }
   }, [user, scrollToBottom]);
+
+  // Mobile device detection
+  const isMobileDevice = useCallback(() => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }, []);
+
+  // GIF picker handlers
+  const handleShowGifPicker = useCallback(() => {
+    setShowGifPicker(true);
+  }, []);
+
+  const handleGifUpload = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/gif';
+    input.multiple = true;
+    input.onchange = (e) => {
+      handleFileChange(e);
+    };
+    input.click();
+  }, [handleFileChange]);
+
+  const handleGifSelect = useCallback((gif) => {
+    // Create a message with the selected GIF
+    const newMessage = {
+      id: Date.now() + Math.random(),
+      text: `🎭 ${gif.name}`,
+      user: user,
+      timestamp: new Date().toISOString(),
+      reactions: [],
+      file: {
+        name: gif.name || 'selected.gif',
+        size: gif.size || 0,
+        type: 'image/gif',
+        url: gif.url,
+        isGif: true
+      }
+    };
+    
+    // Add the GIF message to chat
+    setChatMessages(prev => [...prev, newMessage]);
+    setShowGifPicker(false);
+    
+    // Auto-scroll to the new message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+  }, [user, setChatMessages, scrollToBottom]);
+
+  const handleCloseGifPicker = useCallback(() => {
+    setShowGifPicker(false);
+  }, []);
+
+  const handleMobileUploadMenu = useCallback(() => {
+    setShowMobileUploadMenu(true);
+  }, []);
 
   // Handle adding reactions to messages
   const handleReactionAdd = useCallback((messageId, emoji) => {
@@ -653,14 +708,6 @@ const ProChat = ({
     return 'very-long';
   };
 
-  // Check for debug mode
-  const isDebugMode = new URLSearchParams(window.location.search).get('debug') === 'video';
-  
-  // If debug mode is enabled, show debug component
-  if (isDebugMode) {
-    return <VideoDebugTest />;
-  }
-
   return (
     <div className="pro-layout">
       {/* Video Call Component */}
@@ -675,7 +722,7 @@ const ProChat = ({
               💬
               {totalUnreadCount > 0 && (
                 <div className="logo-unread-badge">{totalUnreadCount > 99 ? '99+' : totalUnreadCount}</div>
-              )}
+              )},
             </div>
             {!sidebarCollapsed && (
               <div className="logo-text">
@@ -1073,8 +1120,7 @@ const ProChat = ({
                 )}
               </div>
             </div>
-          );
-          })}
+          ))}
           {/* Auto-scroll anchor element */}
           <div ref={messagesEndRef} />
         </div>
@@ -1442,6 +1488,13 @@ const ProChat = ({
           </div>
         </div>
       )}
+
+      {/* GIF Picker Modal */}
+      <GifPicker
+        isOpen={showGifPicker}
+        onGifSelect={handleGifSelect}
+        onClose={handleCloseGifPicker}
+      />
     </div>
   );
 };

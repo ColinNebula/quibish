@@ -50,6 +50,42 @@ router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), async (
       });
     }
 
+    // Handle in-memory storage
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      const user = global.inMemoryStorage.users.find(u => u.id === req.user.id);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      // Delete old avatar file if it exists and is not the default
+      if (user.avatar && !user.avatar.includes('default-avatar')) {
+        const oldAvatarPath = path.join(__dirname, '../uploads/avatars', path.basename(user.avatar));
+        if (fs.existsSync(oldAvatarPath)) {
+          try {
+            fs.unlinkSync(oldAvatarPath);
+          } catch (err) {
+            console.warn('Could not delete old avatar:', err.message);
+          }
+        }
+      }
+
+      // Update user avatar URL
+      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      user.avatar = avatarUrl;
+      user.updatedAt = new Date();
+
+      return res.json({
+        success: true,
+        avatarUrl: avatarUrl,
+        message: 'Avatar uploaded successfully'
+      });
+    }
+
+    // Handle MongoDB storage
     const user = await User.findOne({ id: req.user.id });
     
     if (!user) {
@@ -98,6 +134,85 @@ router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), async (
     res.status(500).json({
       success: false,
       error: 'Failed to upload avatar'
+    });
+  }
+});
+
+// DELETE /api/users/avatar - remove user avatar
+router.delete('/avatar', authenticateToken, async (req, res) => {
+  try {
+    // Handle in-memory storage
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      const user = global.inMemoryStorage.users.find(u => u.id === req.user.id);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      // Delete current avatar file if it exists and is not the default
+      if (user.avatar && !user.avatar.includes('default-avatar')) {
+        const avatarPath = path.join(__dirname, '../uploads/avatars', path.basename(user.avatar));
+        if (fs.existsSync(avatarPath)) {
+          try {
+            fs.unlinkSync(avatarPath);
+            console.log('Deleted avatar file:', avatarPath);
+          } catch (err) {
+            console.warn('Could not delete avatar file:', err.message);
+          }
+        }
+      }
+
+      // Remove avatar from user record
+      user.avatar = null;
+      user.updatedAt = new Date();
+
+      return res.json({
+        success: true,
+        message: 'Avatar removed successfully'
+      });
+    }
+
+    // Handle MongoDB storage
+    const user = await User.findOne({ id: req.user.id });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Delete current avatar file if it exists and is not the default
+    if (user.avatar && !user.avatar.includes('default-avatar')) {
+      const avatarPath = path.join(__dirname, '../uploads/avatars', path.basename(user.avatar));
+      if (fs.existsSync(avatarPath)) {
+        try {
+          fs.unlinkSync(avatarPath);
+          console.log('Deleted avatar file:', avatarPath);
+        } catch (err) {
+          console.warn('Could not delete avatar file:', err.message);
+        }
+      }
+    }
+
+    // Remove avatar from user record
+    user.avatar = null;
+    user.updatedAt = new Date();
+    
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Avatar removed successfully'
+    });
+  } catch (error) {
+    console.error('Avatar removal error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to remove avatar'
     });
   }
 });
