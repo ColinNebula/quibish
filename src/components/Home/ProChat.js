@@ -27,7 +27,6 @@ const ProChat = ({
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   
   // Enhanced input state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -181,8 +180,7 @@ const ProChat = ({
   }, []);
 
   const handleQuickSettings = useCallback(() => {
-    // TODO: Implement quick settings
-    console.log('Quick settings clicked');
+    setSettingsModal({ open: true, section: 'profile' });
   }, []);
 
   // Enhanced input functions
