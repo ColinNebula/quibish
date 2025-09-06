@@ -24,7 +24,18 @@
     "build": "react-scripts build",
     "smoke-check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/smoke-check.ps1",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "dev": "concurrently \"npm run backend:dev\" \"npm run start\" --names \"API,APP\" --prefix-colors \"green,blue\"",
+    "backend:dev": "cd backend && nodemon server.js",
+    "backend:start": "cd backend && node server.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:restart": "pm2 restart ecosystem.config.js",
+    "pm2:logs": "pm2 logs",
+    "pm2:monitor": "pm2 monit",
+    "pm2:status": "pm2 status",
+    "startup": "pm2 startup",
+    "save": "pm2 save"
   },
   "eslintConfig": {
     "extends": [
@@ -47,9 +58,11 @@
   "devDependencies": {
     "apollo-server-express": "^3.13.0",
     "bcryptjs": "^3.0.2",
+    "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "graphql": "^16.11.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "nodemon": "^3.1.10"
   }
 }
