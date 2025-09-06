@@ -112,6 +112,14 @@ global.inMemoryStorage = {
 
 // MongoDB connection with fallback mechanism
 const connectToMongoDB = async () => {
+  // Check if we should skip MongoDB and use memory only
+  if (process.env.USE_MEMORY_ONLY === 'true') {
+    console.log('🔄 Using in-memory storage only (MongoDB disabled)');
+    global.inMemoryStorage.usingInMemory = true;
+    global.inMemoryStorage.seedDefaultUsers();
+    return;
+  }
+
   try {
     // Set fallback mode before attempting connection
     // This ensures we don't try to use MongoDB at all if connection fails

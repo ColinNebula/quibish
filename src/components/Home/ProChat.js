@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import UserProfileModal from '../UserProfile';
-import VideoCall from './VideoCall';
+import UserProfileModal from '../UserProfile/UserProfileModal';
 import SettingsModal from './SettingsModal';
-import VideoDebugTest from '../Debug/VideoDebugTest';
+import VideoCall from './VideoCall';
+import GifPicker from '../GifPicker/GifPicker';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -27,7 +27,6 @@ const ProChat = ({
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   
   // Enhanced input state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -44,9 +43,26 @@ const ProChat = ({
     images: [],
     isLoading: false
   });
+
+  // GIF picker state
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [showMobileUploadMenu, setShowMobileUploadMenu] = useState(false);
+
+  // Upload progress state
+  // eslint-disable-next-line no-unused-vars
+  const [uploadProgress, setUploadProgress] = useState({
+    isUploading: false,
+    fileName: '',
+    progress: 0,
+    fileSize: 0,
+    uploadedSize: 0
+  });
   
   // Refs
   const fileInputRef = useRef(null);
+  const mobileCameraPhotoRef = useRef(null);
+  const mobileCameraVideoRef = useRef(null);
+  const mobileGalleryRef = useRef(null);
   const recordingTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -98,6 +114,23 @@ const ProChat = ({
       user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
       timestamp: new Date(Date.now() - 60000).toISOString(),
       reactions: []
+    },
+    {
+      id: 6,
+      text: "🎭 GIF: celebration.gif",
+      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 30000).toISOString(),
+      reactions: [
+        { emoji: '🎉', count: 3, userId: 'user1' },
+        { emoji: '🔥', count: 2, userId: 'user3' }
+      ],
+      file: {
+        name: 'celebration.gif',
+        size: 245760, // 240 KB
+        type: 'image/gif',
+        url: 'https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif',
+        isGif: true
+      }
     }
   ]);
   
@@ -105,67 +138,6 @@ const ProChat = ({
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
-  // Color palette for user message cards
-  const messageColors = [
-    { id: 'blue', bg: '#e3f2fd', border: '#2196f3', accent: '#1976d2' }, // Blue
-    { id: 'purple', bg: '#f3e5f5', border: '#9c27b0', accent: '#7b1fa2' }, // Purple
-    { id: 'green', bg: '#e8f5e8', border: '#4caf50', accent: '#388e3c' }, // Green
-    { id: 'orange', bg: '#fff3e0', border: '#ff9800', accent: '#f57c00' }, // Orange
-    { id: 'pink', bg: '#fce4ec', border: '#e91e63', accent: '#c2185b' }, // Pink
-    { id: 'teal', bg: '#e0f2f1', border: '#009688', accent: '#00695c' }, // Teal
-    { id: 'lightgreen', bg: '#f1f8e9', border: '#8bc34a', accent: '#689f38' }, // Light Green
-    { id: 'indigo', bg: '#e8eaf6', border: '#3f51b5', accent: '#303f9f' }, // Indigo
-    { id: 'amber', bg: '#fff8e1', border: '#ffc107', accent: '#ffa000' }, // Amber
-    { id: 'peach', bg: '#ffeaa7', border: '#fdcb6e', accent: '#e17055' }, // Peach
-    { id: 'coral', bg: '#fab1a0', border: '#e17055', accent: '#d63031' }, // Coral
-    { id: 'lavender', bg: '#a29bfe', border: '#6c5ce7', accent: '#5f3dc4' }, // Lavender
-  ];
-
-  // Listen for color preference changes
-  const [colorRefresh, setColorRefresh] = useState(0);
-  useEffect(() => {
-    const handleColorChange = () => {
-      setColorRefresh(prev => prev + 1); // Force re-render with new colors
-    };
-    
-    window.addEventListener('userColorChanged', handleColorChange);
-    return () => window.removeEventListener('userColorChanged', handleColorChange);
-  }, []);
-
-  // Function to get consistent color for a user
-  const getUserColor = useCallback((userId) => {
-    if (!userId) return messageColors[0]; // Default color for system messages
-    
-    // First check for saved user preference
-    const savedPreference = localStorage.getItem('userColorPreference');
-    if (savedPreference && savedPreference !== 'auto' && userId === user?.id) {
-      const preferredColor = messageColors.find(color => color.id === savedPreference);
-      if (preferredColor) {
-        return preferredColor;
-      }
-    }
-    
-    // If it's the current user and they have a preference in their profile
-    if (userId === user?.id && user?.preferences?.messageColor && user.preferences.messageColor !== 'auto') {
-      const preferredColor = messageColors.find(color => color.id === user.preferences.messageColor);
-      if (preferredColor) {
-        return preferredColor;
-      }
-    }
-    
-    // Fall back to hash-based color assignment
-    let hash = 0;
-    for (let i = 0; i < userId.length; i++) {
-      const char = userId.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    
-    // Use absolute value and modulo to get a color index
-    const colorIndex = Math.abs(hash) % messageColors.length;
-    return messageColors[colorIndex];
-  }, [user, colorRefresh, messageColors]);
-
   // Auto-scroll to bottom function
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -208,22 +180,7 @@ const ProChat = ({
   }, []);
 
   const handleQuickSettings = useCallback(() => {
-    setShowSettingsModal(true);
-  }, []);
-
-  const handleSaveProfile = useCallback(async (updatedUser) => {
-    try {
-      // In a real app, this would make an API call to update the user profile
-      console.log('Saving user profile:', updatedUser);
-      
-      // For now, we'll just update the local user object if there's a parent handler
-      // The color preference is already saved to localStorage in ColorPreferences component
-      
-      return true; // Indicate success
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      throw error;
-    }
+    setSettingsModal({ open: true, section: 'profile' });
   }, []);
 
   // Enhanced input functions
@@ -261,176 +218,8 @@ const ProChat = ({
             console.error('Error reading file:', error);
           };
           reader.readAsDataURL(file);
-        } else if (file.type.startsWith('video/')) {
-          // Handle video files with improved error handling and compatibility
-          console.log('Processing video file:', file.name, file.type, 'Size:', file.size);
-          
-          // Check file size first (browser limitation)
-          if (file.size > 100 * 1024 * 1024) { // 100MB limit for browser processing
-            console.warn('Video file too large for browser processing');
-            const videoUrl = URL.createObjectURL(file);
-            const newMessage = {
-              id: Date.now() + Math.random(),
-              text: `🎥 ${file.name} (Large file - limited preview)`,
-              user: user,
-              timestamp: new Date().toISOString(),
-              reactions: [],
-              file: {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                url: videoUrl
-              }
-            };
-            setChatMessages(prev => [...prev, newMessage]);
-            setTimeout(() => scrollToBottom(), 100);
-            return;
-          }
-          
-          const videoUrl = URL.createObjectURL(file);
-          console.log('Object URL created:', videoUrl);
-          
-          // Use a more compatible approach
-          const video = document.createElement('video');
-          video.muted = true; // Important for autoplay policies
-          video.playsInline = true; // Important for mobile
-          
-          let metadataLoaded = false;
-          let timeoutId;
-          
-          const cleanup = () => {
-            if (timeoutId) clearTimeout(timeoutId);
-            video.removeEventListener('loadedmetadata', onMetadataLoaded);
-            video.removeEventListener('error', onVideoError);
-            video.removeEventListener('seeked', onSeeked);
-          };
-          
-          const createFallbackMessage = (reason = '') => {
-            console.log('Creating fallback message:', reason);
-            const newMessage = {
-              id: Date.now() + Math.random(),
-              text: `🎥 ${file.name}${reason ? ` (${reason})` : ''}`,
-              user: user,
-              timestamp: new Date().toISOString(),
-              reactions: [],
-              file: {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                url: videoUrl
-              }
-            };
-            setChatMessages(prev => [...prev, newMessage]);
-            setTimeout(() => scrollToBottom(), 100);
-            cleanup();
-          };
-          
-          const onMetadataLoaded = () => {
-            if (metadataLoaded) return;
-            metadataLoaded = true;
-            
-            console.log('Video metadata loaded:', {
-              duration: video.duration,
-              width: video.videoWidth,
-              height: video.videoHeight,
-              readyState: video.readyState
-            });
-            
-            if (!video.duration || isNaN(video.duration)) {
-              createFallbackMessage('No duration info');
-              return;
-            }
-            
-            // Try to get thumbnail
-            try {
-              const seekTime = Math.min(video.duration * 0.1, 3); // 10% into video or 3 seconds max
-              console.log('Seeking to time:', seekTime);
-              video.currentTime = seekTime;
-            } catch (error) {
-              console.error('Error seeking video:', error);
-              createFallbackMessage('Thumbnail generation failed');
-            }
-          };
-          
-          const onSeeked = () => {
-            console.log('Video seeked, attempting thumbnail generation...');
-            try {
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
-              
-              // Set canvas size based on video or use defaults
-              const targetWidth = 320;
-              const targetHeight = 180;
-              canvas.width = targetWidth;
-              canvas.height = targetHeight;
-              
-              // Try to draw the video frame
-              ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
-              
-              // Test if canvas has content
-              const imageData = ctx.getImageData(0, 0, 1, 1);
-              if (imageData.data.every(val => val === 0)) {
-                console.warn('Canvas is empty, video frame not captured');
-                createFallbackMessage('Thumbnail capture failed');
-                return;
-              }
-              
-              const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
-              const duration = Math.round(video.duration);
-              const durationFormatted = `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`;
-              
-              console.log('Successfully created video message with thumbnail');
-              
-              const newMessage = {
-                id: Date.now() + Math.random(),
-                text: `🎥 ${file.name} (${durationFormatted})`,
-                user: user,
-                timestamp: new Date().toISOString(),
-                reactions: [],
-                file: {
-                  name: file.name,
-                  size: file.size,
-                  type: file.type,
-                  url: videoUrl,
-                  thumbnail: thumbnail,
-                  duration: durationFormatted,
-                  width: video.videoWidth,
-                  height: video.videoHeight
-                }
-              };
-              setChatMessages(prev => [...prev, newMessage]);
-              setTimeout(() => scrollToBottom(), 100);
-              cleanup();
-              
-            } catch (error) {
-              console.error('Error generating thumbnail:', error);
-              createFallbackMessage('Thumbnail error');
-            }
-          };
-          
-          const onVideoError = (error) => {
-            console.error('Video loading error:', error, video.error);
-            createFallbackMessage('Loading failed');
-          };
-          
-          // Set up event listeners
-          video.addEventListener('loadedmetadata', onMetadataLoaded);
-          video.addEventListener('error', onVideoError);
-          video.addEventListener('seeked', onSeeked);
-          
-          // Set timeout for loading
-          timeoutId = setTimeout(() => {
-            if (!metadataLoaded) {
-              console.warn('Video loading timeout');
-              createFallbackMessage('Loading timeout');
-            }
-          }, 10000); // 10 second timeout
-          
-          // Start loading
-          console.log('Setting video source...');
-          video.src = videoUrl;
         } else {
-          // Handle other file types
+          // Handle non-image files
           const newMessage = {
             id: Date.now() + Math.random(),
             text: `📎 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
@@ -456,6 +245,62 @@ const ProChat = ({
       e.target.value = '';
     }
   }, [user, scrollToBottom]);
+
+  // Mobile device detection
+  const isMobileDevice = useCallback(() => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }, []);
+
+  // GIF picker handlers
+  const handleShowGifPicker = useCallback(() => {
+    setShowGifPicker(true);
+  }, []);
+
+  const handleGifUpload = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/gif';
+    input.multiple = true;
+    input.onchange = (e) => {
+      handleFileChange(e);
+    };
+    input.click();
+  }, [handleFileChange]);
+
+  const handleGifSelect = useCallback((gif) => {
+    // Create a message with the selected GIF
+    const newMessage = {
+      id: Date.now() + Math.random(),
+      text: `🎭 ${gif.name}`,
+      user: user,
+      timestamp: new Date().toISOString(),
+      reactions: [],
+      file: {
+        name: gif.name || 'selected.gif',
+        size: gif.size || 0,
+        type: 'image/gif',
+        url: gif.url,
+        isGif: true
+      }
+    };
+    
+    // Add the GIF message to chat
+    setChatMessages(prev => [...prev, newMessage]);
+    setShowGifPicker(false);
+    
+    // Auto-scroll to the new message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+  }, [user, setChatMessages, scrollToBottom]);
+
+  const handleCloseGifPicker = useCallback(() => {
+    setShowGifPicker(false);
+  }, []);
+
+  const handleMobileUploadMenu = useCallback(() => {
+    setShowMobileUploadMenu(true);
+  }, []);
 
   // Handle adding reactions to messages
   const handleReactionAdd = useCallback((messageId, emoji) => {
@@ -599,6 +444,7 @@ const ProChat = ({
 
   // Enhanced features state
   const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: null });
+  const [settingsModal, setSettingsModal] = useState({ open: false, section: 'profile' });
   const [videoCallState, setVideoCallState] = useState({ 
     active: false, 
     withUser: null, 
@@ -643,6 +489,10 @@ const ProChat = ({
 
   const handleCloseProfileModal = useCallback(() => {
     setProfileModal({ open: false, userId: null, username: null });
+  }, []);
+
+  const handleCloseSettingsModal = useCallback(() => {
+    setSettingsModal({ open: false, section: 'profile' });
   }, []);
 
   // Lightbox handlers
@@ -856,14 +706,6 @@ const ProChat = ({
     return 'very-long';
   };
 
-  // Check for debug mode
-  const isDebugMode = new URLSearchParams(window.location.search).get('debug') === 'video';
-  
-  // If debug mode is enabled, show debug component
-  if (isDebugMode) {
-    return <VideoDebugTest />;
-  }
-
   return (
     <div className="pro-layout">
       {/* Video Call Component */}
@@ -878,7 +720,7 @@ const ProChat = ({
               💬
               {totalUnreadCount > 0 && (
                 <div className="logo-unread-badge">{totalUnreadCount > 99 ? '99+' : totalUnreadCount}</div>
-              )}
+              )},
             </div>
             {!sidebarCollapsed && (
               <div className="logo-text">
@@ -979,56 +821,41 @@ const ProChat = ({
             {!sidebarCollapsed && <h4>Recent Conversations</h4>}
           </div>
           <div className="conversations-list">
-            {filteredConversations.map(conv => {
-              const convColor = getUserColor(conv.id.toString());
-              return (
-                <div 
-                  key={conv.id} 
-                  className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
-                  onClick={() => handleConversationSelect(conv.id)}
-                  style={{
-                    borderLeftColor: selectedConversation === conv.id ? convColor.border : 'transparent',
-                    borderLeftWidth: '3px',
-                    borderLeftStyle: 'solid'
-                  }}
-                >
-                  <div className="conversation-avatar">
-                    <img 
-                      src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
-                      alt={conv.name}
-                    />
-                    {conv.isOnline && <div className="online-dot"></div>}
-                    {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
-                  </div>
-                  {!sidebarCollapsed && (
-                    <div className="conversation-details">
-                      <div className="conversation-header">
-                        <h5 
-                          className="conversation-name"
-                          style={{ 
-                            color: selectedConversation === conv.id ? convColor.accent : 'inherit'
-                          }}
-                        >
-                          {conv.name}
-                        </h5>
-                        <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
+            {filteredConversations.map(conv => (
+              <div 
+                key={conv.id} 
+                className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
+                onClick={() => handleConversationSelect(conv.id)}
+              >
+                <div className="conversation-avatar">
+                  <img 
+                    src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
+                    alt={conv.name}
+                  />
+                  {conv.isOnline && <div className="online-dot"></div>}
+                  {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
+                </div>
+                {!sidebarCollapsed && (
+                  <div className="conversation-details">
+                    <div className="conversation-header">
+                      <h5 className="conversation-name">{conv.name}</h5>
+                      <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
+                    </div>
+                    <div className="conversation-preview">
+                      <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
+                      <div className="conversation-meta">
+                        {conv.isPinned && <span className="pin-icon">📌</span>}
+                        {conv.isMuted && <span className="mute-icon">🔇</span>}
+                        {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
                       </div>
-                      <div className="conversation-preview">
-                        <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
-                        <div className="conversation-meta">
-                          {conv.isPinned && <span className="pin-icon">📌</span>}
-                          {conv.isMuted && <span className="mute-icon">🔇</span>}
-                          {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
-                        </div>
-                      </div>
+                    </div>
                   </div>
                 )}
                 {sidebarCollapsed && conv.unreadCount > 0 && (
                   <div className="collapsed-unread-indicator"></div>
                 )}
               </div>
-              );
-            })}
+            ))}
           </div>
         </div>
 
@@ -1125,87 +952,63 @@ const ProChat = ({
 
         {/* Messages */}
         <div className="pro-message-list" ref={messagesContainerRef}>
-          {chatMessages.map(message => {
-            const userColor = getUserColor(message.user.id);
-            return (
-              <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
-                <div className="message-avatar">
-                  <img 
-                    src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
-                    alt={message.user.name}
-                    onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
-                    style={{
-                      border: `2px solid ${userColor.border}`,
-                      borderRadius: '50%'
-                    }}
-                  />
+          {chatMessages.map(message => (
+            <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
+              <div className="message-avatar">
+                <img 
+                  src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
+                  alt={message.user.name}
+                  onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
+                />
+              </div>
+              <div className="message-content" onClick={() => handleMessageClick(message.id)}>
+                <div className="message-header">
+                  <span className="user-name">{message.user.name}</span>
+                  <span className="timestamp">
+                    {new Date(message.timestamp).toLocaleTimeString()}
+                  </span>
                 </div>
+                
+                {/* Message Text */}
                 <div 
-                  className="message-content" 
-                  onClick={() => handleMessageClick(message.id)}
-                  style={{
-                    backgroundColor: userColor.bg,
-                    borderLeftColor: userColor.border,
-                    borderLeftWidth: '3px',
-                    borderLeftStyle: 'solid'
-                  }}
+                  className="message-text" 
+                  data-length={getMessageLengthCategory(message.text)}
                 >
-                  <div className="message-header">
-                    <div className="user-info">
-                      <div 
-                        className="user-color-dot"
-                        style={{
-                          backgroundColor: userColor.border,
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          display: 'inline-block',
-                          marginRight: '6px'
-                        }}
-                      ></div>
-                      <span 
-                        className="user-name"
-                        style={{ color: userColor.accent }}
-                      >
-                        {message.user.name}
-                      </span>
-                    </div>
-                    <span className="timestamp">
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  
-                  {/* Message Text */}
-                  <div 
-                    className="message-text" 
-                    data-length={getMessageLengthCategory(message.text)}
-                  >
-                    {message.text}
+                  {message.text}
                 </div>
                 
                 {/* File/Image Display */}
                 {message.file && (
                   <div className="message-attachment">
                     {message.file.type.startsWith('image/') ? (
-                      <div className="image-attachment">
+                      <div className={`image-attachment ${message.file.isGif ? 'gif-attachment' : ''}`}>
+                        {message.file.isGif && (
+                          <div className="gif-badge">
+                            <span className="gif-label">GIF</span>
+                          </div>
+                        )}
                         <img 
                           src={message.file.url} 
                           alt={message.file.name}
-                          className="attached-image"
+                          className={`attached-image ${message.file.isGif ? 'gif-image' : ''}`}
                           onClick={() => {
                             // Open image in lightbox/modal
                             handleOpenLightbox(message.file.url, message.file.name);
                           }}
                           style={{
-                            maxWidth: '300px',
-                            maxHeight: '200px',
+                            maxWidth: message.file.isGif ? '350px' : '300px',
+                            maxHeight: message.file.isGif ? '250px' : '200px',
                             borderRadius: '8px',
                             cursor: 'pointer',
                             objectFit: 'cover'
                           }}
                         />
-                        <div className="image-caption">
+                        <div className={`image-caption ${message.file.isGif ? 'gif-caption' : ''}`}>
+                          {message.file.isGif && '🎭 '}
                           {message.file.name} ({(message.file.size / 1024).toFixed(1)} KB)
+                          {message.file.isGif && (
+                            <span className="gif-info"> • Animated GIF</span>
+                          )}
                         </div>
                       </div>
                     ) : message.file.type.startsWith('video/') ? (
@@ -1315,8 +1118,7 @@ const ProChat = ({
                 )}
               </div>
             </div>
-          );
-          })}
+          ))}
           {/* Auto-scroll anchor element */}
           <div ref={messagesEndRef} />
         </div>
@@ -1357,7 +1159,40 @@ const ProChat = ({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                  accept="image/*,image/gif,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                  style={{ display: 'none' }}
+                  multiple
+                  onChange={handleFileChange}
+                />
+
+                {/* Mobile Camera Input - Photo */}
+                <input
+                  ref={mobileCameraPhotoRef}
+                  id="mobile-camera-photo"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
+
+                {/* Mobile Camera Input - Video */}
+                <input
+                  ref={mobileCameraVideoRef}
+                  id="mobile-camera-video"
+                  type="file"
+                  accept="video/*"
+                  capture="environment"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
+
+                {/* Mobile Gallery Input */}
+                <input
+                  ref={mobileGalleryRef}
+                  id="mobile-gallery"
+                  type="file"
+                  accept="image/*,video/*,image/gif"
                   style={{ display: 'none' }}
                   multiple
                   onChange={handleFileChange}
@@ -1368,11 +1203,31 @@ const ProChat = ({
                   {/* File Attachment Button */}
                   <button 
                     className="input-btn attachment-btn"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={isMobileDevice() ? handleMobileUploadMenu : () => fileInputRef.current?.click()}
                     type="button"
-                    title="Attach files"
+                    title={isMobileDevice() ? "Upload menu" : "Attach files"}
                   >
                     📎
+                  </button>
+
+                  {/* GIF Picker Button */}
+                  <button 
+                    className="input-btn gif-btn"
+                    onClick={handleShowGifPicker}
+                    type="button"
+                    title="Choose GIF"
+                  >
+                    🎭
+                  </button>
+
+                  {/* GIF Upload Button (secondary) */}
+                  <button 
+                    className="input-btn gif-upload-btn"
+                    onClick={handleGifUpload}
+                    type="button"
+                    title="Upload your own GIF"
+                  >
+                    📤
                   </button>
 
                   {/* Voice Input Button */}
@@ -1489,6 +1344,21 @@ const ProChat = ({
           userId={profileModal.userId}
           username={profileModal.username}
           onClose={handleCloseProfileModal}
+        />
+      )}
+
+      {/* Settings Modal */}
+      {settingsModal.open && (
+        <SettingsModal 
+          isOpen={settingsModal.open}
+          onClose={handleCloseSettingsModal}
+          initialSection={settingsModal.section}
+          user={user}
+          onSaveProfile={(updatedUser) => {
+            // Handle profile updates if needed
+            console.log('Profile updated:', updatedUser);
+          }}
+          darkMode={darkMode}
         />
       )}
 
@@ -1617,13 +1487,11 @@ const ProChat = ({
         </div>
       )}
 
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-        user={user}
-        onSaveProfile={handleSaveProfile}
-        darkMode={darkMode}
+      {/* GIF Picker Modal */}
+      <GifPicker
+        isOpen={showGifPicker}
+        onGifSelect={handleGifSelect}
+        onClose={handleCloseGifPicker}
       />
     </div>
   );

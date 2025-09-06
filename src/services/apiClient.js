@@ -549,7 +549,7 @@ export const authService = {
   removeAvatar: async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await API.delete('/upload/avatar', {
+      const response = await API.delete('/users/avatar', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
