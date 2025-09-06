@@ -2782,15 +2782,16 @@
   animation-delay: 0.4s;
 }
 
-/* Enhanced hover effects */
+/* UNIFIED Enhanced hover effects - NO CONFLICTS */
 .pro-message-blurb:hover {
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(-2px) scale(1.01);
   box-shadow: 
     0 8px 25px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(99, 102, 241, 0.1),
     0 0 20px rgba(99, 102, 241, 0.05);
   z-index: 10;
   position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Enhanced hover with color-based glow */
@@ -2933,35 +2934,28 @@
   animation-duration: 0.4s;
 }
 
-.pro-message-blurb[data-length="short"]:hover {
-  animation: shortMessageBounce 0.6s ease-in-out;
-}
+/* REMOVED CONFLICTING HOVER ANIMATION */
 
 .pro-message-blurb[data-length="medium"] {
   animation-duration: 0.5s;
 }
 
-.pro-message-blurb[data-length="medium"]:hover {
-  animation: mediumMessageWave 0.8s ease-in-out;
-}
+/* REMOVED CONFLICTING HOVER ANIMATION */
 
 .pro-message-blurb[data-length="long"] {
   animation-duration: 0.6s;
 }
 
-.pro-message-blurb[data-length="long"]:hover {
-  animation: longMessagePulse 1s ease-in-out;
-}
+/* REMOVED CONFLICTING HOVER ANIMATION */
 
 .pro-message-blurb[data-length="very-long"] {
   animation-duration: 0.7s;
 }
 
-.pro-message-blurb[data-length="very-long"]:hover {
-  animation: veryLongMessageFlow 1.2s ease-in-out;
-}
+/* REMOVED CONFLICTING HOVER ANIMATION */
 
-/* Length-specific hover animations */
+/* Length-specific hover animations - DISABLED due to conflicts */
+/*
 @keyframes shortMessageBounce {
   0%, 100% { transform: translateY(0) scale(1); }
   50% { transform: translateY(-5px) scale(1.05); }
@@ -2994,6 +2988,7 @@
     transform: scale(1.01);
   }
 }
+*/
 
 /* Message appearing from different directions based on index */
 .pro-message-blurb:nth-child(even).message-entering {
@@ -8040,17 +8035,7 @@
   overflow: hidden; /* Keep animation contained within this pseudo-element */
 }
 
-.pro-message-blurb:hover::before {
-  animation-duration: 3s;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(64, 128, 255, 0.08) 25%,
-    rgba(64, 128, 255, 0.12) 50%,
-    rgba(64, 128, 255, 0.08) 75%,
-    transparent 100%
-  );
-}
+/* REMOVED DUPLICATE - .pro-message-blurb:hover::before - CAUSING CONFLICTS */
 
 .pro-message-blurb > * {
   position: relative;
@@ -8613,34 +8598,9 @@
   }
 }
 
-/* Enhanced card animations on hover */
-.pro-message-blurb:hover {
-  transform: translateY(-2px); /* Removed scale to prevent cutoff */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    0 8px 25px rgba(64, 128, 255, 0.1),
-    0 4px 12px rgba(0, 0, 0, 0.05);
-}
+/* REMOVED DUPLICATE - Enhanced card animations on hover - MOVED TO MAIN SECTION */
 
-.pro-message-blurb:hover::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(64, 128, 255, 0.02) 0%,
-    transparent 50%,
-    rgba(64, 128, 255, 0.02) 100%
-  );
-  border-radius: inherit;
-  animation: hoverGlow 2s ease infinite alternate;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden; /* Ensure this doesn't overflow */
-}
+/* REMOVED DUPLICATE - .pro-message-blurb:hover::after - CAUSING CONFLICTS */
 
 @keyframes hoverGlow {
   0% {
