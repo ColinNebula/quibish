@@ -89,7 +89,7 @@ const GifPicker = ({ onGifSelect, onClose, isOpen }) => {
   const getCurrentGifs = () => {
     const gifs = sampleGifs[selectedCategory] || sampleGifs.trending;
     if (searchTerm) {
-      return gifs.filter(gif =>
+      return gifs.filter(gif => 
         gif.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
