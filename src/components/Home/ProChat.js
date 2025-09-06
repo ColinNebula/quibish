@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import UserProfileModal from '../UserProfile';
 import VideoCall from './VideoCall';
 import SettingsModal from './SettingsModal';
+import VideoDebugTest from '../Debug/VideoDebugTest';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -27,6 +28,14 @@ const ProChat = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  
+  // Check for debug mode
+  const isDebugMode = new URLSearchParams(window.location.search).get('debug') === 'video';
+  
+  // If debug mode is enabled, show debug component
+  if (isDebugMode) {
+    return <VideoDebugTest />;
+  }
   
   // Enhanced input state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -260,8 +269,176 @@ const ProChat = ({
             console.error('Error reading file:', error);
           };
           reader.readAsDataURL(file);
+        } else if (file.type.startsWith('video/')) {
+          // Handle video files with improved error handling and compatibility
+          console.log('Processing video file:', file.name, file.type, 'Size:', file.size);
+          
+          // Check file size first (browser limitation)
+          if (file.size > 100 * 1024 * 1024) { // 100MB limit for browser processing
+            console.warn('Video file too large for browser processing');
+            const videoUrl = URL.createObjectURL(file);
+            const newMessage = {
+              id: Date.now() + Math.random(),
+              text: `🎥 ${file.name} (Large file - limited preview)`,
+              user: user,
+              timestamp: new Date().toISOString(),
+              reactions: [],
+              file: {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                url: videoUrl
+              }
+            };
+            setChatMessages(prev => [...prev, newMessage]);
+            setTimeout(() => scrollToBottom(), 100);
+            return;
+          }
+          
+          const videoUrl = URL.createObjectURL(file);
+          console.log('Object URL created:', videoUrl);
+          
+          // Use a more compatible approach
+          const video = document.createElement('video');
+          video.muted = true; // Important for autoplay policies
+          video.playsInline = true; // Important for mobile
+          
+          let metadataLoaded = false;
+          let timeoutId;
+          
+          const cleanup = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            video.removeEventListener('loadedmetadata', onMetadataLoaded);
+            video.removeEventListener('error', onVideoError);
+            video.removeEventListener('seeked', onSeeked);
+          };
+          
+          const createFallbackMessage = (reason = '') => {
+            console.log('Creating fallback message:', reason);
+            const newMessage = {
+              id: Date.now() + Math.random(),
+              text: `🎥 ${file.name}${reason ? ` (${reason})` : ''}`,
+              user: user,
+              timestamp: new Date().toISOString(),
+              reactions: [],
+              file: {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                url: videoUrl
+              }
+            };
+            setChatMessages(prev => [...prev, newMessage]);
+            setTimeout(() => scrollToBottom(), 100);
+            cleanup();
+          };
+          
+          const onMetadataLoaded = () => {
+            if (metadataLoaded) return;
+            metadataLoaded = true;
+            
+            console.log('Video metadata loaded:', {
+              duration: video.duration,
+              width: video.videoWidth,
+              height: video.videoHeight,
+              readyState: video.readyState
+            });
+            
+            if (!video.duration || isNaN(video.duration)) {
+              createFallbackMessage('No duration info');
+              return;
+            }
+            
+            // Try to get thumbnail
+            try {
+              const seekTime = Math.min(video.duration * 0.1, 3); // 10% into video or 3 seconds max
+              console.log('Seeking to time:', seekTime);
+              video.currentTime = seekTime;
+            } catch (error) {
+              console.error('Error seeking video:', error);
+              createFallbackMessage('Thumbnail generation failed');
+            }
+          };
+          
+          const onSeeked = () => {
+            console.log('Video seeked, attempting thumbnail generation...');
+            try {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              
+              // Set canvas size based on video or use defaults
+              const targetWidth = 320;
+              const targetHeight = 180;
+              canvas.width = targetWidth;
+              canvas.height = targetHeight;
+              
+              // Try to draw the video frame
+              ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+              
+              // Test if canvas has content
+              const imageData = ctx.getImageData(0, 0, 1, 1);
+              if (imageData.data.every(val => val === 0)) {
+                console.warn('Canvas is empty, video frame not captured');
+                createFallbackMessage('Thumbnail capture failed');
+                return;
+              }
+              
+              const thumbnail = canvas.toDataURL('image/jpeg', 0.8);
+              const duration = Math.round(video.duration);
+              const durationFormatted = `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`;
+              
+              console.log('Successfully created video message with thumbnail');
+              
+              const newMessage = {
+                id: Date.now() + Math.random(),
+                text: `🎥 ${file.name} (${durationFormatted})`,
+                user: user,
+                timestamp: new Date().toISOString(),
+                reactions: [],
+                file: {
+                  name: file.name,
+                  size: file.size,
+                  type: file.type,
+                  url: videoUrl,
+                  thumbnail: thumbnail,
+                  duration: durationFormatted,
+                  width: video.videoWidth,
+                  height: video.videoHeight
+                }
+              };
+              setChatMessages(prev => [...prev, newMessage]);
+              setTimeout(() => scrollToBottom(), 100);
+              cleanup();
+              
+            } catch (error) {
+              console.error('Error generating thumbnail:', error);
+              createFallbackMessage('Thumbnail error');
+            }
+          };
+          
+          const onVideoError = (error) => {
+            console.error('Video loading error:', error, video.error);
+            createFallbackMessage('Loading failed');
+          };
+          
+          // Set up event listeners
+          video.addEventListener('loadedmetadata', onMetadataLoaded);
+          video.addEventListener('error', onVideoError);
+          video.addEventListener('seeked', onSeeked);
+          
+          // Set timeout for loading
+          timeoutId = setTimeout(() => {
+            if (!metadataLoaded) {
+              console.warn('Video loading timeout');
+              createFallbackMessage('Loading timeout');
+            }
+          }, 10000); // 10 second timeout
+          
+          // Start loading
+          console.log('Setting video source...');
+          video.src = videoUrl;
         } else {
-          // Handle non-image files
+          // Handle other file types
           const newMessage = {
             id: Date.now() + Math.random(),
             text: `📎 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
@@ -1029,6 +1206,60 @@ const ProChat = ({
                         />
                         <div className="image-caption">
                           {message.file.name} ({(message.file.size / 1024).toFixed(1)} KB)
+                        </div>
+                      </div>
+                    ) : message.file.type.startsWith('video/') ? (
+                      <div className="video-attachment">
+                        <div className="video-container">
+                          <video 
+                            src={message.file.url}
+                            poster={message.file.thumbnail}
+                            controls
+                            preload="metadata"
+                            muted={false}
+                            playsInline
+                            webkit-playsinline="true"
+                            onError={(e) => {
+                              console.error('Video playback error:', e);
+                              console.log('Video details:', {
+                                src: message.file.url,
+                                type: message.file.type,
+                                poster: message.file.thumbnail ? 'Has thumbnail' : 'No thumbnail',
+                                error: e.target.error
+                              });
+                            }}
+                            onLoadedMetadata={(e) => {
+                              console.log('Video loaded for playback:', {
+                                duration: e.target.duration,
+                                videoWidth: e.target.videoWidth,
+                                videoHeight: e.target.videoHeight,
+                                readyState: e.target.readyState
+                              });
+                            }}
+                            onLoadStart={() => console.log('Video load started')}
+                            onCanPlay={() => console.log('Video can play')}
+                            onCanPlayThrough={() => console.log('Video can play through')}
+                            style={{
+                              maxWidth: '400px',
+                              maxHeight: '300px',
+                              borderRadius: '8px',
+                              width: '100%',
+                              height: 'auto'
+                            }}
+                          >
+                            <source src={message.file.url} type={message.file.type} />
+                            Your browser does not support the video tag.
+                          </video>
+                          {message.file.duration && (
+                            <div className="video-duration-badge">
+                              {message.file.duration}
+                            </div>
+                          )}
+                        </div>
+                        <div className="video-caption">
+                          🎥 {message.file.name} 
+                          {message.file.size && ` (${(message.file.size / (1024 * 1024)).toFixed(1)} MB)`}
+                          {message.file.width && message.file.height && ` • ${message.file.width}×${message.file.height}`}
                         </div>
                       </div>
                     ) : (

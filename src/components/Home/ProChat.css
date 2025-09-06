@@ -2594,6 +2594,57 @@
   transform: translateY(-1px);
 }
 
+/* Video Attachment Styling */
+.video-attachment {
+  margin-top: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.video-attachment:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.video-container {
+  position: relative;
+  display: block;
+}
+
+.video-container video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #000;
+}
+
+.video-duration-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+.video-caption {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .voice-icon {
   font-size: 20px;
   width: 36px;
