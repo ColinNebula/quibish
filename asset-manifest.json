@@ -1,0 +1,12 @@
+{
+  "files": {
+    "main.css": "/quibish/static/css/main.093b93df.css",
+    "main.js": "/quibish/static/js/main.d61e788d.js",
+    "static/js/206.86ac5b8e.chunk.js": "/quibish/static/js/206.86ac5b8e.chunk.js",
+    "index.html": "/quibish/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.093b93df.css",
+    "static/js/main.d61e788d.js"
+  ]
+}
