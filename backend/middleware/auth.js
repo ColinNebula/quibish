@@ -33,5 +33,6 @@ const authenticateToken = (req, res, next) => {
 };
 
 module.exports = {
-  authenticateToken
+  authenticateToken,
+  verifyToken: authenticateToken // Alias for consistency
 };
