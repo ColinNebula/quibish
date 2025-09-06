@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import UserProfileModal from '../UserProfile/UserProfileModal';
 import SettingsModal from './SettingsModal';
 import VideoCall from './VideoCall';
+import GifPicker from '../GifPicker/GifPicker';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -42,9 +43,28 @@ const ProChat = ({
     images: [],
     isLoading: false
   });
+
+  // GIF picker state
+  const [showGifPicker, setShowGifPicker] = useState(false);
+
+  // Mobile upload menu state
+  const [showMobileUploadMenu, setShowMobileUploadMenu] = useState(false);
+
+  // Upload progress state
+  // eslint-disable-next-line no-unused-vars
+  const [uploadProgress, setUploadProgress] = useState({
+    isUploading: false,
+    fileName: '',
+    progress: 0,
+    fileSize: 0,
+    uploadedSize: 0
+  });
   
   // Refs
   const fileInputRef = useRef(null);
+  const mobileCameraPhotoRef = useRef(null);
+  const mobileCameraVideoRef = useRef(null);
+  const mobileGalleryRef = useRef(null);
   const recordingTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -96,6 +116,23 @@ const ProChat = ({
       user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
       timestamp: new Date(Date.now() - 60000).toISOString(),
       reactions: []
+    },
+    {
+      id: 6,
+      text: "🎭 GIF: celebration.gif",
+      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 30000).toISOString(),
+      reactions: [
+        { emoji: '🎉', count: 3, userId: 'user1' },
+        { emoji: '🔥', count: 2, userId: 'user3' }
+      ],
+      file: {
+        name: 'celebration.gif',
+        size: 245760, // 240 KB
+        type: 'image/gif',
+        url: 'https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif',
+        isGif: true
+      }
     }
   ]);
   
@@ -158,6 +195,7 @@ const ProChat = ({
     // Use absolute value and modulo to get a color index
     const colorIndex = Math.abs(hash) % messageColors.length;
     return messageColors[colorIndex];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, colorRefresh, messageColors]);
   
   // Auto-scroll to bottom function
@@ -206,66 +244,266 @@ const ProChat = ({
   }, []);
 
   // Enhanced input functions
-  const handleFileChange = useCallback((e) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      Array.from(files).forEach(file => {
-        console.log('Processing file:', file.name, file.type); // Debug log
-        
-        if (file.type.startsWith('image/')) {
-          // Handle image files
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            console.log('Image loaded, creating message with URL:', event.target.result?.substring(0, 50) + '...'); // Debug log
-            const newMessage = {
-              id: Date.now() + Math.random(),
-              text: `� ${file.name}`,
-              user: user,
-              timestamp: new Date().toISOString(),
-              reactions: [],
-              file: {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                url: event.target.result
-              }
-            };
-            setChatMessages(prev => [...prev, newMessage]);
-            // Auto-scroll to the new message
-            setTimeout(() => {
-              scrollToBottom();
-            }, 100);
-          };
-          reader.onerror = (error) => {
-            console.error('Error reading file:', error);
-          };
-          reader.readAsDataURL(file);
+
+  // Detect mobile device
+  const isMobileDevice = useCallback(() => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }, []);
+
+  // Image compression utility for mobile uploads
+  const compressImage = useCallback((file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) => {
+    return new Promise((resolve) => {
+      // If file is already small enough, return as-is
+      if (file.size <= 1024 * 1024) { // 1MB
+        resolve(file);
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate new dimensions
+        let { width, height } = img;
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
         } else {
-          // Handle non-image files
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  }, []);
+
+  // Enhanced file handler with progress and compression
+  const handleEnhancedFileUpload = useCallback(async (files) => {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Show upload progress
+      setUploadProgress({
+        isUploading: true,
+        fileName: file.name,
+        progress: 0,
+        fileSize: file.size,
+        uploadedSize: 0
+      });
+
+      try {
+        let processedFile = file;
+
+        // Compress images if on mobile and file is large
+        if (file.type.startsWith('image/') && file.type !== 'image/gif' && isMobileDevice()) {
+          processedFile = await compressImage(file);
+          console.log(`Compressed ${file.name} from ${(file.size / 1024).toFixed(1)}KB to ${(processedFile.size / 1024).toFixed(1)}KB`);
+        }
+
+        // Simulate upload progress
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            const newProgress = Math.min(prev.progress + 10, 90);
+            return {
+              ...prev,
+              progress: newProgress,
+              uploadedSize: Math.floor((newProgress / 100) * prev.fileSize)
+            };
+          });
+        }, 100);
+
+        // Process file
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          clearInterval(progressInterval);
+          
+          // Complete upload progress
+          setUploadProgress(prev => ({
+            ...prev,
+            progress: 100,
+            uploadedSize: prev.fileSize
+          }));
+
+          // Determine appropriate emoji and message text
+          let emoji = '📎';
+          let messageText = processedFile.name;
+          
+          if (processedFile.type.startsWith('image/')) {
+            if (processedFile.type === 'image/gif') {
+              emoji = '🎭';
+              messageText = `GIF: ${processedFile.name}`;
+            } else if (processedFile.type === 'image/png') {
+              emoji = '🖼️';
+            } else if (processedFile.type === 'image/jpeg' || processedFile.type === 'image/jpg') {
+              emoji = '📸';
+            } else {
+              emoji = '📷';
+            }
+          } else if (processedFile.type.startsWith('video/')) {
+            emoji = '🎥';
+            messageText = `Video: ${processedFile.name}`;
+          }
+
           const newMessage = {
             id: Date.now() + Math.random(),
-            text: `📎 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
+            text: `${emoji} ${messageText}`,
             user: user,
             timestamp: new Date().toISOString(),
             reactions: [],
             file: {
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              url: URL.createObjectURL(file) // Create object URL for download
+              name: processedFile.name,
+              size: processedFile.size,
+              type: processedFile.type,
+              url: event.target.result,
+              isGif: processedFile.type === 'image/gif',
+              originalSize: file.size !== processedFile.size ? file.size : undefined
             }
           };
+
           setChatMessages(prev => [...prev, newMessage]);
-          // Auto-scroll to the new message
+          
+          // Hide progress after a short delay
           setTimeout(() => {
+            setUploadProgress({
+              isUploading: false,
+              fileName: '',
+              progress: 0,
+              fileSize: 0,
+              uploadedSize: 0
+            });
             scrollToBottom();
-          }, 100);
-        }
-      });
-      
-      // Reset file input
-      e.target.value = '';
+          }, 1000);
+        };
+
+        reader.onerror = () => {
+          clearInterval(progressInterval);
+          setUploadProgress(prev => ({ ...prev, isUploading: false }));
+          console.error('Error reading file:', processedFile.name);
+        };
+
+        reader.readAsDataURL(processedFile);
+
+      } catch (error) {
+        console.error('Error processing file:', error);
+        setUploadProgress(prev => ({ ...prev, isUploading: false }));
+      }
     }
+  }, [user, scrollToBottom, compressImage, isMobileDevice]);
+
+  // Update file change handler to use enhanced upload
+  const handleFileChange = useCallback((e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleEnhancedFileUpload(Array.from(files));
+      e.target.value = ''; // Reset input
+    }
+  }, [handleEnhancedFileUpload]);
+
+  // Specific GIF upload handler
+  const handleGifUpload = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/gif';
+    input.multiple = true;
+    input.onchange = (e) => {
+      // eslint-disable-next-line no-use-before-define
+      handleFileChange(e);
+    };
+    input.click();
+    // eslint-disable-next-line no-use-before-define
+  }, [handleFileChange]);
+
+  // Mobile upload handlers
+  const handleMobileCameraPhoto = useCallback(() => {
+    mobileCameraPhotoRef.current?.click();
+  }, []);
+
+  const handleMobileCameraVideo = useCallback(() => {
+    mobileCameraVideoRef.current?.click();
+  }, []);
+
+  const handleMobileGallery = useCallback(() => {
+    mobileGalleryRef.current?.click();
+  }, []);
+
+  // Mobile upload menu handler
+  const handleMobileUploadMenu = useCallback(() => {
+    setShowMobileUploadMenu(true);
+    setShowEmojiPicker(false);
+    setShowGifPicker(false);
+  }, []);
+
+  const handleMobileUploadAction = useCallback((action) => {
+    setShowMobileUploadMenu(false);
+    switch (action) {
+      case 'camera-photo':
+        handleMobileCameraPhoto();
+        break;
+      case 'camera-video':
+        handleMobileCameraVideo();
+        break;
+      case 'gallery':
+        handleMobileGallery();
+        break;
+      case 'files':
+        fileInputRef.current?.click();
+        break;
+      case 'gif':
+        setShowGifPicker(true);
+        break;
+      default:
+        break;
+    }
+  }, [handleMobileCameraPhoto, handleMobileCameraVideo, handleMobileGallery]);
+
+  // GIF picker handlers
+  const handleShowGifPicker = useCallback(() => {
+    setShowGifPicker(true);
+    setShowEmojiPicker(false);
+  }, []);
+
+  const handleGifSelect = useCallback((gifData) => {
+    const newMessage = {
+      id: Date.now() + Math.random(),
+      text: `🎭 GIF: ${gifData.name}`,
+      user: user,
+      timestamp: new Date().toISOString(),
+      reactions: [],
+      file: {
+        name: gifData.name,
+        size: gifData.size,
+        type: gifData.type,
+        url: gifData.url,
+        isGif: true
+      }
+    };
+    setChatMessages(prev => [...prev, newMessage]);
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
   }, [user, scrollToBottom]);
 
   // Handle adding reactions to messages
@@ -1011,25 +1249,34 @@ const ProChat = ({
                 {message.file && (
                   <div className="message-attachment">
                     {message.file.type.startsWith('image/') ? (
-                      <div className="image-attachment">
+                      <div className={`image-attachment ${message.file.isGif ? 'gif-attachment' : ''}`}>
+                        {message.file.isGif && (
+                          <div className="gif-badge">
+                            <span className="gif-label">GIF</span>
+                          </div>
+                        )}
                         <img 
                           src={message.file.url} 
                           alt={message.file.name}
-                          className="attached-image"
+                          className={`attached-image ${message.file.isGif ? 'gif-image' : ''}`}
                           onClick={() => {
                             // Open image in lightbox/modal
                             handleOpenLightbox(message.file.url, message.file.name);
                           }}
                           style={{
-                            maxWidth: '300px',
-                            maxHeight: '200px',
+                            maxWidth: message.file.isGif ? '350px' : '300px',
+                            maxHeight: message.file.isGif ? '250px' : '200px',
                             borderRadius: '8px',
                             cursor: 'pointer',
                             objectFit: 'cover'
                           }}
                         />
-                        <div className="image-caption">
+                        <div className={`image-caption ${message.file.isGif ? 'gif-caption' : ''}`}>
+                          {message.file.isGif && '🎭 '}
                           {message.file.name} ({(message.file.size / 1024).toFixed(1)} KB)
+                          {message.file.isGif && (
+                            <span className="gif-info"> • Animated GIF</span>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -1127,7 +1374,40 @@ const ProChat = ({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                  accept="image/*,image/gif,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                  style={{ display: 'none' }}
+                  multiple
+                  onChange={handleFileChange}
+                />
+
+                {/* Mobile Camera Input - Photo */}
+                <input
+                  ref={mobileCameraPhotoRef}
+                  id="mobile-camera-photo"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
+
+                {/* Mobile Camera Input - Video */}
+                <input
+                  ref={mobileCameraVideoRef}
+                  id="mobile-camera-video"
+                  type="file"
+                  accept="video/*"
+                  capture="environment"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
+
+                {/* Mobile Gallery Input */}
+                <input
+                  ref={mobileGalleryRef}
+                  id="mobile-gallery"
+                  type="file"
+                  accept="image/*,video/*,image/gif"
                   style={{ display: 'none' }}
                   multiple
                   onChange={handleFileChange}
@@ -1138,11 +1418,31 @@ const ProChat = ({
                   {/* File Attachment Button */}
                   <button 
                     className="input-btn attachment-btn"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={isMobileDevice() ? handleMobileUploadMenu : () => fileInputRef.current?.click()}
                     type="button"
-                    title="Attach files"
+                    title={isMobileDevice() ? "Upload menu" : "Attach files"}
                   >
                     📎
+                  </button>
+
+                  {/* GIF Picker Button */}
+                  <button 
+                    className="input-btn gif-btn"
+                    onClick={handleShowGifPicker}
+                    type="button"
+                    title="Choose GIF"
+                  >
+                    🎭
+                  </button>
+
+                  {/* GIF Upload Button (secondary) */}
+                  <button 
+                    className="input-btn gif-upload-btn"
+                    onClick={handleGifUpload}
+                    type="button"
+                    title="Upload your own GIF"
+                  >
+                    📤
                   </button>
 
                   {/* Voice Input Button */}
@@ -1397,6 +1697,72 @@ const ProChat = ({
             </div>
             <div className="pro-lightbox-help">
               <span>ESC to close • Arrow keys to navigate • Mouse wheel to zoom • Drag to pan • Double-click to zoom</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GIF Picker */}
+      <GifPicker
+        isOpen={showGifPicker}
+        onGifSelect={handleGifSelect}
+        onClose={() => setShowGifPicker(false)}
+      />
+
+      {/* Mobile Upload Menu */}
+      {showMobileUploadMenu && (
+        <div className="mobile-upload-overlay">
+          <div className="mobile-upload-menu">
+            <div className="mobile-upload-header">
+              <h3>Upload Options</h3>
+              <button 
+                className="close-btn" 
+                onClick={() => setShowMobileUploadMenu(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="mobile-upload-options">
+              <button 
+                className="mobile-upload-option"
+                onClick={() => handleMobileUploadAction('camera-photo')}
+              >
+                <span className="option-icon">📷</span>
+                <span className="option-text">Take Photo</span>
+                <span className="option-desc">Use camera to take a photo</span>
+              </button>
+              <button 
+                className="mobile-upload-option"
+                onClick={() => handleMobileUploadAction('camera-video')}
+              >
+                <span className="option-icon">🎥</span>
+                <span className="option-text">Record Video</span>
+                <span className="option-desc">Use camera to record video</span>
+              </button>
+              <button 
+                className="mobile-upload-option"
+                onClick={() => handleMobileUploadAction('gallery')}
+              >
+                <span className="option-icon">🖼️</span>
+                <span className="option-text">Photo Library</span>
+                <span className="option-desc">Choose from your photos/videos</span>
+              </button>
+              <button 
+                className="mobile-upload-option"
+                onClick={() => handleMobileUploadAction('gif')}
+              >
+                <span className="option-icon">🎭</span>
+                <span className="option-text">GIF Library</span>
+                <span className="option-desc">Choose from GIF collection</span>
+              </button>
+              <button 
+                className="mobile-upload-option"
+                onClick={() => handleMobileUploadAction('files')}
+              >
+                <span className="option-icon">📁</span>
+                <span className="option-text">Browse Files</span>
+                <span className="option-desc">Upload documents and other files</span>
+              </button>
             </div>
           </div>
         </div>
