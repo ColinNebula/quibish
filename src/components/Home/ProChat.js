@@ -177,8 +177,35 @@ const ProChat = ({
     scrollToBottom();
   }, [chatMessages, scrollToBottom]);
 
+  // Auto-collapse sidebar on mobile screens (but preserve content)
+  useEffect(() => {
+    const handleResize = () => {
+      // Only auto-collapse on very small screens (like phone portrait)
+      if (window.innerWidth <= 480) {
+        setSidebarCollapsed(true);
+      } else if (window.innerWidth > 768) {
+        // Auto-expand on larger screens
+        setSidebarCollapsed(false);
+      }
+      // For tablets (481-768px), maintain current state
+    };
+
+    // Set initial state
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
+  }, []);
+
+  // Close sidebar when clicking outside on mobile
+  const handleOverlayClick = useCallback(() => {
+    if (window.innerWidth <= 480) {
+      setSidebarCollapsed(true);
+    }
   }, []);
 
   const handleConversationSelect = useCallback((conversationId) => {
@@ -978,6 +1005,15 @@ const ProChat = ({
           </div>
         </div>
       </div>
+
+      {/* Sidebar Backdrop Overlay for Mobile */}
+      {!sidebarCollapsed && (
+        <div 
+          className="pro-sidebar-overlay" 
+          onClick={handleOverlayClick}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Main Chat Area */}
       <div className={`pro-main ${sidebarCollapsed ? 'collapsed' : ''}`}>

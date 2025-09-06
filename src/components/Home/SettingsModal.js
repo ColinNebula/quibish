@@ -80,10 +80,16 @@ const SettingsModal = ({
     }, 150);
   }, [activeSection]);
 
-  // Close on escape key
+  // Close on escape key and manage body scroll
   useEffect(() => {
+    if (!isOpen) return;
+    
+    // Lock body scroll when modal is open
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         if (hasUnsavedChanges) {
           const confirmClose = window.confirm('You have unsaved changes. Are you sure you want to close?');
           if (!confirmClose) return;
@@ -94,11 +100,29 @@ const SettingsModal = ({
     };
     
     window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    
+    return () => {
+      // Restore body scroll when modal closes
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
   }, [isOpen, hasUnsavedChanges, onClose]);
 
   // Handle close with unsaved changes warning
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback((e) => {
+    // Only close if clicking the overlay, not its children
+    if (e && e.target !== e.currentTarget) return;
+    
+    if (hasUnsavedChanges) {
+      const confirmClose = window.confirm('You have unsaved changes. Are you sure you want to close?');
+      if (!confirmClose) return;
+    }
+    setHasUnsavedChanges(false);
+    onClose();
+  }, [hasUnsavedChanges, onClose]);
+
+  // Force close (for close button)
+  const handleForceClose = useCallback(() => {
     if (hasUnsavedChanges) {
       const confirmClose = window.confirm('You have unsaved changes. Are you sure you want to close?');
       if (!confirmClose) return;
@@ -268,7 +292,7 @@ const SettingsModal = ({
                   <span>Unsaved</span>
                 </div>
               )}
-              <button className="settings-modal-close" onClick={handleClose} aria-label="Close settings">
+              <button className="settings-modal-close" onClick={handleForceClose} aria-label="Close settings">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
