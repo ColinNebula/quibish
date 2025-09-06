@@ -2754,8 +2754,10 @@
 
 /* Base animation setup for all messages */
 .pro-message-blurb {
+  position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;
+  z-index: 1;
 }
 
 /* Message entrance animations */
@@ -2804,8 +2806,10 @@
     rgba(168, 85, 247, 0.1) 50%,
     rgba(236, 72, 153, 0.1) 100%);
   border-radius: inherit;
-  z-index: -1;
+  z-index: 0;
+  opacity: 0.8;
   animation: borderGlow 2s ease-in-out infinite;
+  pointer-events: none;
 }
 
 @keyframes borderGlow {
@@ -2824,6 +2828,8 @@
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.95) 0%, 
     rgba(248, 250, 252, 0.95) 100%);
+  position: relative;
+  z-index: 2;
 }
 
 /* Avatar animation enhancement */
@@ -2855,7 +2861,7 @@
 /* Text content animations */
 .pro-message-blurb .message-text-content {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   transition: all 0.3s ease;
 }
 
@@ -2885,9 +2891,6 @@
 }
 
 /* Sparkle effect on hover */
-.pro-message-blurb:hover::before {
-  animation: sparkleRotate 3s linear infinite;
-}
 
 @keyframes sparkleRotate {
   0% { 
