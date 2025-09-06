@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import UserProfileModal from '../UserProfile';
+import UserProfileModal from '../UserProfile/UserProfileModal';
 import VideoCall from './VideoCall';
 import PropTypes from 'prop-types';
 
