@@ -13,6 +13,7 @@ const userRoutes = require('./routes/users');
 const messageRoutes = require('./routes/messages');
 const healthRoutes = require('./routes/health');
 const uploadRoutes = require('./routes/upload');
+const twoFactorRoutes = require('./routes/twoFactor');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -35,6 +36,14 @@ global.inMemoryStorage = {
           avatar: null,
           status: 'online',
           role: 'user',
+          twoFactorAuth: {
+            enabled: false,
+            secret: null,
+            method: 'totp',
+            backupCodes: [],
+            lastUsed: null,
+            setupAt: null
+          },
           createdAt: new Date()
         },
         {
@@ -46,6 +55,14 @@ global.inMemoryStorage = {
           avatar: null,
           status: 'online',
           role: 'user',
+          twoFactorAuth: {
+            enabled: false,
+            secret: null,
+            method: 'totp',
+            backupCodes: [],
+            lastUsed: null,
+            setupAt: null
+          },
           createdAt: new Date()
         },
         {
@@ -57,17 +74,33 @@ global.inMemoryStorage = {
           avatar: null,
           status: 'online',
           role: 'user',
+          twoFactorAuth: {
+            enabled: false,
+            secret: null,
+            method: 'totp',
+            backupCodes: [],
+            lastUsed: null,
+            setupAt: null
+          },
           createdAt: new Date()
         },
         {
           id: '4',
           username: 'admin',
           email: 'admin@quibish.com',
-          password: bcrypt.hashSync('admin', 10),
+          password: bcrypt.hashSync('dhG6-x5T@-pM&C-$qZ1', 10),
           name: 'Admin User',
           avatar: null,
           status: 'online',
           role: 'admin',
+          twoFactorAuth: {
+            enabled: false,
+            secret: null,
+            method: 'totp',
+            backupCodes: [],
+            lastUsed: null,
+            setupAt: null
+          },
           createdAt: new Date()
         }
       ];
@@ -215,6 +248,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // API routes (health routes already mounted above)
 app.use('/api/auth', authRoutes);
+app.use('/api/auth/2fa', twoFactorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);

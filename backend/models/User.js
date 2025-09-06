@@ -51,6 +51,18 @@ const userSchema = new Schema({
   role: { type: String, default: 'user' },
   isOnline: { type: Boolean, default: false },
   lastActive: { type: Date, default: Date.now },
+  twoFactorAuth: {
+    enabled: { type: Boolean, default: false },
+    secret: { type: String, default: null },
+    method: { type: String, enum: ['totp', 'sms'], default: 'totp' },
+    backupCodes: [{ 
+      code: { type: String, required: true },
+      used: { type: Boolean, default: false },
+      createdAt: { type: Date, default: Date.now }
+    }],
+    lastUsed: { type: Date, default: null },
+    setupAt: { type: Date, default: null }
+  },
   userMedia: {
     photos: [{ 
       url: String, 

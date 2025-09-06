@@ -87,7 +87,7 @@ const initDB = () => {
 
 // API utility functions
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken') || localStorage.getItem('token');
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -95,9 +95,10 @@ const getAuthHeaders = () => {
 };
 
 const getFileUploadHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken') || localStorage.getItem('token');
   return {
     'Authorization': `Bearer ${token}`
+    // Note: Don't set Content-Type for file uploads, let browser set it with boundary
   };
 };
 
@@ -159,7 +160,7 @@ const uploadAvatarAPI = async (file) => {
   const formData = new FormData();
   formData.append('avatar', file);
   
-  return await apiCall('/upload/avatar', {
+  return await apiCall('/users/avatar', {
     method: 'POST',
     headers: getFileUploadHeaders(),
     body: formData
@@ -785,6 +786,89 @@ const fetchUserViewHistory = async (userId) => {
   }
 };
 
+/**
+ * Fetch user analytics by user ID
+ * @param {string} userId - The ID of the user
+ * @param {string} timeframe - The timeframe for analytics ('week', 'month', 'quarter', 'year')
+ * @returns {Promise<Object>} - User analytics data
+ */
+const fetchUserAnalytics = async (userId, timeframe = 'month') => {
+  try {
+    // In a real application, this would call the API
+    // For now, returning mock data based on timeframe
+    await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate API delay
+    
+    const baseMultiplier = timeframe === 'week' ? 0.3 : timeframe === 'month' ? 1 : timeframe === 'quarter' ? 3 : 12;
+    
+    return {
+      profileViews: Math.floor((200 + Math.random() * 800) * baseMultiplier),
+      monthlyViews: Math.floor((50 + Math.random() * 200) * baseMultiplier),
+      topViewers: Array.from({ length: 5 }, (_, i) => ({
+        id: `viewer_${i}`,
+        name: `Viewer ${i + 1}`,
+        avatar: `https://randomuser.me/api/portraits/${i % 2 === 0 ? 'men' : 'women'}/${i + 5}.jpg`,
+        viewCount: Math.floor((5 + Math.random() * 20) * baseMultiplier)
+      })).sort((a, b) => b.viewCount - a.viewCount),
+      uploadStats: {
+        totalUploads: Math.floor((10 + Math.random() * 40) * baseMultiplier),
+        totalViews: Math.floor((500 + Math.random() * 2000) * baseMultiplier),
+        totalLikes: Math.floor((100 + Math.random() * 500) * baseMultiplier),
+        mostViewedContent: {
+          name: 'summer_vacation_2024.jpg',
+          views: Math.floor((50 + Math.random() * 200) * baseMultiplier),
+          thumbnail: `https://picsum.photos/seed/${userId}_popular/300/300`
+        }
+      },
+      activityStats: {
+        messagesCount: Math.floor((100 + Math.random() * 400) * baseMultiplier),
+        reactionsGiven: Math.floor((50 + Math.random() * 200) * baseMultiplier),
+        connectionsCount: Math.floor(20 + Math.random() * 80),
+        joinDate: new Date(Date.now() - (Math.random() * 31536000000)).toISOString() // Random date within last year
+      }
+    };
+  } catch (error) {
+    console.error(`Error fetching analytics for user ${userId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Update user profile via API or local storage
+ * @param {string} userId - The ID of the user
+ * @param {Object} profileData - The profile data to update
+ * @returns {Promise<Object>} - Updated profile data
+ */
+const updateUserProfile = async (userId, profileData) => {
+  try {
+    // Try to update via API first
+    if (localStorage.getItem('token')) {
+      try {
+        const result = await updateUserProfileAPI(profileData);
+        // Also update local storage with the result
+        await saveUserProfile({ ...result, userId });
+        return result;
+      } catch (apiError) {
+        console.warn('API update failed, falling back to local storage:', apiError);
+      }
+    }
+    
+    // Fallback to local storage update
+    const currentProfile = await getUserProfile(profileData.username || userId);
+    const updatedProfile = {
+      ...currentProfile,
+      ...profileData,
+      userId,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    await saveUserProfile(updatedProfile);
+    return updatedProfile;
+  } catch (error) {
+    console.error(`Error updating profile for user ${userId}:`, error);
+    throw error;
+  }
+};
+
 // Export the service functions
 const userDataService = {
   // Profile management (local storage)
@@ -809,6 +893,8 @@ const userDataService = {
   fetchUserProfile,
   fetchUserUploads,
   fetchUserViewHistory,
+  fetchUserAnalytics,
+  updateUserProfile,
   
   // Backend API integration
   api: {
@@ -818,7 +904,150 @@ const userDataService = {
     uploadAvatar: uploadAvatarAPI,
     uploadMedia: uploadMediaAPI,
     getUserMedia: getUserMediaAPI,
-    deleteMedia: deleteMediaAPI
+    deleteMedia: deleteMediaAPI,
+    
+    // Two-Factor Authentication API methods
+    setupTwoFactor: async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/setup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to setup 2FA');
+        return data;
+      } catch (error) {
+        console.error('Setup 2FA error:', error);
+        throw error;
+      }
+    },
+    
+    verifyTwoFactorSetup: async (verificationToken) => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/verify-setup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ token: verificationToken })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to verify 2FA setup');
+        return data;
+      } catch (error) {
+        console.error('Verify 2FA setup error:', error);
+        throw error;
+      }
+    },
+    
+    verifyTwoFactor: async (userId, verificationToken, isBackupCode = false) => {
+      try {
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            userId, 
+            token: verificationToken, 
+            isBackupCode 
+          })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to verify 2FA');
+        return data;
+      } catch (error) {
+        console.error('Verify 2FA error:', error);
+        throw error;
+      }
+    },
+    
+    completeTwoFactorLogin: async (userId) => {
+      try {
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/complete-login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ userId })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to complete login');
+        return data;
+      } catch (error) {
+        console.error('Complete 2FA login error:', error);
+        throw error;
+      }
+    },
+    
+    disableTwoFactor: async (password, twoFactorToken) => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/disable`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ password, token: twoFactorToken })
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to disable 2FA');
+        return data;
+      } catch (error) {
+        console.error('Disable 2FA error:', error);
+        throw error;
+      }
+    },
+    
+    getTwoFactorStatus: async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/status`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to get 2FA status');
+        return data;
+      } catch (error) {
+        console.error('Get 2FA status error:', error);
+        throw error;
+      }
+    },
+    
+    generateBackupCodes: async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_CONFIG.baseURL}/auth/2fa/backup-codes`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to generate backup codes');
+        return data;
+      } catch (error) {
+        console.error('Generate backup codes error:', error);
+        throw error;
+      }
+    }
   },
   
   // Utility functions

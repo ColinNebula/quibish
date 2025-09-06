@@ -1,8 +1,106 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+
+// Configure multer for avatar uploads
+const avatarStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, '../uploads/avatars');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename with user ID and timestamp
+    const extension = path.extname(file.originalname);
+    const filename = `avatar_${req.user.id}_${Date.now()}${extension}`;
+    cb(null, filename);
+  }
+});
+
+const avatarUpload = multer({
+  storage: avatarStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Check if file is an image
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
+
+// POST /api/users/avatar - upload user avatar
+router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No file uploaded'
+      });
+    }
+
+    const user = await User.findOne({ id: req.user.id });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Delete old avatar file if it exists and is not the default
+    if (user.avatar && !user.avatar.includes('default-avatar')) {
+      const oldAvatarPath = path.join(__dirname, '../uploads/avatars', path.basename(user.avatar));
+      if (fs.existsSync(oldAvatarPath)) {
+        try {
+          fs.unlinkSync(oldAvatarPath);
+        } catch (err) {
+          console.warn('Could not delete old avatar:', err.message);
+        }
+      }
+    }
+
+    // Update user avatar URL
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    user.avatar = avatarUrl;
+    user.updatedAt = new Date();
+    
+    await user.save();
+
+    res.json({
+      success: true,
+      avatarUrl: avatarUrl,
+      message: 'Avatar uploaded successfully'
+    });
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    
+    // Clean up uploaded file if there was an error
+    if (req.file && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.warn('Could not clean up uploaded file:', unlinkError.message);
+      }
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload avatar'
+    });
+  }
+});
 
 // GET /api/users/profile - get current user profile
 router.get('/profile', authenticateToken, async (req, res) => {

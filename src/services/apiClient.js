@@ -532,7 +532,7 @@ export const authService = {
       formData.append('avatar', file);
       
       const token = localStorage.getItem('authToken');
-      const response = await API.post('/upload/avatar', formData, {
+      const response = await API.post('/users/avatar', formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -724,7 +724,7 @@ export const authService = {
       try {
         const fallbackStorage = remember ? sessionStorage : localStorage;
         fallbackStorage.setItem('user', JSON.stringify(user));
-        fallbackStorage.setItem('token', token);
+        fallbackStorage.setItem('authToken', token);
         console.log('User session saved in fallback storage');
         return true;
       } catch (fallbackError) {

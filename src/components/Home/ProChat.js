@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import UserProfileModal from '../UserProfile';
 import VideoCall from './VideoCall';
+import SettingsModal from './SettingsModal';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -25,7 +26,160 @@ const ProChat = ({
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   
+  // Enhanced input state
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [lightboxModal, setLightboxModal] = useState({ 
+    open: false, 
+    imageUrl: null, 
+    imageName: null,
+    zoom: 1,
+    pan: { x: 0, y: 0 },
+    isDragging: false,
+    currentIndex: 0,
+    images: [],
+    isLoading: false
+  });
+  
+  // Refs
+  const fileInputRef = useRef(null);
+  const recordingTimerRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+
+  // Chat messages state - moved here to be available for useEffect
+  const [chatMessages, setChatMessages] = useState([
+    {
+      id: 1,
+      text: "Hey! 👋",
+      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 300000).toISOString(),
+      reactions: [
+        { emoji: '👋', count: 2, userId: 'user2' },
+        { emoji: '😊', count: 1, userId: 'user3' }
+      ]
+    },
+    {
+      id: 2,
+      text: "Welcome to the enhanced chat application! This is a medium-length message to demonstrate how the message cards scale based on content length.",
+      user: { id: 'system', name: 'System', avatar: null },
+      timestamp: new Date(Date.now() - 240000).toISOString(),
+      reactions: [
+        { emoji: '👍', count: 3, userId: 'user1' },
+        { emoji: '🎉', count: 1, userId: 'user2' }
+      ]
+    },
+    {
+      id: 3,
+      text: "This is a longer message that demonstrates the chat application's ability to handle various message lengths gracefully. The card automatically adjusts its height and the content flows naturally within the card boundaries.",
+      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 180000).toISOString(),
+      reactions: [
+        { emoji: '💯', count: 1, userId: 'user1' }
+      ]
+    },
+    {
+      id: 4,
+      text: "Short one! 😄",
+      user: { id: 'user3', name: 'Charlie Brown', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 120000).toISOString(),
+      reactions: [
+        { emoji: '😄', count: 2, userId: 'user1' },
+        { emoji: '❤️', count: 1, userId: 'user2' }
+      ]
+    },
+    {
+      id: 5,
+      text: "The chat interface supports real-time messaging, file uploads, voice messages, and many other features that make communication seamless and enjoyable.",
+      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 60000).toISOString(),
+      reactions: []
+    }
+  ]);
+  
+  // Reaction system state - moved here to be available for functions
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  
+  // Color palette for user message cards
+  const messageColors = [
+    { id: 'blue', bg: '#e3f2fd', border: '#2196f3', accent: '#1976d2' }, // Blue
+    { id: 'purple', bg: '#f3e5f5', border: '#9c27b0', accent: '#7b1fa2' }, // Purple
+    { id: 'green', bg: '#e8f5e8', border: '#4caf50', accent: '#388e3c' }, // Green
+    { id: 'orange', bg: '#fff3e0', border: '#ff9800', accent: '#f57c00' }, // Orange
+    { id: 'pink', bg: '#fce4ec', border: '#e91e63', accent: '#c2185b' }, // Pink
+    { id: 'teal', bg: '#e0f2f1', border: '#009688', accent: '#00695c' }, // Teal
+    { id: 'lightgreen', bg: '#f1f8e9', border: '#8bc34a', accent: '#689f38' }, // Light Green
+    { id: 'indigo', bg: '#e8eaf6', border: '#3f51b5', accent: '#303f9f' }, // Indigo
+    { id: 'amber', bg: '#fff8e1', border: '#ffc107', accent: '#ffa000' }, // Amber
+    { id: 'peach', bg: '#ffeaa7', border: '#fdcb6e', accent: '#e17055' }, // Peach
+    { id: 'coral', bg: '#fab1a0', border: '#e17055', accent: '#d63031' }, // Coral
+    { id: 'lavender', bg: '#a29bfe', border: '#6c5ce7', accent: '#5f3dc4' }, // Lavender
+  ];
+
+  // Listen for color preference changes
+  const [colorRefresh, setColorRefresh] = useState(0);
+  useEffect(() => {
+    const handleColorChange = () => {
+      setColorRefresh(prev => prev + 1); // Force re-render with new colors
+    };
+    
+    window.addEventListener('userColorChanged', handleColorChange);
+    return () => window.removeEventListener('userColorChanged', handleColorChange);
+  }, []);
+
+  // Function to get consistent color for a user
+  const getUserColor = useCallback((userId) => {
+    if (!userId) return messageColors[0]; // Default color for system messages
+    
+    // First check for saved user preference
+    const savedPreference = localStorage.getItem('userColorPreference');
+    if (savedPreference && savedPreference !== 'auto' && userId === user?.id) {
+      const preferredColor = messageColors.find(color => color.id === savedPreference);
+      if (preferredColor) {
+        return preferredColor;
+      }
+    }
+    
+    // If it's the current user and they have a preference in their profile
+    if (userId === user?.id && user?.preferences?.messageColor && user.preferences.messageColor !== 'auto') {
+      const preferredColor = messageColors.find(color => color.id === user.preferences.messageColor);
+      if (preferredColor) {
+        return preferredColor;
+      }
+    }
+    
+    // Fall back to hash-based color assignment
+    let hash = 0;
+    for (let i = 0; i < userId.length; i++) {
+      const char = userId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    
+    // Use absolute value and modulo to get a color index
+    const colorIndex = Math.abs(hash) % messageColors.length;
+    return messageColors[colorIndex];
+  }, [user, colorRefresh, messageColors]);
+
+  // Auto-scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }
+  }, []);
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, scrollToBottom]);
+
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
   }, []);
@@ -53,8 +207,183 @@ const ProChat = ({
   }, []);
 
   const handleQuickSettings = useCallback(() => {
-    // TODO: Implement quick settings
-    console.log('Quick settings clicked');
+    setShowSettingsModal(true);
+  }, []);
+
+  const handleSaveProfile = useCallback(async (updatedUser) => {
+    try {
+      // In a real app, this would make an API call to update the user profile
+      console.log('Saving user profile:', updatedUser);
+      
+      // For now, we'll just update the local user object if there's a parent handler
+      // The color preference is already saved to localStorage in ColorPreferences component
+      
+      return true; // Indicate success
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      throw error;
+    }
+  }, []);
+
+  // Enhanced input functions
+  const handleFileChange = useCallback((e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach(file => {
+        console.log('Processing file:', file.name, file.type); // Debug log
+        
+        if (file.type.startsWith('image/')) {
+          // Handle image files
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            console.log('Image loaded, creating message with URL:', event.target.result?.substring(0, 50) + '...'); // Debug log
+            const newMessage = {
+              id: Date.now() + Math.random(),
+              text: `� ${file.name}`,
+              user: user,
+              timestamp: new Date().toISOString(),
+              reactions: [],
+              file: {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                url: event.target.result
+              }
+            };
+            setChatMessages(prev => [...prev, newMessage]);
+            // Auto-scroll to the new message
+            setTimeout(() => {
+              scrollToBottom();
+            }, 100);
+          };
+          reader.onerror = (error) => {
+            console.error('Error reading file:', error);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          // Handle non-image files
+          const newMessage = {
+            id: Date.now() + Math.random(),
+            text: `📎 ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
+            user: user,
+            timestamp: new Date().toISOString(),
+            reactions: [],
+            file: {
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              url: URL.createObjectURL(file) // Create object URL for download
+            }
+          };
+          setChatMessages(prev => [...prev, newMessage]);
+          // Auto-scroll to the new message
+          setTimeout(() => {
+            scrollToBottom();
+          }, 100);
+        }
+      });
+      
+      // Reset file input
+      e.target.value = '';
+    }
+  }, [user, scrollToBottom]);
+
+  // Handle adding reactions to messages
+  const handleReactionAdd = useCallback((messageId, emoji) => {
+    setChatMessages(prev => prev.map(message => {
+      if (message.id === messageId) {
+        const existingReaction = message.reactions.find(r => r.emoji === emoji);
+        if (existingReaction) {
+          // Toggle existing reaction
+          return {
+            ...message,
+            reactions: message.reactions.map(r => 
+              r.emoji === emoji 
+                ? { ...r, count: r.count + 1 }
+                : r
+            )
+          };
+        } else {
+          // Add new reaction
+          return {
+            ...message,
+            reactions: [...message.reactions, { emoji, count: 1, userId: user.id }]
+          };
+        }
+      }
+      return message;
+    }));
+  }, [user.id]);
+
+  const handleEmojiClick = useCallback((emoji) => {
+    if (selectedMessageId) {
+      // Add reaction to specific message
+      handleReactionAdd(selectedMessageId, emoji);
+    } else {
+      // Add emoji to input text (existing functionality)
+      setInputText(prev => prev + emoji);
+    }
+    setShowEmojiPicker(false);
+    setShowReactionPicker(false);
+    setSelectedMessageId(null);
+  }, [selectedMessageId, handleReactionAdd]);
+
+  // Handle message click for reactions
+  const handleMessageClick = useCallback((messageId) => {
+    setSelectedMessageId(messageId);
+    setShowReactionPicker(true);
+    setShowEmojiPicker(false);
+  }, []);
+
+  const formatRecordingTime = useCallback((seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  const startRecording = useCallback(() => {
+    setIsRecording(true);
+    setRecordingDuration(0);
+    setShowEmojiPicker(false);
+    
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingDuration(prev => prev + 1);
+    }, 1000);
+    
+    console.log('Voice recording started');
+  }, []);
+
+  const stopRecording = useCallback((send = true) => {
+    clearInterval(recordingTimerRef.current);
+    setIsRecording(false);
+    
+    if (send && recordingDuration > 0) {
+      const newMessage = {
+        id: Date.now(),
+        text: `🎤 Voice message (${formatRecordingTime(recordingDuration)})`,
+        user: user,
+        timestamp: new Date().toISOString(),
+        reactions: [],
+        type: 'voice',
+        duration: recordingDuration
+      };
+      setChatMessages(prev => [...prev, newMessage]);
+      // Auto-scroll to the new message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+    
+    setRecordingDuration(0);
+  }, [recordingDuration, formatRecordingTime, user, scrollToBottom]);
+
+  // Cleanup recording timer
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    };
   }, []);
 
   // Filter conversations based on search and active filter
@@ -95,43 +424,7 @@ const ProChat = ({
     return conversations.reduce((total, conv) => total + conv.unreadCount, 0);
   }, [conversations]);
 
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 1,
-      text: "Hey! 👋",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 300000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 2,
-      text: "Welcome to the enhanced chat application! This is a medium-length message to demonstrate how the message cards scale based on content length.",
-      user: { id: 'system', name: 'System', avatar: null },
-      timestamp: new Date(Date.now() - 240000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 3,
-      text: "This is a much longer message that demonstrates how the chat interface adapts to longer content. When users write extensive messages with detailed explanations, multiple sentences, and comprehensive information, the message cards automatically expand to accommodate the content while maintaining readability and visual hierarchy. The system intelligently adjusts padding, background styling, and maximum width to ensure optimal presentation regardless of message length.",
-      user: { id: 'user2', name: 'Bob Wilson', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 180000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 4,
-      text: "Perfect! 🎉",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 120000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 5,
-      text: "This is an extremely long message that serves as an example of how the chat interface handles very extensive content. In real-world applications, users often need to share detailed information, comprehensive explanations, lengthy instructions, or elaborate discussions that span multiple paragraphs. The dynamic scaling system ensures that such messages are presented in an optimal format with appropriate styling, enhanced readability features, distinctive visual treatment, and proper spacing that maintains the overall chat flow while giving long-form content the space and attention it deserves. The system automatically detects content length and applies the most suitable styling approach to ensure excellent user experience across all message types and lengths.",
-      user: { id: 'user3', name: 'Charlie Brown', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 60000).toISOString(),
-      reactions: []
-    }
-  ]);
+  // chatMessages state already defined above
 
   const [inputText, setInputText] = useState('');
 
@@ -143,6 +436,8 @@ const ProChat = ({
     minimized: false, 
     audioOnly: false 
   });
+  
+  // Reaction system state already defined above
 
   // Message input handlers
   const handleSendMessage = useCallback(() => {
@@ -158,7 +453,12 @@ const ProChat = ({
     
     setChatMessages(prev => [...prev, newMessage]);
     setInputText('');
-  }, [inputText, user]);
+    
+    // Auto-scroll to the new message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+  }, [inputText, user, scrollToBottom]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -175,6 +475,190 @@ const ProChat = ({
   const handleCloseProfileModal = useCallback(() => {
     setProfileModal({ open: false, userId: null, username: null });
   }, []);
+
+  // Lightbox handlers
+  const getAllImages = useCallback(() => {
+    return chatMessages
+      .filter(msg => msg.file && msg.file.type.startsWith('image/'))
+      .map(msg => ({
+        url: msg.file.url,
+        name: msg.file.name,
+        messageId: msg.id
+      }));
+  }, [chatMessages]);
+
+  const handleOpenLightbox = useCallback((imageUrl, imageName) => {
+    const allImages = getAllImages();
+    const currentIndex = allImages.findIndex(img => img.url === imageUrl);
+    
+    setLightboxModal({ 
+      open: true, 
+      imageUrl, 
+      imageName,
+      zoom: 1,
+      pan: { x: 0, y: 0 },
+      isDragging: false,
+      currentIndex: Math.max(0, currentIndex),
+      images: allImages
+    });
+  }, [getAllImages]);
+
+  const handleNavigateImage = useCallback((direction) => {
+    setLightboxModal(prev => {
+      const newIndex = direction === 'next' 
+        ? Math.min(prev.currentIndex + 1, prev.images.length - 1)
+        : Math.max(prev.currentIndex - 1, 0);
+      
+      const newImage = prev.images[newIndex];
+      if (newImage) {
+        return {
+          ...prev,
+          currentIndex: newIndex,
+          imageUrl: newImage.url,
+          imageName: newImage.name,
+          zoom: 1,
+          pan: { x: 0, y: 0 },
+          isLoading: true
+        };
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleImageLoad = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      isLoading: false
+    }));
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      isLoading: false
+    }));
+  }, []);
+
+  const handleCloseLightbox = useCallback(() => {
+    setLightboxModal({ 
+      open: false, 
+      imageUrl: null, 
+      imageName: null,
+      zoom: 1,
+      pan: { x: 0, y: 0 },
+      isDragging: false,
+      currentIndex: 0,
+      images: [],
+      isLoading: false
+    });
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      zoom: Math.min(prev.zoom * 1.2, 3)
+    }));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      zoom: Math.max(prev.zoom / 1.2, 0.5),
+      pan: prev.zoom <= 1 ? { x: 0, y: 0 } : prev.pan
+    }));
+  }, []);
+
+  const handleZoomReset = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      zoom: 1,
+      pan: { x: 0, y: 0 }
+    }));
+  }, []);
+
+  const handleMouseDown = useCallback((e) => {
+    if (lightboxModal.zoom > 1) {
+      setLightboxModal(prev => ({
+        ...prev,
+        isDragging: true
+      }));
+    }
+  }, [lightboxModal.zoom]);
+
+  const handleMouseMove = useCallback((e) => {
+    if (lightboxModal.isDragging && lightboxModal.zoom > 1) {
+      setLightboxModal(prev => ({
+        ...prev,
+        pan: {
+          x: prev.pan.x + e.movementX,
+          y: prev.pan.y + e.movementY
+        }
+      }));
+    }
+  }, [lightboxModal.isDragging, lightboxModal.zoom]);
+
+  const handleMouseUp = useCallback(() => {
+    setLightboxModal(prev => ({
+      ...prev,
+      isDragging: false
+    }));
+  }, []);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (lightboxModal.open) {
+        switch (event.key) {
+          case 'Escape':
+            handleCloseLightbox();
+            break;
+          case 'ArrowLeft':
+            event.preventDefault();
+            handleNavigateImage('prev');
+            break;
+          case 'ArrowRight':
+            event.preventDefault();
+            handleNavigateImage('next');
+            break;
+          case '+':
+          case '=':
+            event.preventDefault();
+            handleZoomIn();
+            break;
+          case '-':
+            event.preventDefault();
+            handleZoomOut();
+            break;
+          case '0':
+            event.preventDefault();
+            handleZoomReset();
+            break;
+          default:
+            // No action for other keys
+            break;
+        }
+      }
+    };
+
+    const handleWheel = (event) => {
+      if (lightboxModal.open) {
+        event.preventDefault();
+        if (event.deltaY < 0) {
+          handleZoomIn();
+        } else {
+          handleZoomOut();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('wheel', handleWheel);
+    };
+  }, [lightboxModal.open, handleCloseLightbox, handleNavigateImage, handleZoomIn, handleZoomOut, handleZoomReset]);
 
   // Video call handlers
   const handleEndCall = useCallback(() => {
@@ -248,8 +732,9 @@ const ProChat = ({
           )}
           {!sidebarCollapsed && (
             <div className="user-actions">
-              <button className="action-btn" title="Settings">⚙️</button>
-              <button className="action-btn" title="Profile">👤</button>
+              <button className="action-btn" title="Settings" onClick={handleQuickSettings}>⚙️</button>
+              <button className="action-btn" title="Profile" onClick={() => handleViewUserProfile(user?.id, user?.name)}>👤</button>
+              <button className="action-btn logout-btn" title="Logout / Disconnect" onClick={onLogout}>🚪</button>
             </div>
           )}
         </div>
@@ -317,41 +802,56 @@ const ProChat = ({
             {!sidebarCollapsed && <h4>Recent Conversations</h4>}
           </div>
           <div className="conversations-list">
-            {filteredConversations.map(conv => (
-              <div 
-                key={conv.id} 
-                className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
-                onClick={() => handleConversationSelect(conv.id)}
-              >
-                <div className="conversation-avatar">
-                  <img 
-                    src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
-                    alt={conv.name}
-                  />
-                  {conv.isOnline && <div className="online-dot"></div>}
-                  {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
-                </div>
-                {!sidebarCollapsed && (
-                  <div className="conversation-details">
-                    <div className="conversation-header">
-                      <h5 className="conversation-name">{conv.name}</h5>
-                      <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
-                    </div>
-                    <div className="conversation-preview">
-                      <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
-                      <div className="conversation-meta">
-                        {conv.isPinned && <span className="pin-icon">📌</span>}
-                        {conv.isMuted && <span className="mute-icon">🔇</span>}
-                        {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
+            {filteredConversations.map(conv => {
+              const convColor = getUserColor(conv.id.toString());
+              return (
+                <div 
+                  key={conv.id} 
+                  className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
+                  onClick={() => handleConversationSelect(conv.id)}
+                  style={{
+                    borderLeftColor: selectedConversation === conv.id ? convColor.border : 'transparent',
+                    borderLeftWidth: '3px',
+                    borderLeftStyle: 'solid'
+                  }}
+                >
+                  <div className="conversation-avatar">
+                    <img 
+                      src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
+                      alt={conv.name}
+                    />
+                    {conv.isOnline && <div className="online-dot"></div>}
+                    {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
+                  </div>
+                  {!sidebarCollapsed && (
+                    <div className="conversation-details">
+                      <div className="conversation-header">
+                        <h5 
+                          className="conversation-name"
+                          style={{ 
+                            color: selectedConversation === conv.id ? convColor.accent : 'inherit'
+                          }}
+                        >
+                          {conv.name}
+                        </h5>
+                        <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
                       </div>
-                    </div>
+                      <div className="conversation-preview">
+                        <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
+                        <div className="conversation-meta">
+                          {conv.isPinned && <span className="pin-icon">📌</span>}
+                          {conv.isMuted && <span className="mute-icon">🔇</span>}
+                          {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
+                        </div>
+                      </div>
                   </div>
                 )}
                 {sidebarCollapsed && conv.unreadCount > 0 && (
                   <div className="collapsed-unread-indicator"></div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -426,12 +926,15 @@ const ProChat = ({
             <button onClick={onToggleDarkMode} className="action-btn theme-toggle" title="Toggle theme">
               {darkMode ? '☀️' : '🌙'}
             </button>
+            <button onClick={onLogout} className="action-btn logout-btn" title="Logout / Disconnect">
+              🚪
+            </button>
             <div className="header-menu">
               <button className="action-btn menu-btn" title="More options">
                 ⋮
               </button>
               <div className="dropdown-menu">
-                <button className="dropdown-item">Settings</button>
+                <button className="dropdown-item" onClick={handleQuickSettings}>Settings</button>
                 <button className="dropdown-item">Export Chat</button>
                 <button className="dropdown-item">Mute Notifications</button>
                 <hr className="dropdown-divider" />
@@ -444,53 +947,308 @@ const ProChat = ({
         </div>
 
         {/* Messages */}
-        <div className="pro-message-list">
-          {chatMessages.map(message => (
-            <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
-              <div className="message-avatar">
-                <img 
-                  src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
-                  alt={message.user.name}
-                  onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
-                />
-              </div>
-              <div className="message-content">
-                <div className="message-header">
-                  <span className="user-name">{message.user.name}</span>
-                  <span className="timestamp">
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </span>
+        <div className="pro-message-list" ref={messagesContainerRef}>
+          {chatMessages.map(message => {
+            const userColor = getUserColor(message.user.id);
+            return (
+              <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
+                <div className="message-avatar">
+                  <img 
+                    src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
+                    alt={message.user.name}
+                    onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
+                    style={{
+                      border: `2px solid ${userColor.border}`,
+                      borderRadius: '50%'
+                    }}
+                  />
                 </div>
                 <div 
-                  className="message-text" 
-                  data-length={getMessageLengthCategory(message.text)}
+                  className="message-content" 
+                  onClick={() => handleMessageClick(message.id)}
+                  style={{
+                    backgroundColor: userColor.bg,
+                    borderLeftColor: userColor.border,
+                    borderLeftWidth: '3px',
+                    borderLeftStyle: 'solid'
+                  }}
                 >
-                  {message.text}
+                  <div className="message-header">
+                    <div className="user-info">
+                      <div 
+                        className="user-color-dot"
+                        style={{
+                          backgroundColor: userColor.border,
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          display: 'inline-block',
+                          marginRight: '6px'
+                        }}
+                      ></div>
+                      <span 
+                        className="user-name"
+                        style={{ color: userColor.accent }}
+                      >
+                        {message.user.name}
+                      </span>
+                    </div>
+                    <span className="timestamp">
+                      {new Date(message.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  
+                  {/* Message Text */}
+                  <div 
+                    className="message-text" 
+                    data-length={getMessageLengthCategory(message.text)}
+                  >
+                    {message.text}
+                </div>
+                
+                {/* File/Image Display */}
+                {message.file && (
+                  <div className="message-attachment">
+                    {message.file.type.startsWith('image/') ? (
+                      <div className="image-attachment">
+                        <img 
+                          src={message.file.url} 
+                          alt={message.file.name}
+                          className="attached-image"
+                          onClick={() => {
+                            // Open image in lightbox/modal
+                            handleOpenLightbox(message.file.url, message.file.name);
+                          }}
+                          style={{
+                            maxWidth: '300px',
+                            maxHeight: '200px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            objectFit: 'cover'
+                          }}
+                        />
+                        <div className="image-caption">
+                          {message.file.name} ({(message.file.size / 1024).toFixed(1)} KB)
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="file-attachment">
+                        <div className="file-icon">📄</div>
+                        <div className="file-info">
+                          <div className="file-name">{message.file.name}</div>
+                          <div className="file-size">{(message.file.size / 1024).toFixed(1)} KB</div>
+                        </div>
+                        <button 
+                          className="download-btn"
+                          onClick={() => {
+                            // Trigger download
+                            const link = document.createElement('a');
+                            link.href = message.file.url;
+                            link.download = message.file.name;
+                            link.click();
+                          }}
+                        >
+                          Download
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Voice Message Display */}
+                {message.type === 'voice' && (
+                  <div className="voice-message">
+                    <div className="voice-icon">🎤</div>
+                    <div className="voice-duration">{formatRecordingTime(message.duration || 0)}</div>
+                    <button className="play-voice-btn">▶️</button>
+                  </div>
+                )}
+                
+                {/* Reactions Display */}
+                {message.reactions && message.reactions.length > 0 && (
+                  <div className="message-reactions">
+                    {message.reactions.map((reaction, index) => (
+                      <button
+                        key={index}
+                        className="reaction-bubble"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReactionAdd(message.id, reaction.emoji);
+                        }}
+                      >
+                        <span className="reaction-emoji">{reaction.emoji}</span>
+                        <span className="reaction-count">{reaction.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+          })}
+          {/* Auto-scroll anchor element */}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Enhanced Input Area with Voice and File Upload */}
+        <div className="pro-chat-input-container enhanced">
+          <div className="input-wrapper enhanced">
+            {/* Voice Recording Interface */}
+            {isRecording && (
+              <div className="recording-interface">
+                <div className="recording-indicator">
+                  <div className="recording-dot"></div>
+                  <span>Recording... {formatRecordingTime(recordingDuration)}</span>
+                </div>
+                <div className="recording-actions">
+                  <button 
+                    className="recording-btn cancel"
+                    onClick={() => stopRecording(false)}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="recording-btn send"
+                    onClick={() => stopRecording(true)}
+                    type="button"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Regular Input Interface */}
+            {!isRecording && (
+              <>
+                {/* File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                  style={{ display: 'none' }}
+                  multiple
+                  onChange={handleFileChange}
+                />
+
+                {/* Input Actions - Left Side */}
+                <div className="input-actions left">
+                  {/* File Attachment Button */}
+                  <button 
+                    className="input-btn attachment-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    type="button"
+                    title="Attach files"
+                  >
+                    📎
+                  </button>
+
+                  {/* Voice Input Button */}
+                  <button 
+                    className="input-btn voice-btn"
+                    onClick={startRecording}
+                    type="button"
+                    title="Voice message"
+                  >
+                    🎤
+                  </button>
+
+                  {/* Emoji Button */}
+                  <button 
+                    className="input-btn emoji-btn"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    type="button"
+                    title="Add emoji"
+                  >
+                    😊
+                  </button>
+                </div>
+
+                {/* Text Input */}
+                <textarea
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  className="message-input enhanced"
+                  rows="1"
+                />
+
+                {/* Send Button */}
+                <button 
+                  onClick={handleSendMessage}
+                  disabled={!inputText.trim()}
+                  className="send-button enhanced"
+                  type="button"
+                >
+                  <span className="send-icon">➤</span>
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Emoji Picker */}
+          {showEmojiPicker && (
+            <div className="emoji-picker-overlay" onClick={() => setShowEmojiPicker(false)}>
+              <div className="emoji-picker" onClick={(e) => e.stopPropagation()}>
+                <div className="emoji-picker-header">
+                  <span>Choose an emoji</span>
+                  <button 
+                    className="emoji-close"
+                    onClick={() => setShowEmojiPicker(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="emoji-grid">
+                  {['😊', '😂', '🥰', '😍', '🤔', '😮', '😅', '👍', '👎', '❤️', '🔥', '🎉', '👏', '🙌', '✨', '💯', '🚀', '💡', '🎯', '✅', '❌', '⚡', '🌟', '🤝', '💪', '🌈', '☀️', '🌙', '⭐', '💝', '🎈'].map(emoji => (
+                    <button
+                      key={emoji}
+                      className="emoji-item"
+                      onClick={() => handleEmojiClick(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Input Area */}
-        <div className="pro-chat-input-container">
-          <div className="input-wrapper">
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              className="message-input"
-              rows="1"
-            />
-            <button 
-              onClick={handleSendMessage}
-              disabled={!inputText.trim()}
-              className="send-button"
-            >
-              Send
-            </button>
-          </div>
+          {/* Reaction Picker for Messages */}
+          {showReactionPicker && selectedMessageId && (
+            <div className="emoji-picker-overlay" onClick={() => {
+              setShowReactionPicker(false);
+              setSelectedMessageId(null);
+            }}>
+              <div className="emoji-picker" onClick={(e) => e.stopPropagation()}>
+                <div className="emoji-picker-header">
+                  <span>Add Reaction</span>
+                  <button 
+                    className="emoji-close"
+                    onClick={() => {
+                      setShowReactionPicker(false);
+                      setSelectedMessageId(null);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="emoji-grid">
+                  {['😊', '😂', '🥰', '😍', '🤔', '😮', '😅', '👍', '👎', '❤️', '🔥', '🎉', '👏', '🙌', '✨', '💯', '🚀', '💡', '🎯', '✅', '❌', '⚡', '🌟', '🤝', '💪', '🌈', '☀️', '🌙', '⭐', '💝', '🎈'].map(emoji => (
+                    <button
+                      key={emoji}
+                      className="emoji-item"
+                      onClick={() => handleEmojiClick(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -502,6 +1260,140 @@ const ProChat = ({
           onClose={handleCloseProfileModal}
         />
       )}
+
+      {/* Lightbox Modal */}
+      {lightboxModal.open && (
+        <div className="pro-lightbox-overlay" onClick={handleCloseLightbox}>
+          <div className="pro-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <div className="pro-lightbox-header">
+              <div className="pro-lightbox-info">
+                <div className="pro-lightbox-title">{lightboxModal.imageName}</div>
+                <div className="pro-lightbox-meta">
+                  <span className="pro-lightbox-zoom-info">
+                    {Math.round(lightboxModal.zoom * 100)}%
+                  </span>
+                  {lightboxModal.images.length > 1 && (
+                    <span className="pro-lightbox-counter">
+                      {lightboxModal.currentIndex + 1} / {lightboxModal.images.length}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="pro-lightbox-controls">
+                <button 
+                  className="pro-lightbox-btn" 
+                  onClick={handleZoomOut}
+                  title="Zoom out (-)"
+                >
+                  🔍-
+                </button>
+                <button 
+                  className="pro-lightbox-btn" 
+                  onClick={handleZoomReset}
+                  title="Reset zoom (0)"
+                >
+                  ⊡
+                </button>
+                <button 
+                  className="pro-lightbox-btn" 
+                  onClick={handleZoomIn}
+                  title="Zoom in (+)"
+                >
+                  🔍+
+                </button>
+                <button 
+                  className="pro-lightbox-btn pro-lightbox-download" 
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = lightboxModal.imageUrl;
+                    link.download = lightboxModal.imageName;
+                    link.click();
+                  }}
+                  title="Download image"
+                >
+                  💾
+                </button>
+              </div>
+              <button className="pro-lightbox-close" onClick={handleCloseLightbox}>
+                ×
+              </button>
+            </div>
+            <div 
+              className="pro-lightbox-image-container"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              style={{
+                cursor: lightboxModal.zoom > 1 ? (lightboxModal.isDragging ? 'grabbing' : 'grab') : 'zoom-in'
+              }}
+            >
+              {/* Navigation Arrows */}
+              {lightboxModal.images.length > 1 && (
+                <>
+                  <button 
+                    className="pro-lightbox-nav pro-lightbox-nav-prev"
+                    onClick={() => handleNavigateImage('prev')}
+                    disabled={lightboxModal.currentIndex === 0}
+                    title="Previous image (←)"
+                  >
+                    ←
+                  </button>
+                  <button 
+                    className="pro-lightbox-nav pro-lightbox-nav-next"
+                    onClick={() => handleNavigateImage('next')}
+                    disabled={lightboxModal.currentIndex === lightboxModal.images.length - 1}
+                    title="Next image (→)"
+                  >
+                    →
+                  </button>
+                </>
+              )}
+              
+              <img 
+                src={lightboxModal.imageUrl} 
+                alt={lightboxModal.imageName}
+                className={`pro-lightbox-image ${lightboxModal.isLoading ? 'loading' : 'loaded'}`}
+                style={{
+                  transform: `scale(${lightboxModal.zoom}) translate(${lightboxModal.pan.x}px, ${lightboxModal.pan.y}px)`,
+                  transition: lightboxModal.isDragging ? 'none' : 'transform 0.3s ease',
+                  opacity: lightboxModal.isLoading ? 0.3 : 1
+                }}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                onDoubleClick={() => {
+                  if (lightboxModal.zoom === 1) {
+                    handleZoomIn();
+                  } else {
+                    handleZoomReset();
+                  }
+                }}
+                draggable={false}
+              />
+              
+              {/* Loading Indicator */}
+              {lightboxModal.isLoading && (
+                <div className="pro-lightbox-loading">
+                  <div className="pro-lightbox-spinner"></div>
+                  <span>Loading...</span>
+                </div>
+              )}
+            </div>
+            <div className="pro-lightbox-help">
+              <span>ESC to close • Arrow keys to navigate • Mouse wheel to zoom • Drag to pan • Double-click to zoom</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        user={user}
+        onSaveProfile={handleSaveProfile}
+        darkMode={darkMode}
+      />
     </div>
   );
 };

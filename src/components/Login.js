@@ -3,6 +3,8 @@ import './Login.css';
 import './AuthStyles.css';
 import { authService, checkApiConnection } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
+import TwoFactorVerify from './TwoFactorAuth/TwoFactorVerify';
+import userDataService from '../services/userDataService';
 
 const Login = ({ onLogin, switchToRegister }) => {
   const { login } = useAuth(); // Get login function from AuthContext
@@ -15,6 +17,12 @@ const Login = ({ onLogin, switchToRegister }) => {
   const [formTouched, setFormTouched] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
   const [serverStatus, setServerStatus] = useState('checking');
+  
+  // 2FA specific state
+  const [showTwoFactor, setShowTwoFactor] = useState(false);
+  const [twoFactorUserId, setTwoFactorUserId] = useState(null);
+  const [twoFactorUsername, setTwoFactorUsername] = useState('');
+  
   const usernameRef = useRef(null);
   
   // Focus username field on component mount and check server connection
@@ -150,6 +158,16 @@ const Login = ({ onLogin, switchToRegister }) => {
         console.error('Login Component - Empty response received');
         throw new Error('No response from server');
       }
+
+      // Check if 2FA is required
+      if (data.requiresTwoFactor) {
+        console.log('Login Component - 2FA required for user:', data.userId);
+        setTwoFactorUserId(data.userId);
+        setTwoFactorUsername(username);
+        setShowTwoFactor(true);
+        setLoading(false);
+        return;
+      }
       
       if (!data.user) {
         console.error('Login Component - Missing user data in response');
@@ -206,6 +224,50 @@ const Login = ({ onLogin, switchToRegister }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle 2FA verification
+  const handleTwoFactorVerify = async (verificationCode, isBackupCode) => {
+    try {
+      setLoading(true);
+      
+      // Verify the 2FA code
+      const verifyResponse = await userDataService.api.verifyTwoFactor(
+        twoFactorUserId, 
+        verificationCode, 
+        isBackupCode
+      );
+      
+      if (!verifyResponse.success) {
+        throw new Error(verifyResponse.error || '2FA verification failed');
+      }
+      
+      // Complete the login process
+      const loginResponse = await userDataService.api.completeTwoFactorLogin(twoFactorUserId);
+      
+      if (!loginResponse.success || !loginResponse.user || !loginResponse.token) {
+        throw new Error('Failed to complete login after 2FA verification');
+      }
+      
+      // Save user session and notify parent component
+      console.log('Login Component - 2FA successful, completing login');
+      authService.saveUserSession(loginResponse.user, loginResponse.token, rememberMe);
+      onLogin(loginResponse.user, loginResponse.token);
+      
+    } catch (error) {
+      console.error('2FA verification error:', error);
+      throw error; // Let TwoFactorVerify component handle the error display
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle 2FA cancellation
+  const handleTwoFactorCancel = () => {
+    setShowTwoFactor(false);
+    setTwoFactorUserId(null);
+    setTwoFactorUsername('');
+    setError(null);
   };
 
   return (
@@ -397,6 +459,17 @@ const Login = ({ onLogin, switchToRegister }) => {
           </div>
         </div>
       </div>
+      
+      {/* Two-Factor Authentication Modal */}
+      {showTwoFactor && (
+        <TwoFactorVerify
+          userId={twoFactorUserId}
+          username={twoFactorUsername}
+          onVerify={handleTwoFactorVerify}
+          onCancel={handleTwoFactorCancel}
+          loading={loading}
+        />
+      )}
     </div>
   );
 };
