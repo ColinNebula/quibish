@@ -3,6 +3,7 @@ import UserProfileModal from '../UserProfile/UserProfileModal';
 import SettingsModal from './SettingsModal';
 import VideoCall from './VideoCall';
 import GifPicker from '../GifPicker/GifPicker';
+import NewChatModal from '../NewChat/NewChatModal';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -42,6 +43,15 @@ const ProChat = ({
     currentIndex: 0,
     images: [],
     isLoading: false
+  });
+  
+  // Video lightbox state
+  const [videoLightboxModal, setVideoLightboxModal] = useState({
+    open: false,
+    videoUrl: null,
+    videoName: null,
+    poster: null,
+    type: null
   });
 
   // GIF picker state
@@ -131,6 +141,20 @@ const ProChat = ({
         url: 'https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif',
         isGif: true
       }
+    },
+    {
+      id: 7,
+      text: "🎬 Check out this demo video!",
+      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
+      timestamp: new Date(Date.now() - 15000).toISOString(),
+      reactions: [],
+      file: {
+        name: 'demo-video.mp4',
+        size: 1024000, // 1MB
+        type: 'video/mp4',
+        url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
+        thumbnail: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
+      }
     }
   ]);
   
@@ -170,14 +194,57 @@ const ProChat = ({
   }, []);
 
   const handleNewChat = useCallback(() => {
-    // TODO: Implement new chat functionality
-    console.log('New chat clicked');
+    setNewChatModal(true);
   }, []);
 
   const handleCreateGroup = useCallback(() => {
     // TODO: Implement create group functionality
     console.log('Create group clicked');
   }, []);
+
+  const handleCreateChat = useCallback(async (conversation) => {
+    try {
+      console.log('New chat created:', conversation);
+      
+      // In a real app, the conversation is already created by the API
+      // Format it for the UI
+      const newConversation = {
+        id: conversation.id || `conv_${Date.now()}`,
+        name: conversation.name || conversation.participants?.find(p => p.id !== user.id)?.name || 'New Chat',
+        type: conversation.type,
+        participants: conversation.participants,
+        lastMessage: {
+          text: 'Chat created',
+          timestamp: conversation.createdAt || new Date().toISOString(),
+          user: { name: 'System' }
+        },
+        unreadCount: 0,
+        isOnline: true,
+        avatar: conversation.type === 'group' 
+          ? null 
+          : conversation.participants?.find(p => p.id !== user.id)?.avatar
+      };
+
+      console.log('Formatted conversation:', newConversation);
+      
+      // Here you would typically:
+      // 1. Add to conversations state if you have one
+      // 2. Navigate to the new chat
+      // 3. Refresh conversation list
+      
+      // For now, we'll just select this conversation if we have a way to do it
+      setSelectedConversation(newConversation.id);
+      
+      // You could also trigger a callback to parent component
+      // if (onConversationCreated) {
+      //   onConversationCreated(newConversation);
+      // }
+      
+    } catch (error) {
+      console.error('Failed to handle new chat:', error);
+      throw error; // Re-throw so modal can handle the error
+    }
+  }, [user]);
 
   const handleQuickSettings = useCallback(() => {
     setSettingsModal({ open: true, section: 'profile' });
@@ -445,6 +512,7 @@ const ProChat = ({
   // Enhanced features state
   const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: null });
   const [settingsModal, setSettingsModal] = useState({ open: false, section: 'profile' });
+  const [newChatModal, setNewChatModal] = useState(false);
   const [videoCallState, setVideoCallState] = useState({ 
     active: false, 
     withUser: null, 
@@ -521,6 +589,27 @@ const ProChat = ({
       images: allImages
     });
   }, [getAllImages]);
+
+  // Video lightbox handlers
+  const handleOpenVideoLightbox = useCallback((videoUrl, videoName, poster, type) => {
+    setVideoLightboxModal({
+      open: true,
+      videoUrl,
+      videoName,
+      poster,
+      type
+    });
+  }, []);
+
+  const handleCloseVideoLightbox = useCallback(() => {
+    setVideoLightboxModal({
+      open: false,
+      videoUrl: null,
+      videoName: null,
+      poster: null,
+      type: null
+    });
+  }, []);
 
   const handleNavigateImage = useCallback((direction) => {
     setLightboxModal(prev => {
@@ -651,6 +740,15 @@ const ProChat = ({
           case '0':
             event.preventDefault();
             handleZoomReset();
+            break;
+          default:
+            // No action for other keys
+            break;
+        }
+      } else if (videoLightboxModal.open) {
+        switch (event.key) {
+          case 'Escape':
+            handleCloseVideoLightbox();
             break;
           default:
             // No action for other keys
@@ -1022,6 +1120,15 @@ const ProChat = ({
                             muted={false}
                             playsInline
                             webkit-playsinline="true"
+                            onClick={() => {
+                              // Open video in spotlight/lightbox mode
+                              handleOpenVideoLightbox(
+                                message.file.url, 
+                                message.file.name,
+                                message.file.thumbnail,
+                                message.file.type
+                              );
+                            }}
                             onError={(e) => {
                               console.error('Video playback error:', e);
                               console.log('Video details:', {
@@ -1047,7 +1154,8 @@ const ProChat = ({
                               maxHeight: '300px',
                               borderRadius: '8px',
                               width: '100%',
-                              height: 'auto'
+                              height: 'auto',
+                              cursor: 'pointer'
                             }}
                           >
                             <source src={message.file.url} type={message.file.type} />
@@ -1487,11 +1595,74 @@ const ProChat = ({
         </div>
       )}
 
+      {/* Video Lightbox Modal */}
+      {videoLightboxModal.open && (
+        <div className="pro-lightbox-overlay" onClick={handleCloseVideoLightbox}>
+          <div className="pro-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <div className="pro-lightbox-header">
+              <div className="pro-lightbox-info">
+                <div className="pro-lightbox-title">
+                  <h3>{videoLightboxModal.videoName}</h3>
+                </div>
+              </div>
+              <div className="pro-lightbox-controls">
+                <button 
+                  className="pro-lightbox-btn pro-lightbox-download" 
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = videoLightboxModal.videoUrl;
+                    link.download = videoLightboxModal.videoName;
+                    link.click();
+                  }}
+                  title="Download video"
+                >
+                  💾
+                </button>
+              </div>
+              <button className="pro-lightbox-close" onClick={handleCloseVideoLightbox}>
+                ×
+              </button>
+            </div>
+            <div className="pro-lightbox-video-container">
+              <video 
+                src={videoLightboxModal.videoUrl}
+                poster={videoLightboxModal.poster}
+                controls
+                autoPlay
+                playsInline
+                className="pro-lightbox-video"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '80vh',
+                  width: 'auto',
+                  height: 'auto'
+                }}
+              >
+                <source src={videoLightboxModal.videoUrl} type={videoLightboxModal.type} />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+            <div className="pro-lightbox-help">
+              <span>ESC to close • Click outside to close • Download available</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* GIF Picker Modal */}
       <GifPicker
         isOpen={showGifPicker}
         onGifSelect={handleGifSelect}
         onClose={handleCloseGifPicker}
+      />
+
+      {/* New Chat Modal */}
+      <NewChatModal
+        isOpen={newChatModal}
+        onClose={() => setNewChatModal(false)}
+        onCreateChat={handleCreateChat}
+        currentUser={user}
+        darkMode={darkMode}
       />
     </div>
   );

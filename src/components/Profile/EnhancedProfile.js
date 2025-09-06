@@ -190,11 +190,36 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
   // Save profile changes
   const handleSaveProfile = async (e) => {
     e.preventDefault();
+    console.log('Save Profile Button Clicked!');
+    console.log('Current user prop:', user);
+    console.log('FormData state:', formData);
+    
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
+      // Debug: Check what tokens are available
+      const authToken = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
+      const sessionAuthToken = sessionStorage.getItem('authToken');
+      const sessionToken = sessionStorage.getItem('token');
+      const currentUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+      
+      console.log('Profile Save Debug - Available tokens:', {
+        authToken: authToken ? 'present' : 'missing',
+        token: token ? 'present' : 'missing',
+        sessionAuthToken: sessionAuthToken ? 'present' : 'missing',
+        sessionToken: sessionToken ? 'present' : 'missing',
+        currentUser: currentUser ? 'present' : 'missing'
+      });
+
+      // Check if we have any token at all
+      const hasToken = authToken || token || sessionAuthToken || sessionToken;
+      if (!hasToken) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+
       // Prepare update data (exclude avatar since it's handled separately)
       const updateData = {
         name: formData.name,
@@ -218,8 +243,12 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
         }
       };
 
+      console.log('Profile Save Debug - Update data:', updateData);
+
       // Update profile via API
       const response = await authService.updateProfile(updateData);
+      
+      console.log('Profile Save Debug - API response:', response);
       
       if (response.success) {
         setSuccess('Profile updated successfully!');
@@ -232,7 +261,12 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
       }
 
     } catch (err) {
-      console.error('Profile update error:', err);
+      console.error('Profile update error details:', {
+        error: err,
+        message: err.message,
+        stack: err.stack,
+        response: err.response?.data
+      });
       setError(err.message || 'Failed to update profile');
     } finally {
       setLoading(false);
@@ -609,7 +643,15 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="save-button" disabled={loading}>
+            <button 
+              type="submit" 
+              className="save-button" 
+              disabled={loading}
+              onClick={(e) => {
+                console.log('Save button clicked directly!');
+                // Don't prevent default here, let the form submit handle it
+              }}
+            >
               {loading ? 'Saving...' : 'Save Profile'}
             </button>
           </div>
@@ -765,60 +807,126 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
 
       {/* Security Tab Content */}
       {activeTab === 'security' && (
-        <form className="profile-form" onSubmit={handlePasswordChange}>
+        <div className="security-tab-content">
+          {/* Security Overview */}
           <div className="form-section">
-            <h3>Change Password</h3>
-            <div className="form-group">
-              <label htmlFor="currentPassword">Current Password</label>
-              <input
-                id="currentPassword"
-                type="password"
-                value={passwordData.currentPassword}
-                onChange={(e) => setPasswordData(prev => ({
-                  ...prev,
-                  currentPassword: e.target.value
-                }))}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="newPassword">New Password</label>
-              <input
-                id="newPassword"
-                type="password"
-                value={passwordData.newPassword}
-                onChange={(e) => setPasswordData(prev => ({
-                  ...prev,
-                  newPassword: e.target.value
-                }))}
-                required
-                minLength="8"
-              />
-              <div className="password-requirements">
-                Password must be at least 8 characters long
+            <h3>Account Security</h3>
+            <div className="security-status-card">
+              <div className="security-score">
+                <div className="score-icon">🛡️</div>
+                <div className="score-info">
+                  <div className="score-title">Security Level</div>
+                  <div className="score-description">Your account security status</div>
+                </div>
+                <button 
+                  type="button" 
+                  className="view-security-btn"
+                  onClick={() => {
+                    // This would open the SecurityDashboard component
+                    console.log('Open security dashboard');
+                  }}
+                >
+                  View Details
+                </button>
               </div>
-            </div>
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm New Password</label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => setPasswordData(prev => ({
-                  ...prev,
-                  confirmPassword: e.target.value
-                }))}
-                required
-              />
             </div>
           </div>
 
-          <div className="form-actions">
-            <button type="submit" className="save-button" disabled={loading}>
-              {loading ? 'Changing...' : 'Change Password'}
-            </button>
+          {/* Two-Factor Authentication */}
+          <div className="form-section">
+            <h3>Two-Factor Authentication</h3>
+            <div className="two-factor-status">
+              <div className="status-indicator">
+                <div className="status-icon">
+                  {/* This would be dynamically updated based on 2FA status */}
+                  <span className="icon-placeholder">🔓</span>
+                </div>
+                <div className="status-content">
+                  <div className="status-title">Two-Factor Authentication is Off</div>
+                  <div className="status-description">
+                    Add an extra layer of security to protect your account
+                  </div>
+                </div>
+                <button 
+                  type="button" 
+                  className="enable-2fa-btn"
+                  onClick={() => {
+                    // This would open the TwoFactorSetup component
+                    console.log('Enable 2FA');
+                  }}
+                >
+                  Enable 2FA
+                </button>
+              </div>
+              
+              <div className="security-benefits">
+                <h4>Benefits of enabling 2FA:</h4>
+                <ul>
+                  <li>🛡️ Protects against password breaches</li>
+                  <li>🔐 Adds an extra layer of security</li>
+                  <li>📱 Works with popular authenticator apps</li>
+                  <li>🔑 Includes backup codes for recovery</li>
+                </ul>
+              </div>
+            </div>
           </div>
-        </form>
+
+          {/* Password Change */}
+          <form className="password-change-form" onSubmit={handlePasswordChange}>
+            <div className="form-section">
+              <h3>Change Password</h3>
+              <div className="form-group">
+                <label htmlFor="currentPassword">Current Password</label>
+                <input
+                  id="currentPassword"
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData(prev => ({
+                    ...prev,
+                    currentPassword: e.target.value
+                  }))}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="newPassword">New Password</label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData(prev => ({
+                    ...prev,
+                    newPassword: e.target.value
+                  }))}
+                  required
+                  minLength="8"
+                />
+                <div className="password-requirements">
+                  Password must be at least 8 characters long
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="confirmPassword">Confirm New Password</label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData(prev => ({
+                    ...prev,
+                    confirmPassword: e.target.value
+                  }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="save-button" disabled={loading}>
+                {loading ? 'Changing...' : 'Change Password'}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

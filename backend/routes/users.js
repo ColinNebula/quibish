@@ -248,6 +248,71 @@ router.get('/profile', authenticateToken, async (req, res) => {
 // PUT /api/users/profile - update current user profile
 router.put('/profile', authenticateToken, async (req, res) => {
   try {
+    // Handle in-memory storage
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      const userIndex = global.inMemoryStorage.users.findIndex(u => u.id === req.user.id);
+      
+      if (userIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      const user = global.inMemoryStorage.users[userIndex];
+
+      // Enhanced allowed updates for comprehensive profile
+      const allowedUpdates = [
+        'name', 'displayName', 'bio', 'phone', 'location', 'company', 'jobTitle',
+        'website', 'avatar', 'avatarColor', 'statusMessage', 'theme', 'language', 'timezone'
+      ];
+      
+      // Update simple fields
+      allowedUpdates.forEach(field => {
+        if (req.body[field] !== undefined) {
+          user[field] = req.body[field];
+        }
+      });
+
+      // Handle nested objects properly
+      if (req.body.socialLinks) {
+        if (!user.socialLinks) user.socialLinks = {};
+        Object.keys(req.body.socialLinks).forEach(key => {
+          user.socialLinks[key] = req.body.socialLinks[key];
+        });
+      }
+      
+      if (req.body.notifications) {
+        if (!user.notifications) user.notifications = {};
+        Object.keys(req.body.notifications).forEach(key => {
+          user.notifications[key] = req.body.notifications[key];
+        });
+      }
+      
+      if (req.body.privacy) {
+        if (!user.privacy) user.privacy = {};
+        Object.keys(req.body.privacy).forEach(key => {
+          user.privacy[key] = req.body.privacy[key];
+        });
+      }
+
+      // Update timestamp
+      user.updatedAt = new Date().toISOString();
+      
+      // Update the user in the array
+      global.inMemoryStorage.users[userIndex] = user;
+      
+      // Return updated user object (without password)
+      const { password, ...userObject } = user;
+      
+      return res.json({
+        success: true,
+        user: userObject,
+        message: 'Profile updated successfully'
+      });
+    }
+
+    // Handle MongoDB storage
     const user = await User.findOne({ id: req.user.id });
     
     if (!user) {
@@ -316,6 +381,58 @@ router.put('/profile', authenticateToken, async (req, res) => {
 // PUT /api/users/preferences - update user preferences
 router.put('/preferences', authenticateToken, async (req, res) => {
   try {
+    // Handle in-memory storage
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      const userIndex = global.inMemoryStorage.users.findIndex(u => u.id === req.user.id);
+      
+      if (userIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      const user = global.inMemoryStorage.users[userIndex];
+
+      const { theme, language, timezone, notifications, privacy } = req.body;
+      
+      // Update direct fields
+      if (theme) user.theme = theme;
+      if (language) user.language = language;
+      if (timezone) user.timezone = timezone;
+      
+      // Update nested objects
+      if (notifications) {
+        if (!user.notifications) user.notifications = {};
+        Object.keys(notifications).forEach(key => {
+          user.notifications[key] = notifications[key];
+        });
+      }
+      
+      if (privacy) {
+        if (!user.privacy) user.privacy = {};
+        Object.keys(privacy).forEach(key => {
+          user.privacy[key] = privacy[key];
+        });
+      }
+
+      // Update timestamp
+      user.updatedAt = new Date().toISOString();
+      
+      // Update the user in the array
+      global.inMemoryStorage.users[userIndex] = user;
+      
+      // Return updated user object (without password)
+      const { password, ...userObject } = user;
+      
+      return res.json({
+        success: true,
+        user: userObject,
+        message: 'Preferences updated successfully'
+      });
+    }
+
+    // Handle MongoDB storage
     const user = await User.findOne({ id: req.user.id });
     
     if (!user) {

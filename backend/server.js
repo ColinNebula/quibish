@@ -11,6 +11,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const messageRoutes = require('./routes/messages');
+const conversationRoutes = require('./routes/conversations');
 const healthRoutes = require('./routes/health');
 const uploadRoutes = require('./routes/upload');
 const twoFactorRoutes = require('./routes/twoFactor');
@@ -259,6 +260,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/auth/2fa', twoFactorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/conversations', conversationRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Serve uploaded files statically

@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './UserProfileManager.css';
 
+// Utility function to format video duration
+const formatDuration = (seconds) => {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [userInfo, setUserInfo] = useState({
@@ -21,7 +30,8 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
   const [userMedia, setUserMedia] = useState({
     photos: [],
     videos: [],
-    gifs: []
+    gifs: [],
+    documents: []
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,7 +62,7 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
 
   const loadUserMedia = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       const response = await fetch('http://localhost:5001/api/upload/media', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -111,7 +121,8 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
       // Validate file type
       const allowedTypes = [
         'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-        'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'
+        'video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov',
+        'application/pdf'
       ];
       
       if (allowedTypes.includes(file.type)) {
@@ -136,7 +147,7 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
 
       // Update basic profile info
       const profileResponse = await fetch('http://localhost:5001/api/users/profile', {
@@ -223,7 +234,7 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
     setError('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       const formData = new FormData();
       
       mediaFiles.forEach(file => {
@@ -261,7 +272,7 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
 
   const deleteMedia = async (mediaId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       const response = await fetch(`http://localhost:5001/api/upload/media/${mediaId}`, {
         method: 'DELETE',
         headers: {
@@ -434,14 +445,14 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
             ref={mediaInputRef}
             type="file"
             multiple
-            accept="image/*,video/*"
+            accept="image/*,video/*,.pdf"
             onChange={handleMediaChange}
             id="media-upload"
           />
           <label htmlFor="media-upload" className="upload-label">
             <div className="upload-icon">📁</div>
-            <p>Click to select photos, videos, or GIFs</p>
-            <p className="upload-hint">Max 10 files, 50MB per video, 10MB per image</p>
+            <p>Click to select photos, videos, GIFs, or PDFs</p>
+            <p className="upload-hint">Max 10 files, 50MB per video, 10MB per image/PDF</p>
           </label>
         </div>
 
@@ -478,7 +489,7 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
             <div className="media-grid">
               {userMedia.photos.map((photo) => (
                 <div key={photo.id} className="media-item">
-                  <img src={photo.url} alt={photo.originalName} />
+                  <img src={photo.url.startsWith('http') ? photo.url : `http://localhost:5001${photo.url}`} alt={photo.originalName} />
                   <div className="media-overlay">
                     <button 
                       onClick={() => deleteMedia(photo.id)}
@@ -504,7 +515,28 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
             <div className="media-grid">
               {userMedia.videos.map((video) => (
                 <div key={video.id} className="media-item">
-                  <video src={video.url} controls />
+                  <div className="video-container">
+                    <video 
+                      src={video.url.startsWith('http') ? video.url : `http://localhost:5001${video.url}`}
+                      controls
+                      preload="metadata"
+                      poster={video.thumbnailUrl}
+                      playsInline
+                      onError={(e) => {
+                        console.error('Video playback error:', e);
+                        console.log('Video details:', video);
+                      }}
+                      onLoadedMetadata={(e) => {
+                        console.log('Video loaded successfully:', video.originalName);
+                      }}
+                    >
+                      <source src={video.url.startsWith('http') ? video.url : `http://localhost:5001${video.url}`} type={video.type || 'video/mp4'} />
+                      Your browser does not support the video tag.
+                    </video>
+                    {video.duration && (
+                      <div className="video-duration">{formatDuration(video.duration)}</div>
+                    )}
+                  </div>
                   <div className="media-overlay">
                     <button 
                       onClick={() => deleteMedia(video.id)}
@@ -516,6 +548,9 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
                   <div className="media-info">
                     <span className="media-name">{video.originalName}</span>
                     <span className="media-size">{formatFileSize(video.size)}</span>
+                    {video.duration && (
+                      <span className="media-duration">Duration: {formatDuration(video.duration)}</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -530,7 +565,7 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
             <div className="media-grid">
               {userMedia.gifs.map((gif) => (
                 <div key={gif.id} className="media-item">
-                  <img src={gif.url} alt={gif.originalName} />
+                  <img src={gif.url.startsWith('http') ? gif.url : `http://localhost:5001${gif.url}`} alt={gif.originalName} />
                   <div className="media-overlay">
                     <button 
                       onClick={() => deleteMedia(gif.id)}
@@ -549,9 +584,44 @@ const UserProfileManager = ({ user, onUserUpdate, onClose }) => {
           </div>
         )}
 
-        {userMedia.photos.length === 0 && userMedia.videos.length === 0 && userMedia.gifs.length === 0 && (
+        {/* Documents (PDFs) */}
+        {userMedia.documents.length > 0 && (
+          <div className="media-category">
+            <h4>Documents ({userMedia.documents.length})</h4>
+            <div className="media-grid">
+              {userMedia.documents.map((document) => (
+                <div key={document.id} className="media-item document-item">
+                  <div className="document-preview">
+                    <div className="document-icon">📄</div>
+                    <div className="document-info">
+                      <span className="document-name">{document.originalName}</span>
+                      <span className="document-size">{formatFileSize(document.size)}</span>
+                    </div>
+                  </div>
+                  <div className="media-overlay">
+                    <button 
+                      onClick={() => window.open(document.url.startsWith('http') ? document.url : `http://localhost:5001${document.url}`, '_blank')}
+                      className="view-btn"
+                      title="View PDF"
+                    >
+                      👁️
+                    </button>
+                    <button 
+                      onClick={() => deleteMedia(document.id)}
+                      className="delete-btn"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {userMedia.photos.length === 0 && userMedia.videos.length === 0 && userMedia.gifs.length === 0 && userMedia.documents.length === 0 && (
           <div className="no-media">
-            <p>No media uploaded yet. Start by uploading some photos, videos, or GIFs!</p>
+            <p>No media uploaded yet. Start by uploading some photos, videos, GIFs, or PDFs!</p>
           </div>
         )}
       </div>

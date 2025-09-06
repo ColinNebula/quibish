@@ -502,20 +502,38 @@ export const authService = {
   // Update current user's profile (simplified)
   updateProfile: async (userData) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      
+      console.log('updateProfile Debug - Token check:', {
+        token: token ? 'present' : 'missing',
+        userData: userData
+      });
+      
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+      
       const response = await API.put('/users/profile', userData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
+      
+      console.log('updateProfile Debug - API response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('updateProfile Debug - Error details:', {
+        error: error,
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       
       // Fallback to offline mode
       if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK' || !navigator.onLine) {
-        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        console.log('Network error detected - falling back to offline mode');
+        const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
         const updatedUser = { ...currentUser, ...userData };
         localStorage.setItem('user', JSON.stringify(updatedUser));
         return { success: true, user: updatedUser };
@@ -825,6 +843,148 @@ const messageCache = {
     }
     
     return [];
+  }
+};
+
+// User search and management service
+export const userService = {
+  // Search users by name, username, or email
+  async searchUsers(query, limit = 10) {
+    try {
+      if (!query || query.trim().length < 2) {
+        return {
+          success: false,
+          error: 'Search query must be at least 2 characters long'
+        };
+      }
+
+      const response = await axios.get(`http://localhost:5001/api/users/search`, {
+        params: { q: query.trim(), limit },
+        headers: {
+          'Authorization': `Bearer ${authService.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        return {
+          success: true,
+          users: response.data.users,
+          count: response.data.count
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data.error || 'Search failed'
+        };
+      }
+    } catch (error) {
+      console.error('Error searching users:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to search users'
+      };
+    }
+  },
+
+  // Get all users (for development/testing)
+  async getAllUsers(limit = 50) {
+    try {
+      const response = await axios.get(`http://localhost:5001/api/users`, {
+        params: { limit },
+        headers: {
+          'Authorization': `Bearer ${authService.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        return {
+          success: true,
+          users: response.data.users
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data.error || 'Failed to get users'
+        };
+      }
+    } catch (error) {
+      console.error('Error getting users:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to get users'
+      };
+    }
+  }
+};
+
+// Conversation service
+export const conversationService = {
+  // Create a new conversation
+  async createConversation(participants, type = 'direct', name = null) {
+    try {
+      const conversationData = {
+        type,
+        participants: participants.map(p => p.id || p),
+        name: type === 'group' ? name : null
+      };
+
+      const response = await axios.post(`http://localhost:5001/api/conversations`, conversationData, {
+        headers: {
+          'Authorization': `Bearer ${authService.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        return {
+          success: true,
+          conversation: response.data.conversation
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data.error || 'Failed to create conversation'
+        };
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to create conversation'
+      };
+    }
+  },
+
+  // Get user's conversations
+  async getConversations() {
+    try {
+      const response = await axios.get(`http://localhost:5001/api/conversations`, {
+        headers: {
+          'Authorization': `Bearer ${authService.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        return {
+          success: true,
+          conversations: response.data.conversations
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data.error || 'Failed to get conversations'
+        };
+      }
+    } catch (error) {
+      console.error('Error getting conversations:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to get conversations'
+      };
+    }
   }
 };
 

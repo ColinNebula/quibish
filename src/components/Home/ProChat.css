@@ -4661,6 +4661,18 @@
   transform: scale(1.02);
   border-color: rgba(255, 255, 255, 0.2);
 }
+
+/* Video lightbox container */
+.pro-lightbox-video-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
 /* Video error handling */
 .pro-video-error {
   display: flex;
