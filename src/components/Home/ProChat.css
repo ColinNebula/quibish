@@ -322,6 +322,24 @@
   border-color: rgba(245, 158, 11, 0.3);
 }
 
+.logout-btn {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.3);
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: rgba(248, 113, 113, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(248, 113, 113, 0.2);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(248, 113, 113, 0.2);
+}
+
 /* Header Menu */
 .header-menu {
   position: relative;

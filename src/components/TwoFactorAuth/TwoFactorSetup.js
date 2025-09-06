@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import './TwoFactorSetup.css';
 import userDataService from '../../services/userDataService';
 
@@ -172,7 +172,7 @@ const TwoFactorSetup = ({ onClose, onSetupComplete }) => {
             <div className="qr-code-section">
               {qrCodeUrl && (
                 <div className="qr-code-container">
-                  <QRCode value={qrCodeUrl} size={200} />
+                  <QRCodeSVG value={qrCodeUrl} size={200} />
                 </div>
               )}
               

@@ -88,7 +88,7 @@ global.inMemoryStorage = {
           id: '4',
           username: 'admin',
           email: 'admin@quibish.com',
-          password: bcrypt.hashSync('admin', 10),
+          password: bcrypt.hashSync('dhG6-x5T@-pM&C-$qZ1', 10),
           name: 'Admin User',
           avatar: null,
           status: 'online',

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import UserProfileModal from '../UserProfile';
 import VideoCall from './VideoCall';
+import SettingsModal from './SettingsModal';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -25,6 +26,7 @@ const ProChat = ({
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   
   // Enhanced input state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -102,6 +104,67 @@ const ProChat = ({
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
+  // Color palette for user message cards
+  const messageColors = [
+    { id: 'blue', bg: '#e3f2fd', border: '#2196f3', accent: '#1976d2' }, // Blue
+    { id: 'purple', bg: '#f3e5f5', border: '#9c27b0', accent: '#7b1fa2' }, // Purple
+    { id: 'green', bg: '#e8f5e8', border: '#4caf50', accent: '#388e3c' }, // Green
+    { id: 'orange', bg: '#fff3e0', border: '#ff9800', accent: '#f57c00' }, // Orange
+    { id: 'pink', bg: '#fce4ec', border: '#e91e63', accent: '#c2185b' }, // Pink
+    { id: 'teal', bg: '#e0f2f1', border: '#009688', accent: '#00695c' }, // Teal
+    { id: 'lightgreen', bg: '#f1f8e9', border: '#8bc34a', accent: '#689f38' }, // Light Green
+    { id: 'indigo', bg: '#e8eaf6', border: '#3f51b5', accent: '#303f9f' }, // Indigo
+    { id: 'amber', bg: '#fff8e1', border: '#ffc107', accent: '#ffa000' }, // Amber
+    { id: 'peach', bg: '#ffeaa7', border: '#fdcb6e', accent: '#e17055' }, // Peach
+    { id: 'coral', bg: '#fab1a0', border: '#e17055', accent: '#d63031' }, // Coral
+    { id: 'lavender', bg: '#a29bfe', border: '#6c5ce7', accent: '#5f3dc4' }, // Lavender
+  ];
+
+  // Listen for color preference changes
+  const [colorRefresh, setColorRefresh] = useState(0);
+  useEffect(() => {
+    const handleColorChange = () => {
+      setColorRefresh(prev => prev + 1); // Force re-render with new colors
+    };
+    
+    window.addEventListener('userColorChanged', handleColorChange);
+    return () => window.removeEventListener('userColorChanged', handleColorChange);
+  }, []);
+
+  // Function to get consistent color for a user
+  const getUserColor = useCallback((userId) => {
+    if (!userId) return messageColors[0]; // Default color for system messages
+    
+    // First check for saved user preference
+    const savedPreference = localStorage.getItem('userColorPreference');
+    if (savedPreference && savedPreference !== 'auto' && userId === user?.id) {
+      const preferredColor = messageColors.find(color => color.id === savedPreference);
+      if (preferredColor) {
+        return preferredColor;
+      }
+    }
+    
+    // If it's the current user and they have a preference in their profile
+    if (userId === user?.id && user?.preferences?.messageColor && user.preferences.messageColor !== 'auto') {
+      const preferredColor = messageColors.find(color => color.id === user.preferences.messageColor);
+      if (preferredColor) {
+        return preferredColor;
+      }
+    }
+    
+    // Fall back to hash-based color assignment
+    let hash = 0;
+    for (let i = 0; i < userId.length; i++) {
+      const char = userId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    
+    // Use absolute value and modulo to get a color index
+    const colorIndex = Math.abs(hash) % messageColors.length;
+    return messageColors[colorIndex];
+  }, [user, colorRefresh, messageColors]);
+
   // Auto-scroll to bottom function
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -144,8 +207,22 @@ const ProChat = ({
   }, []);
 
   const handleQuickSettings = useCallback(() => {
-    // TODO: Implement quick settings
-    console.log('Quick settings clicked');
+    setShowSettingsModal(true);
+  }, []);
+
+  const handleSaveProfile = useCallback(async (updatedUser) => {
+    try {
+      // In a real app, this would make an API call to update the user profile
+      console.log('Saving user profile:', updatedUser);
+      
+      // For now, we'll just update the local user object if there's a parent handler
+      // The color preference is already saved to localStorage in ColorPreferences component
+      
+      return true; // Indicate success
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      throw error;
+    }
   }, []);
 
   // Enhanced input functions
@@ -655,8 +732,9 @@ const ProChat = ({
           )}
           {!sidebarCollapsed && (
             <div className="user-actions">
-              <button className="action-btn" title="Settings">⚙️</button>
+              <button className="action-btn" title="Settings" onClick={handleQuickSettings}>⚙️</button>
               <button className="action-btn" title="Profile" onClick={() => handleViewUserProfile(user?.id, user?.name)}>👤</button>
+              <button className="action-btn logout-btn" title="Logout / Disconnect" onClick={onLogout}>🚪</button>
             </div>
           )}
         </div>
@@ -724,41 +802,56 @@ const ProChat = ({
             {!sidebarCollapsed && <h4>Recent Conversations</h4>}
           </div>
           <div className="conversations-list">
-            {filteredConversations.map(conv => (
-              <div 
-                key={conv.id} 
-                className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
-                onClick={() => handleConversationSelect(conv.id)}
-              >
-                <div className="conversation-avatar">
-                  <img 
-                    src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
-                    alt={conv.name}
-                  />
-                  {conv.isOnline && <div className="online-dot"></div>}
-                  {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
-                </div>
-                {!sidebarCollapsed && (
-                  <div className="conversation-details">
-                    <div className="conversation-header">
-                      <h5 className="conversation-name">{conv.name}</h5>
-                      <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
-                    </div>
-                    <div className="conversation-preview">
-                      <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
-                      <div className="conversation-meta">
-                        {conv.isPinned && <span className="pin-icon">📌</span>}
-                        {conv.isMuted && <span className="mute-icon">🔇</span>}
-                        {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
+            {filteredConversations.map(conv => {
+              const convColor = getUserColor(conv.id.toString());
+              return (
+                <div 
+                  key={conv.id} 
+                  className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
+                  onClick={() => handleConversationSelect(conv.id)}
+                  style={{
+                    borderLeftColor: selectedConversation === conv.id ? convColor.border : 'transparent',
+                    borderLeftWidth: '3px',
+                    borderLeftStyle: 'solid'
+                  }}
+                >
+                  <div className="conversation-avatar">
+                    <img 
+                      src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
+                      alt={conv.name}
+                    />
+                    {conv.isOnline && <div className="online-dot"></div>}
+                    {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
+                  </div>
+                  {!sidebarCollapsed && (
+                    <div className="conversation-details">
+                      <div className="conversation-header">
+                        <h5 
+                          className="conversation-name"
+                          style={{ 
+                            color: selectedConversation === conv.id ? convColor.accent : 'inherit'
+                          }}
+                        >
+                          {conv.name}
+                        </h5>
+                        <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
                       </div>
-                    </div>
+                      <div className="conversation-preview">
+                        <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
+                        <div className="conversation-meta">
+                          {conv.isPinned && <span className="pin-icon">📌</span>}
+                          {conv.isMuted && <span className="mute-icon">🔇</span>}
+                          {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
+                        </div>
+                      </div>
                   </div>
                 )}
                 {sidebarCollapsed && conv.unreadCount > 0 && (
                   <div className="collapsed-unread-indicator"></div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -833,12 +926,15 @@ const ProChat = ({
             <button onClick={onToggleDarkMode} className="action-btn theme-toggle" title="Toggle theme">
               {darkMode ? '☀️' : '🌙'}
             </button>
+            <button onClick={onLogout} className="action-btn logout-btn" title="Logout / Disconnect">
+              🚪
+            </button>
             <div className="header-menu">
               <button className="action-btn menu-btn" title="More options">
                 ⋮
               </button>
               <div className="dropdown-menu">
-                <button className="dropdown-item">Settings</button>
+                <button className="dropdown-item" onClick={handleQuickSettings}>Settings</button>
                 <button className="dropdown-item">Export Chat</button>
                 <button className="dropdown-item">Mute Notifications</button>
                 <hr className="dropdown-divider" />
@@ -852,29 +948,62 @@ const ProChat = ({
 
         {/* Messages */}
         <div className="pro-message-list" ref={messagesContainerRef}>
-          {chatMessages.map(message => (
-            <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
-              <div className="message-avatar">
-                <img 
-                  src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
-                  alt={message.user.name}
-                  onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
-                />
-              </div>
-              <div className="message-content" onClick={() => handleMessageClick(message.id)}>
-                <div className="message-header">
-                  <span className="user-name">{message.user.name}</span>
-                  <span className="timestamp">
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </span>
+          {chatMessages.map(message => {
+            const userColor = getUserColor(message.user.id);
+            return (
+              <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
+                <div className="message-avatar">
+                  <img 
+                    src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
+                    alt={message.user.name}
+                    onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
+                    style={{
+                      border: `2px solid ${userColor.border}`,
+                      borderRadius: '50%'
+                    }}
+                  />
                 </div>
-                
-                {/* Message Text */}
                 <div 
-                  className="message-text" 
-                  data-length={getMessageLengthCategory(message.text)}
+                  className="message-content" 
+                  onClick={() => handleMessageClick(message.id)}
+                  style={{
+                    backgroundColor: userColor.bg,
+                    borderLeftColor: userColor.border,
+                    borderLeftWidth: '3px',
+                    borderLeftStyle: 'solid'
+                  }}
                 >
-                  {message.text}
+                  <div className="message-header">
+                    <div className="user-info">
+                      <div 
+                        className="user-color-dot"
+                        style={{
+                          backgroundColor: userColor.border,
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          display: 'inline-block',
+                          marginRight: '6px'
+                        }}
+                      ></div>
+                      <span 
+                        className="user-name"
+                        style={{ color: userColor.accent }}
+                      >
+                        {message.user.name}
+                      </span>
+                    </div>
+                    <span className="timestamp">
+                      {new Date(message.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  
+                  {/* Message Text */}
+                  <div 
+                    className="message-text" 
+                    data-length={getMessageLengthCategory(message.text)}
+                  >
+                    {message.text}
                 </div>
                 
                 {/* File/Image Display */}
@@ -955,7 +1084,8 @@ const ProChat = ({
                 )}
               </div>
             </div>
-          ))}
+          );
+          })}
           {/* Auto-scroll anchor element */}
           <div ref={messagesEndRef} />
         </div>
@@ -1255,6 +1385,15 @@ const ProChat = ({
           </div>
         </div>
       )}
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        user={user}
+        onSaveProfile={handleSaveProfile}
+        darkMode={darkMode}
+      />
     </div>
   );
 };
