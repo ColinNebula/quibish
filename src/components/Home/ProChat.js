@@ -931,12 +931,14 @@ const ProChat = ({
         <div className="pro-message-list" ref={messagesContainerRef}>
           {chatMessages.map((message, index) => {
             const userColor = getUserColor(message.user.id);
+            const isCurrentUser = message.user.id === user?.id;
             return (
               <div 
                 key={message.id} 
-                className={`pro-message-blurb message-enhanced`}
+                className={`pro-message-blurb message-enhanced ${isCurrentUser ? 'current-user-message' : 'other-user-message'}`}
                 data-message-id={message.id}
                 data-length={getMessageLengthCategory(message.text)}
+                data-message-type={isCurrentUser ? 'current-user' : 'other-user'}
                 style={{
                   '--message-index': index,
                   animationDelay: `${Math.min(index * 0.1, 1)}s`
@@ -961,9 +963,15 @@ const ProChat = ({
                   onClick={() => handleMessageClick(message.id)}
                   style={{
                     backgroundColor: userColor.bg,
-                    borderLeftColor: userColor.border,
-                    borderLeftWidth: '3px',
-                    borderLeftStyle: 'solid'
+                    ...(isCurrentUser ? {
+                      borderLeftColor: userColor.border,
+                      borderLeftWidth: '3px',
+                      borderLeftStyle: 'solid'
+                    } : {
+                      borderRightColor: userColor.border,
+                      borderRightWidth: '3px',
+                      borderRightStyle: 'solid'
+                    })
                   }}
                 >
                   <div className="message-header">
