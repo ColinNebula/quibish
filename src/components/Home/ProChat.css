@@ -2754,9 +2754,9 @@
 
 /* Base animation setup for all messages */
 .pro-message-blurb {
-  position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;
+  position: relative;
   z-index: 1;
 }
 
@@ -2790,11 +2790,11 @@
     0 0 0 1px rgba(99, 102, 241, 0.1),
     0 0 20px rgba(99, 102, 241, 0.05);
   z-index: 10;
-  backdrop-filter: blur(10px);
+  position: relative;
 }
 
 /* Enhanced hover with color-based glow */
-.pro-message-blurb:hover::before {
+.pro-message-blurb::before {
   content: '';
   position: absolute;
   top: -2px;
@@ -2807,9 +2807,14 @@
     rgba(236, 72, 153, 0.1) 100%);
   border-radius: inherit;
   z-index: 0;
-  opacity: 0.8;
-  animation: borderGlow 2s ease-in-out infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
   pointer-events: none;
+}
+
+.pro-message-blurb:hover::before {
+  opacity: 1;
+  animation: borderGlow 2s ease-in-out infinite;
 }
 
 @keyframes borderGlow {
@@ -2828,8 +2833,6 @@
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.95) 0%, 
     rgba(248, 250, 252, 0.95) 100%);
-  position: relative;
-  z-index: 2;
 }
 
 /* Avatar animation enhancement */
@@ -2861,7 +2864,7 @@
 /* Text content animations */
 .pro-message-blurb .message-text-content {
   position: relative;
-  z-index: 3;
+  z-index: 2;
   transition: all 0.3s ease;
 }
 
@@ -2890,7 +2893,12 @@
   animation: backgroundGlowPulse 2s ease-in-out infinite;
 }
 
-/* Sparkle effect on hover */
+/* Sparkle effect on hover - DISABLED to prevent disappearing cards */
+/*
+.pro-message-blurb:hover::before {
+  animation: sparkleRotate 3s linear infinite;
+}
+*/
 
 @keyframes sparkleRotate {
   0% { 
@@ -2903,16 +2911,16 @@
   }
 }
 
-/* Message text shimmer effect */
+/* Message text shimmer effect - simplified */
 .pro-message-blurb:hover .message-text-content {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(99, 102, 241, 0.1) 50%,
+    rgba(99, 102, 241, 0.05) 50%,
     transparent 100%
   );
   background-size: 200% 100%;
-  animation: textShimmer 1.5s ease-in-out infinite;
+  animation: textShimmer 2s ease-in-out infinite;
 }
 
 @keyframes textShimmer {
@@ -3012,27 +3020,11 @@
   transition: transform 0.1s ease;
 }
 
-/* Message click ripple effect */
-.pro-message-blurb::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(99, 102, 241, 0.2);
-  transform: translate(-50%, -50%);
-  transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
-  opacity: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.pro-message-blurb:active::after {
-  width: 100%;
-  height: 100%;
-  opacity: 1;
+/* Message click feedback - simplified */
+.pro-message-blurb:active {
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 2px 4px rgba(99, 102, 241, 0.1);
 }
 
 /* Smooth transitions for all child elements */
