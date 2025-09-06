@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import UserProfileModal from '../UserProfile/UserProfileModal';
+import SettingsModal from './SettingsModal';
 import VideoCall from './VideoCall';
 import PropTypes from 'prop-types';
 
@@ -201,8 +202,7 @@ const ProChat = ({
   }, []);
 
   const handleQuickSettings = useCallback(() => {
-    // TODO: Implement quick settings
-    console.log('Quick settings clicked');
+    setSettingsModal({ open: true, section: 'profile' });
   }, []);
 
   // Enhanced input functions
@@ -410,6 +410,7 @@ const ProChat = ({
 
   // Enhanced features state
   const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: null });
+  const [settingsModal, setSettingsModal] = useState({ open: false, section: 'profile' });
   const [videoCallState, setVideoCallState] = useState({ 
     active: false, 
     withUser: null, 
@@ -454,6 +455,10 @@ const ProChat = ({
 
   const handleCloseProfileModal = useCallback(() => {
     setProfileModal({ open: false, userId: null, username: null });
+  }, []);
+
+  const handleCloseSettingsModal = useCallback(() => {
+    setSettingsModal({ open: false, section: 'profile' });
   }, []);
 
   // Lightbox handlers
@@ -712,7 +717,7 @@ const ProChat = ({
           )}
           {!sidebarCollapsed && (
             <div className="user-actions">
-              <button className="action-btn" title="Settings">⚙️</button>
+              <button className="action-btn" title="Settings" onClick={handleQuickSettings}>⚙️</button>
               <button className="action-btn" title="Profile" onClick={() => handleViewUserProfile(user?.id, user?.name)}>👤</button>
             </div>
           )}
@@ -910,7 +915,7 @@ const ProChat = ({
                 ⋮
               </button>
               <div className="dropdown-menu">
-                <button className="dropdown-item">Settings</button>
+                <button className="dropdown-item" onClick={handleQuickSettings}>Settings</button>
                 <button className="dropdown-item">Export Chat</button>
                 <button className="dropdown-item">Mute Notifications</button>
                 <hr className="dropdown-divider" />
@@ -1246,6 +1251,21 @@ const ProChat = ({
           userId={profileModal.userId}
           username={profileModal.username}
           onClose={handleCloseProfileModal}
+        />
+      )}
+
+      {/* Settings Modal */}
+      {settingsModal.open && (
+        <SettingsModal 
+          isOpen={settingsModal.open}
+          onClose={handleCloseSettingsModal}
+          initialSection={settingsModal.section}
+          user={user}
+          onSaveProfile={(updatedUser) => {
+            // Handle profile updates if needed
+            console.log('Profile updated:', updatedUser);
+          }}
+          darkMode={darkMode}
         />
       )}
 
