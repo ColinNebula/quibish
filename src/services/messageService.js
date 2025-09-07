@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import websocketService from './websocketService';
+import localStorageService from './localStorageService';
 
 // Create an axios instance for messages API
 const API = axios.create({
@@ -51,6 +52,9 @@ class MessageService {
    * @param {Object} message - Incoming message
    */
   handleIncomingMessage(message) {
+    // Save to localStorage for persistence
+    localStorageService.addMessage(message);
+    
     // Notify all message listeners
     this.messageListeners.forEach(listener => {
       try {
@@ -164,12 +168,25 @@ class MessageService {
     };
     
     try {
+      // Save to localStorage immediately for offline persistence
+      localStorageService.addMessage({
+        ...messageData,
+        senderId: sender,
+        senderName: sender,
+        id: Date.now().toString(),
+        local: true // Mark as locally stored
+      });
+      
       // Try to send via WebSocket first for better real-time experience
       const wsSuccess = websocketService.send('newMessage', messageData);
       
       // If WebSocket send failed or we're not connected, fall back to HTTP
       if (!wsSuccess) {
         const response = await API.post('/messages', messageData);
+        // Update localStorage with server response
+        if (response.data.message) {
+          localStorageService.addMessage({...response.data.message, local: false});
+        }
         return response.data;
       }
       
@@ -418,6 +435,37 @@ class MessageService {
       console.error('Reconnection failed:', error);
       return false;
     }
+  }
+
+  /**
+   * Load messages from localStorage for offline persistence
+   * @returns {Array} - Array of messages from localStorage
+   */
+  loadMessagesFromStorage() {
+    try {
+      const storedMessages = localStorageService.loadMessages();
+      console.log(`📁 Loaded ${storedMessages.length} messages from localStorage`);
+      return storedMessages;
+    } catch (error) {
+      console.error('Error loading messages from localStorage:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get storage info for debugging
+   * @returns {Object} - Storage information
+   */
+  getStorageInfo() {
+    return localStorageService.getStorageInfo();
+  }
+
+  /**
+   * Clear all stored messages
+   * @returns {boolean} - Whether clear was successful
+   */
+  clearStoredMessages() {
+    return localStorageService.clearAllData();
   }
 }
 

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "1",
+    "username": "demo",
+    "email": "demo@quibish.com",
+    "password": "$2a$10$aUAiHNtdJzAta7Zn5tNHief/59SQSwnPTxTbnkxl/Du8wWmfxkPwq",
+    "name": "Demo User",
+    "avatar": null,
+    "status": "online",
+    "role": "user",
+    "createdAt": "2025-09-07T02:41:19.713Z"
+  },
+  {
+    "id": "2",
+    "username": "john",
+    "email": "john@example.com",
+    "password": "$2a$10$fD7kEJw7JtmAEgAaPAKQsuwRCpccrIWTQxhaWwFF4hAyVbJwFQSPa",
+    "name": "John Doe",
+    "avatar": null,
+    "status": "online",
+    "role": "user",
+    "createdAt": "2025-09-07T02:41:19.759Z"
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1757212879760",
+    "text": "This is a demo message from John. How are you doing today?",
+    "senderId": "2",
+    "senderName": "John Doe",
+    "timestamp": "2025-09-07T02:41:19.760Z",
+    "type": "text",
+    "reactions": {},
+    "edited": false
+  },
+  {
+    "id": "1757212879761",
+    "text": "Hello everyone! Great to be here! 👋",
+    "senderId": "3",
+    "senderName": "Jane Smith",
+    "timestamp": "2025-09-07T02:41:19.761Z",
+    "type": "text",
+    "reactions": {
+      "👍": [
+        "1",
+        "2"
+      ],
+      "❤️": [
+        "1"
+      ]
+    },
+    "edited": false
+  }
+]
