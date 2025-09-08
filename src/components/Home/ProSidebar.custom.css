@@ -1,6 +1,7 @@
 /* Custom styles to hide names and style avatars */
 
 /* Hide conversation names completely - using more specific selectors for higher specificity */
+/* COMMENTED OUT TO SHOW CONVERSATION NAMES 
 .pro-sidebar .pro-conversation-details .pro-conversation-name,
 .pro-sidebar .pro-conversation-header .pro-conversation-name,
 .pro-conversation-name,
@@ -19,6 +20,7 @@
   line-height: 0 !important;
   opacity: 0 !important;
 }
+*/
 
 /* Add hover effects to the conversation items */
 .pro-conversation-item:hover .pro-conversation-avatar {
@@ -63,6 +65,7 @@
 }
 
 /* Adjust layout for hidden names */
+/* COMMENTED OUT TO SHOW CONVERSATION DETAILS
 .pro-sidebar .pro-conversation-details,
 .pro-conversation-details,
 .pro-conversation-item .pro-conversation-details,
@@ -74,14 +77,25 @@
   overflow: hidden !important;
   padding: 0 !important;
   margin: 0 !important;
-  position: absolute !important; /* Remove from layout flow */
+  position: absolute !important;
 }
+*/
 
-/* Center the conversation items */
+/* Center the conversation items when details are hidden */
+/* 
 .pro-sidebar .pro-conversation-item,
 .pro-conversation-item {
   justify-content: center !important;
   padding: 8px !important;
+  position: relative !important;
+}
+*/
+
+/* Restore normal conversation item layout */
+.pro-sidebar .pro-conversation-item,
+.pro-conversation-item {
+  justify-content: flex-start !important;
+  padding: 12px 16px !important;
   position: relative !important;
 }
 

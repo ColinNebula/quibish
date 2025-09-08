@@ -63,12 +63,14 @@
   flex-shrink: 0;
 }
 
-/* Mobile responsive adjustments */
-@media (max-width: 768px) {
+/* Mobile responsive adjustments (updated breakpoint) */
+@media (max-width: 480px) {
   .pro-layout {
     flex-direction: column;
     height: 100vh;
     height: 100dvh; /* Dynamic viewport height for mobile */
+    overflow: hidden;
+    position: relative;
   }
 
   .pro-sidebar {
@@ -78,13 +80,50 @@
     height: 100vh;
     height: 100dvh;
     width: 280px;
+    max-width: 85vw; /* Prevent sidebar from being too wide on small screens */
     z-index: 1000;
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--pro-surface, #f8f9fa);
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+  }
+
+  .pro-sidebar.enhanced-sidebar {
+    background: var(--pro-surface, #f8f9fa);
+    border-right: 1px solid var(--pro-border, #e0e0e0);
   }
 
   .pro-sidebar:not(.collapsed) {
     transform: translateX(0);
+  }
+
+  /* Sidebar overlay for mobile */
+  .pro-sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    backdrop-filter: blur(2px);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Main area adjustments for mobile */
+  .pro-main {
+    flex: 1;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
   }
 
   .pro-main {
@@ -131,20 +170,39 @@
   }
 }
 
-/* Small mobile devices */
+/* Small mobile devices (320px-480px) */
 @media (max-width: 480px) {
+  .pro-layout {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .pro-sidebar {
+    width: 260px;
+    max-width: 80vw; /* More space for content on very small screens */
+  }
+
+  /* iPhone SE and similar small devices */
+  .pro-sidebar-overlay {
+    background: rgba(0, 0, 0, 0.5); /* Stronger overlay for better visibility */
+    backdrop-filter: blur(1px);
+  }
+
   .pro-message-list {
     padding: 8px 4px;
-    height: calc(100vh - 110px);
-    height: calc(100dvh - 110px);
-    max-height: calc(100vh - 110px);
-    max-height: calc(100dvh - 110px);
+    height: calc(100vh - 105px); /* Tighter spacing for small screens */
+    height: calc(100dvh - 105px);
+    max-height: calc(100vh - 105px);
+    max-height: calc(100dvh - 105px);
+    font-size: 14px; /* Slightly smaller text for better fit */
   }
 
   .pro-message-blurb {
     margin-bottom: 8px;
-    padding: 6px;
+    padding: 8px 6px; /* Reduced padding for more content space */
     border-radius: 10px;
+    max-width: calc(100% - 8px); /* Ensure full width utilization */
   }
 
   .message-avatar,
@@ -158,22 +216,84 @@
   .message-text {
     font-size: 14px;
     line-height: 1.4;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .user-name {
     font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Enhanced chat header mobile */
+  .enhanced-chat-header {
+    height: 50px;
+    padding: 0 8px;
+    min-height: 50px;
+  }
+
+  .conversation-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .conversation-status {
+    font-size: 11px;
+  }
+
+  /* Input area improvements */
+  .pro-chat-input-container.enhanced {
+    padding: 6px 8px;
+    min-height: 50px;
+  }
+
+  .message-input.enhanced {
+    font-size: 16px; /* Prevent iOS zoom */
+    min-height: 38px;
+    padding: 8px 12px;
+    border-radius: 20px;
+  }
+
+  .input-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 14px;
+  }
+
+  .send-button.enhanced {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
 }
 
-/* Very small devices */
+/* Very small devices (320px-360px) */
 @media (max-width: 360px) {
+  .pro-layout {
+    font-size: 13px; /* Base font size reduction for tiny screens */
+  }
+
+  .pro-sidebar {
+    width: 240px;
+    max-width: 75vw; /* Maximum sidebar width for tiny screens */
+  }
+
   .pro-message-list {
     padding: 6px 2px;
+    height: calc(100vh - 100px); /* Optimized height for tiny screens */
+    height: calc(100dvh - 100px);
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
   }
 
   .pro-message-blurb {
     margin-bottom: 6px;
-    padding: 4px;
+    padding: 6px 4px; /* Minimal padding for maximum content space */
+    border-radius: 8px;
+    max-width: calc(100% - 4px);
   }
 
   .message-avatar,
@@ -182,6 +302,130 @@
     height: 28px;
     min-width: 28px;
     min-height: 28px;
+  }
+
+  .message-text {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .user-name {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* Ultra-compact header */
+  .enhanced-chat-header {
+    height: 45px;
+    padding: 0 6px;
+    min-height: 45px;
+  }
+
+  .conversation-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .conversation-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .conversation-status {
+    font-size: 10px;
+  }
+
+  .action-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 12px;
+  }
+
+  /* Ultra-compact input */
+  .pro-chat-input-container.enhanced {
+    padding: 4px 6px;
+    min-height: 45px;
+  }
+
+  .message-input.enhanced {
+    font-size: 16px; /* Keep 16px to prevent iOS zoom */
+    min-height: 34px;
+    padding: 6px 10px;
+    border-radius: 18px;
+  }
+
+  .input-btn {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    font-size: 13px;
+  }
+
+  .send-button.enhanced {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+  }
+
+  /* Compact sidebar elements */
+  .sidebar-logo .logo-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .conversation-item {
+    padding: 8px 6px;
+    min-height: 50px;
+  }
+}
+
+/* iPhone SE specific optimizations (375px width) */
+@media (max-width: 375px) and (max-height: 667px) {
+  .pro-sidebar {
+    width: 250px;
+    max-width: 78vw; /* Optimized for iPhone SE width */
+  }
+
+  .pro-sidebar-overlay {
+    background: rgba(0, 0, 0, 0.6); /* Darker overlay for better contrast */
+  }
+
+  .pro-message-list {
+    height: calc(100vh - 95px); /* iPhone SE specific height */
+    height: calc(100dvh - 95px);
+    padding: 6px 3px;
+  }
+
+  .enhanced-chat-header {
+    height: 48px;
+    padding: 0 8px;
+  }
+
+  .pro-chat-input-container.enhanced {
+    padding: 5px 8px;
+    min-height: 47px;
+  }
+
+  /* Ensure touch targets remain accessible */
+  .conversation-item {
+    min-height: 48px;
+    padding: 8px 6px;
+  }
+
+  .sidebar-toggle-btn {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 6px;
   }
 }
 
@@ -274,6 +518,124 @@
   box-sizing: border-box;
 }
 
+/* Enhanced Touch Targets for Small Screens */
+@media (max-width: 768px) {
+  /* Ensure all interactive elements meet WCAG touch target guidelines */
+  button,
+  .btn,
+  .action-btn,
+  .input-btn,
+  .send-button,
+  .sidebar-toggle-btn,
+  .conversation-item {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Specific touch target improvements */
+  .conversation-item {
+    padding: 12px 8px;
+    min-height: 56px; /* Larger touch target for easier selection */
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar-toggle-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  /* Message reactions touch targets */
+  .message-reactions .reaction-item {
+    min-height: 36px;
+    min-width: 36px;
+    padding: 6px 8px;
+    margin: 2px;
+    border-radius: 18px;
+    font-size: 14px;
+  }
+
+  /* Input area touch improvements */
+  .message-input.enhanced {
+    padding: 12px 16px;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 22px;
+  }
+
+  /* Emoji picker touch targets */
+  .emoji-item {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Profile and settings buttons */
+  .user-actions .action-item {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 8px;
+    border-radius: 8px;
+  }
+}
+
+/* Small device touch targets */
+@media (max-width: 480px) {
+  /* Maintain minimum touch targets even on small screens */
+  button,
+  .btn,
+  .action-btn {
+    min-height: 40px;
+    min-width: 40px;
+  }
+
+  .conversation-item {
+    min-height: 52px;
+    padding: 10px 6px;
+  }
+
+  .message-reactions .reaction-item {
+    min-height: 32px;
+    min-width: 32px;
+    padding: 4px 6px;
+    font-size: 13px;
+  }
+}
+
+/* Very small device touch adaptations */
+@media (max-width: 360px) {
+  /* Minimum viable touch targets for tiny screens */
+  button,
+  .btn,
+  .action-btn {
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  .conversation-item {
+    min-height: 48px;
+    padding: 8px 4px;
+  }
+
+  .sidebar-toggle-btn {
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 14px;
+  }
+}
+
 /* Scroll performance optimizations */
 .pro-message-list {
   transform: translateZ(0); /* Force hardware acceleration */
@@ -283,28 +645,12 @@
 
 /* Fix for sidebar overlay on mobile */
 @media (max-width: 768px) {
-  .pro-sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-  }
-
-  .pro-sidebar:not(.collapsed) + .pro-sidebar-overlay {
-    opacity: 1;
-    visibility: visible;
-  }
+  /* Sidebar overlay is now handled in the component */
 }
 
 /* Safe area adjustments for mobile devices with notches */
 @supports (padding: max(0px)) {
-  @media (max-width: 768px) {
+  @media (max-width: 480px) {
     .pro-message-list {
       padding-left: max(8px, env(safe-area-inset-left));
       padding-right: max(8px, env(safe-area-inset-right));
@@ -395,5 +741,191 @@
 @media (prefers-reduced-motion: reduce) {
   .pro-message-list {
     scroll-behavior: auto;
+  }
+}
+
+/* Additional Small Screen Performance Optimizations */
+
+/* Reduce animations on low-end devices */
+@media (max-width: 480px) {
+  * {
+    transition-duration: 0.2s !important;
+    animation-duration: 0.2s !important;
+  }
+
+  /* Disable complex backgrounds on small screens for performance */
+  .enhanced-chat-header::before {
+    display: none;
+  }
+
+  /* Simplify shadows and effects */
+  .pro-sidebar {
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+    backdrop-filter: none;
+  }
+
+  .pro-message-blurb {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Ultra-small screen performance mode */
+@media (max-width: 360px) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* Disable all shadows and effects for performance */
+  .pro-sidebar,
+  .pro-message-blurb,
+  .enhanced-chat-header {
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  /* Simplified borders */
+  .pro-sidebar {
+    border-right: 1px solid var(--pro-border, #e0e0e0);
+  }
+
+  .enhanced-chat-header {
+    border-bottom: 1px solid var(--pro-border, #e0e0e0);
+  }
+}
+
+/* Accessibility improvements for small screens */
+@media (max-width: 768px) {
+  /* High contrast focus indicators */
+  button:focus,
+  .btn:focus,
+  .action-btn:focus,
+  .conversation-item:focus {
+    outline: 2px solid var(--pro-accent, #007bff);
+    outline-offset: 2px;
+  }
+
+  /* Larger text for better readability */
+  .message-text {
+    font-size: max(14px, 1rem);
+    line-height: 1.5;
+  }
+
+  /* Better color contrast for small text */
+  .user-name,
+  .conversation-status,
+  .timestamp {
+    font-weight: 600;
+    color: var(--pro-text-primary, #000);
+  }
+
+  /* Improved tap targets for accessibility */
+  .conversation-item:hover,
+  .conversation-item:focus {
+    background: var(--pro-accent-light, rgba(0, 123, 255, 0.1));
+  }
+
+  .message-reactions .reaction-item:hover,
+  .message-reactions .reaction-item:focus {
+    background: var(--pro-accent-light, rgba(0, 123, 255, 0.1));
+    transform: scale(1.05);
+  }
+}
+
+/* Landscape orientation optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .enhanced-chat-header {
+    height: 45px;
+    padding: 0 12px;
+  }
+
+  .pro-message-list {
+    height: calc(100vh - 85px);
+    height: calc(100dvh - 85px);
+    max-height: calc(100vh - 85px);
+    max-height: calc(100dvh - 85px);
+    padding: 8px 6px;
+  }
+
+  .pro-chat-input-container.enhanced {
+    padding: 4px 8px;
+    min-height: 40px;
+  }
+
+  .message-input.enhanced {
+    min-height: 32px;
+    padding: 8px 12px;
+  }
+}
+
+/* Dark mode small screen optimizations */
+@media (max-width: 768px) {
+  .dark-mode .pro-sidebar,
+  .dark-theme .pro-sidebar {
+    background: var(--pro-surface-dark, #1e1e2e);
+    border-right: 1px solid var(--pro-border-dark, #374151);
+  }
+
+  .dark-mode .enhanced-chat-header,
+  .dark-theme .enhanced-chat-header {
+    background: var(--pro-surface-dark, #1e1e2e);
+    border-bottom: 1px solid var(--pro-border-dark, #374151);
+  }
+
+  .dark-mode .pro-message-list,
+  .dark-theme .pro-message-list {
+    background: var(--pro-bg-dark, #111827);
+  }
+}
+
+/* Print styles for small screens */
+@media print {
+  .pro-sidebar,
+  .enhanced-chat-header,
+  .pro-chat-input-container {
+    display: none !important;
+  }
+
+  .pro-message-list {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .pro-message-blurb {
+    break-inside: avoid;
+    margin-bottom: 8px;
+    padding: 4px;
+    border: 1px solid #ccc;
+  }
+}
+
+/* EMERGENCY FIX: Ensure sidebar and input are always visible on desktop */
+@media (min-width: 481px) {
+  .pro-sidebar {
+    position: relative !important;
+    transform: none !important;
+    width: 300px !important;
+    height: 100vh !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .pro-layout {
+    display: flex !important;
+    flex-direction: row !important;
+  }
+  
+  .pro-main {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .pro-chat-input-container {
+    display: flex !important;
+    position: relative !important;
   }
 }

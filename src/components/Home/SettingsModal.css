@@ -1,34 +1,101 @@
-/* Settings Modal Styles */
-.settings-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
+/* Settings Modal Styles - Fixed */
+:root {
+  /* Gradient patterns for reuse */
+  --modal-overlay-gradient: 
     radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(147, 51, 234, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 40% 60%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
     rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(12px) saturate(150%);
-  animation: fadeIn 0.3s ease-out;
-}
-
-.settings-modal {
-  background: 
+  
+  --modal-light-gradient:
     linear-gradient(135deg, 
       rgba(255, 255, 255, 0.95) 0%,
       rgba(248, 250, 252, 0.98) 25%,
       rgba(241, 245, 249, 0.95) 50%,
       rgba(248, 250, 252, 0.98) 75%,
       rgba(255, 255, 255, 0.95) 100%);
+      
+  --modal-dark-gradient:
+    linear-gradient(135deg, 
+      rgba(17, 24, 39, 0.95) 0%,
+      rgba(31, 41, 55, 0.98) 25%,
+      rgba(17, 24, 39, 0.95) 50%,
+      rgba(31, 41, 55, 0.98) 75%,
+      rgba(17, 24, 39, 0.95) 100%);
+      
+  --subtle-radial-gradient:
+    radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(147, 51, 234, 0.03) 0%, transparent 50%);
+    
+  /* Diagonal overlay patterns */
+  --diagonal-overlay-light:
+    linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.03) 50%, transparent 70%),
+    linear-gradient(-45deg, transparent 30%, rgba(147, 51, 234, 0.03) 50%, transparent 70%);
+    
+  --diagonal-overlay-dark:
+    linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.08) 50%, transparent 70%),
+    linear-gradient(-45deg, transparent 30%, rgba(147, 51, 234, 0.08) 50%, transparent 70%);
+    
+  --diagonal-overlay-subtle:
+    linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.02) 50%, transparent 70%),
+    linear-gradient(-45deg, transparent 30%, rgba(147, 51, 234, 0.02) 50%, transparent 70%);
+    
+  --diagonal-overlay-minimal:
+    linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.01) 50%, transparent 70%),
+    linear-gradient(-45deg, transparent 30%, rgba(147, 51, 234, 0.01) 50%, transparent 70%);
+    
+  /* Background patterns for content areas */
+  --content-bg-light:
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(248, 250, 252, 0.6) 50%,
+      rgba(241, 245, 249, 0.4) 100%);
+      
+  --content-bg-enhanced:
+    linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.3) 0%,
+      rgba(248, 250, 252, 0.5) 50%,
+      rgba(241, 245, 249, 0.3) 100%);
+      
+  --content-bg-dark:
+    linear-gradient(135deg, 
+      rgba(17, 24, 39, 0.4) 0%,
+      rgba(31, 41, 55, 0.6) 50%,
+      rgba(17, 24, 39, 0.4) 100%);
+      
+  /* Common spacing and sizing values */
+  --modal-padding: 28px;
+  --modal-padding-mobile: 16px;
+  --modal-padding-small: 20px;
+  --modal-padding-header: 20px 28px;
+  --modal-border-radius: 16px;
+  --modal-border-radius-mobile: 12px;
+  --modal-border-radius-small: 8px;
+  --modal-z-index: 15000;
+}
+
+.settings-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--modal-overlay-gradient);
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--modal-z-index) !important; /* Much higher z-index to avoid conflicts */
+  backdrop-filter: blur(12px) saturate(150%);
+  animation: fadeIn 0.3s ease-out;
+  overflow-y: auto; /* Allow scrolling */
+  padding: var(--modal-padding-small); /* Add padding for mobile */
+}
+
+.settings-modal {
+  background: var(--modal-light-gradient);
   backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
+  border-radius: var(--modal-border-radius);
   box-shadow: 
     0 20px 40px rgba(0, 0, 0, 0.1),
     0 8px 16px rgba(0, 0, 0, 0.08),
@@ -37,10 +104,11 @@
   max-width: 900px;
   max-height: 90vh;
   overflow: hidden;
-  display: flex;
+  display: flex !important; /* Force display */
   flex-direction: column;
   animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
+  pointer-events: auto !important; /* Ensure clicks work */
 }
 
 .settings-modal::before {
@@ -50,22 +118,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.03) 50%, transparent 70%),
-    linear-gradient(-45deg, transparent 30%, rgba(147, 51, 234, 0.03) 50%, transparent 70%);
-  border-radius: 16px;
+  background: var(--diagonal-overlay-light);
+  border-radius: var(--modal-border-radius);
   pointer-events: none;
   z-index: 1;
 }
 
 .settings-modal.dark {
-  background: 
-    linear-gradient(135deg, 
-      rgba(17, 24, 39, 0.95) 0%,
-      rgba(31, 41, 55, 0.98) 25%,
-      rgba(17, 24, 39, 0.95) 50%,
-      rgba(31, 41, 55, 0.98) 75%,
-      rgba(17, 24, 39, 0.95) 100%);
+  background: var(--modal-dark-gradient);
   border: 1px solid rgba(75, 85, 99, 0.3);
   box-shadow: 
     0 20px 40px rgba(0, 0, 0, 0.4),
@@ -74,13 +134,11 @@
 }
 
 .settings-modal.dark::before {
-  background: 
-    linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.08) 50%, transparent 70%),
-    linear-gradient(-45deg, transparent 30%, rgba(147, 51, 234, 0.08) 50%, transparent 70%);
+  background: var(--diagonal-overlay-dark);
 }
 
 .settings-modal-header {
-  padding: 20px 28px;
+  padding: var(--modal-padding-header);
   border-bottom: 1px solid rgba(226, 232, 240, 0.6);
   display: flex;
   align-items: center;
@@ -104,6 +162,175 @@
       rgba(31, 41, 55, 0.95) 100%);
 }
 
+/* Header Content */
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+}
+
+.header-main {
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.header-content h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.title-icon {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+.settings-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+  font-weight: 400;
+}
+
+/* Section Headers */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.section-header .section-icon {
+  font-size: 1.125rem;
+  color: var(--primary-color);
+}
+
+.section-badge {
+  background: var(--primary-color);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: auto;
+  min-width: fit-content;
+}
+
+/* Settings Search */
+.settings-search {
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+}
+
+.search-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.settings-search input {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-left: 2.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.search-input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.search-clear {
+  position: absolute;
+  right: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.search-clear:hover {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.settings-search input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.settings-search .search-icon {
+  position: absolute;
+  left: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Unsaved Changes Indicator */
+.unsaved-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: #f59e0b;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* Enhanced Profile Container */
 .enhanced-profile-container {
   padding: 0;
@@ -112,11 +339,8 @@
   background: 
     radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.04) 0%, transparent 60%),
     radial-gradient(circle at 80% 70%, rgba(147, 51, 234, 0.04) 0%, transparent 60%),
-    linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.3) 0%,
-      rgba(248, 250, 252, 0.5) 50%,
-      rgba(241, 245, 249, 0.3) 100%);
-  border-radius: 12px;
+    var(--content-bg-enhanced);
+  border-radius: var(--modal-border-radius-mobile);
   position: relative;
   backdrop-filter: blur(5px);
 }
@@ -128,10 +352,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.02) 50%, transparent 70%),
-    linear-gradient(-45deg, transparent 30%, rgba(147, 51, 234, 0.02) 50%, transparent 70%);
-  border-radius: 12px;
+  background: var(--diagonal-overlay-subtle);
+  border-radius: var(--modal-border-radius-mobile);
   pointer-events: none;
   z-index: 1;
 }
@@ -207,15 +429,11 @@
 
 .settings-modal-body {
   flex: 1;
-  padding: 28px;
+  padding: var(--modal-padding);
   overflow-y: auto;
   background: 
-    radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 90% 80%, rgba(147, 51, 234, 0.03) 0%, transparent 50%),
-    linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.4) 0%,
-      rgba(248, 250, 252, 0.6) 50%,
-      rgba(241, 245, 249, 0.4) 100%);
+    var(--subtle-radial-gradient),
+    var(--content-bg-light);
   backdrop-filter: blur(5px);
   position: relative;
   z-index: 2;
@@ -225,10 +443,7 @@
   background: 
     radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 90% 80%, rgba(147, 51, 234, 0.08) 0%, transparent 50%),
-    linear-gradient(135deg, 
-      rgba(17, 24, 39, 0.4) 0%,
-      rgba(31, 41, 55, 0.6) 50%,
-      rgba(17, 24, 39, 0.4) 100%);
+    var(--content-bg-dark);
 }
 
 .settings-modal-nav {
@@ -359,10 +574,7 @@
   background: 
     radial-gradient(circle at 15% 25%, rgba(59, 130, 246, 0.03) 0%, transparent 60%),
     radial-gradient(circle at 85% 75%, rgba(147, 51, 234, 0.03) 0%, transparent 60%),
-    linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.4) 0%,
-      rgba(248, 250, 252, 0.6) 50%,
-      rgba(241, 245, 249, 0.4) 100%);
+    var(--content-bg-light);
   border-radius: 12px;
   padding: 24px;
   border: 1px solid rgba(226, 232, 240, 0.3);
@@ -381,9 +593,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
-    linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.01) 50%, transparent 70%),
-    linear-gradient(-45deg, transparent 30%, rgba(147, 51, 234, 0.01) 50%, transparent 70%);
+  background: var(--diagonal-overlay-minimal);
   border-radius: 12px;
   pointer-events: none;
   z-index: 1;
@@ -416,10 +626,7 @@
   background: 
     radial-gradient(circle at 15% 25%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
     radial-gradient(circle at 85% 75%, rgba(147, 51, 234, 0.08) 0%, transparent 60%),
-    linear-gradient(135deg, 
-      rgba(17, 24, 39, 0.4) 0%,
-      rgba(31, 41, 55, 0.6) 50%,
-      rgba(17, 24, 39, 0.4) 100%);
+    var(--content-bg-dark);
   border-color: rgba(75, 85, 99, 0.3);
   box-shadow: 
     0 4px 12px rgba(0, 0, 0, 0.2),
@@ -428,6 +635,95 @@
 
 .settings-modal.dark .settings-section p {
   color: rgba(156, 163, 175, 0.9);
+}
+
+/* Settings Navigation */
+.settings-navigation {
+  width: 280px;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.navigation-section {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--spacing-md) 0;
+}
+
+.navigation-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.navigation-item {
+  margin-bottom: var(--spacing-xs);
+}
+
+.navigation-item button {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.navigation-item button:hover {
+  background: var(--bg-secondary);
+}
+
+.navigation-item.active button {
+  background: var(--primary-color);
+  color: white;
+}
+
+.nav-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.nav-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-description {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.navigation-item.active .nav-description {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* Responsive adjustments */
@@ -441,6 +737,35 @@
   }
   
   .settings-modal-body {
-    padding: 16px;
+    padding: var(--modal-padding-mobile);
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .settings-modal-overlay {
+    padding: 10px !important;
+    align-items: flex-start !important;
+    padding-top: 20px !important;
+  }
+  
+  .settings-modal {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: calc(100vh - 40px) !important;
+    border-radius: var(--modal-border-radius-mobile) !important;
+  }
+  
+  .settings-modal-header {
+    padding: var(--modal-padding-mobile) !important;
+  }
+  
+  .settings-modal-nav {
+    padding: 0 var(--modal-padding-mobile) !important;
+    overflow-x: auto !important;
+  }
+  
+  .settings-content {
+    padding: var(--modal-padding-mobile) !important;
   }
 }

@@ -13,8 +13,9 @@ const mediaDir = path.join(uploadsDir, 'user-media');
 const photosDir = path.join(mediaDir, 'photos');
 const videosDir = path.join(mediaDir, 'videos');
 const gifsDir = path.join(mediaDir, 'gifs');
+const documentsDir = path.join(mediaDir, 'documents');
 
-[uploadsDir, avatarsDir, mediaDir, photosDir, videosDir, gifsDir].forEach(dir => {
+[uploadsDir, avatarsDir, mediaDir, photosDir, videosDir, gifsDir, documentsDir].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -45,6 +46,8 @@ const mediaStorage = multer.diskStorage({
       }
     } else if (file.mimetype.startsWith('video/')) {
       uploadPath = videosDir;
+    } else if (file.mimetype === 'application/pdf') {
+      uploadPath = documentsDir;
     } else {
       uploadPath = mediaDir; // fallback
     }
@@ -68,15 +71,18 @@ const avatarFileFilter = (req, file, cb) => {
   }
 };
 
-// File filter for user media (photos, videos, GIFs)
+// File filter for user media (photos, videos, GIFs, PDFs)
 const mediaFileFilter = (req, file, cb) => {
   const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'];
+  const allowedDocumentTypes = ['application/pdf'];
   
-  if (allowedImageTypes.includes(file.mimetype) || allowedVideoTypes.includes(file.mimetype)) {
+  if (allowedImageTypes.includes(file.mimetype) || 
+      allowedVideoTypes.includes(file.mimetype) || 
+      allowedDocumentTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only images (JPEG, PNG, GIF, WebP) and videos (MP4, WebM, OGG, AVI, MOV) are allowed.'), false);
+    cb(new Error('Invalid file type. Only images (JPEG, PNG, GIF, WebP), videos (MP4, WebM, OGG, AVI, MOV), and PDFs are allowed.'), false);
   }
 };
 
@@ -243,7 +249,8 @@ router.post('/media', authenticateToken, mediaUpload.array('media', 10), async (
       users[userIndex].userMedia = {
         photos: [],
         videos: [],
-        gifs: []
+        gifs: [],
+        documents: []
       };
     }
 
@@ -268,6 +275,8 @@ router.post('/media', authenticateToken, mediaUpload.array('media', 10), async (
         users[userIndex].userMedia.photos.push(mediaInfo);
       } else if (file.mimetype.startsWith('video/')) {
         users[userIndex].userMedia.videos.push(mediaInfo);
+      } else if (file.mimetype === 'application/pdf') {
+        users[userIndex].userMedia.documents.push(mediaInfo);
       }
 
       uploadedMedia.push(mediaInfo);
@@ -324,7 +333,8 @@ router.get('/media', authenticateToken, (req, res) => {
     const userMedia = user.userMedia || {
       photos: [],
       videos: [],
-      gifs: []
+      gifs: [],
+      documents: []
     };
 
     res.json({
@@ -367,7 +377,7 @@ router.delete('/media/:mediaId', authenticateToken, (req, res) => {
     let mediaPath = null;
 
     // Search in all media categories
-    ['photos', 'videos', 'gifs'].forEach(category => {
+    ['photos', 'videos', 'gifs', 'documents'].forEach(category => {
       const mediaIndex = userMedia[category].findIndex(media => media.id === mediaId);
       if (mediaIndex !== -1) {
         const media = userMedia[category][mediaIndex];

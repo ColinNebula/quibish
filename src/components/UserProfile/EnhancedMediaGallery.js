@@ -12,6 +12,7 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
   const [viewMode, setViewMode] = useState('grid');
   const [showStats, setShowStats] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState(null); // For video/image viewer modal
 
   // Filter and sort uploads
   useEffect(() => {
@@ -129,6 +130,7 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
       case 'video': return '🎥';
       case 'gif': return '✨';
       case 'document': return '📄';
+      case 'pdf': return '📄';
       default: return '📁';
     }
   };
@@ -179,7 +181,13 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
         {item.type === 'gif' && (
           <img src={item.url} alt={item.name} loading="lazy" />
         )}
-        {item.type === 'document' && (
+        {(item.type === 'document' || item.type === 'pdf') && (
+          <div className="document-preview">
+            <span className="file-icon">{getFileIcon(item.type)}</span>
+            <span className="file-extension">PDF</span>
+          </div>
+        )}
+        {item.type === 'document' && item.name && !item.name.toLowerCase().endsWith('.pdf') && (
           <div className="document-preview">
             <span className="file-icon">{getFileIcon(item.type)}</span>
             <span className="file-extension">{item.name.split('.').pop()?.toUpperCase()}</span>
@@ -354,8 +362,8 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
               isSelected={selectedItems.has(item.id)}
               onSelect={handleItemSelect}
               onView={(item) => {
-                // Handle item view - could open a modal or navigate
-                console.log('Viewing item:', item);
+                // Open media viewer modal for images and videos
+                setSelectedMedia(item);
               }}
             />
           ))
@@ -368,8 +376,112 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
         {searchQuery && ` matching "${searchQuery}"`}
         {activeFilter !== 'all' && ` (${activeFilter} only)`}
       </div>
+
+      {/* Media Viewer Modal */}
+      {selectedMedia && (
+        <div className="media-viewer-overlay" onClick={() => setSelectedMedia(null)}>
+          <div className="media-viewer-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="media-viewer-header">
+              <h3>{selectedMedia.name}</h3>
+              <button 
+                className="close-viewer-btn" 
+                onClick={() => setSelectedMedia(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="media-viewer-content">
+              {selectedMedia.type === 'image' && (
+                <img 
+                  src={selectedMedia.url} 
+                  alt={selectedMedia.name} 
+                  className="viewer-image"
+                />
+              )}
+              {selectedMedia.type === 'video' && (
+                <video 
+                  src={selectedMedia.url.startsWith('http') ? selectedMedia.url : `http://localhost:5001${selectedMedia.url}`}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="viewer-video"
+                  poster={selectedMedia.thumbnailUrl}
+                  onError={(e) => {
+                    console.error('Video playback error in viewer:', e);
+                    console.log('Selected media details:', selectedMedia);
+                  }}
+                >
+                  <source 
+                    src={selectedMedia.url.startsWith('http') ? selectedMedia.url : `http://localhost:5001${selectedMedia.url}`} 
+                    type={selectedMedia.mimeType || 'video/mp4'} 
+                  />
+                  Your browser does not support the video tag.
+                </video>
+              )}
+              {selectedMedia.type === 'gif' && (
+                <img 
+                  src={selectedMedia.url} 
+                  alt={selectedMedia.name} 
+                  className="viewer-gif"
+                />
+              )}
+              {(selectedMedia.type === 'document' || selectedMedia.type === 'pdf') && (
+                <div className="pdf-viewer">
+                  <iframe 
+                    src={selectedMedia.url.startsWith('http') ? selectedMedia.url : `http://localhost:5001${selectedMedia.url}`}
+                    width="100%"
+                    height="500px"
+                    title={selectedMedia.name}
+                    style={{ border: 'none', borderRadius: '8px' }}
+                  />
+                  <div className="pdf-actions">
+                    <a 
+                      href={selectedMedia.url.startsWith('http') ? selectedMedia.url : `http://localhost:5001${selectedMedia.url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="pdf-open-btn"
+                    >
+                      Open in New Tab
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="media-viewer-info">
+              <div className="media-details">
+                <span><strong>Type:</strong> {selectedMedia.type}</span>
+                <span><strong>Size:</strong> {formatFileSize(selectedMedia.size)}</span>
+                {selectedMedia.dimensions && (
+                  <span><strong>Dimensions:</strong> {selectedMedia.dimensions}</span>
+                )}
+                {selectedMedia.duration && (
+                  <span><strong>Duration:</strong> {formatDuration(selectedMedia.duration)}</span>
+                )}
+                <span><strong>Uploaded:</strong> {new Date(selectedMedia.uploadedAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+};
+
+// Helper function to format file size
+const formatFileSize = (bytes) => {
+  if (!bytes) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// Helper function to format duration
+const formatDuration = (seconds) => {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 export default EnhancedMediaGallery;

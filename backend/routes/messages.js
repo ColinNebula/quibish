@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
+// Import file storage if enabled
+const fileStorage = process.env.USE_FILE_STORAGE === 'true' ? require('../storage/fileStorage') : null;
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 
 // Middleware to verify JWT token
@@ -28,8 +31,30 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-// In-memory message storage (in production, use a database)
-const messages = [
+// Storage abstraction functions
+const getMessages = async () => {
+  if (fileStorage) {
+    return await fileStorage.getMessages();
+  }
+  return global.inMemoryStorage.messages || [];
+};
+
+const saveMessage = async (message) => {
+  if (fileStorage) {
+    return await fileStorage.addMessage(message);
+  }
+  // Fallback to in-memory
+  if (!global.inMemoryStorage.messages) {
+    global.inMemoryStorage.messages = [];
+  }
+  message.id = Date.now().toString();
+  message.timestamp = new Date().toISOString();
+  global.inMemoryStorage.messages.push(message);
+  return message;
+};
+
+// In-memory message storage (fallback when file storage not available)
+const defaultMessages = [
   {
     id: '1',
     text: 'Welcome to Quibish! 🎉',
@@ -62,40 +87,70 @@ const messages = [
   }
 ];
 
-// GET /api/messages - get all messages with pagination
-router.get('/', authenticateToken, (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 50;
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-
-  // Sort messages by timestamp (newest first)
-  const sortedMessages = [...messages].sort((a, b) => 
-    new Date(b.timestamp) - new Date(a.timestamp)
-  );
-
-  const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
-  
-  res.json({
-    success: true,
-    messages: paginatedMessages,
-    pagination: {
-      currentPage: page,
-      totalPages: Math.ceil(messages.length / limit),
-      totalMessages: messages.length,
-      hasNext: endIndex < messages.length,
-      hasPrev: startIndex > 0
+// Initialize default messages in storage if empty
+const initializeMessages = async () => {
+  try {
+    const existingMessages = await getMessages();
+    if (existingMessages.length === 0) {
+      console.log('📝 Initializing default messages...');
+      for (const msg of defaultMessages) {
+        await saveMessage(msg);
+      }
     }
-  });
+  } catch (error) {
+    console.error('Error initializing messages:', error);
+  }
+};
+
+// Initialize messages when the module loads
+initializeMessages();
+
+// GET /api/messages - get all messages with pagination
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+
+    // Get messages from storage
+    const allMessages = await getMessages();
+    
+    // Sort messages by timestamp (newest first)
+    const sortedMessages = [...allMessages].sort((a, b) => 
+      new Date(b.timestamp) - new Date(a.timestamp)
+    );
+
+    const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
+    
+    res.json({
+      success: true,
+      messages: paginatedMessages,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(allMessages.length / limit),
+        totalMessages: allMessages.length,
+        hasNext: endIndex < allMessages.length,
+        hasPrev: startIndex > 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch messages'
+    });
+  }
 });
 
 // POST /api/messages - send a new message
-router.post('/', authenticateToken, (req, res) => {
-  const { text, type = 'text' } = req.body;
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const { text, type = 'text' } = req.body;
 
-  if (!text || text.trim().length === 0) {
-    return res.status(400).json({
-      success: false,
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
       error: 'Message text is required'
     });
   }
@@ -108,24 +163,30 @@ router.post('/', authenticateToken, (req, res) => {
   }
 
   const newMessage = {
-    id: uuidv4(),
     text: text.trim(),
     senderId: req.user.id,
     senderName: req.user.username,
-    timestamp: new Date().toISOString(),
     type: type,
     reactions: {},
     edited: false
   };
 
-  messages.push(newMessage);
+  // Save message using storage abstraction
+  const savedMessage = await saveMessage(newMessage);
   
   console.log(`New message from ${req.user.username}: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
   
   res.status(201).json({
     success: true,
-    message: newMessage
+    message: savedMessage
   });
+  } catch (error) {
+    console.error('Error saving message:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save message'
+    });
+  }
 });
 
 // PUT /api/messages/:id - edit a message

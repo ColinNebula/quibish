@@ -2527,7 +2527,8 @@
 .pro-message-blurb.message-delay-4 {
   animation-delay: 0.4s;
 }
-/* UNIFIED Enhanced hover effects - NO CONFLICTS */
+/* DISABLED - Conflicting hover effects - handled in MessagePositionStyles.css */
+/*
 .pro-message-blurb:hover {
   transform: translateY(-2px) scale(1.01);
   box-shadow: 
@@ -2538,6 +2539,7 @@
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+*/
 /* Enhanced hover with color-based glow */
 .pro-message-blurb::before {
   content: '';
@@ -2711,7 +2713,8 @@
   margin-left: 8px;
   margin-right: 0;
 }
-/* Hover effects for different message types */
+/* DISABLED - Conflicting hover effects for different message types */
+/*
 .pro-message-blurb.current-user-message:hover {
   transform: translateX(5px);
   background: linear-gradient(135deg, 
@@ -2730,6 +2733,7 @@
     3px 5px 15px rgba(34, 197, 94, 0.2),
     inset 1px 1px 0 rgba(255, 255, 255, 0.3);
 }
+*/
 /* Dark mode support */
 .pro-layout.dark .pro-message-blurb.current-user-message {
   background: linear-gradient(135deg, 
@@ -3625,8 +3629,8 @@
 }
 .pro-lightbox-content {
   position: relative;
-  max-width: 90vw;
-  max-height: 80vh;
+  max-width: 95vw;
+  max-height: 85vh;
   width: auto;
   height: auto;
   display: flex;
@@ -3648,8 +3652,8 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 20px;
   overflow: hidden;
-  /* Compact design for above-message display */
-  min-width: 400px;
+  /* Enhanced wider design for better content display */
+  min-width: 500px;
   /* Subtle inner glow */
   box-shadow: 
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -4092,34 +4096,50 @@
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 /* Mobile-specific lightbox improvements */
+/* Enhanced mobile responsiveness for lightbox */
 @media (max-width: 768px) {
   .pro-lightbox-overlay {
     /* Enhanced mobile backdrop */
     background: rgba(0, 0, 0, 0.98);
     backdrop-filter: blur(8px);
+    /* Better mobile scroll handling */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .pro-lightbox-content {
     max-width: 98vw;
     max-height: 98vh;
     min-width: 280px; /* Override desktop min-width for mobile */
     border-radius: 12px;
+    /* Enhanced mobile positioning */
+    margin: 5px auto;
+    /* Better mobile scaling */
+    transform-origin: center center;
   }
   .pro-lightbox-body {
-    padding: 60px 16px;
+    padding: 40px 16px 20px 16px;
     /* Grid layout for mobile centering */
     display: grid;
     place-items: center;
+    /* Improved mobile spacing */
+    gap: 16px;
   }
   .pro-lightbox-header {
     padding: 16px 20px;
+    /* Mobile header improvements */
+    flex-shrink: 0;
+    z-index: 10;
   }
   .pro-lightbox-image {
-    min-width: 70vw;
-    min-height: 40vh;
+    min-width: 75vw;
+    min-height: 45vh;
     border-radius: 8px;
     /* Optimized mobile sizing */
-    max-width: 90vw;
-    max-height: 70vh;
+    max-width: 92vw;
+    max-height: 75vh;
+    /* Better mobile image handling */
+    object-fit: contain;
+    touch-action: pinch-zoom;
   }
   /* Mobile GIF styling */
   .pro-lightbox-gif::before {
@@ -4135,10 +4155,10 @@
     font-size: 8px;
   }
   .pro-lightbox-video {
-    min-width: 88vw;
+    min-width: 90vw;
     min-height: 50vh;
-    max-width: 92vw;
-    max-height: 75vh;
+    max-width: 94vw;
+    max-height: 78vh;
     border-radius: 8px;
     /* Mobile video optimizations */
     object-fit: contain;
@@ -4195,46 +4215,65 @@
     transform: scale(0.95);
   }
 }
-/* Small screen centering enhancements */
+/* Enhanced small screen centering and touch optimization */
 @media (max-width: 480px) {
   .pro-lightbox-content {
-    max-width: 95vw;
-    max-height: 95vh;
+    max-width: 96vw;
+    max-height: 96vh;
     min-width: 250px; /* Override desktop min-width for very small screens */
-    margin: 10px auto;
+    margin: 8px auto;
+    /* Enhanced small screen positioning */
+    transform-origin: center center;
   }
   .pro-lightbox-image {
-    min-width: 90vw;
-    min-height: 40vh;
-  }
-  .pro-lightbox-video {
     min-width: 92vw;
     min-height: 45vh;
-    max-width: 95vw;
-    max-height: 70vh;
+    max-width: 94vw;
+    max-height: 72vh;
+    /* Better small screen image handling */
+    object-fit: contain;
+    border-radius: 6px;
+  }
+  .pro-lightbox-video {
+    min-width: 94vw;
+    min-height: 48vh;
+    max-width: 96vw;
+    max-height: 74vh;
+    /* Enhanced small screen video */
+    object-fit: contain;
+    border-radius: 6px;
   }
   .pro-lightbox-body {
-    padding: 40px 8px;
+    padding: 35px 8px 15px 8px;
+    /* Tighter spacing for small screens */
+    gap: 12px;
   }
   .pro-lightbox-header {
-    padding: 15px 12px;
+    padding: 12px 16px;
+    /* Compact header for small screens */
+    min-height: 50px;
   }
   .pro-lightbox-close {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+    /* Better touch target */
+    top: 10px;
+    right: 10px;
   }
   .pro-lightbox-nav {
-    width: 50px;
-    height: 50px;
-    min-width: 50px;
-    min-height: 50px;
-    font-size: 20px;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+    font-size: 22px;
+    /* Enhanced touch targets */
+    border-radius: 26px;
   }
   .pro-lightbox-prev {
-    left: 8px;
+    left: 10px;
   }
   .pro-lightbox-next {
-    right: 8px;
+    right: 10px;
   }
   .pro-lightbox-name {
     font-size: 14px;
@@ -4274,22 +4313,113 @@
     min-height: 36px;
   }
 }
-/* Landscape mobile optimizations */
+/* Enhanced landscape mobile optimizations */
 @media (max-width: 768px) and (orientation: landscape) {
   .pro-lightbox-content {
-    max-width: 95vw;
-    max-height: 90vh;
+    max-width: 97vw;
+    max-height: 92vh;
+    /* Better landscape positioning */
+    margin: 4vh auto;
   }
   .pro-lightbox-body {
-    padding: 30px 16px;
+    padding: 20px 16px 10px 16px;
+    /* Compact landscape layout */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .pro-lightbox-header {
+    padding: 10px 20px;
+    /* Compact landscape header */
+    position: relative;
+    z-index: 10;
   }
   .pro-lightbox-image {
-    max-width: 85vw;
-    max-height: 75vh;
+    max-width: 87vw;
+    max-height: 78vh;
+    min-width: 70vw;
+    min-height: 55vh;
+    /* Better landscape image sizing */
+    object-fit: contain;
   }
   .pro-lightbox-video {
-    max-width: 90vw;
-    max-height: 80vh;
+    max-width: 92vw;
+    max-height: 82vh;
+    min-width: 75vw;
+    min-height: 60vh;
+    /* Optimized landscape video */
+    object-fit: contain;
+  }
+  .pro-lightbox-close {
+    top: 8px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+  }
+  .pro-lightbox-nav {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Portrait tablet optimizations */
+@media (min-width: 481px) and (max-width: 768px) and (orientation: portrait) {
+  .pro-lightbox-content {
+    max-width: 94vw;
+    max-height: 90vh;
+    min-width: 400px;
+    /* Better tablet portrait positioning */
+    margin: 5vh auto;
+  }
+  .pro-lightbox-image {
+    min-width: 65vw;
+    min-height: 50vh;
+    max-width: 85vw;
+    max-height: 70vh;
+    /* Optimized tablet image sizing */
+    object-fit: contain;
+  }
+  .pro-lightbox-video {
+    min-width: 70vw;
+    min-height: 55vh;
+    max-width: 88vw;
+    max-height: 75vh;
+    /* Better tablet video sizing */
+    object-fit: contain;
+  }
+  .pro-lightbox-body {
+    padding: 50px 24px 25px 24px;
+    /* Comfortable tablet spacing */
+    gap: 20px;
+  }
+}
+
+/* Medium tablet landscape optimizations */
+@media (min-width: 481px) and (max-width: 1024px) and (orientation: landscape) {
+  .pro-lightbox-content {
+    max-width: 95vw;
+    max-height: 88vh;
+    /* Better landscape tablet positioning */
+    margin: 6vh auto;
+  }
+  .pro-lightbox-image {
+    min-width: 60vw;
+    min-height: 60vh;
+    max-width: 80vw;
+    max-height: 75vh;
+    /* Landscape tablet image optimization */
+    object-fit: contain;
+  }
+  .pro-lightbox-video {
+    min-width: 65vw;
+    min-height: 65vh;
+    max-width: 85vw;
+    max-height: 78vh;
+    /* Landscape tablet video optimization */
+    object-fit: contain;
   }
 }
 /* Touch device optimizations */
@@ -4401,16 +4531,51 @@
   }
 }
 /* Large screen enhancements for bigger images */
-@media (min-width: 1200px) {
+@media (min-width: 769px) and (max-width: 1199px) {
+  .pro-lightbox-content {
+    max-width: 96vw;
+    max-height: 88vh;
+    min-width: 600px;
+  }
   .pro-lightbox-image {
     min-width: 70vw;
-    min-height: 70vh;
+    min-height: 65vh;
+  }
+}
+
+@media (min-width: 1200px) {
+  .pro-lightbox-content {
+    max-width: 98vw;
+    max-height: 90vh;
+    min-width: 800px;
+  }
+  .pro-lightbox-image {
+    min-width: 75vw;
+    min-height: 75vh;
   }
 }
 /* Ultra-wide screen optimizations */
 @media (min-width: 1600px) {
+  .pro-lightbox-content {
+    max-width: 99vw;
+    max-height: 95vh;
+    min-width: 1000px;
+  }
   .pro-lightbox-image {
-    min-width: 60vw;
+    min-width: 70vw;
+    min-height: 85vh;
+  }
+}
+
+/* Extra large screen optimizations */
+@media (min-width: 2560px) {
+  .pro-lightbox-content {
+    max-width: 98vw;
+    max-height: 92vh;
+    min-width: 1200px;
+  }
+  .pro-lightbox-image {
+    min-width: 65vw;
     min-height: 80vh;
   }
 }
@@ -4661,6 +4826,18 @@
   transform: scale(1.02);
   border-color: rgba(255, 255, 255, 0.2);
 }
+
+/* Video lightbox container */
+.pro-lightbox-video-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
 /* Video error handling */
 .pro-video-error {
   display: flex;
@@ -7008,10 +7185,13 @@
 .pro-message-blurb {
   transition: all 0.2s ease;
 }
+/* DISABLED - Conflicting hover effect */
+/*
 .pro-message-blurb:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(64, 128, 255, 0.1);
 }
+*/
 .pro-message-blurb.pro-message-selected {
   background: rgba(64, 128, 255, 0.05);
   border: 1px solid rgba(64, 128, 255, 0.2);
@@ -7019,9 +7199,11 @@
   box-shadow: 0 4px 12px rgba(64, 128, 255, 0.15);
 }
 /* Dark theme support for message selection */
+/* DISABLED - Conflicting hover effect */
+/*
 .dark-theme .pro-message-blurb:hover {
   box-shadow: 0 4px 12px rgba(64, 128, 255, 0.2);
-}
+*/
 .dark-theme .pro-message-blurb.pro-message-selected {
   background: rgba(64, 128, 255, 0.1);
   border-color: rgba(64, 128, 255, 0.3);
@@ -8623,5 +8805,66 @@
   }
   .option-desc {
     font-size: 14px;
+  }
+}
+
+/* Ultra-small screen lightbox optimizations (below 400px) */
+@media (max-width: 400px) {
+  .pro-lightbox-content {
+    max-width: 98vw;
+    max-height: 97vh;
+    min-width: 280px;
+    /* Maximum space utilization */
+    margin: 1.5vh auto;
+    border-radius: 6px;
+  }
+  .pro-lightbox-body {
+    padding: 40px 8px 12px 8px;
+    /* Minimal padding for ultra-small */
+    gap: 8px;
+  }
+  .pro-lightbox-image {
+    min-width: 88vw;
+    min-height: 40vh;
+    max-width: 94vw;
+    max-height: 65vh;
+    /* Ultra-small screen image optimization */
+    border-radius: 4px;
+  }
+  .pro-lightbox-video {
+    min-width: 90vw;
+    min-height: 42vh;
+    max-width: 96vw;
+    max-height: 68vh;
+    /* Ultra-small screen video optimization */
+    border-radius: 4px;
+  }
+  .pro-lightbox-close {
+    top: 4px;
+    right: 6px;
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    border-radius: 50%;
+  }
+  .pro-lightbox-nav {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 50%;
+  }
+  .pro-lightbox-nav.pro-lightbox-prev {
+    left: 4px;
+  }
+  .pro-lightbox-nav.pro-lightbox-next {
+    right: 4px;
+  }
+  .pro-lightbox-header {
+    padding: 6px 12px;
+    font-size: 13px;
+    min-height: 45px;
   }
 }

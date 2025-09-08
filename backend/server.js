@@ -6,11 +6,13 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const mongoose = require('mongoose');
+const { connectToMySQL } = require('./config/mysql');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const messageRoutes = require('./routes/messages');
+const conversationRoutes = require('./routes/conversations');
 const healthRoutes = require('./routes/health');
 const uploadRoutes = require('./routes/upload');
 const twoFactorRoutes = require('./routes/twoFactor');
@@ -217,10 +219,38 @@ const connectToMongoDB = async () => {
   }
 };
 
-// Initialize MongoDB or fallback to in-memory storage
-connectToMongoDB().then(success => {
-  console.log(`🔄 Storage mode: ${global.inMemoryStorage.usingInMemory ? 'In-memory (non-persistent)' : 'MongoDB (persistent)'}`);
-});
+// Database connection based on environment configuration
+const connectToDatabase = async () => {
+  const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+  
+  console.log(`🔧 Database type configured: ${databaseType}`);
+  
+  switch (databaseType.toLowerCase()) {
+    case 'mysql':
+      console.log('🔄 Connecting to MySQL database...');
+      const mysqlSuccess = await connectToMySQL();
+      if (mysqlSuccess) {
+        console.log('🔄 Storage mode: MySQL (persistent)');
+        return true;
+      } else {
+        console.log('⚠️  MySQL connection failed, falling back to in-memory storage');
+        global.inMemoryStorage.usingInMemory = true;
+        global.inMemoryStorage.seedDefaultUsers();
+        console.log('🔄 Storage mode: In-memory (non-persistent)');
+        return false;
+      }
+      
+    case 'mongodb':
+    default:
+      console.log('🔄 Connecting to MongoDB database...');
+      const mongoSuccess = await connectToMongoDB();
+      console.log(`🔄 Storage mode: ${global.inMemoryStorage.usingInMemory ? 'In-memory (non-persistent)' : 'MongoDB (persistent)'}`);
+      return mongoSuccess;
+  }
+};
+
+// Initialize database connection
+connectToDatabase();
 
 // Security middleware
 app.use(helmet());
@@ -259,6 +289,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/auth/2fa', twoFactorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/conversations', conversationRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Serve uploaded files statically

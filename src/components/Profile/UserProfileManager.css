@@ -608,3 +608,79 @@
     --secondary-background-hover: #545b62;
   }
 }
+
+/* Document Item Styles */
+.document-item {
+  position: relative;
+}
+
+.document-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: var(--card-background, #f8f9fa);
+  border: 2px dashed var(--border-color, #e1e5e9);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.document-item:hover .document-preview {
+  border-color: var(--primary-color, #007bff);
+  background: var(--hover-background, #e9ecef);
+}
+
+.document-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+
+.document-info {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.document-name {
+  font-weight: 600;
+  color: var(--text-color, #333);
+  font-size: 14px;
+  word-break: break-word;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.document-size {
+  font-size: 12px;
+  color: var(--text-color-secondary, #666);
+}
+
+.view-btn {
+  background: var(--primary-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+
+.view-btn:hover {
+  background: var(--primary-color-hover, #0056b3);
+  transform: translateY(-1px);
+}
+
+.document-item .media-overlay {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
