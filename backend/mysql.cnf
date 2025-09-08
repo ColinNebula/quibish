@@ -1,0 +1,41 @@
+# MySQL Configuration for Quibish
+[mysqld]
+# Basic Settings
+port = 3306
+bind-address = 127.0.0.1
+datadir = C:/ProgramData/MySQL/MySQL Server 8.4/Data
+socket = /tmp/mysql.sock
+
+# Authentication
+default_authentication_plugin = mysql_native_password
+
+# Security
+skip-networking = false
+skip-name-resolve = true
+
+# Character Set
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+# InnoDB Settings
+innodb_buffer_pool_size = 256M
+innodb_log_file_size = 64M
+innodb_file_per_table = 1
+innodb_open_files = 400
+
+# Logging
+log-error = C:/ProgramData/MySQL/MySQL Server 8.4/Data/error.log
+general_log = 1
+general_log_file = C:/ProgramData/MySQL/MySQL Server 8.4/Data/general.log
+
+# Binary Logging (for replication)
+log-bin = mysql-bin
+binlog_format = ROW
+
+[client]
+port = 3306
+socket = /tmp/mysql.sock
+default-character-set = utf8mb4
+
+[mysql]
+default-character-set = utf8mb4

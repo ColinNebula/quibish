@@ -9,6 +9,7 @@ import PropTypes from 'prop-types';
 // CSS imports
 import './ProLayout.css';
 import './ProMessages.css';
+import '../../styles/DynamicBackground.css';
 import './ProSidebar.css';
 import './ProHeader.css';
 import './ProChat.css';
@@ -833,6 +834,23 @@ const ProChat = ({
 
   return (
     <div className="pro-layout">
+      {/* Dynamic Animated Background */}
+      <div className="dynamic-background">
+        <div className="gradient-orb orb-1"></div>
+        <div className="gradient-orb orb-2"></div>
+        <div className="gradient-orb orb-3"></div>
+        <div className="gradient-orb orb-4"></div>
+        <div className="gradient-orb orb-5"></div>
+        <div className="floating-particles">
+          {[...Array(20)].map((_, i) => (
+            <div key={i} className={`particle particle-${i + 1}`}></div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Content Backdrop for Readability */}
+      <div className="content-backdrop"></div>
+      
       {/* Video Call Component */}
       {MemoizedVideoCall}
       

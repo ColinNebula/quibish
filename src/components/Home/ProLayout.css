@@ -15,9 +15,9 @@
   --pro-error: #ef4444;
   --pro-text: #1e293b;
   --pro-text-secondary: #64748b;
-  --pro-background: #f8fafc;
-  --pro-surface: #ffffff;
-  --pro-border: #e2e8f0;
+  --pro-background: rgba(248, 250, 252, 0.95);
+  --pro-surface: rgba(255, 255, 255, 0.9);
+  --pro-border: rgba(226, 232, 240, 0.8);
 }
 
 /* Modern Animation Keyframes */
@@ -197,12 +197,14 @@
   grid-template-rows: 1fr;
   width: 100%;
   height: calc(var(--vh, 1vh) * 100);
-  background-color: var(--pro-bg);
+  background-color: transparent;
   color: var(--pro-text);
   font-family: var(--pro-ui-font-family);
   overflow: hidden;
   position: relative;
   gap: var(--pro-gap);
+  /* Support for dynamic background */
+  backdrop-filter: blur(1px);
 }
 
 /* Content area grid layout */
