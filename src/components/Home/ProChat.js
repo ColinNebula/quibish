@@ -4,6 +4,8 @@ import SettingsModal from './SettingsModal';
 import VideoCall from './VideoCall';
 import GifPicker from '../GifPicker/GifPicker';
 import NewChatModal from '../NewChat/NewChatModal';
+import SmartTextContent from './SmartTextContent';
+import MessageActions from './MessageActions';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -823,14 +825,74 @@ const ProChat = ({
     />
   ), [videoCallState, handleEndCall, handleToggleMinimize]);
 
-  // Function to determine message length category for dynamic styling
-  const getMessageLengthCategory = (text) => {
+  // Enhanced smart content preview function
+  const getSmartPreview = useCallback((message) => {
+    const { text, file, reactions } = message;
+    
+    // Handle different content types
+    if (file?.type.startsWith('image/')) {
+      return `📸 Image: ${file.name}`;
+    }
+    if (file?.type.startsWith('video/')) {
+      return `🎥 Video: ${file.name}`;
+    }
+    if (file?.type.startsWith('audio/')) {
+      return `🎵 Audio: ${file.name}`;
+    }
+    if (file && !file.type.startsWith('image/') && !file.type.startsWith('video/') && !file.type.startsWith('audio/')) {
+      return `📎 File: ${file.name}`;
+    }
+    
+    // Handle text content
+    if (text.includes('```')) {
+      return `💻 Code snippet`;
+    }
+    if (text.match(/https?:\/\/[^\s]+/)) {
+      return `🔗 ${text.substring(0, 60)}...`;
+    }
+    if (text.includes('@')) {
+      const mentions = text.match(/@\w+/g);
+      return `💬 ${text.replace(/@\w+/g, '@user')}${mentions?.length > 1 ? ` (+${mentions.length - 1} mentions)` : ''}`;
+    }
+    if (reactions?.length > 0) {
+      return `${text.substring(0, 60)}... (${reactions.length} ${reactions.length === 1 ? 'reaction' : 'reactions'})`;
+    }
+    
+    return text.length > 100 ? text.substring(0, 100) + '...' : text;
+  }, []);
+
+  // Advanced message categorization with multiple factors
+  const getAdvancedMessageCategory = useCallback((message) => {
+    const { text, file, user, reactions = [] } = message;
+    const length = text.length;
+    
+    const categories = {
+      length: length <= 50 ? 'short' : length <= 200 ? 'medium' : length <= 500 ? 'long' : 'very-long',
+      type: file ? (file.type.startsWith('image/') ? 'image' : 
+                   file.type.startsWith('video/') ? 'video' : 
+                   file.type.startsWith('audio/') ? 'audio' : 'file') : 'text',
+      priority: user.role === 'admin' ? 'high' : user.role === 'moderator' ? 'medium' : 'normal',
+      hasMedia: !!file,
+      hasReactions: reactions.length > 0,
+      hasCode: text.includes('```') || text.includes('`'),
+      hasLinks: /https?:\/\/[^\s]+/.test(text),
+      hasMentions: /@\w+/.test(text),
+      sentiment: text.includes('!') && text.includes('urgent') ? 'urgent' : 
+                text.includes('?') ? 'question' : 
+                /[😀😃😄😁😆😅😂🤣😊😇🙂😉😌😍🥰😘😗😙😚😋😛😝😜🤪🤨🧐🤓😎🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑😬🙄😯😦😧😮😲🥱😴🤤😪😵🤐🥴🤢🤮🤧😷🤒🤕🤑🤠😈👿👹👺🤡💩👻💀☠️👽👾🤖🎃😺😸😹😻😼😽🙀😿😾]/.test(text) ? 'emoji' : 'neutral'
+    };
+    
+    return categories;
+  }, []);
+
+  // Function to determine message length category for dynamic styling (enhanced)
+  const getMessageLengthCategory = useCallback((text) => {
     const length = text.length;
     if (length <= 50) return 'short';
     if (length <= 200) return 'medium';
     if (length <= 500) return 'long';
     return 'very-long';
-  };
+  }, []);
 
   return (
     <div className="pro-layout">
@@ -859,7 +921,7 @@ const ProChat = ({
         {/* Sidebar Header */}
         <div className="pro-sidebar-header">
           <div className="sidebar-logo">
-            <div className="logo-icon">
+            <div className="logo-icon" data-tooltip="Quibish Chat">
               💬
               {totalUnreadCount > 0 && (
                 <div className="logo-unread-badge">{totalUnreadCount > 99 ? '99+' : totalUnreadCount}</div>
@@ -879,7 +941,7 @@ const ProChat = ({
 
         {/* User Profile Section */}
         <div className="sidebar-user-profile">
-          <div className="user-avatar">
+          <div className="user-avatar" data-tooltip={user?.name || 'User Profile'}>
             <img 
               src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=4f46e5&color=fff&size=40`}
               alt={user?.name || 'User'}
@@ -970,7 +1032,7 @@ const ProChat = ({
                 className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
                 onClick={() => handleConversationSelect(conv.id)}
               >
-                <div className="conversation-avatar">
+                <div className="conversation-avatar" data-tooltip={conv.name}>
                   <img 
                     src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
                     alt={conv.name}
@@ -1017,9 +1079,36 @@ const ProChat = ({
             </div>
           )}
           <div className="footer-actions">
-            <button className="footer-btn" title="Help" onClick={() => console.log('Help clicked')}>❓</button>
-            {!sidebarCollapsed && <button className="footer-btn" title="Feedback" onClick={() => console.log('Feedback clicked')}>💬</button>}
-            <button className="footer-btn" title="Settings" onClick={handleQuickSettings}>⚙️</button>
+            <button 
+              className="footer-btn" 
+              title="Profile" 
+              onClick={() => handleViewUserProfile(user?.id, user?.name)}
+              data-mobile-action="profile"
+            >
+              👤
+            </button>
+            <button 
+              className="footer-btn" 
+              title="Settings" 
+              onClick={handleQuickSettings}
+              data-mobile-action="settings"
+            >
+              ⚙️
+            </button>
+            <button 
+              className="footer-btn logout-btn" 
+              title="Logout" 
+              onClick={onLogout}
+              data-mobile-action="logout"
+            >
+              🚪
+            </button>
+            {!sidebarCollapsed && (
+              <button className="footer-btn" title="Help" onClick={() => console.log('Help clicked')}>❓</button>
+            )}
+            {!sidebarCollapsed && (
+              <button className="footer-btn" title="Feedback" onClick={() => console.log('Feedback clicked')}>💬</button>
+            )}
           </div>
         </div>
       </div>
@@ -1114,19 +1203,46 @@ const ProChat = ({
                 />
               </div>
               <div className="message-content" onClick={() => handleMessageClick(message.id)}>
+                {/* Reactions Display - Moved above message content */}
+                {message.reactions && message.reactions.length > 0 && (
+                  <div className="message-reactions">
+                    {message.reactions.map((reaction, index) => (
+                      <button
+                        key={index}
+                        className="reaction-bubble"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReactionAdd(message.id, reaction.emoji);
+                        }}
+                      >
+                        <span className="reaction-emoji">{reaction.emoji}</span>
+                        <span className="reaction-count">{reaction.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
                 <div className="message-header">
                   <span className="user-name">{message.user.name}</span>
-                  <span className="timestamp">
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </span>
                 </div>
                 
-                {/* Message Text */}
+                {/* Enhanced Message Text with Smart Content */}
                 <div 
                   className="message-text" 
                   data-length={getMessageLengthCategory(message.text)}
+                  data-content-type={getAdvancedMessageCategory(message).type}
+                  data-has-code={getAdvancedMessageCategory(message).hasCode}
+                  data-has-links={getAdvancedMessageCategory(message).hasLinks}
+                  data-has-mentions={getAdvancedMessageCategory(message).hasMentions}
+                  data-sentiment={getAdvancedMessageCategory(message).sentiment}
                 >
-                  {message.text}
+                  <SmartTextContent 
+                    text={message.text}
+                    maxLength={300}
+                    showWordCount={message.text.length > 500}
+                    enableSmartBreaks={true}
+                    className="message-smart-text"
+                  />
                 </div>
                 
                 {/* File/Image Display */}
@@ -1259,26 +1375,23 @@ const ProChat = ({
                     <button className="play-voice-btn">▶️</button>
                   </div>
                 )}
-                
-                {/* Reactions Display */}
-                {message.reactions && message.reactions.length > 0 && (
-                  <div className="message-reactions">
-                    {message.reactions.map((reaction, index) => (
-                      <button
-                        key={index}
-                        className="reaction-bubble"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReactionAdd(message.id, reaction.emoji);
-                        }}
-                      >
-                        <span className="reaction-emoji">{reaction.emoji}</span>
-                        <span className="reaction-count">{reaction.count}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
+              
+              {/* Message Timestamp */}
+              <div className="message-timestamp">
+                {new Date(message.timestamp).toLocaleTimeString()}
+              </div>
+              
+              {/* Context-Aware Message Actions */}
+              <MessageActions
+                message={message}
+                currentUser={user}
+                onReply={(messageId) => console.log('Reply to:', messageId)}
+                onReact={handleReactionAdd}
+                onEdit={(messageId) => console.log('Edit message:', messageId)}
+                onDelete={(messageId) => console.log('Delete message:', messageId)}
+                onTranslate={(messageId) => console.log('Translate message:', messageId)}
+              />
             </div>
           ))}
           {/* Auto-scroll anchor element */}
@@ -1421,6 +1534,13 @@ const ProChat = ({
                   placeholder="Type your message..."
                   className="message-input enhanced"
                   rows="1"
+                  autoComplete="off"
+                  autoCorrect="on"
+                  autoCapitalize="sentences"
+                  spellCheck="true"
+                  inputMode="text"
+                  aria-label="Type your message"
+                  data-testid="message-input"
                 />
 
                 {/* Send Button */}
@@ -1429,8 +1549,11 @@ const ProChat = ({
                   disabled={!inputText.trim()}
                   className="send-button enhanced"
                   type="button"
+                  aria-label="Send message"
+                  title="Send message"
+                  data-testid="send-button"
                 >
-                  <span className="send-icon">➤</span>
+                  <span className="send-icon" aria-hidden="true">➤</span>
                 </button>
               </>
             )}

@@ -1,5 +1,13 @@
 /* App.css - Main application styles */
 
+/* Import responsive styles */
+@import './responsive.css';
+@import './mobile-responsive.css';
+@import './adaptive-message-scaling.css';
+@import './mobile-sidebar-tooltips.css';
+@import './mobile-input-enhanced.css';
+@import './mobile-sidebar-buttons.css';
+
 /* CSS Variables for theming */
 :root {
   /* Light theme colors */
