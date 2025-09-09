@@ -6,6 +6,7 @@ import GifPicker from '../GifPicker/GifPicker';
 import NewChatModal from '../NewChat/NewChatModal';
 import SmartTextContent from './SmartTextContent';
 import MessageActions from './MessageActions';
+import messageService from '../../services/messageService';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -80,91 +81,53 @@ const ProChat = ({
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
-  // Chat messages state - moved here to be available for useEffect
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 1,
-      text: "Hey! 👋",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 300000).toISOString(),
-      reactions: [
-        { emoji: '👋', count: 2, userId: 'user2' },
-        { emoji: '😊', count: 1, userId: 'user3' }
-      ]
-    },
-    {
-      id: 2,
-      text: "Welcome to the enhanced chat application! This is a medium-length message to demonstrate how the message cards scale based on content length.",
-      user: { id: 'system', name: 'System', avatar: null },
-      timestamp: new Date(Date.now() - 240000).toISOString(),
-      reactions: [
-        { emoji: '👍', count: 3, userId: 'user1' },
-        { emoji: '🎉', count: 1, userId: 'user2' }
-      ]
-    },
-    {
-      id: 3,
-      text: "This is a longer message that demonstrates the chat application's ability to handle various message lengths gracefully. The card automatically adjusts its height and the content flows naturally within the card boundaries.",
-      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 180000).toISOString(),
-      reactions: [
-        { emoji: '💯', count: 1, userId: 'user1' }
-      ]
-    },
-    {
-      id: 4,
-      text: "Short one! 😄",
-      user: { id: 'user3', name: 'Charlie Brown', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 120000).toISOString(),
-      reactions: [
-        { emoji: '😄', count: 2, userId: 'user1' },
-        { emoji: '❤️', count: 1, userId: 'user2' }
-      ]
-    },
-    {
-      id: 5,
-      text: "The chat interface supports real-time messaging, file uploads, voice messages, and many other features that make communication seamless and enjoyable.",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 60000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 6,
-      text: "🎭 GIF: celebration.gif",
-      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 30000).toISOString(),
-      reactions: [
-        { emoji: '🎉', count: 3, userId: 'user1' },
-        { emoji: '🔥', count: 2, userId: 'user3' }
-      ],
-      file: {
-        name: 'celebration.gif',
-        size: 245760, // 240 KB
-        type: 'image/gif',
-        url: 'https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif',
-        isGif: true
-      }
-    },
-    {
-      id: 7,
-      text: "🎬 Check out this demo video!",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 15000).toISOString(),
-      reactions: [],
-      file: {
-        name: 'demo-video.mp4',
-        size: 1024000, // 1MB
-        type: 'video/mp4',
-        url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
-        thumbnail: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
-      }
-    }
-  ]);
+  // Chat messages state - loaded from database
+  const [chatMessages, setChatMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [messagesError, setMessagesError] = useState(null);
   
   // Reaction system state - moved here to be available for functions
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
+  // Load messages from database on component mount
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        setMessagesLoading(true);
+        setMessagesError(null);
+        
+        // Load messages from the message service
+        const messages = await messageService.getMessages({ limit: 50 });
+        
+        if (Array.isArray(messages)) {
+          setChatMessages(messages);
+        } else {
+          console.warn('Invalid messages format received:', messages);
+          setChatMessages([]);
+        }
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+        setMessagesError('Failed to load messages');
+        
+        // Try to load from localStorage as fallback
+        try {
+          const cachedMessages = messageService.loadMessagesFromStorage();
+          if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+            setChatMessages(cachedMessages);
+            console.log('Loaded messages from local storage');
+          }
+        } catch (storageError) {
+          console.error('Failed to load from storage:', storageError);
+        }
+      } finally {
+        setMessagesLoading(false);
+      }
+    };
+
+    loadMessages();
+  }, []);
+
   // Auto-scroll to bottom function
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -199,6 +162,26 @@ const ProChat = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Manage body scroll lock when emoji picker is open on mobile
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 480;
+    if (isMobile) {
+      if (showEmojiPicker || showReactionPicker) {
+        // Add class to body to prevent scrolling
+        document.body.classList.add('emoji-picker-open');
+        // Store original overflow style
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        
+        return () => {
+          // Cleanup: restore original overflow and remove class
+          document.body.classList.remove('emoji-picker-open');
+          document.body.style.overflow = originalOverflow;
+        };
+      }
+    }
+  }, [showEmojiPicker, showReactionPicker]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
@@ -400,7 +383,8 @@ const ProChat = ({
   }, []);
 
   // Handle adding reactions to messages
-  const handleReactionAdd = useCallback((messageId, emoji) => {
+  const handleReactionAdd = useCallback(async (messageId, emoji) => {
+    // Update local state immediately for responsive UI
     setChatMessages(prev => prev.map(message => {
       if (message.id === messageId) {
         const existingReaction = message.reactions.find(r => r.emoji === emoji);
@@ -424,6 +408,16 @@ const ProChat = ({
       }
       return message;
     }));
+
+    // Try to sync with backend
+    try {
+      if (messageService.addReaction) {
+        await messageService.addReaction(messageId, emoji);
+      }
+    } catch (error) {
+      console.error('Failed to sync reaction with backend:', error);
+      // Reaction already added to local state, so no rollback needed
+    }
   }, [user.id]);
 
   const handleEmojiClick = useCallback((emoji) => {
@@ -553,24 +547,54 @@ const ProChat = ({
   // Reaction system state already defined above
 
   // Message input handlers
-  const handleSendMessage = useCallback(() => {
+  const handleSendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
     
-    const newMessage = {
-      id: Date.now(),
-      text: inputText,
-      user: user,
-      timestamp: new Date().toISOString(),
-      reactions: []
-    };
-    
-    setChatMessages(prev => [...prev, newMessage]);
-    setInputText('');
-    
-    // Auto-scroll to the new message
-    setTimeout(() => {
-      scrollToBottom();
-    }, 100);
+    try {
+      // Send message via service
+      const sentMessage = await messageService.sendMessage(inputText.trim(), user?.name || 'User');
+      
+      // Add to local state immediately for responsive UI
+      const newMessage = {
+        id: sentMessage.id || Date.now(),
+        text: inputText.trim(),
+        user: user,
+        timestamp: sentMessage.timestamp || new Date().toISOString(),
+        reactions: sentMessage.reactions || []
+      };
+      
+      setChatMessages(prev => [...prev, newMessage]);
+      setInputText('');
+      
+      // Auto-scroll to the new message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      
+      // Still add to local state for offline persistence
+      const fallbackMessage = {
+        id: Date.now(),
+        text: inputText.trim(),
+        user: user,
+        timestamp: new Date().toISOString(),
+        reactions: [],
+        pending: true // Mark as pending/failed
+      };
+      
+      setChatMessages(prev => [...prev, fallbackMessage]);
+      setInputText('');
+      
+      // Auto-scroll to the new message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+      // Optionally show error message to user
+      console.warn('Message sent offline, will sync when connection is restored');
+    }
   }, [inputText, user, scrollToBottom]);
 
   const handleKeyPress = useCallback((e) => {
@@ -1193,6 +1217,32 @@ const ProChat = ({
 
         {/* Messages */}
         <div className="pro-message-list" ref={messagesContainerRef}>
+          {messagesLoading && (
+            <div className="message-loading-indicator">
+              <div className="loading-spinner"></div>
+              <span>Loading messages...</span>
+            </div>
+          )}
+          
+          {messagesError && !messagesLoading && (
+            <div className="message-error-indicator">
+              <span>⚠️ {messagesError}</span>
+              <button 
+                className="retry-button"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          
+          {!messagesLoading && !messagesError && chatMessages.length === 0 && (
+            <div className="no-messages-indicator">
+              <span>🎉 Start the conversation!</span>
+              <p>Send your first message below.</p>
+            </div>
+          )}
+          
           {chatMessages.map(message => (
             <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
               <div className="message-avatar">

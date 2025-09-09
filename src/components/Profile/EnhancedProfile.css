@@ -599,14 +599,14 @@
 }
 
 .status-icon {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--section-bg, #f3f4f6);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 16px;
   flex-shrink: 0;
 }
 

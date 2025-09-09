@@ -7,6 +7,9 @@
 @import './mobile-sidebar-tooltips.css';
 @import './mobile-input-enhanced.css';
 @import './mobile-sidebar-buttons.css';
+@import './mobile-emoji-fixes.css';
+@import './mobile-emoji-picker-fix.css';
+@import './mobile-input-center-fix.css';
 
 /* CSS Variables for theming */
 :root {

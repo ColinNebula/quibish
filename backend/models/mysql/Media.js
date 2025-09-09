@@ -87,12 +87,12 @@ const MySQLMedia = sequelize.define('Media', {
 }, {
   tableName: 'media',
   indexes: [
-    { fields: ['uploadedBy'] },
-    { fields: ['messageId'] },
-    { fields: ['mediaType'] },
-    { fields: ['isAvatar'] },
+    { fields: ['uploaded_by'] },
+    { fields: ['message_id'] },
+    { fields: ['media_type'] },
+    { fields: ['is_avatar'] },
     { fields: ['deleted'] },
-    { fields: ['createdAt'] }
+    { fields: ['created_at'] }
   ]
 });
 
