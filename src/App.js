@@ -12,7 +12,7 @@ import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 
 const App = () => {
-  const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
+  const { isAuthenticated, user, loading: authLoading, logout, updateUser } = useAuth();
   const [view, setView] = useState('login');
   const [showSplash, setShowSplash] = useState(() => {
     // Only show splash screen once per session
@@ -23,6 +23,15 @@ const App = () => {
     const savedMode = localStorage.getItem('quibish-dark-mode');
     return savedMode ? JSON.parse(savedMode) : false;
   });
+
+  // Sync dark mode with user's theme preference
+  useEffect(() => {
+    if (user && user.theme) {
+      const isDark = user.theme === 'dark';
+      setDarkMode(isDark);
+      localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
+    }
+  }, [user?.theme]);
 
   // Mock conversations data
   const [conversations] = useState([
@@ -110,7 +119,36 @@ const App = () => {
   const handleLogout = () => { logout(); setView('login'); };
   const handleRegister = () => setView('register');
   const handleBackToLogin = () => setView('login');
-  const toggleDarkMode = () => setDarkMode(prev => !prev);
+  
+  const toggleDarkMode = async () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    
+    // If user is authenticated, save theme preference to backend
+    if (isAuthenticated && user) {
+      try {
+        const newTheme = newDarkMode ? 'dark' : 'light';
+        const response = await fetch('http://localhost:5001/api/users/preferences', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ theme: newTheme })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            updateUser({ theme: newTheme });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to save theme preference:', error);
+      }
+    }
+  };
+  
   const handleSplashComplete = () => {
     setShowSplash(false);
     sessionStorage.setItem('quibish-splash-seen', 'true');

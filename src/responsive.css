@@ -95,11 +95,97 @@ audio {
 @media screen and (max-width: 768px) {
   :root {
     --message-max-width: 80%;
+    --sidebar-width: 0px; /* Hide sidebar on mobile */
+  }
+  
+  /* Mobile layout container */
+  .mobile-app-container,
+  .pro-layout {
+    display: flex !important;
+    flex-direction: column;
+    grid-template-columns: none !important;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  
+  /* Center content on mobile */
+  .pro-content,
+  .chat-container,
+  .messages-container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Center message area */
+  .messages-list,
+  .pro-message-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 12px 16px;
+    box-sizing: border-box;
+  }
+  
+  /* Center individual messages */
+  .message,
+  .pro-message-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 8px 0;
+  }
+  
+  .message-content,
+  .pro-message-wrapper {
+    max-width: calc(100vw - 40px);
+    width: fit-content;
+    margin: 0 auto;
   }
   
   /* Compact header for smaller screens */
-  .app-header {
-    padding: 8px 12px;
+  .app-header,
+  .enhanced-chat-header {
+    padding: 8px 16px;
+    height: 60px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Center input area */
+  .input-bar,
+  .pro-input-area,
+  .pro-chat-input-container {
+    padding: 12px 16px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .input-wrapper {
+    width: 100%;
+    max-width: calc(100vw - 32px);
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  /* Message input centering */
+  .message-input {
+    width: 100%;
+    max-width: calc(100vw - 120px);
+    margin: 0 auto;
   }
   
   /* Hide username on small screens, show only avatar */
@@ -114,13 +200,9 @@ audio {
     padding: 8px;
   }
   
-  /* Adjustments for the message input area */
-  .input-bar {
-    padding: 8px 12px;
-  }
-  
   /* Smaller buttons on mobile */
-  .voice-button, .file-button, .photo-button, .send-button {
+  .voice-button, .file-button, .photo-button, .send-button,
+  .input-btn {
     width: 38px;
     height: 38px;
   }
@@ -129,17 +211,86 @@ audio {
   .message-actions {
     padding: 3px 6px;
   }
+  
+  /* Mobile menu button */
+  .mobile-menu-btn {
+    display: flex !important;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .mobile-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 }
 
 /* Small phones */
 @media screen and (max-width: 480px) {
   :root {
-    --message-max-width: 85%;
+    --message-max-width: 90%;
   }
   
   /* Ultra compact header */
-  .app-header {
-    padding: 6px 10px;
+  .app-header,
+  .enhanced-chat-header {
+    padding: 6px 12px;
+    height: 56px;
+  }
+  
+  /* Center everything on small screens */
+  .pro-layout,
+  .mobile-app-container {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .pro-content {
+    width: 100%;
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Center messages */
+  .messages-list,
+  .pro-message-list {
+    width: 100%;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  
+  .message,
+  .pro-message-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 6px 0;
+  }
+  
+  .message-content,
+  .pro-message-wrapper {
+    max-width: calc(100vw - 24px);
+    width: fit-content;
+    margin: 0 auto;
+    text-align: center;
   }
   
   /* Hide welcome message completely on very small screens */
@@ -168,21 +319,55 @@ audio {
   }
   
   /* Even smaller buttons */
-  .voice-button, .file-button, .photo-button, .send-button {
+  .voice-button, .file-button, .photo-button, .send-button,
+  .input-btn {
     width: 34px;
     height: 34px;
     font-size: 1rem;
   }
   
-  /* Simplified message input */
+  /* Simplified message input - centered */
   .message-input {
     padding: 8px 35px 8px 10px;
+    width: 100%;
+    max-width: calc(100vw - 100px);
+    margin: 0 auto;
+    text-align: center;
   }
   
-  /* More compact action buttons */
+  .message-input::placeholder {
+    text-align: center;
+  }
+  
+  /* Center input actions */
   .input-actions {
     right: 8px;
-    gap: 8px;
+    gap: 6px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  /* Center input bar */
+  .input-bar,
+  .pro-input-area,
+  .pro-chat-input-container {
+    padding: 8px 12px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+  }
+  
+  .input-wrapper {
+    width: 100%;
+    max-width: calc(100vw - 24px);
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
   }
   
   /* Smaller emoji buttons */
@@ -194,6 +379,13 @@ audio {
   .message-meta {
     font-size: 0.65rem;
   }
+  
+  /* Hide less important UI elements on very small screens */
+  .participant-count,
+  .info-btn,
+  .voice-call-btn {
+    display: none;
+  }
 }
 
 /* Landscape orientation optimizations */
@@ -201,6 +393,12 @@ audio {
   .app-header {
     height: 40px;
     min-height: 40px;
+  }
+  
+  .enhanced-chat-header {
+    height: 45px;
+    min-height: 45px;
+    padding: 8px 16px;
   }
   
   .status-updates-bar {
@@ -222,17 +420,123 @@ audio {
     padding: 5px 10px;
   }
   
-  .input-bar {
-    padding: 5px 10px;
+  .input-bar,
+  .pro-input-area,
+  .pro-chat-input-container {
+    padding: 8px 12px;
+    min-height: 50px;
   }
   
   /* Maximize the message area in landscape */
-  .messages-list {
+  .messages-list,
+  .pro-message-list {
     flex: 1;
+    padding: 8px 12px;
+  }
+  
+  /* Compact message bubbles for landscape */
+  .message,
+  .pro-message-container {
+    margin: 4px 0;
+  }
+  
+  .message-bubble,
+  .pro-message-bubble,
+  .pro-message-blurb {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .input-wrapper {
+    gap: 6px;
+  }
+  
+  .voice-button, .file-button, .photo-button, .send-button,
+  .input-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
   }
 }
 
-/* Larger screens and tablets */
+/* Tablet landscape optimizations */
+@media screen and (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  .pro-layout {
+    grid-template-columns: 240px 1fr;
+  }
+  
+  .enhanced-chat-header {
+    height: 55px;
+    padding: 10px 16px;
+  }
+  
+  .messages-list,
+  .pro-message-list {
+    padding: 12px 16px;
+  }
+  
+  .input-bar,
+  .pro-input-area,
+  .pro-chat-input-container {
+    padding: 12px 16px;
+  }
+}
+
+/* Tablet and Medium Screens (769px - 1024px) */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --message-max-width: 75%;
+    --sidebar-width: 260px; /* Slightly smaller sidebar on tablets */
+  }
+  
+  .mobile-app-container,
+  .pro-layout {
+    display: grid !important;
+    grid-template-columns: 260px 1fr;
+    gap: 12px;
+    max-width: 1024px;
+    margin: 0 auto;
+  }
+  
+  .pro-sidebar {
+    display: block !important;
+    width: 260px;
+  }
+  
+  .enhanced-chat-header {
+    padding: 12px 20px;
+    height: 65px;
+  }
+  
+  .messages-list,
+  .pro-message-list {
+    padding: 16px 20px;
+  }
+  
+  .input-bar,
+  .pro-input-area,
+  .pro-chat-input-container {
+    padding: 16px 20px;
+  }
+  
+  .message,
+  .pro-message-container {
+    max-width: 75%;
+  }
+  
+  .input-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .voice-button, .file-button, .photo-button, .send-button,
+  .input-btn {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* Large tablets and small laptops (769px - 1199px) */
 @media screen and (min-width: 769px) {
   .mobile-app-container {
     max-width: 800px;
@@ -262,13 +566,74 @@ audio {
   }
 }
 
-/* High-resolution screens */
+/* Desktop and Large Screens (1200px+) */
 @media screen and (min-width: 1200px) {
-  .mobile-app-container {
-    max-width: 1000px;
+  :root {
+    --message-max-width: 70%;
+    --sidebar-width: 300px; /* Full sidebar width on large screens */
+  }
+  
+  .mobile-app-container,
+  .pro-layout {
+    max-width: 1200px;
     height: calc(100vh - 40px);
     margin: 20px auto;
     border-radius: var(--border-radius);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 0;
+  }
+  
+  .pro-content {
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  }
+  
+  .enhanced-chat-header {
+    padding: 16px 24px;
+    height: 75px;
+    border-radius: 0 var(--border-radius) 0 0;
+  }
+  
+  .messages-list,
+  .pro-message-list {
+    padding: 20px 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .message,
+  .pro-message-container {
+    max-width: 70%;
+  }
+  
+  .input-bar,
+  .pro-input-area,
+  .pro-chat-input-container {
+    padding: 20px 24px;
+    border-radius: 0 0 var(--border-radius) 0;
+  }
+  
+  .input-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+}
+
+/* Ultra-wide screens (1600px+) */
+@media screen and (min-width: 1600px) {
+  .mobile-app-container,
+  .pro-layout {
+    max-width: 1400px;
+  }
+  
+  .messages-list,
+  .pro-message-list {
+    max-width: 1000px;
+  }
+  
+  .input-wrapper {
+    max-width: 900px;
   }
 }
 

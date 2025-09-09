@@ -1,0 +1,663 @@
+/* Enhanced Mobile Sidebar Button Positioning for Quibish Chat */
+
+/* =================================================================== */
+/* MOBILE SIDEBAR BUTTON FIXES */
+/* =================================================================== */
+
+/* =================================================================== */
+/* USER ACTIONS (Settings, Profile, Logout) MOBILE ENHANCEMENTS */
+/* =================================================================== */
+
+@media (max-width: 768px) {
+  /* Hide text-based user actions on mobile - they're handled by collapsed sidebar */
+  .sidebar-user-profile .user-actions {
+    display: none !important;
+  }
+  
+  /* Enhanced mobile sidebar with properly positioned action buttons */
+  .sidebar,
+  .pro-sidebar {
+    /* Enhanced layout for mobile */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    
+    /* Fixed positioning and sizing */
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    
+    /* Enhanced visual styling */
+    background: rgba(30, 30, 46, 0.98) !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 
+      4px 0 24px rgba(0, 0, 0, 0.15),
+      2px 0 12px rgba(0, 0, 0, 0.1) !important;
+    
+    /* Z-index management */
+    z-index: 1000 !important;
+    
+    /* Smooth transitions */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    
+    /* Padding and spacing */
+    padding: 12px 8px !important;
+    box-sizing: border-box !important;
+    gap: 8px !important;
+  }
+  
+  /* Dark mode sidebar */
+  .dark-mode .sidebar,
+  .dark-mode .pro-sidebar {
+    background: rgba(15, 15, 24, 0.98) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 
+      4px 0 24px rgba(0, 0, 0, 0.3),
+      2px 0 12px rgba(0, 0, 0, 0.2) !important;
+  }
+}
+
+/* =================================================================== */
+/* MOBILE SIDEBAR HEADER ENHANCEMENTS */
+/* =================================================================== */
+
+@media (max-width: 768px) {
+  /* Enhanced sidebar header with logo/brand */
+  .sidebar .pro-sidebar-header,
+  .pro-sidebar .pro-sidebar-header,
+  .sidebar-toggle-container {
+    width: 100% !important;
+    padding: 8px 0 !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .sidebar-toggle-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  .sidebar-toggle-btn:hover,
+  .sidebar-toggle-btn:focus {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  }
+  
+  .sidebar-toggle-btn:active {
+    transform: scale(0.95) !important;
+    transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+}
+
+/* =================================================================== */
+/* MOBILE USER PROFILE SECTION ENHANCEMENTS */
+/* =================================================================== */
+
+@media (max-width: 768px) {
+  /* Enhanced user profile section with avatar only */
+  .sidebar .sidebar-user-profile,
+  .pro-sidebar .sidebar-user-profile {
+    width: 100% !important;
+    padding: 8px 0 !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: column !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(79, 70, 229, 0.1) !important;
+    border-radius: 8px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Enhanced user avatar for mobile */
+  .sidebar .user-avatar,
+  .pro-sidebar .user-avatar {
+    position: relative !important;
+    width: 36px !important;
+    height: 36px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+  }
+  
+  .sidebar .user-avatar img,
+  .pro-sidebar .user-avatar img {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  .sidebar .user-avatar:hover img,
+  .pro-sidebar .user-avatar:hover img {
+    border-color: rgba(79, 70, 229, 0.6) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+  }
+  
+  /* Status indicator enhancements */
+  .status-indicator {
+    position: absolute !important;
+    bottom: 2px !important;
+    right: 2px !important;
+    width: 10px !important;
+    height: 10px !important;
+    border-radius: 50% !important;
+    background: #10b981 !important;
+    border: 2px solid rgba(30, 30, 46, 0.9) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  }
+  
+  .status-indicator.online {
+    background: #10b981 !important;
+    animation: pulse-online 2s infinite !important;
+  }
+  
+  @keyframes pulse-online {
+    0%, 100% { 
+      opacity: 1; 
+      transform: scale(1); 
+    }
+    50% { 
+      opacity: 0.8; 
+      transform: scale(1.1); 
+    }
+  }
+}
+
+/* =================================================================== */
+/* MOBILE ACTION BUTTONS IN SIDEBAR FOOTER */
+/* =================================================================== */
+
+@media (max-width: 768px) {
+  /* Enhanced sidebar footer with action buttons */
+  .sidebar .sidebar-footer,
+  .pro-sidebar .sidebar-footer {
+    width: 100% !important;
+    margin-top: auto !important;
+    padding: 8px 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Enhanced footer actions container */
+  .sidebar .footer-actions,
+  .pro-sidebar .footer-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  
+  /* Enhanced footer buttons (Settings, Help, etc.) */
+  .sidebar .footer-btn,
+  .pro-sidebar .footer-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border: none !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    position: relative !important;
+  }
+  
+  /* Mobile action button ordering */
+  .sidebar .footer-btn[data-mobile-action="profile"],
+  .pro-sidebar .footer-btn[data-mobile-action="profile"] {
+    order: 1 !important;
+    background: rgba(59, 130, 246, 0.2) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+  }
+  
+  .sidebar .footer-btn[data-mobile-action="settings"],
+  .pro-sidebar .footer-btn[data-mobile-action="settings"] {
+    order: 2 !important;
+    background: rgba(79, 70, 229, 0.2) !important;
+    border-color: rgba(79, 70, 229, 0.3) !important;
+  }
+  
+  .sidebar .footer-btn[data-mobile-action="logout"],
+  .pro-sidebar .footer-btn[data-mobile-action="logout"] {
+    order: 3 !important;
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+  }
+  
+  .sidebar .footer-btn:hover,
+  .pro-sidebar .footer-btn:hover,
+  .sidebar .footer-btn:focus,
+  .pro-sidebar .footer-btn:focus {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  }
+  
+  /* Specific hover effects for mobile action buttons */
+  .sidebar .footer-btn[data-mobile-action="profile"]:hover,
+  .pro-sidebar .footer-btn[data-mobile-action="profile"]:hover {
+    background: rgba(59, 130, 246, 0.3) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+  }
+  
+  .sidebar .footer-btn[data-mobile-action="settings"]:hover,
+  .pro-sidebar .footer-btn[data-mobile-action="settings"]:hover {
+    background: rgba(79, 70, 229, 0.3) !important;
+    border-color: rgba(79, 70, 229, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+  }
+  
+  .sidebar .footer-btn[data-mobile-action="logout"]:hover,
+  .pro-sidebar .footer-btn[data-mobile-action="logout"]:hover {
+    background: rgba(239, 68, 68, 0.3) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+  }
+  
+  .sidebar .footer-btn:active,
+  .pro-sidebar .footer-btn:active {
+    transform: translateY(0) scale(0.95) !important;
+    transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  /* Specific button styling variations */
+  .sidebar .footer-btn[title*="Settings"],
+  .pro-sidebar .footer-btn[title*="Settings"] {
+    background: rgba(79, 70, 229, 0.2) !important;
+    border-color: rgba(79, 70, 229, 0.3) !important;
+  }
+  
+  .sidebar .footer-btn[title*="Settings"]:hover,
+  .pro-sidebar .footer-btn[title*="Settings"]:hover {
+    background: rgba(79, 70, 229, 0.3) !important;
+    border-color: rgba(79, 70, 229, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+  }
+  
+  .sidebar .footer-btn[title*="Help"],
+  .pro-sidebar .footer-btn[title*="Help"] {
+    background: rgba(34, 197, 94, 0.2) !important;
+    border-color: rgba(34, 197, 94, 0.3) !important;
+  }
+  
+  .sidebar .footer-btn[title*="Help"]:hover,
+  .pro-sidebar .footer-btn[title*="Help"]:hover {
+    background: rgba(34, 197, 94, 0.3) !important;
+    border-color: rgba(34, 197, 94, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
+  }
+}
+
+/* =================================================================== */
+/* MOBILE USER ACTIONS OVERLAY (Settings, Profile, Logout) */
+/* =================================================================== */
+
+@media (max-width: 768px) {
+  /* Create mobile-specific user actions at bottom of sidebar */
+  .sidebar::after,
+  .pro-sidebar::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: 60px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 44px !important;
+    height: 160px !important;
+    background: rgba(30, 30, 46, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+    z-index: 1001 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    pointer-events: none !important;
+  }
+  
+  /* Show user actions overlay on user avatar hover/click */
+  .sidebar .user-avatar:hover::before,
+  .pro-sidebar .user-avatar:hover::before,
+  .sidebar .user-avatar:focus::before,
+  .pro-sidebar .user-avatar:focus::before {
+    content: '' !important;
+    position: fixed !important;
+    bottom: 60px !important;
+    left: 66px !important;
+    width: 44px !important;
+    height: 160px !important;
+    background: rgba(30, 30, 46, 0.98) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+    box-shadow: 
+      0 12px 32px rgba(0, 0, 0, 0.4),
+      0 6px 16px rgba(0, 0, 0, 0.2) !important;
+    z-index: 1002 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    pointer-events: auto !important;
+  }
+}
+
+/* =================================================================== */
+/* MOBILE CONVERSATION LIST ENHANCEMENTS */
+/* =================================================================== */
+
+@media (max-width: 768px) {
+  /* Enhanced conversation list for mobile */
+  .sidebar .pro-sidebar-content,
+  .pro-sidebar .pro-sidebar-content,
+  .sidebar .conversations-list,
+  .pro-sidebar .conversations-list {
+    flex: 1 !important;
+    width: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 8px 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 6px !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  .sidebar .pro-sidebar-content::-webkit-scrollbar,
+  .pro-sidebar .pro-sidebar-content::-webkit-scrollbar,
+  .sidebar .conversations-list::-webkit-scrollbar,
+  .pro-sidebar .conversations-list::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  /* Enhanced conversation items for mobile */
+  .sidebar .conversation-item,
+  .pro-sidebar .conversation-item {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 12px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+  
+  .sidebar .conversation-item:hover,
+  .pro-sidebar .conversation-item:hover,
+  .sidebar .conversation-item.active,
+  .pro-sidebar .conversation-item.active {
+    background: rgba(79, 70, 229, 0.2) !important;
+    border-color: rgba(79, 70, 229, 0.4) !important;
+    transform: translateX(2px) scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+  }
+  
+  /* Enhanced conversation avatars for mobile */
+  .sidebar .conversation-avatar,
+  .pro-sidebar .conversation-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .sidebar .conversation-avatar img,
+  .pro-sidebar .conversation-avatar img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+  }
+  
+  /* Unread indicators for mobile */
+  .sidebar .unread-badge,
+  .pro-sidebar .unread-badge {
+    position: absolute !important;
+    top: -4px !important;
+    right: -4px !important;
+    background: #ef4444 !important;
+    color: white !important;
+    border-radius: 50% !important;
+    width: 16px !important;
+    height: 16px !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 2px solid rgba(30, 30, 46, 0.9) !important;
+    z-index: 10 !important;
+  }
+  
+  .sidebar .online-dot,
+  .pro-sidebar .online-dot {
+    position: absolute !important;
+    bottom: -2px !important;
+    right: -2px !important;
+    width: 10px !important;
+    height: 10px !important;
+    background: #10b981 !important;
+    border-radius: 50% !important;
+    border: 2px solid rgba(30, 30, 46, 0.9) !important;
+    z-index: 10 !important;
+  }
+}
+
+/* =================================================================== */
+/* SMALL MOBILE OPTIMIZATIONS */
+/* =================================================================== */
+
+@media (max-width: 480px) {
+  .sidebar,
+  .pro-sidebar {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    padding: 8px 6px !important;
+  }
+  
+  .sidebar-toggle-btn,
+  .sidebar .footer-btn,
+  .pro-sidebar .footer-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    font-size: 14px !important;
+  }
+  
+  .sidebar .user-avatar,
+  .pro-sidebar .user-avatar {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  
+  .sidebar .user-avatar img,
+  .pro-sidebar .user-avatar img {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  
+  .sidebar .conversation-item,
+  .pro-sidebar .conversation-item {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+  
+  .sidebar .conversation-avatar,
+  .pro-sidebar .conversation-avatar {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  
+  .status-indicator {
+    width: 8px !important;
+    height: 8px !important;
+  }
+  
+  .sidebar .unread-badge,
+  .pro-sidebar .unread-badge {
+    width: 14px !important;
+    height: 14px !important;
+    font-size: 9px !important;
+  }
+}
+
+/* =================================================================== */
+/* VERY SMALL MOBILE OPTIMIZATIONS */
+/* =================================================================== */
+
+@media (max-width: 400px) {
+  .sidebar,
+  .pro-sidebar {
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    padding: 6px 4px !important;
+    gap: 6px !important;
+  }
+  
+  .sidebar-toggle-btn,
+  .sidebar .footer-btn,
+  .pro-sidebar .footer-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+  }
+  
+  .sidebar .user-avatar,
+  .pro-sidebar .user-avatar {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  
+  .sidebar .user-avatar img,
+  .pro-sidebar .user-avatar img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  
+  .sidebar .conversation-item,
+  .pro-sidebar .conversation-item {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border-radius: 10px !important;
+  }
+  
+  .sidebar .conversation-avatar,
+  .pro-sidebar .conversation-avatar {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+/* =================================================================== */
+/* ACCESSIBILITY ENHANCEMENTS */
+/* =================================================================== */
+
+@media (max-width: 768px) {
+  /* Enhanced focus indicators for mobile */
+  .sidebar .footer-btn:focus-visible,
+  .pro-sidebar .footer-btn:focus-visible,
+  .sidebar-toggle-btn:focus-visible,
+  .sidebar .conversation-item:focus-visible,
+  .pro-sidebar .conversation-item:focus-visible {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: 2px !important;
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .sidebar .footer-btn,
+    .pro-sidebar .footer-btn,
+    .sidebar-toggle-btn,
+    .sidebar .conversation-item,
+    .pro-sidebar .conversation-item {
+      border-width: 2px !important;
+    }
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .sidebar .footer-btn,
+    .pro-sidebar .footer-btn,
+    .sidebar-toggle-btn,
+    .sidebar .conversation-item,
+    .pro-sidebar .conversation-item,
+    .sidebar .user-avatar,
+    .pro-sidebar .user-avatar {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}

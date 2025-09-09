@@ -1,0 +1,455 @@
+/* Mobile Responsive Styles for Quibish Chat */
+
+/* Mobile-first responsive utilities */
+.mobile-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.mobile-full-width {
+  width: 100% !important;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* Extra Small Screens (320px - 400px) */
+@media (max-width: 400px) {
+  /* Ultra compact layout for very small screens */
+  .message-container,
+  .pro-message-container {
+    margin: 4px auto !important;
+    padding: 0 8px !important;
+  }
+  
+  .message-bubble,
+  .pro-message-bubble,
+  .pro-message-blurb {
+    max-width: calc(100vw - 76px) !important; /* Account for 60px sidebar */
+    padding: 6px 8px !important;
+    font-size: 13px !important;
+    border-radius: 12px !important;
+  }
+  
+  .input-wrapper {
+    max-width: calc(100vw - 76px) !important; /* Account for 60px sidebar */
+    gap: 4px !important;
+  }
+  
+  .message-input,
+  .pro-text-input {
+    max-width: calc(100vw - 140px) !important; /* Account for sidebar and buttons */
+    font-size: 14px !important;
+    padding: 8px 10px !important;
+  }
+  
+  .input-btn,
+  .pro-input-action {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 12px !important;
+  }
+  
+  .enhanced-chat-header {
+    height: 50px !important;
+    padding: 6px 8px !important;
+    margin-left: 60px !important; /* Account for sidebar */
+  }
+  
+  .header-actions {
+    gap: 2px !important;
+  }
+  
+  .action-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 12px !important;
+  }
+  
+  /* Ultra-compact sidebar for very small screens */
+  .sidebar,
+  .pro-sidebar {
+    width: 50px !important;
+    min-width: 50px !important;
+  }
+  
+  /* Adjust content for ultra-compact sidebar */
+  .content,
+  .pro-content,
+  .chat-content {
+    margin-left: 50px !important;
+    width: calc(100vw - 50px) !important;
+  }
+}
+
+/* Small Mobile Screens (401px - 480px) */
+@media (min-width: 401px) and (max-width: 480px) {
+  .message-bubble,
+  .pro-message-bubble,
+  .pro-message-blurb {
+    max-width: calc(100vw - 24px) !important;
+    padding: 8px 12px !important;
+  }
+  
+  .input-wrapper {
+    max-width: calc(100vw - 24px) !important;
+    gap: 6px !important;
+  }
+  
+  .message-input,
+  .pro-text-input {
+    max-width: calc(100vw - 100px) !important;
+  }
+}
+
+/* Mobile Message Centering (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  /* Force center alignment for all message containers */
+  .message-container,
+  .pro-message-container,
+  .message-wrapper,
+  .pro-message-wrapper {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 8px auto !important;
+  }
+  
+  /* Center message bubbles */
+  .message-bubble,
+  .pro-message-bubble,
+  .message-content,
+  .pro-message-blurb {
+    margin: 0 auto !important;
+    max-width: calc(100vw - 40px) !important;
+    width: fit-content !important;
+    display: block !important;
+  }
+  
+  .input-wrapper {
+    max-width: calc(100vw - 32px) !important;
+    gap: 8px !important;
+  }
+}
+
+/* General Mobile Styles (up to 768px) */
+@media (max-width: 768px) {
+  /* Center message text */
+  .message-text {
+    text-align: left !important; /* Keep text left-aligned for readability */
+    width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  /* Center input area completely */
+  .input-container,
+  .pro-input-container,
+  .message-input-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 12px 16px !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Center input wrapper */
+  .input-wrapper {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: calc(100vw - 32px) !important;
+    margin: 0 auto !important;
+    gap: 8px !important;
+  }
+  
+  /* Center message input field */
+  .message-input,
+  .pro-text-input {
+    width: 100% !important;
+    max-width: calc(100vw - 120px) !important;
+    margin: 0 auto !important;
+    text-align: left !important;
+  }
+  
+  /* Center messages list */
+  .messages-list,
+  .pro-message-list,
+  .chat-messages {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    padding: 12px 16px !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Collapse sidebar to icons only on mobile */
+  .sidebar,
+  .pro-sidebar {
+    width: 60px !important;
+    min-width: 60px !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    z-index: 1000 !important;
+    transform: translateX(0) !important;
+    background: rgba(30, 30, 46, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    overflow: visible !important;
+  }
+  
+  /* Dark mode sidebar */
+  .dark-mode .sidebar,
+  .dark-mode .pro-sidebar {
+    background: rgba(15, 15, 24, 0.95) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+  }
+  
+  /* Hide all text content in collapsed sidebar */
+  .sidebar .logo-text,
+  .pro-sidebar .logo-text,
+  .sidebar .user-info,
+  .pro-sidebar .user-info,
+  .sidebar .sidebar-quick-actions,
+  .pro-sidebar .sidebar-quick-actions,
+  .sidebar .sidebar-search,
+  .pro-sidebar .sidebar-search,
+  .sidebar .sidebar-filters,
+  .pro-sidebar .sidebar-filters,
+  .sidebar .conversations-header h4,
+  .pro-sidebar .conversations-header h4,
+  .sidebar .conversation-details,
+  .pro-sidebar .conversation-details,
+  .sidebar .footer-stats,
+  .pro-sidebar .footer-stats {
+    display: none !important;
+  }
+  
+  /* Center sidebar items */
+  .sidebar .pro-sidebar-header,
+  .pro-sidebar .pro-sidebar-header,
+  .sidebar .sidebar-user-profile,
+  .pro-sidebar .sidebar-user-profile,
+  .sidebar .conversation-item,
+  .pro-sidebar .conversation-item {
+    justify-content: center !important;
+    padding: 12px 8px !important;
+  }
+  
+  /* Style sidebar icons with hover tooltips */
+  .sidebar .logo-icon,
+  .pro-sidebar .logo-icon,
+  .sidebar .user-avatar,
+  .pro-sidebar .user-avatar,
+  .sidebar .conversation-avatar,
+  .pro-sidebar .conversation-avatar {
+    position: relative !important;
+    cursor: pointer !important;
+  }
+  
+  /* Tooltip styles for sidebar icons */
+  .sidebar .logo-icon::after,
+  .pro-sidebar .logo-icon::after,
+  .sidebar .user-avatar::after,
+  .pro-sidebar .user-avatar::after,
+  .sidebar .conversation-avatar::after,
+  .pro-sidebar .conversation-avatar::after {
+    content: attr(data-tooltip) !important;
+    position: absolute !important;
+    left: 100% !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: rgba(0, 0, 0, 0.9) !important;
+    color: white !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    white-space: nowrap !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s ease !important;
+    z-index: 10000 !important;
+    margin-left: 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  }
+  
+  /* Tooltip arrow */
+  .sidebar .logo-icon::before,
+  .pro-sidebar .logo-icon::before,
+  .sidebar .user-avatar::before,
+  .pro-sidebar .user-avatar::before,
+  .sidebar .conversation-avatar::before,
+  .pro-sidebar .conversation-avatar::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 100% !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    border: 6px solid transparent !important;
+    border-right-color: rgba(0, 0, 0, 0.9) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s ease !important;
+    z-index: 10000 !important;
+    margin-left: 6px !important;
+  }
+  
+  /* Show tooltips on hover */
+  .sidebar .logo-icon:hover::after,
+  .pro-sidebar .logo-icon:hover::after,
+  .sidebar .user-avatar:hover::after,
+  .pro-sidebar .user-avatar:hover::after,
+  .sidebar .conversation-avatar:hover::after,
+  .pro-sidebar .conversation-avatar:hover::after {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  .sidebar .logo-icon:hover::before,
+  .pro-sidebar .logo-icon:hover::before,
+  .sidebar .user-avatar:hover::before,
+  .pro-sidebar .user-avatar:hover::before,
+  .sidebar .conversation-avatar:hover::before,
+  .pro-sidebar .conversation-avatar:hover::before {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* Adjust content area to account for collapsed sidebar */
+  .content,
+  .pro-content,
+  .chat-content {
+    margin-left: 60px !important;
+    width: calc(100vw - 60px) !important;
+    padding: 0 !important;
+  }
+  
+  /* Mobile menu button */
+  .mobile-menu-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .mobile-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Landscape orientation fixes */
+@media (max-height: 480px) and (orientation: landscape) {
+  .header,
+  .pro-header,
+  .enhanced-chat-header {
+    height: 48px !important;
+    padding: 8px 16px !important;
+  }
+  
+  .input-container,
+  .pro-input-container,
+  .message-input-container {
+    padding: 8px 16px !important;
+  }
+  
+  .messages-list,
+  .pro-message-list {
+    padding: 8px 16px !important;
+  }
+}
+
+/* High DPI/Retina display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .message-text {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Dark mode mobile adjustments */
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+  .mobile-menu-toggle {
+    background: rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+  }
+  
+  .mobile-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Accessibility improvements for mobile */
+@media (max-width: 768px) {
+  /* Larger touch targets */
+  .clickable,
+  .input-btn,
+  .pro-input-action,
+  .mobile-menu-toggle {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+  
+  /* Improved focus indicators */
+  .message-input:focus,
+  .pro-text-input:focus {
+    outline: 2px solid var(--pro-accent, #3b82f6);
+    outline-offset: 2px;
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .message-bubble,
+    .pro-message-bubble {
+      border: 2px solid currentColor;
+    }
+  }
+}
+
+/* Safe area adjustments for devices with notches */
+@media (max-width: 768px) {
+  .header,
+  .pro-header {
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  
+  .input-container,
+  .pro-input-container {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  
+  /* Mobile responsive styles for external timestamp */
+  .message-timestamp {
+    margin-left: 8px !important; /* Reduce margin on mobile due to collapsed sidebar */
+    font-size: 10px !important;
+    margin-top: 3px !important; /* Slightly more space on mobile */
+  }
+}
+
+/* Extra small screens - further adjust timestamp */
+@media (max-width: 400px) {
+  .message-timestamp {
+    margin-left: 4px !important;
+    font-size: 9px !important;
+  }
+}

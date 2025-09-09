@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const mongoose = require('mongoose');
 const { connectToMySQL } = require('./config/mysql');
+const databaseService = require('./services/databaseService');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -219,33 +220,34 @@ const connectToMongoDB = async () => {
   }
 };
 
-// Database connection based on environment configuration
+// Enhanced database connection with proper service initialization
 const connectToDatabase = async () => {
-  const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+  const databaseType = process.env.DATABASE_TYPE || 'mysql';
   
   console.log(`🔧 Database type configured: ${databaseType}`);
   
-  switch (databaseType.toLowerCase()) {
-    case 'mysql':
-      console.log('🔄 Connecting to MySQL database...');
-      const mysqlSuccess = await connectToMySQL();
-      if (mysqlSuccess) {
-        console.log('🔄 Storage mode: MySQL (persistent)');
-        return true;
-      } else {
-        console.log('⚠️  MySQL connection failed, falling back to in-memory storage');
-        global.inMemoryStorage.usingInMemory = true;
-        global.inMemoryStorage.seedDefaultUsers();
-        console.log('🔄 Storage mode: In-memory (non-persistent)');
-        return false;
-      }
+  try {
+    // Initialize the database service
+    await databaseService.initialize();
+    
+    if (databaseService.isInitialized()) {
+      console.log(`🔄 Storage mode: ${databaseType.toUpperCase()} (persistent) via DatabaseService`);
       
-    case 'mongodb':
-    default:
-      console.log('🔄 Connecting to MongoDB database...');
-      const mongoSuccess = await connectToMongoDB();
-      console.log(`🔄 Storage mode: ${global.inMemoryStorage.usingInMemory ? 'In-memory (non-persistent)' : 'MongoDB (persistent)'}`);
-      return mongoSuccess;
+      // Get initial stats
+      const stats = await databaseService.getStats();
+      console.log(`� Database initialized with ${stats.users} users, ${stats.messages} messages, ${stats.media} media files`);
+      
+      return true;
+    } else {
+      throw new Error('Database service failed to initialize');
+    }
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error.message);
+    console.log('⚠️  Falling back to in-memory storage');
+    global.inMemoryStorage.usingInMemory = true;
+    global.inMemoryStorage.seedDefaultUsers();
+    console.log('🔄 Storage mode: In-memory (non-persistent)');
+    return false;
   }
 };
 
