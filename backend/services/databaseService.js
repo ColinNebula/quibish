@@ -25,6 +25,16 @@ async function loadMySQLModels() {
     return mysqlModels;
   } catch (error) {
     console.error(' Failed to load MySQL models:', error.message);
+    
+    // Handle specific MySQL errors that should fall back to in-memory
+    if (error.message.includes('Too many keys specified') || 
+        error.message.includes('max 64 keys allowed')) {
+      console.log('⚠️ MySQL schema error - falling back to in-memory storage');
+      mysqlConnected = false;
+      global.inMemoryStorage.usingInMemory = true;
+      global.inMemoryStorage.seedDefaultUsers();
+    }
+    
     mysqlConnected = false;
     return null;
   }
@@ -38,16 +48,35 @@ class DatabaseService {
   async initialize() {
     console.log('🔧 Initializing database service...');
     
+    // Check if we should force memory mode
+    const databaseType = process.env.DATABASE_TYPE || 'mysql';
+    if (databaseType === 'memory') {
+      console.log('⚠️ Memory database mode enabled, skipping MySQL');
+      mysqlConnected = false;
+      global.inMemoryStorage.usingInMemory = true;
+      global.inMemoryStorage.seedDefaultUsers();
+      return false;
+    }
+    
     try {
-      await loadMySQLModels();
-      console.log('✅ Database service initialized with MySQL');
+      const models = await loadMySQLModels();
+      if (models && mysqlConnected) {
+        console.log('✅ Database service initialized with MySQL');
+        return true;
+      } else {
+        throw new Error('MySQL initialization failed');
+      }
     } catch (error) {
-      console.log('⚠️ MySQL not available');
+      console.log('⚠️ MySQL not available, using in-memory fallback');
+      mysqlConnected = false;
+      global.inMemoryStorage.usingInMemory = true;
+      global.inMemoryStorage.seedDefaultUsers();
+      return false;
     }
   }
 
   isInitialized() {
-    return mysqlConnected;
+    return mysqlConnected || process.env.DATABASE_TYPE === 'memory';
   }
 
   async getStats() {

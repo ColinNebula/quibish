@@ -7,21 +7,9 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const mongoose = require('mongoose');
 const { connectToMySQL } = require('./config/mysql');
-const databaseService = require('./services/databaseService');
 require('dotenv').config();
 
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const messageRoutes = require('./routes/messages');
-const conversationRoutes = require('./routes/conversations');
-const healthRoutes = require('./routes/health');
-const uploadRoutes = require('./routes/upload');
-const twoFactorRoutes = require('./routes/twoFactor');
-
-const app = express();
-const PORT = process.env.PORT || 5001;
-
-// Initialize global in-memory storage for fallback when MongoDB is unavailable
+// Initialize global in-memory storage BEFORE importing databaseService
 global.inMemoryStorage = {
   users: [],
   messages: [],
@@ -112,6 +100,20 @@ global.inMemoryStorage = {
     }
   }
 };
+
+const databaseService = require('./services/databaseService');
+
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+const messageRoutes = require('./routes/messages');
+const conversationRoutes = require('./routes/conversations');
+const healthRoutes = require('./routes/health');
+const uploadRoutes = require('./routes/upload');
+const twoFactorRoutes = require('./routes/twoFactor');
+const feedbackRoutes = require('./routes/feedback');
+
+const app = express();
+const PORT = process.env.PORT || 5001;
 
 // MongoDB connection with fallback mechanism
 const connectToMongoDB = async () => {
@@ -251,9 +253,6 @@ const connectToDatabase = async () => {
   }
 };
 
-// Initialize database connection
-connectToDatabase();
-
 // Security middleware
 app.use(helmet());
 
@@ -293,6 +292,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -336,12 +336,23 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Quibish Backend Server running on port ${PORT}`);
-  console.log(`📱 Frontend should connect to: http://localhost:${PORT}`);
-  console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
-  console.log(`⚕️  Health Check: http://localhost:${PORT}/api/ping`);
-});
+// Start server after database initialization
+(async () => {
+  try {
+    await connectToDatabase();
+  } catch (error) {
+    console.log('⚠️ Database connection failed, using fallback mode');
+    global.inMemoryStorage.usingInMemory = true;
+    global.inMemoryStorage.seedDefaultUsers();
+  }
+
+  // Start server
+  app.listen(PORT, () => {
+    console.log(`🚀 Quibish Backend Server running on port ${PORT}`);
+    console.log(`📱 Frontend should connect to: http://localhost:${PORT}`);
+    console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
+    console.log(`⚕️  Health Check: http://localhost:${PORT}/api/ping`);
+  });
+})();
 
 module.exports = app;
