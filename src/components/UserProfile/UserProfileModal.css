@@ -83,17 +83,22 @@
 @media (max-width: 768px) {
   .user-profile-modal-backdrop {
     justify-content: center;
-    align-items: center;
-    padding: 20px;
+    align-items: flex-start;
+    padding: 10px;
+    padding-top: 20px;
   }
   
   .modal-glass-effect {
     width: 100%;
     max-width: 400px;
+    max-height: calc(100vh - 40px);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    transform: scale(0.8) translateY(100px);
+    transform: scale(0.8) translateY(50px);
     opacity: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   
   .user-profile-modal-backdrop.visible .modal-glass-effect {
@@ -102,8 +107,37 @@
   }
   
   .user-profile-modal-backdrop.closing .modal-glass-effect {
-    transform: scale(0.8) translateY(100px);
+    transform: scale(0.8) translateY(50px);
     opacity: 0;
+  }
+}
+
+/* Small mobile devices (480px and down) */
+@media (max-width: 480px) {
+  .user-profile-modal-backdrop {
+    padding: 8px;
+    padding-top: 15px;
+  }
+  
+  .modal-glass-effect {
+    max-width: 100%;
+    max-height: calc(100vh - 30px);
+    border-radius: 16px;
+    width: calc(100% - 16px);
+  }
+}
+
+/* Very small devices (320px and down) */
+@media (max-width: 320px) {
+  .user-profile-modal-backdrop {
+    padding: 5px;
+    padding-top: 10px;
+  }
+  
+  .modal-glass-effect {
+    width: calc(100% - 10px);
+    max-height: calc(100vh - 20px);
+    border-radius: 12px;
   }
 }
 

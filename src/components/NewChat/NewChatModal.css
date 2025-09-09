@@ -450,6 +450,46 @@
   color: #fca5a5;
 }
 
+/* Auth Helper */
+.auth-helper {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #fecaca;
+}
+
+.new-chat-modal-overlay.dark .auth-helper {
+  border-top-color: #991b1b;
+}
+
+.auth-helper p {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.demo-login-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.demo-login-btn:hover {
+  background: #b91c1c;
+}
+
+.new-chat-modal-overlay.dark .demo-login-btn {
+  background: #991b1b;
+}
+
+.new-chat-modal-overlay.dark .demo-login-btn:hover {
+  background: #7f1d1d;
+}
+
 /* Modal Footer */
 .modal-footer {
   display: flex;

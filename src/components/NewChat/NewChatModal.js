@@ -153,6 +153,16 @@ const NewChatModal = ({
     setError(null);
 
     try {
+      // Check if user is authenticated
+      const { authService } = await import('../../services/apiClient');
+      const token = authService.getToken();
+      
+      if (!token) {
+        setError('You need to be logged in to create conversations. Please refresh the page and log in again.');
+        setLoading(false);
+        return;
+      }
+
       // Import services dynamically to avoid circular dependencies
       const { conversationService } = await import('../../services/apiClient');
       const participants = [currentUser, ...selectedUsers];
@@ -174,7 +184,14 @@ const NewChatModal = ({
         setError(result.error || 'Failed to create chat');
       }
     } catch (err) {
-      setError(err.message || 'Failed to create chat');
+      // Enhanced error handling for authentication issues
+      if (err.message && err.message.includes('Access token is required')) {
+        setError('Authentication required. Please refresh the page and log in again.');
+      } else if (err.message && err.message.includes('Invalid or expired token')) {
+        setError('Your session has expired. Please refresh the page and log in again.');
+      } else {
+        setError(err.message || 'Failed to create chat');
+      }
       console.error('Create chat error:', err);
     } finally {
       setLoading(false);
@@ -320,6 +337,27 @@ const NewChatModal = ({
           {error && (
             <div className="error-message">
               {error}
+              {(error.includes('Authentication required') || error.includes('session has expired') || error.includes('Access token is required')) && (
+                <div className="auth-helper">
+                  <p>Try logging in with demo credentials:</p>
+                  <button 
+                    className="demo-login-btn"
+                    onClick={async () => {
+                      try {
+                        const { authService } = await import('../../services/apiClient');
+                        const result = await authService.login('admin', 'admin');
+                        if (result.success) {
+                          window.location.reload(); // Refresh to update auth state
+                        }
+                      } catch (err) {
+                        console.error('Demo login failed:', err);
+                      }
+                    }}
+                  >
+                    Quick Login (admin/admin)
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
