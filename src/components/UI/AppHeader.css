@@ -463,8 +463,8 @@
   position: absolute;
   bottom: -1px;
   right: -1px;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   border: 2px solid var(--header-bg, #ffffff);
   background-color: var(--success-color, #10b981);

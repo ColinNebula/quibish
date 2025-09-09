@@ -4,6 +4,9 @@ import SettingsModal from './SettingsModal';
 import VideoCall from './VideoCall';
 import GifPicker from '../GifPicker/GifPicker';
 import NewChatModal from '../NewChat/NewChatModal';
+import SmartTextContent from './SmartTextContent';
+import MessageActions from './MessageActions';
+import messageService from '../../services/messageService';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -78,91 +81,53 @@ const ProChat = ({
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
-  // Chat messages state - moved here to be available for useEffect
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 1,
-      text: "Hey! 👋",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 300000).toISOString(),
-      reactions: [
-        { emoji: '👋', count: 2, userId: 'user2' },
-        { emoji: '😊', count: 1, userId: 'user3' }
-      ]
-    },
-    {
-      id: 2,
-      text: "Welcome to the enhanced chat application! This is a medium-length message to demonstrate how the message cards scale based on content length.",
-      user: { id: 'system', name: 'System', avatar: null },
-      timestamp: new Date(Date.now() - 240000).toISOString(),
-      reactions: [
-        { emoji: '👍', count: 3, userId: 'user1' },
-        { emoji: '🎉', count: 1, userId: 'user2' }
-      ]
-    },
-    {
-      id: 3,
-      text: "This is a longer message that demonstrates the chat application's ability to handle various message lengths gracefully. The card automatically adjusts its height and the content flows naturally within the card boundaries.",
-      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 180000).toISOString(),
-      reactions: [
-        { emoji: '💯', count: 1, userId: 'user1' }
-      ]
-    },
-    {
-      id: 4,
-      text: "Short one! 😄",
-      user: { id: 'user3', name: 'Charlie Brown', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 120000).toISOString(),
-      reactions: [
-        { emoji: '😄', count: 2, userId: 'user1' },
-        { emoji: '❤️', count: 1, userId: 'user2' }
-      ]
-    },
-    {
-      id: 5,
-      text: "The chat interface supports real-time messaging, file uploads, voice messages, and many other features that make communication seamless and enjoyable.",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 60000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 6,
-      text: "🎭 GIF: celebration.gif",
-      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 30000).toISOString(),
-      reactions: [
-        { emoji: '🎉', count: 3, userId: 'user1' },
-        { emoji: '🔥', count: 2, userId: 'user3' }
-      ],
-      file: {
-        name: 'celebration.gif',
-        size: 245760, // 240 KB
-        type: 'image/gif',
-        url: 'https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif',
-        isGif: true
-      }
-    },
-    {
-      id: 7,
-      text: "🎬 Check out this demo video!",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 15000).toISOString(),
-      reactions: [],
-      file: {
-        name: 'demo-video.mp4',
-        size: 1024000, // 1MB
-        type: 'video/mp4',
-        url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
-        thumbnail: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
-      }
-    }
-  ]);
+  // Chat messages state - loaded from database
+  const [chatMessages, setChatMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [messagesError, setMessagesError] = useState(null);
   
   // Reaction system state - moved here to be available for functions
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
+  // Load messages from database on component mount
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        setMessagesLoading(true);
+        setMessagesError(null);
+        
+        // Load messages from the message service
+        const messages = await messageService.getMessages({ limit: 50 });
+        
+        if (Array.isArray(messages)) {
+          setChatMessages(messages);
+        } else {
+          console.warn('Invalid messages format received:', messages);
+          setChatMessages([]);
+        }
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+        setMessagesError('Failed to load messages');
+        
+        // Try to load from localStorage as fallback
+        try {
+          const cachedMessages = messageService.loadMessagesFromStorage();
+          if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+            setChatMessages(cachedMessages);
+            console.log('Loaded messages from local storage');
+          }
+        } catch (storageError) {
+          console.error('Failed to load from storage:', storageError);
+        }
+      } finally {
+        setMessagesLoading(false);
+      }
+    };
+
+    loadMessages();
+  }, []);
+
   // Auto-scroll to bottom function
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -197,6 +162,26 @@ const ProChat = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Manage body scroll lock when emoji picker is open on mobile
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 480;
+    if (isMobile) {
+      if (showEmojiPicker || showReactionPicker) {
+        // Add class to body to prevent scrolling
+        document.body.classList.add('emoji-picker-open');
+        // Store original overflow style
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        
+        return () => {
+          // Cleanup: restore original overflow and remove class
+          document.body.classList.remove('emoji-picker-open');
+          document.body.style.overflow = originalOverflow;
+        };
+      }
+    }
+  }, [showEmojiPicker, showReactionPicker]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
@@ -398,7 +383,8 @@ const ProChat = ({
   }, []);
 
   // Handle adding reactions to messages
-  const handleReactionAdd = useCallback((messageId, emoji) => {
+  const handleReactionAdd = useCallback(async (messageId, emoji) => {
+    // Update local state immediately for responsive UI
     setChatMessages(prev => prev.map(message => {
       if (message.id === messageId) {
         const existingReaction = message.reactions.find(r => r.emoji === emoji);
@@ -422,6 +408,16 @@ const ProChat = ({
       }
       return message;
     }));
+
+    // Try to sync with backend
+    try {
+      if (messageService.addReaction) {
+        await messageService.addReaction(messageId, emoji);
+      }
+    } catch (error) {
+      console.error('Failed to sync reaction with backend:', error);
+      // Reaction already added to local state, so no rollback needed
+    }
   }, [user.id]);
 
   const handleEmojiClick = useCallback((emoji) => {
@@ -551,24 +547,54 @@ const ProChat = ({
   // Reaction system state already defined above
 
   // Message input handlers
-  const handleSendMessage = useCallback(() => {
+  const handleSendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
     
-    const newMessage = {
-      id: Date.now(),
-      text: inputText,
-      user: user,
-      timestamp: new Date().toISOString(),
-      reactions: []
-    };
-    
-    setChatMessages(prev => [...prev, newMessage]);
-    setInputText('');
-    
-    // Auto-scroll to the new message
-    setTimeout(() => {
-      scrollToBottom();
-    }, 100);
+    try {
+      // Send message via service
+      const sentMessage = await messageService.sendMessage(inputText.trim(), user?.name || 'User');
+      
+      // Add to local state immediately for responsive UI
+      const newMessage = {
+        id: sentMessage.id || Date.now(),
+        text: inputText.trim(),
+        user: user,
+        timestamp: sentMessage.timestamp || new Date().toISOString(),
+        reactions: sentMessage.reactions || []
+      };
+      
+      setChatMessages(prev => [...prev, newMessage]);
+      setInputText('');
+      
+      // Auto-scroll to the new message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      
+      // Still add to local state for offline persistence
+      const fallbackMessage = {
+        id: Date.now(),
+        text: inputText.trim(),
+        user: user,
+        timestamp: new Date().toISOString(),
+        reactions: [],
+        pending: true // Mark as pending/failed
+      };
+      
+      setChatMessages(prev => [...prev, fallbackMessage]);
+      setInputText('');
+      
+      // Auto-scroll to the new message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+      // Optionally show error message to user
+      console.warn('Message sent offline, will sync when connection is restored');
+    }
   }, [inputText, user, scrollToBottom]);
 
   const handleKeyPress = useCallback((e) => {
@@ -823,14 +849,74 @@ const ProChat = ({
     />
   ), [videoCallState, handleEndCall, handleToggleMinimize]);
 
-  // Function to determine message length category for dynamic styling
-  const getMessageLengthCategory = (text) => {
+  // Enhanced smart content preview function
+  const getSmartPreview = useCallback((message) => {
+    const { text, file, reactions } = message;
+    
+    // Handle different content types
+    if (file?.type.startsWith('image/')) {
+      return `📸 Image: ${file.name}`;
+    }
+    if (file?.type.startsWith('video/')) {
+      return `🎥 Video: ${file.name}`;
+    }
+    if (file?.type.startsWith('audio/')) {
+      return `🎵 Audio: ${file.name}`;
+    }
+    if (file && !file.type.startsWith('image/') && !file.type.startsWith('video/') && !file.type.startsWith('audio/')) {
+      return `📎 File: ${file.name}`;
+    }
+    
+    // Handle text content
+    if (text.includes('```')) {
+      return `💻 Code snippet`;
+    }
+    if (text.match(/https?:\/\/[^\s]+/)) {
+      return `🔗 ${text.substring(0, 60)}...`;
+    }
+    if (text.includes('@')) {
+      const mentions = text.match(/@\w+/g);
+      return `💬 ${text.replace(/@\w+/g, '@user')}${mentions?.length > 1 ? ` (+${mentions.length - 1} mentions)` : ''}`;
+    }
+    if (reactions?.length > 0) {
+      return `${text.substring(0, 60)}... (${reactions.length} ${reactions.length === 1 ? 'reaction' : 'reactions'})`;
+    }
+    
+    return text.length > 100 ? text.substring(0, 100) + '...' : text;
+  }, []);
+
+  // Advanced message categorization with multiple factors
+  const getAdvancedMessageCategory = useCallback((message) => {
+    const { text, file, user, reactions = [] } = message;
+    const length = text.length;
+    
+    const categories = {
+      length: length <= 50 ? 'short' : length <= 200 ? 'medium' : length <= 500 ? 'long' : 'very-long',
+      type: file ? (file.type.startsWith('image/') ? 'image' : 
+                   file.type.startsWith('video/') ? 'video' : 
+                   file.type.startsWith('audio/') ? 'audio' : 'file') : 'text',
+      priority: user.role === 'admin' ? 'high' : user.role === 'moderator' ? 'medium' : 'normal',
+      hasMedia: !!file,
+      hasReactions: reactions.length > 0,
+      hasCode: text.includes('```') || text.includes('`'),
+      hasLinks: /https?:\/\/[^\s]+/.test(text),
+      hasMentions: /@\w+/.test(text),
+      sentiment: text.includes('!') && text.includes('urgent') ? 'urgent' : 
+                text.includes('?') ? 'question' : 
+                /[😀😃😄😁😆😅😂🤣😊😇🙂😉😌😍🥰😘😗😙😚😋😛😝😜🤪🤨🧐🤓😎🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑😬🙄😯😦😧😮😲🥱😴🤤😪😵🤐🥴🤢🤮🤧😷🤒🤕🤑🤠😈👿👹👺🤡💩👻💀☠️👽👾🤖🎃😺😸😹😻😼😽🙀😿😾]/.test(text) ? 'emoji' : 'neutral'
+    };
+    
+    return categories;
+  }, []);
+
+  // Function to determine message length category for dynamic styling (enhanced)
+  const getMessageLengthCategory = useCallback((text) => {
     const length = text.length;
     if (length <= 50) return 'short';
     if (length <= 200) return 'medium';
     if (length <= 500) return 'long';
     return 'very-long';
-  };
+  }, []);
 
   return (
     <div className="pro-layout">
@@ -859,7 +945,7 @@ const ProChat = ({
         {/* Sidebar Header */}
         <div className="pro-sidebar-header">
           <div className="sidebar-logo">
-            <div className="logo-icon">
+            <div className="logo-icon" data-tooltip="Quibish Chat">
               💬
               {totalUnreadCount > 0 && (
                 <div className="logo-unread-badge">{totalUnreadCount > 99 ? '99+' : totalUnreadCount}</div>
@@ -879,7 +965,7 @@ const ProChat = ({
 
         {/* User Profile Section */}
         <div className="sidebar-user-profile">
-          <div className="user-avatar">
+          <div className="user-avatar" data-tooltip={user?.name || 'User Profile'}>
             <img 
               src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=4f46e5&color=fff&size=40`}
               alt={user?.name || 'User'}
@@ -970,7 +1056,7 @@ const ProChat = ({
                 className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
                 onClick={() => handleConversationSelect(conv.id)}
               >
-                <div className="conversation-avatar">
+                <div className="conversation-avatar" data-tooltip={conv.name}>
                   <img 
                     src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
                     alt={conv.name}
@@ -1017,9 +1103,36 @@ const ProChat = ({
             </div>
           )}
           <div className="footer-actions">
-            <button className="footer-btn" title="Help" onClick={() => console.log('Help clicked')}>❓</button>
-            {!sidebarCollapsed && <button className="footer-btn" title="Feedback" onClick={() => console.log('Feedback clicked')}>💬</button>}
-            <button className="footer-btn" title="Settings" onClick={handleQuickSettings}>⚙️</button>
+            <button 
+              className="footer-btn" 
+              title="Profile" 
+              onClick={() => handleViewUserProfile(user?.id, user?.name)}
+              data-mobile-action="profile"
+            >
+              👤
+            </button>
+            <button 
+              className="footer-btn" 
+              title="Settings" 
+              onClick={handleQuickSettings}
+              data-mobile-action="settings"
+            >
+              ⚙️
+            </button>
+            <button 
+              className="footer-btn logout-btn" 
+              title="Logout" 
+              onClick={onLogout}
+              data-mobile-action="logout"
+            >
+              🚪
+            </button>
+            {!sidebarCollapsed && (
+              <button className="footer-btn" title="Help" onClick={() => console.log('Help clicked')}>❓</button>
+            )}
+            {!sidebarCollapsed && (
+              <button className="footer-btn" title="Feedback" onClick={() => console.log('Feedback clicked')}>💬</button>
+            )}
           </div>
         </div>
       </div>
@@ -1104,6 +1217,32 @@ const ProChat = ({
 
         {/* Messages */}
         <div className="pro-message-list" ref={messagesContainerRef}>
+          {messagesLoading && (
+            <div className="message-loading-indicator">
+              <div className="loading-spinner"></div>
+              <span>Loading messages...</span>
+            </div>
+          )}
+          
+          {messagesError && !messagesLoading && (
+            <div className="message-error-indicator">
+              <span>⚠️ {messagesError}</span>
+              <button 
+                className="retry-button"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          
+          {!messagesLoading && !messagesError && chatMessages.length === 0 && (
+            <div className="no-messages-indicator">
+              <span>🎉 Start the conversation!</span>
+              <p>Send your first message below.</p>
+            </div>
+          )}
+          
           {chatMessages.map(message => (
             <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
               <div className="message-avatar">
@@ -1114,19 +1253,46 @@ const ProChat = ({
                 />
               </div>
               <div className="message-content" onClick={() => handleMessageClick(message.id)}>
+                {/* Reactions Display - Moved above message content */}
+                {message.reactions && message.reactions.length > 0 && (
+                  <div className="message-reactions">
+                    {message.reactions.map((reaction, index) => (
+                      <button
+                        key={index}
+                        className="reaction-bubble"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReactionAdd(message.id, reaction.emoji);
+                        }}
+                      >
+                        <span className="reaction-emoji">{reaction.emoji}</span>
+                        <span className="reaction-count">{reaction.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
                 <div className="message-header">
                   <span className="user-name">{message.user.name}</span>
-                  <span className="timestamp">
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </span>
                 </div>
                 
-                {/* Message Text */}
+                {/* Enhanced Message Text with Smart Content */}
                 <div 
                   className="message-text" 
                   data-length={getMessageLengthCategory(message.text)}
+                  data-content-type={getAdvancedMessageCategory(message).type}
+                  data-has-code={getAdvancedMessageCategory(message).hasCode}
+                  data-has-links={getAdvancedMessageCategory(message).hasLinks}
+                  data-has-mentions={getAdvancedMessageCategory(message).hasMentions}
+                  data-sentiment={getAdvancedMessageCategory(message).sentiment}
                 >
-                  {message.text}
+                  <SmartTextContent 
+                    text={message.text}
+                    maxLength={300}
+                    showWordCount={message.text.length > 500}
+                    enableSmartBreaks={true}
+                    className="message-smart-text"
+                  />
                 </div>
                 
                 {/* File/Image Display */}
@@ -1259,26 +1425,23 @@ const ProChat = ({
                     <button className="play-voice-btn">▶️</button>
                   </div>
                 )}
-                
-                {/* Reactions Display */}
-                {message.reactions && message.reactions.length > 0 && (
-                  <div className="message-reactions">
-                    {message.reactions.map((reaction, index) => (
-                      <button
-                        key={index}
-                        className="reaction-bubble"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReactionAdd(message.id, reaction.emoji);
-                        }}
-                      >
-                        <span className="reaction-emoji">{reaction.emoji}</span>
-                        <span className="reaction-count">{reaction.count}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
+              
+              {/* Message Timestamp */}
+              <div className="message-timestamp">
+                {new Date(message.timestamp).toLocaleTimeString()}
+              </div>
+              
+              {/* Context-Aware Message Actions */}
+              <MessageActions
+                message={message}
+                currentUser={user}
+                onReply={(messageId) => console.log('Reply to:', messageId)}
+                onReact={handleReactionAdd}
+                onEdit={(messageId) => console.log('Edit message:', messageId)}
+                onDelete={(messageId) => console.log('Delete message:', messageId)}
+                onTranslate={(messageId) => console.log('Translate message:', messageId)}
+              />
             </div>
           ))}
           {/* Auto-scroll anchor element */}
@@ -1421,6 +1584,13 @@ const ProChat = ({
                   placeholder="Type your message..."
                   className="message-input enhanced"
                   rows="1"
+                  autoComplete="off"
+                  autoCorrect="on"
+                  autoCapitalize="sentences"
+                  spellCheck="true"
+                  inputMode="text"
+                  aria-label="Type your message"
+                  data-testid="message-input"
                 />
 
                 {/* Send Button */}
@@ -1429,8 +1599,11 @@ const ProChat = ({
                   disabled={!inputText.trim()}
                   className="send-button enhanced"
                   type="button"
+                  aria-label="Send message"
+                  title="Send message"
+                  data-testid="send-button"
                 >
-                  <span className="send-icon">➤</span>
+                  <span className="send-icon" aria-hidden="true">➤</span>
                 </button>
               </>
             )}

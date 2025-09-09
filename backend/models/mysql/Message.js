@@ -35,7 +35,7 @@ const MySQLMessage = sequelize.define('Message', {
       isIn: [['text', 'image', 'video', 'audio', 'file', 'gif']]
     }
   },
-  attachments: {
+  attachmentData: {
     type: DataTypes.JSON,
     allowNull: true,
     defaultValue: []
@@ -92,10 +92,10 @@ const MySQLMessage = sequelize.define('Message', {
 }, {
   tableName: 'messages',
   indexes: [
-    { fields: ['userId'] },
-    { fields: ['conversationId'] },
-    { fields: ['createdAt'] },
-    { fields: ['messageType'] },
+    { fields: ['user_id'] },
+    { fields: ['conversation_id'] },
+    { fields: ['created_at'] },
+    { fields: ['message_type'] },
     { fields: ['deleted'] }
   ]
 });
