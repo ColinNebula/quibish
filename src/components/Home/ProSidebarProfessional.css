@@ -166,6 +166,7 @@
 
 .professional .pro-conversation-item {
   border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 0.5rem;
   padding: 0.75rem;
   transition: all 0.2s ease;
@@ -295,7 +296,7 @@
 .professional .pro-sidebar-footer {
   margin-top: auto;
   padding: 0.75rem;
-  border-top: 1px solid var(--pro-border);
+  border-top: 2px solid var(--pro-border);
 }
 
 .professional .pro-new-chat-button {

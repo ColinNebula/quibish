@@ -88,6 +88,7 @@ const initDB = () => {
 // API utility functions
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+  console.log('🔑 Auth token for API call:', token ? 'Present' : 'Missing');
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -110,17 +111,24 @@ const apiCall = async (endpoint, options = {}) => {
     ...options
   };
 
+  console.log('🌐 Making API call to:', url, 'with options:', defaultOptions);
+
   try {
     const response = await fetch(url, defaultOptions);
     
+    console.log('📡 API response status:', response.status, 'for', endpoint);
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('❌ API call failed with error data:', errorData);
       throw new Error(errorData.error || `API call failed: ${response.status}`);
     }
     
-    return await response.json();
+    const responseData = await response.json();
+    console.log('✅ API call successful for', endpoint, ':', responseData);
+    return responseData;
   } catch (error) {
-    console.error(`API call to ${endpoint} failed:`, error);
+    console.error(`❌ API call to ${endpoint} failed:`, error);
     throw error;
   }
 };
@@ -839,17 +847,27 @@ const fetchUserAnalytics = async (userId, timeframe = 'month') => {
  * @returns {Promise<Object>} - Updated profile data
  */
 const updateUserProfile = async (userId, profileData) => {
+  console.log('🔄 Starting profile update for user:', userId, 'with data:', profileData);
+  
   try {
     // Try to update via API first
-    if (localStorage.getItem('token')) {
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    console.log('🔑 Token check:', token ? 'Found' : 'Not found');
+    
+    if (token) {
       try {
+        console.log('🌐 Attempting API update...');
         const result = await updateUserProfileAPI(profileData);
+        console.log('✅ API update successful:', result);
+        
         // Also update local storage with the result
         await saveUserProfile({ ...result, userId });
         return result;
       } catch (apiError) {
-        console.warn('API update failed, falling back to local storage:', apiError);
+        console.warn('⚠️ API update failed, falling back to local storage:', apiError);
       }
+    } else {
+      console.log('📴 No token found, using local storage only');
     }
     
     // Fallback to local storage update
@@ -861,6 +879,7 @@ const updateUserProfile = async (userId, profileData) => {
       lastUpdated: new Date().toISOString()
     };
     
+    console.log('💾 Saving to local storage:', updatedProfile);
     await saveUserProfile(updatedProfile);
     return updatedProfile;
   } catch (error) {

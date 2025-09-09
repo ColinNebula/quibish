@@ -117,6 +117,10 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
   };
 
   const handleSave = async () => {
+    console.log('🔄 Starting profile save process...');
+    console.log('📋 Form data:', formData);
+    console.log('👤 User profile:', userProfile);
+    
     setLoading(true);
     try {
       // Validate all fields
@@ -137,15 +141,19 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
       });
 
       if (Object.keys(validationErrors).length > 0) {
+        console.log('❌ Validation errors found:', validationErrors);
         setErrors(validationErrors);
         setLoading(false);
         return;
       }
 
+      console.log('✅ Validation passed');
+
       // Upload avatar if changed
       let avatarUrl = userProfile?.avatar;
       if (avatarFile) {
         try {
+          console.log('📸 Uploading avatar...');
           const uploadResult = await userDataService.api.uploadAvatar(avatarFile);
           avatarUrl = uploadResult.avatarUrl;
           console.log('✅ Avatar uploaded successfully in EditProfileModal:', uploadResult);
@@ -161,14 +169,21 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
         avatar: avatarUrl
       };
 
+      console.log('💾 Updating profile with data:', updatedProfile);
+      console.log('🆔 User ID:', userProfile?.id);
+
       await userDataService.updateUserProfile(userProfile.id, updatedProfile);
+      
+      console.log('✅ Profile update completed successfully');
       onSave(updatedProfile);
       onClose();
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error('❌ Error saving profile:', error);
+      console.error('❌ Error details:', error.message, error.stack);
       setErrors({ general: 'Failed to save profile. Please try again.' });
     } finally {
       setLoading(false);
+      console.log('🏁 Profile save process completed');
     }
   };
 

@@ -82,9 +82,16 @@ router.get('/', authenticateToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const offset = (page - 1) * limit;
+    const conversationId = req.query.conversationId;
 
-    // Get messages using database service
-    const messages = await databaseService.getMessages({}, { limit, offset });
+    // Build filter object
+    const filter = {};
+    if (conversationId) {
+      filter.conversationId = conversationId;
+    }
+
+    // Get messages using database service with conversation filter
+    const messages = await databaseService.getMessages(filter, { limit, offset });
     
     // Transform messages to expected format
     const transformedMessages = messages.map(msg => ({
@@ -97,6 +104,7 @@ router.get('/', authenticateToken, async (req, res) => {
       reactions: msg.reactions || [],
       edited: msg.edited || false,
       editedAt: msg.editedAt,
+      conversationId: msg.conversationId,
       user: msg.user ? {
         id: msg.user.id,
         username: msg.user.username,

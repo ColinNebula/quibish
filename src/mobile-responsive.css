@@ -316,6 +316,27 @@
     visibility: visible !important;
   }
   
+  /* Enhanced admin user styling for mobile */
+  .sidebar .user-avatar.admin-user::after,
+  .pro-sidebar .user-avatar.admin-user::after {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.95) 0%, rgba(255, 193, 7, 0.95) 100%) !important;
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(255, 215, 0, 0.8) !important;
+  }
+
+  .sidebar .user-avatar.admin-user::before,
+  .pro-sidebar .user-avatar.admin-user::before {
+    border-right-color: rgba(255, 215, 0, 0.95) !important;
+  }
+
+  .sidebar .user-avatar.admin-user:hover img,
+  .pro-sidebar .user-avatar.admin-user:hover img {
+    border-color: #ffd700 !important;
+    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4) !important;
+    filter: brightness(1.1) !important;
+  }
+  
   .sidebar .logo-icon:hover::before,
   .pro-sidebar .logo-icon:hover::before,
   .sidebar .user-avatar:hover::before,
