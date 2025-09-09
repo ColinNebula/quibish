@@ -4,6 +4,12 @@ import SettingsModal from './SettingsModal';
 import VideoCall from './VideoCall';
 import GifPicker from '../GifPicker/GifPicker';
 import NewChatModal from '../NewChat/NewChatModal';
+import FeedbackModal from './FeedbackModal';
+import HelpModal from './HelpModal';
+import SmartTextContent from './SmartTextContent';
+import MessageActions from './MessageActions';
+import messageService from '../../services/messageService';
+import { feedbackService } from '../../services/feedbackService';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -541,6 +547,8 @@ const ProChat = ({
   const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: null });
   const [settingsModal, setSettingsModal] = useState({ open: false, section: 'profile' });
   const [newChatModal, setNewChatModal] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState(false);
+  const [helpModal, setHelpModal] = useState(false);
   const [videoCallState, setVideoCallState] = useState({ 
     active: false, 
     withUser: null, 
@@ -589,6 +597,30 @@ const ProChat = ({
 
   const handleCloseSettingsModal = useCallback(() => {
     setSettingsModal({ open: false, section: 'profile' });
+  }, []);
+
+  // Feedback handler
+  const handleFeedbackSubmit = useCallback(async (feedbackData) => {
+    try {
+      console.log('Feedback submitted:', feedbackData);
+      
+      // Format and validate feedback data
+      const formattedData = feedbackService.formatFeedbackData(feedbackData);
+      const validation = feedbackService.validateFeedback(formattedData);
+      
+      if (!validation.isValid) {
+        throw new Error('Please check your feedback and try again.');
+      }
+      
+      // Submit feedback via service
+      const result = await feedbackService.submitFeedback(formattedData);
+      
+      console.log('✅ Feedback submitted successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to submit feedback:', error);
+      throw error;
+    }
   }, []);
 
   // Lightbox handlers
@@ -1017,9 +1049,36 @@ const ProChat = ({
             </div>
           )}
           <div className="footer-actions">
-            <button className="footer-btn" title="Help" onClick={() => console.log('Help clicked')}>❓</button>
-            {!sidebarCollapsed && <button className="footer-btn" title="Feedback" onClick={() => console.log('Feedback clicked')}>💬</button>}
-            <button className="footer-btn" title="Settings" onClick={handleQuickSettings}>⚙️</button>
+            <button 
+              className="footer-btn" 
+              title="Profile" 
+              onClick={() => handleViewUserProfile(user?.id, user?.name)}
+              data-mobile-action="profile"
+            >
+              👤
+            </button>
+            <button 
+              className="footer-btn" 
+              title="Settings" 
+              onClick={handleQuickSettings}
+              data-mobile-action="settings"
+            >
+              ⚙️
+            </button>
+            <button 
+              className="footer-btn logout-btn" 
+              title="Logout" 
+              onClick={onLogout}
+              data-mobile-action="logout"
+            >
+              🚪
+            </button>
+            {!sidebarCollapsed && (
+              <button className="footer-btn" title="Help" onClick={() => setHelpModal(true)}>❓</button>
+            )}
+            {!sidebarCollapsed && (
+              <button className="footer-btn" title="Feedback" onClick={() => setFeedbackModal(true)}>💬</button>
+            )}
           </div>
         </div>
       </div>
@@ -1717,6 +1776,19 @@ const ProChat = ({
         onCreateChat={handleCreateChat}
         currentUser={user}
         darkMode={darkMode}
+      />
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={feedbackModal}
+        onClose={() => setFeedbackModal(false)}
+        onSubmit={handleFeedbackSubmit}
+      />
+
+      {/* Help Modal */}
+      <HelpModal
+        isOpen={helpModal}
+        onClose={() => setHelpModal(false)}
       />
     </div>
   );
