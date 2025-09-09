@@ -6,15 +6,44 @@
 import axios from 'axios';
 import websocketService from './websocketService';
 import localStorageService from './localStorageService';
+import authHelper from '../utils/authHelper';
 
 // Create an axios instance for messages API
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'http://localhost:5001/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   }
 });
+
+// Add request interceptor to include auth token
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    console.log('🔑 API request with auth:', config.url, token ? 'Token present' : 'No token');
+    return config;
+  },
+  (error) => {
+    console.error('❌ Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for better error handling
+API.interceptors.response.use(
+  (response) => {
+    console.log('✅ API response success:', response.config.url, response.status);
+    return response;
+  },
+  (error) => {
+    console.error('❌ API response error:', error.config?.url, error.response?.status, error.message);
+    return Promise.reject(error);
+  }
+);
 
 class MessageService {
   constructor() {
@@ -125,6 +154,13 @@ class MessageService {
    */
   async getMessages(options = {}) {
     try {
+      // Ensure user is authenticated before making API calls
+      const isAuth = await authHelper.ensureAuthenticated();
+      if (!isAuth) {
+        console.warn('⚠️ Authentication failed, using cached messages only');
+        return this.loadMessagesFromStorage(options.conversationId) || [];
+      }
+
       // Build query params
       const params = {};
       

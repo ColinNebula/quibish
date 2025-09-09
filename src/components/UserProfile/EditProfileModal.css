@@ -284,11 +284,15 @@
 @media (max-width: 768px) {
   .edit-profile-modal-overlay {
     padding: 10px;
+    align-items: flex-start;
+    padding-top: 20px;
   }
 
   .edit-profile-modal {
     max-width: 100%;
     max-height: 95vh;
+    margin: 0 auto;
+    width: calc(100% - 20px);
   }
 
   .edit-profile-content {
@@ -321,6 +325,110 @@
   .cancel-btn,
   .save-btn {
     width: 100%;
+  }
+}
+
+/* Extra small devices (phones, 480px and down) */
+@media (max-width: 480px) {
+  .edit-profile-modal-overlay {
+    padding: 8px;
+    align-items: flex-start;
+    padding-top: 15px;
+  }
+
+  .edit-profile-modal {
+    width: calc(100% - 16px);
+    max-height: 98vh;
+    border-radius: 12px;
+  }
+
+  .edit-profile-header {
+    padding: 16px 20px;
+  }
+
+  .edit-profile-header h2 {
+    font-size: 20px;
+  }
+
+  .edit-profile-content {
+    padding: 12px 16px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px;
+  }
+
+  .avatar-upload-area {
+    width: 80px;
+    height: 80px;
+  }
+
+  .avatar-placeholder span:first-child {
+    font-size: 24px;
+  }
+
+  .avatar-placeholder span:last-child {
+    font-size: 9px;
+  }
+
+  .edit-profile-footer {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .cancel-btn,
+  .save-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}
+
+/* Very small devices (320px and down) */
+@media (max-width: 320px) {
+  .edit-profile-modal-overlay {
+    padding: 4px;
+    padding-top: 10px;
+  }
+
+  .edit-profile-modal {
+    width: calc(100% - 8px);
+    border-radius: 8px;
+  }
+
+  .edit-profile-header {
+    padding: 12px 16px;
+  }
+
+  .edit-profile-header h2 {
+    font-size: 18px;
+  }
+
+  .edit-profile-content {
+    padding: 10px 12px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .avatar-upload-area {
+    width: 70px;
+    height: 70px;
+  }
+
+  .edit-profile-footer {
+    padding: 10px 12px;
   }
 }
 
