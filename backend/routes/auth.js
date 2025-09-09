@@ -478,7 +478,9 @@ router.get('/verify', async (req, res) => {
       });
     }
 
+    console.log('Verifying token for request...');
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('Token decoded successfully, user ID:', decoded.id);
     
     let user;
     let userObject;
@@ -489,6 +491,7 @@ router.get('/verify', async (req, res) => {
       user = global.inMemoryStorage.users.find(u => u.id === decoded.id);
       
       if (!user) {
+        console.log('User not found in memory storage');
         return res.status(401).json({
           success: false,
           error: 'Invalid token'
@@ -504,30 +507,59 @@ router.get('/verify', async (req, res) => {
       userObject = { ...user };
       delete userObject.password;
     } else {
-      // Find in MongoDB
-      user = await User.findOne({ id: decoded.id });
+      // Find in database (MySQL or MongoDB)
+      const dbType = process.env.DATABASE_TYPE || 'mongodb';
+      console.log('Looking up user in database, type:', dbType);
       
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid token'
-        });
+      if (dbType.toLowerCase() === 'mysql') {
+        // MySQL/Sequelize query using primary key
+        user = await User.findByPk(decoded.id);
+        console.log('MySQL findByPk result:', user ? 'Found' : 'Not found');
+        
+        if (!user) {
+          return res.status(401).json({
+            success: false,
+            error: 'Invalid token'
+          });
+        }
+        
+        // Update last active timestamp
+        user.lastActive = new Date();
+        await user.save();
+      } else {
+        // MongoDB query
+        user = await User.findOne({ id: decoded.id });
+        console.log('MongoDB findOne result:', user ? 'Found' : 'Not found');
+        
+        if (!user) {
+          return res.status(401).json({
+            success: false,
+            error: 'Invalid token'
+          });
+        }
+        
+        // Update last active timestamp
+        user.lastActive = new Date();
+        await user.save();
       }
       
-      // Update last active timestamp
-      user.lastActive = new Date();
-      await user.save();
-      
-      userObject = user.toObject();
+      // Create userObject based on database type
+      if (dbType.toLowerCase() === 'mysql') {
+        userObject = user.toJSON();
+      } else {
+        userObject = user.toObject();
+      }
       delete userObject.password;
     }
     
+    console.log('Token verification successful for user:', userObject.username);
     res.json({
       success: true,
       user: userObject
     });
 
   } catch (error) {
+    console.error('Token verification error:', error.message);
     res.status(401).json({
       success: false,
       error: 'Invalid token'

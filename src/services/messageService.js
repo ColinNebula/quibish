@@ -118,6 +118,9 @@ class MessageService {
   /**
    * Get messages from server
    * @param {Object} options - Options for fetching messages
+   * @param {string} options.conversationId - Filter messages by conversation ID
+   * @param {number} options.limit - Maximum number of messages to fetch
+   * @param {number} options.page - Page number for pagination
    * @returns {Promise<Array>} - Array of messages
    */
   async getMessages(options = {}) {
@@ -135,10 +138,31 @@ class MessageService {
         params.limit = options.limit;
       }
       
+      // Add conversation ID filter if provided
+      if (options.conversationId) {
+        params.conversationId = options.conversationId;
+      }
+      
       const response = await API.get('/messages', { params });
-      return response.data;
+      const messages = response.data.messages || response.data || [];
+      
+      // Cache messages for offline access
+      this.cacheMessages(messages, options.conversationId);
+      
+      return messages;
     } catch (error) {
       console.error('Error fetching messages:', error);
+      
+      // Try to load from cache as fallback
+      try {
+        const cachedMessages = this.loadMessagesFromStorage(options.conversationId);
+        if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+          console.log('Loaded messages from cache');
+          return cachedMessages;
+        }
+      } catch (storageError) {
+        console.error('Error loading messages from storage:', storageError);
+      }
       
       // Return cached messages if available
       const cachedMessages = localStorage.getItem('cachedMessages');
@@ -150,18 +174,64 @@ class MessageService {
       return [];
     }
   }
+
+  /**
+   * Cache messages in localStorage
+   * @param {Array} messages - Messages to cache
+   * @param {string} conversationId - Conversation ID for scoped caching
+   */
+  cacheMessages(messages, conversationId = null) {
+    try {
+      const cacheKey = conversationId ? `messages_${conversationId}` : 'cachedMessages';
+      localStorage.setItem(cacheKey, JSON.stringify(messages));
+    } catch (error) {
+      console.error('Error caching messages:', error);
+    }
+  }
+
+  /**
+   * Load messages from localStorage
+   * @param {string} conversationId - Conversation ID for scoped loading
+   * @returns {Array} - Cached messages
+   */
+  loadMessagesFromStorage(conversationId = null) {
+    try {
+      const cacheKey = conversationId ? `messages_${conversationId}` : 'cachedMessages';
+      const cachedMessages = localStorage.getItem(cacheKey);
+      
+      if (cachedMessages) {
+        return JSON.parse(cachedMessages);
+      }
+      
+      // Fallback to general messages cache if conversation-specific cache is empty
+      if (conversationId) {
+        const generalCache = localStorage.getItem('cachedMessages');
+        if (generalCache) {
+          const allMessages = JSON.parse(generalCache);
+          return allMessages.filter(msg => msg.conversationId === conversationId);
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error loading messages from storage:', error);
+      return [];
+    }
+  }
   
   /**
    * Send a message
    * @param {string} text - Message text
    * @param {string} sender - Message sender
+   * @param {string|null} conversationId - Conversation ID for the message
    * @param {Object} replyTo - Message being replied to (optional)
    * @returns {Promise<Object>} - Sent message
    */
-  async sendMessage(text, sender, replyTo = null) {
+  async sendMessage(text, sender, conversationId = null, replyTo = null) {
     const messageData = {
       text,
       sender,
+      conversationId,
       type: 'text',
       timestamp: new Date().toISOString(),
       replyTo
@@ -434,21 +504,6 @@ class MessageService {
     } catch (error) {
       console.error('Reconnection failed:', error);
       return false;
-    }
-  }
-
-  /**
-   * Load messages from localStorage for offline persistence
-   * @returns {Array} - Array of messages from localStorage
-   */
-  loadMessagesFromStorage() {
-    try {
-      const storedMessages = localStorageService.loadMessages();
-      console.log(`📁 Loaded ${storedMessages.length} messages from localStorage`);
-      return storedMessages;
-    } catch (error) {
-      console.error('Error loading messages from localStorage:', error);
-      return [];
     }
   }
 

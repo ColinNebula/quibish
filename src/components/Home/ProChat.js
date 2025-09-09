@@ -90,6 +90,11 @@ const ProChat = ({
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
+  // Computed value for current conversation based on selectedConversation
+  const currentSelectedConversation = selectedConversation 
+    ? conversations.find(conv => conv.id === selectedConversation) || null
+    : null;
+  
   // Load messages from database on component mount
   useEffect(() => {
     const loadMessages = async () => {
@@ -194,8 +199,54 @@ const ProChat = ({
     }
   }, []);
 
-  const handleConversationSelect = useCallback((conversationId) => {
+  const handleConversationSelect = useCallback(async (conversationId) => {
     setSelectedConversation(conversationId);
+    
+    // Load messages for the selected conversation
+    try {
+      setMessagesLoading(true);
+      setMessagesError(null);
+      
+      console.log('Loading messages for conversation:', conversationId);
+      
+      // Load messages from the message service for this conversation
+      const conversationMessages = await messageService.getMessages({ 
+        conversationId: conversationId,
+        limit: 50 
+      });
+      
+      if (Array.isArray(conversationMessages)) {
+        setChatMessages(conversationMessages);
+        console.log('Loaded conversation messages:', conversationMessages.length);
+        
+        // Scroll to bottom after loading messages
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+      } else {
+        console.warn('Invalid conversation messages format received:', conversationMessages);
+        setChatMessages([]);
+      }
+    } catch (error) {
+      console.error('Failed to load conversation messages:', error);
+      setMessagesError('Failed to load conversation messages');
+      
+      // Try to load from localStorage as fallback
+      try {
+        const cachedMessages = messageService.loadMessagesFromStorage(conversationId);
+        if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+          setChatMessages(cachedMessages);
+          console.log('Loaded conversation messages from cache');
+        } else {
+          setChatMessages([]);
+        }
+      } catch (storageError) {
+        console.error('Error loading conversation messages from storage:', storageError);
+        setChatMessages([]);
+      }
+    } finally {
+      setMessagesLoading(false);
+    }
   }, []);
 
   const handleSearchChange = useCallback((e) => {
@@ -551,8 +602,14 @@ const ProChat = ({
     if (!inputText.trim()) return;
     
     try {
-      // Send message via service
-      const sentMessage = await messageService.sendMessage(inputText.trim(), user?.name || 'User');
+      // Send message via service with conversation context
+      const messageData = {
+        text: inputText.trim(),
+        conversationId: selectedConversation,
+        user: user?.name || 'User'
+      };
+      
+      const sentMessage = await messageService.sendMessage(messageData.text, messageData.user, messageData.conversationId);
       
       // Add to local state immediately for responsive UI
       const newMessage = {
@@ -560,7 +617,8 @@ const ProChat = ({
         text: inputText.trim(),
         user: user,
         timestamp: sentMessage.timestamp || new Date().toISOString(),
-        reactions: sentMessage.reactions || []
+        reactions: sentMessage.reactions || [],
+        conversationId: selectedConversation
       };
       
       setChatMessages(prev => [...prev, newMessage]);
@@ -581,7 +639,8 @@ const ProChat = ({
         user: user,
         timestamp: new Date().toISOString(),
         reactions: [],
-        pending: true // Mark as pending/failed
+        pending: true, // Mark as pending/failed
+        conversationId: selectedConversation
       };
       
       setChatMessages(prev => [...prev, fallbackMessage]);
@@ -595,7 +654,7 @@ const ProChat = ({
       // Optionally show error message to user
       console.warn('Message sent offline, will sync when connection is restored');
     }
-  }, [inputText, user, scrollToBottom]);
+  }, [inputText, user, selectedConversation, scrollToBottom]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -965,12 +1024,20 @@ const ProChat = ({
 
         {/* User Profile Section */}
         <div className="sidebar-user-profile">
-          <div className="user-avatar" data-tooltip={user?.name || 'User Profile'}>
+          <div 
+            className={`user-avatar ${user?.role === 'admin' ? 'admin-user' : ''}`} 
+            data-tooltip={user?.role === 'admin' ? `${user?.name || 'Admin'} (Administrator)` : user?.name || 'User Profile'}
+          >
             <img 
               src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=4f46e5&color=fff&size=40`}
               alt={user?.name || 'User'}
             />
             <div className="status-indicator online"></div>
+            {user?.role === 'admin' && (
+              <div className="admin-badge" title="Administrator">
+                👑
+              </div>
+            )}
           </div>
           {!sidebarCollapsed && (
             <div className="user-info">
@@ -1153,19 +1220,21 @@ const ProChat = ({
           <div className="header-left">
             <div className="conversation-avatar">
               <img 
-                src={currentConversation?.avatar || `https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=40&h=40&fit=crop&crop=face`}
-                alt={currentConversation?.name || 'Chat'}
+                src={currentSelectedConversation?.avatar || currentConversation?.avatar || `https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=40&h=40&fit=crop&crop=face`}
+                alt={currentSelectedConversation?.name || currentConversation?.name || 'Chat'}
               />
               <div className={`online-indicator ${isConnected ? 'online' : 'offline'}`}></div>
             </div>
             <div className="conversation-info">
-              <h3 className="conversation-title">{currentConversation?.name || 'General Chat'}</h3>
+              <h3 className="conversation-title">
+                {currentSelectedConversation?.name || currentConversation?.name || (selectedConversation ? 'Loading conversation...' : 'Select a conversation')}
+              </h3>
               <div className="conversation-status">
                 <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
                   {isConnected ? '● Online' : '● Disconnected'}
                 </span>
                 <span className="participant-count">
-                  {currentConversation?.participants || 5} participants
+                  {currentSelectedConversation?.participants || currentConversation?.participants || (currentSelectedConversation ? 2 : 0)} participants
                 </span>
               </div>
             </div>
@@ -1238,8 +1307,17 @@ const ProChat = ({
           
           {!messagesLoading && !messagesError && chatMessages.length === 0 && (
             <div className="no-messages-indicator">
-              <span>🎉 Start the conversation!</span>
-              <p>Send your first message below.</p>
+              {selectedConversation ? (
+                <>
+                  <span>💬 No messages yet in this conversation</span>
+                  <p>Be the first to send a message!</p>
+                </>
+              ) : (
+                <>
+                  <span>👈 Select a conversation to view messages</span>
+                  <p>Choose a conversation from the sidebar to start chatting.</p>
+                </>
+              )}
             </div>
           )}
           
