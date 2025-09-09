@@ -132,7 +132,7 @@ const MediaGallery = ({
     const isPhoto = item.type === 'photo';
     const thumbnailSrc = isVideo && item.thumbnail ? 
       item.thumbnail : 
-      item.url.startsWith('http') ? item.url : `http://localhost:5000${item.url}`;
+      item.url.startsWith('http') ? item.url : `http://localhost:5001${item.url}`;
 
     return (
       <div 
@@ -265,7 +265,7 @@ const MediaGallery = ({
             <div className={`lightbox-media-container ${isZoomed ? 'zoomed' : ''}`} onClick={handleZoom}>
               {activeItem.type === 'video' ? (
                 <video 
-                  src={activeItem.url.startsWith('http') ? activeItem.url : `http://localhost:5000${activeItem.url}`} 
+                  src={activeItem.url.startsWith('http') ? activeItem.url : `http://localhost:5001${activeItem.url}`} 
                   className={`lightbox-media ${getFilterClass(activeItem.filter || 'none')}`}
                   controls
                   autoPlay
@@ -273,7 +273,7 @@ const MediaGallery = ({
                 />
               ) : (
                 <img 
-                  src={activeItem.url.startsWith('http') ? activeItem.url : `http://localhost:5000${activeItem.url}`} 
+                  src={activeItem.url.startsWith('http') ? activeItem.url : `http://localhost:5001${activeItem.url}`} 
                   alt={activeItem.name}
                   className={`lightbox-media ${getFilterClass(activeItem.filter || 'none')}`}
                   style={{ transform: isZoomed ? `scale(${zoomLevel})` : 'none' }}
@@ -329,7 +329,7 @@ const MediaGallery = ({
                 {/* Download button */}
                 <a 
                   className="action-button" 
-                  href={activeItem.url.startsWith('http') ? activeItem.url : `http://localhost:5000${activeItem.url}`} 
+                  href={activeItem.url.startsWith('http') ? activeItem.url : `http://localhost:5001${activeItem.url}`} 
                   download={activeItem.name}
                   onClick={e => e.stopPropagation()}
                 >

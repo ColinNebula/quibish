@@ -1177,7 +1177,7 @@ export const messageService = {
     formData.append('sender', sender);
     formData.append('type', 'voice');
     
-    const response = await axios.post('http://localhost:5000/api/voice-messages', formData, {
+    const response = await axios.post('http://localhost:5001/api/voice-messages', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1192,7 +1192,7 @@ export const messageService = {
     formData.append('sender', sender);
     formData.append('type', 'file');
     
-    const response = await axios.post('http://localhost:5000/api/files', formData, {
+    const response = await axios.post('http://localhost:5001/api/files', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1268,7 +1268,7 @@ export const photoService = {
     formData.append('photo', file);
     formData.append('sender', sender);
     
-    const response = await axios.post('http://localhost:5000/api/photos', formData, {
+    const response = await axios.post('http://localhost:5001/api/photos', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1283,7 +1283,7 @@ export const photoService = {
     formData.append('sender', sender);
     
     try {
-      const response = await axios.post('http://localhost:5000/api/videos', formData, {
+      const response = await axios.post('http://localhost:5001/api/videos', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`

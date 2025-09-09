@@ -7,7 +7,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   animation: pro-fade-in 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid var(--pro-border);
+  border: 2px solid var(--pro-border);
   max-height: 80vh;
   display: flex;
 }

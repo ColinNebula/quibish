@@ -5,7 +5,7 @@
 
 // Configuration
 const WS_CONFIG = {
-  URL: process.env.REACT_APP_WS_URL || 'ws://localhost:5000/ws',
+  URL: process.env.REACT_APP_WS_URL || 'ws://localhost:5001/ws',
   RECONNECT_ATTEMPTS: parseInt(process.env.REACT_APP_WS_RECONNECT_ATTEMPTS) || 5,
   RECONNECT_DELAY: parseInt(process.env.REACT_APP_WS_RECONNECT_DELAY) || 3000,
   RECONNECT_INTERVAL_MS: 2000,
