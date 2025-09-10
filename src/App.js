@@ -11,6 +11,7 @@ import ErrorBoundary from './components/ErrorHandling/ErrorBoundary';
 import PWAStatus from './components/ServiceWorker/PWAStatus';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
+import frontendHealthService from './services/frontendHealthService';
 
 const App = () => {
   const { isAuthenticated, user, loading: authLoading, logout, updateUser } = useAuth();
@@ -24,6 +25,8 @@ const App = () => {
     const savedMode = localStorage.getItem('quibish-dark-mode');
     return savedMode ? JSON.parse(savedMode) : false;
   });
+  const [appInitialized, setAppInitialized] = useState(false);
+  const [initializationError, setInitializationError] = useState(null);
 
   // Sync dark mode with user's theme preference
   useEffect(() => {
@@ -33,6 +36,25 @@ const App = () => {
       localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
     }
   }, [user?.theme]);
+
+  // Initialize frontend health service
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        console.log('🚀 Initializing Quibish Frontend...');
+        await frontendHealthService.initialize();
+        setAppInitialized(true);
+        console.log('✅ Frontend initialization completed successfully');
+      } catch (error) {
+        console.error('❌ Frontend initialization failed:', error);
+        setInitializationError(error.message);
+        // Don't prevent app loading, just log the error
+        setAppInitialized(true);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   // Mock conversations data
   const [conversations] = useState([
@@ -156,6 +178,19 @@ const App = () => {
   };
   
   if (authLoading) return <LoadingSpinner size="large" message="Loading..." />;
+  
+  // Show initialization status
+  if (!appInitialized) {
+    return (
+      <LoadingSpinner 
+        size="large" 
+        message={initializationError ? 
+          `Initialization failed: ${initializationError}` : 
+          "Initializing application..."
+        } 
+      />
+    );
+  }
   
   // Show splash screen on first load
   if (showSplash) {

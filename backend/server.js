@@ -7,6 +7,8 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const mongoose = require('mongoose');
 const { connectToMySQL } = require('./config/mysql');
+const startupService = require('./services/startupService');
+const healthCheck = require('./middleware/healthCheck');
 require('dotenv').config();
 
 // Initialize global in-memory storage BEFORE importing databaseService
@@ -267,6 +269,18 @@ app.use(cors({
 // Health check endpoints (before rate limiting)
 app.use('/api', healthRoutes);
 
+// Add comprehensive health check endpoint
+app.get('/api/health', healthCheck.middleware());
+app.get('/api/health/detailed', healthCheck.middleware(true));
+
+// Add startup status endpoint
+app.get('/api/startup', (req, res) => {
+  res.json(startupService.getInitializationStatus());
+});
+
+// Require initialization for all other API routes
+app.use('/api', startupService.requireInitialization());
+
 // Rate limiting (after health checks) - Temporarily increased for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -336,23 +350,42 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server after database initialization
+// Start server with comprehensive initialization
 (async () => {
   try {
-    await connectToDatabase();
-  } catch (error) {
-    console.log('⚠️ Database connection failed, using fallback mode');
-    global.inMemoryStorage.usingInMemory = true;
-    global.inMemoryStorage.seedDefaultUsers();
-  }
+    console.log('🚀 Starting Quibish Backend Server...');
+    
+    // Initialize startup service
+    await startupService.initialize();
+    
+    // Database connection (handled by startup service, but keeping legacy call for compatibility)
+    try {
+      await connectToDatabase();
+    } catch (error) {
+      console.log('⚠️ Database connection failed, using fallback mode');
+      global.inMemoryStorage.usingInMemory = true;
+      global.inMemoryStorage.seedDefaultUsers();
+    }
 
-  // Start server
-  app.listen(PORT, () => {
-    console.log(`🚀 Quibish Backend Server running on port ${PORT}`);
-    console.log(`📱 Frontend should connect to: http://localhost:${PORT}`);
-    console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
-    console.log(`⚕️  Health Check: http://localhost:${PORT}/api/ping`);
-  });
+    // Start server
+    app.listen(PORT, () => {
+      console.log(`✅ Quibish Backend Server successfully running on port ${PORT}`);
+      console.log(`📱 Frontend should connect to: http://localhost:${PORT}`);
+      console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
+      console.log(`⚕️  Health Check: http://localhost:${PORT}/api/health`);
+      console.log(`📊 Startup Status: http://localhost:${PORT}/api/startup`);
+      console.log(`🔍 Detailed Health: http://localhost:${PORT}/api/health/detailed`);
+      
+      // Log startup summary
+      const status = startupService.getInitializationStatus();
+      console.log(`🎯 Server ready! Initialized in ${status.totalDuration}ms with ${status.steps.length} steps`);
+    });
+    
+  } catch (error) {
+    console.error('❌ Server startup failed:', error.message);
+    console.error('📋 Check the startup status at /api/startup for detailed information');
+    process.exit(1);
+  }
 })();
 
 module.exports = app;

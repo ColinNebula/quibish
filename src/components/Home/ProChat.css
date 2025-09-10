@@ -463,8 +463,8 @@
     width: 32px;
     height: 32px;
   }
-  .conversation-title {
-    font-size: 15px;
+  .conversation-info {
+    display: none; /* Hide conversation title and status on small screens */
   }
   .participant-count {
     display: none; /* Hide participant count on very small screens */
@@ -4005,8 +4005,8 @@
   .header-right {
     gap: 8px;
   }
-  .connection-status span {
-    display: none;
+  .connection-status {
+    display: none; /* Hide connection status completely on mobile to prevent content blocking */
   }
   .chat-header {
     height: 56px;
