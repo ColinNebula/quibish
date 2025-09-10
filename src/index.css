@@ -51,6 +51,27 @@ code {
   box-shadow: none;
 }
 
+/* Offline indicator styles */
+.offline {
+  --app-accent: #6b7280;
+}
+
+.offline::before {
+  content: "📱 Offline Mode";
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(107, 114, 128, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 /* Smooth scrolling for all elements */
 * {
   scroll-behavior: smooth;

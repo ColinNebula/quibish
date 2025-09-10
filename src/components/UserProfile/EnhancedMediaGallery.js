@@ -362,8 +362,25 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
               isSelected={selectedItems.has(item.id)}
               onSelect={handleItemSelect}
               onView={(item) => {
-                // Open media viewer modal for images and videos
-                setSelectedMedia(item);
+                try {
+                  console.log('🎬 Opening media viewer for:', item);
+                  console.log('📋 Media details:', {
+                    type: item.type,
+                    url: item.url,
+                    name: item.name,
+                    hasUrl: !!item.url,
+                    urlType: typeof item.url
+                  });
+                  
+                  if (!item.url) {
+                    console.error('❌ No URL found for media item:', item);
+                  }
+                  
+                  // Open media viewer modal for images and videos
+                  setSelectedMedia(item);
+                } catch (error) {
+                  console.error('💥 Error opening media viewer:', error);
+                }
               }}
             />
           ))
@@ -382,7 +399,7 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
         <div className="media-viewer-overlay" onClick={() => setSelectedMedia(null)}>
           <div className="media-viewer-modal" onClick={(e) => e.stopPropagation()}>
             <div className="media-viewer-header">
-              <h3>{selectedMedia.name}</h3>
+              <h3>{selectedMedia.name || 'Media File'}</h3>
               <button 
                 className="close-viewer-btn" 
                 onClick={() => setSelectedMedia(null)}
@@ -391,14 +408,18 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
               </button>
             </div>
             <div className="media-viewer-content">
-              {selectedMedia.type === 'image' && (
+              {selectedMedia.type === 'image' && selectedMedia.url && (
                 <img 
                   src={selectedMedia.url} 
-                  alt={selectedMedia.name} 
+                  alt={selectedMedia.name || 'Image'} 
                   className="viewer-image"
+                  onError={(e) => {
+                    console.error('Image load error:', e);
+                    console.log('Image URL:', selectedMedia.url);
+                  }}
                 />
               )}
-              {selectedMedia.type === 'video' && (
+              {selectedMedia.type === 'video' && selectedMedia.url && (
                 <video 
                   src={selectedMedia.url.startsWith('http') ? selectedMedia.url : `http://localhost:5001${selectedMedia.url}`}
                   controls
@@ -409,6 +430,13 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
                   onError={(e) => {
                     console.error('Video playback error in viewer:', e);
                     console.log('Selected media details:', selectedMedia);
+                    console.log('Video source URL:', selectedMedia.url.startsWith('http') ? selectedMedia.url : `http://localhost:5001${selectedMedia.url}`);
+                  }}
+                  onLoadStart={() => {
+                    console.log('Video load started for:', selectedMedia.name);
+                  }}
+                  onCanPlay={() => {
+                    console.log('Video can play:', selectedMedia.name);
                   }}
                 >
                   <source 
@@ -418,21 +446,29 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
                   Your browser does not support the video tag.
                 </video>
               )}
-              {selectedMedia.type === 'gif' && (
+              {selectedMedia.type === 'gif' && selectedMedia.url && (
                 <img 
                   src={selectedMedia.url} 
-                  alt={selectedMedia.name} 
+                  alt={selectedMedia.name || 'GIF'} 
                   className="viewer-gif"
+                  onError={(e) => {
+                    console.error('GIF load error:', e);
+                    console.log('GIF URL:', selectedMedia.url);
+                  }}
                 />
               )}
-              {(selectedMedia.type === 'document' || selectedMedia.type === 'pdf') && (
+              {(selectedMedia.type === 'document' || selectedMedia.type === 'pdf') && selectedMedia.url && (
                 <div className="pdf-viewer">
                   <iframe 
                     src={selectedMedia.url.startsWith('http') ? selectedMedia.url : `http://localhost:5001${selectedMedia.url}`}
                     width="100%"
                     height="500px"
-                    title={selectedMedia.name}
+                    title={selectedMedia.name || 'Document'}
                     style={{ border: 'none', borderRadius: '8px' }}
+                    onError={(e) => {
+                      console.error('Document load error:', e);
+                      console.log('Document URL:', selectedMedia.url);
+                    }}
                   />
                   <div className="pdf-actions">
                     <a 
@@ -446,6 +482,28 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
                   </div>
                 </div>
               )}
+              {!selectedMedia.url && (
+                <div className="error-message">
+                  <p>⚠️ Media file not found or invalid URL</p>
+                  <p><strong>File:</strong> {selectedMedia.name}</p>
+                  <p><strong>Type:</strong> {selectedMedia.type}</p>
+                  <p><strong>URL:</strong> {selectedMedia.url || 'No URL provided'}</p>
+                  <div className="debug-info">
+                    <p><strong>Debug Info:</strong></p>
+                    <pre>{JSON.stringify(selectedMedia, null, 2)}</pre>
+                  </div>
+                  <button 
+                    className="refresh-media-btn"
+                    onClick={() => {
+                      console.log('🔄 Refreshing media gallery...');
+                      onRefresh && onRefresh();
+                      setSelectedMedia(null);
+                    }}
+                  >
+                    🔄 Refresh Gallery
+                  </button>
+                </div>
+              )}
             </div>
             <div className="media-viewer-info">
               <div className="media-details">
@@ -457,7 +515,7 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
                 {selectedMedia.duration && (
                   <span><strong>Duration:</strong> {formatDuration(selectedMedia.duration)}</span>
                 )}
-                <span><strong>Uploaded:</strong> {new Date(selectedMedia.uploadedAt).toLocaleDateString()}</span>
+                <span><strong>Uploaded:</strong> {selectedMedia.uploadedAt ? new Date(selectedMedia.uploadedAt).toLocaleDateString() : 'Unknown'}</span>
               </div>
             </div>
           </div>
@@ -465,15 +523,6 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
       )}
     </div>
   );
-};
-
-// Helper function to format file size
-const formatFileSize = (bytes) => {
-  if (!bytes) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
 // Helper function to format duration
