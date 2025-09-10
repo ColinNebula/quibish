@@ -117,16 +117,26 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
   };
 
   const handleSave = async () => {
-    console.log('🔄 Starting profile save process...');
-    console.log('📋 Form data:', formData);
-    console.log('👤 User profile:', userProfile);
-    
-    setLoading(true);
-    setErrors({}); // Clear previous errors
+      console.log('🔄 Starting profile save process...');
+      console.log('📋 Form data:', formData);
+      console.log('👤 User profile:', userProfile);
+      
+      // Check if we have the minimum required data
+      if (!userProfile?.id && !userProfile?.username) {
+        console.error('❌ No user ID or username found in userProfile');
+        setErrors({ general: 'User information is missing. Please refresh the page and try again.' });
+        setLoading(false);
+        return;
+      }
+      
+      setLoading(true);
+      setErrors({}); // Clear previous errors
     
     try {
       // Check authentication first
       const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      console.log('🔑 Current token status:', token ? 'Found' : 'Not found');
+      
       if (!token) {
         console.log('🔐 No authentication token found, attempting auto-authentication...');
         try {
@@ -135,12 +145,15 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
           if (!authenticated) {
             throw new Error('Authentication failed. Please log in again.');
           }
+          console.log('✅ Auto-authentication successful');
         } catch (authError) {
           console.error('❌ Authentication error:', authError);
           setErrors({ general: 'Authentication failed. Please refresh the page and try again.' });
           setLoading(false);
           return;
         }
+      } else {
+        console.log('✅ Authentication token found, proceeding with update...');
       }
 
       // Validate all fields
@@ -192,7 +205,7 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
       console.log('💾 Updating profile with data:', updatedProfile);
       console.log('🆔 User ID:', userProfile?.id);
 
-      await userDataService.updateUserProfile(userProfile.id, updatedProfile);
+      await userDataService.updateUserProfile(userProfile?.id || userProfile?.username, updatedProfile);
       
       console.log('✅ Profile update completed successfully');
       onSave(updatedProfile);

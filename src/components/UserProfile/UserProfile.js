@@ -62,8 +62,38 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
       try {
         setLoading(true);
         
-        // Fetch basic user profile data
+        // For the current user's own profile, try to get real data first
+        if (isOwnProfile) {
+          try {
+            // Try to get current user data from localStorage/sessionStorage
+            const localUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+            if (localUser) {
+              const userData = JSON.parse(localUser);
+              console.log('📋 Setting current user profile from local storage:', userData);
+              setUserProfile({
+                ...userData,
+                userId: userData.id,
+                username: userData.username,
+                displayName: userData.displayName || userData.name,
+                bio: userData.bio || '',
+                avatarUrl: userData.avatar,
+                uploadCount: 0,
+                connectionCount: 0,
+                activityScore: 0,
+                joinDate: userData.createdAt,
+                isOnline: true, // Current user is always online
+                status: 'online'
+              });
+            }
+          } catch (error) {
+            console.warn('⚠️ Could not parse user data from storage:', error);
+          }
+        }
+        
+        // Fetch user profile data (this will either get real API data or mock data)
+        console.log('🔍 Fetching user profile for:', userId, isOwnProfile ? '(own profile)' : '(other user)');
         const profileData = await userDataService.fetchUserProfile(userId);
+        console.log('✅ Profile data received:', profileData);
         setUserProfile(profileData);
         
         // Fetch user uploads based on active tab
@@ -87,17 +117,45 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
     };
 
     loadUserData();
-  }, [userId, activeTab]);
+  }, [userId, activeTab, isOwnProfile]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
 
   const handleProfileSave = (updatedProfile) => {
+    console.log('💾 Saving updated profile:', updatedProfile);
     setUserProfile(prev => ({
       ...prev,
-      ...updatedProfile
+      ...updatedProfile,
+      // Ensure online status is maintained for current user
+      isOnline: isOwnProfile ? true : prev?.isOnline,
+      status: isOwnProfile ? 'online' : prev?.status
     }));
+    
+    // Also update localStorage if this is the current user
+    if (isOwnProfile) {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+        const updatedUser = {
+          ...currentUser,
+          ...updatedProfile,
+          isOnline: true,
+          status: 'online'
+        };
+        
+        // Update both localStorage and sessionStorage
+        if (localStorage.getItem('user')) {
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+        if (sessionStorage.getItem('user')) {
+          sessionStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+        console.log('✅ Updated user data in local storage');
+      } catch (error) {
+        console.warn('⚠️ Could not update user data in storage:', error);
+      }
+    }
   };
 
   const handleAvatarChange = async (newAvatarUrl) => {

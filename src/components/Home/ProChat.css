@@ -273,6 +273,26 @@
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.3);
 }
+
+/* Connection indicator on voice call button */
+.voice-call-btn {
+  position: relative;
+}
+
+.connection-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  font-size: 8px;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
 .info-btn:hover {
   background: rgba(147, 51, 234, 0.1);
   border-color: rgba(147, 51, 234, 0.3);
@@ -2123,6 +2143,14 @@
   background: rgba(34, 197, 94, 0.2);
 }
 /* Emoji Picker Overlay */
+/* Z-Index Hierarchy Documentation:
+ * 999  - Input container (sticky bottom)
+ * 9000 - Video call component
+ * 12000 - Call method selector modal
+ * 15000 - Emoji picker overlay
+ * 15001 - Emoji picker container
+ */
+
 .emoji-picker-overlay {
   position: fixed;
   top: 0;
@@ -2133,7 +2161,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 1000;
+  z-index: 15000;
   backdrop-filter: blur(2px);
 }
 .emoji-picker {
@@ -2147,6 +2175,8 @@
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.3);
   animation: slideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 15001;
+  position: relative;
 }
 .emoji-picker-header {
   display: flex;
@@ -2626,6 +2656,559 @@
 .dark-theme .play-voice-btn {
   background: rgba(34, 197, 94, 0.3);
   color: #34d399;
+}
+
+/* Voice Call Message Styles */
+.voice-call-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  margin-top: 8px;
+  max-width: 320px;
+  transition: all 0.3s ease;
+}
+
+.voice-call-message:hover {
+  background: rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.voice-call-icon {
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 50%;
+  color: white;
+  flex-shrink: 0;
+}
+
+.voice-call-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.voice-call-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2563eb;
+}
+
+.voice-call-status {
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.voice-call-controls {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.voice-call-btn-small {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-call-btn-small.end-call {
+  background: rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.voice-call-btn-small.end-call:hover {
+  background: rgba(239, 68, 68, 0.3);
+  transform: scale(1.05);
+}
+
+/* Dark Theme Support for Voice Call Messages */
+.dark-theme .voice-call-message {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark-theme .voice-call-text {
+  color: #60a5fa;
+}
+
+.dark-theme .voice-call-status {
+  color: #94a3b8;
+}
+
+.dark-theme .voice-call-btn-small.end-call {
+  background: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Enhanced Voice Call Message Styles */
+.voice-call-enhanced-message {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 16px;
+  margin-top: 8px;
+  max-width: 400px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.voice-call-enhanced-message:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+}
+
+.voice-call-enhanced-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.voice-call-method-icon {
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  border-radius: 50%;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.voice-call-enhanced-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.voice-call-enhanced-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e40af;
+  line-height: 1.4;
+}
+
+.voice-call-method-description {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.voice-call-quality-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.connection-quality {
+  font-weight: 600;
+}
+
+.latency-info {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.voice-call-enhanced-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.call-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.connecting {
+  background: #f59e0b;
+}
+
+.status-dot.connected {
+  background: #10b981;
+}
+
+.status-dot.ringing {
+  background: #3b82f6;
+}
+
+.status-dot.reconnecting {
+  background: #ef4444;
+}
+
+.status-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+.voice-call-btn-small.end-call-enhanced {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.voice-call-btn-small.end-call-enhanced:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.call-method-note {
+  font-size: 11px;
+  color: #6b7280;
+  font-style: italic;
+  padding: 8px 12px;
+  background: rgba(107, 114, 128, 0.1);
+  border-radius: 8px;
+  margin-top: 8px;
+  border-left: 3px solid #6b7280;
+}
+
+/* Call Method Selector Modal */
+.call-method-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 12000;
+  animation: fadeIn 0.3s ease;
+}
+
+.call-method-selector-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: slideInUp 0.3s ease;
+}
+
+.call-method-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.call-method-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(107, 114, 128, 0.1);
+  color: #374151;
+}
+
+.call-method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.call-method-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.call-method-option:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+}
+
+.call-method-option.high {
+  border-color: #10b981;
+}
+
+.call-method-option.high:hover {
+  border-color: #059669;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+}
+
+.call-method-option.medium {
+  border-color: #f59e0b;
+}
+
+.call-method-option.medium:hover {
+  border-color: #d97706;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+}
+
+.call-method-option.standard {
+  border-color: #6b7280;
+}
+
+.call-method-option.fallback {
+  border-color: #ef4444;
+  opacity: 0.8;
+}
+
+.method-icon {
+  font-size: 32px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 50%;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.method-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.method-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.method-quality {
+  font-size: 14px;
+  color: #059669;
+  font-weight: 500;
+}
+
+.method-phone {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.method-note {
+  font-size: 12px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.method-latency {
+  font-size: 12px;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.method-quality-badge {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.connection-info {
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.current-connection {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Dark Theme Support for Enhanced Features */
+.dark-theme .voice-call-enhanced-message {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15));
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark-theme .voice-call-enhanced-text {
+  color: #60a5fa;
+}
+
+.dark-theme .voice-call-method-description {
+  color: #94a3b8;
+}
+
+.dark-theme .call-method-selector-modal {
+  background: #1f2937;
+  color: white;
+}
+
+.dark-theme .call-method-header {
+  border-color: #374151;
+}
+
+.dark-theme .call-method-header h3 {
+  color: #f9fafb;
+}
+
+.dark-theme .call-method-option {
+  background: linear-gradient(135deg, #374151, #4b5563);
+  border-color: #4b5563;
+  color: white;
+}
+
+.dark-theme .call-method-option:hover {
+  background: linear-gradient(135deg, #4b5563, #6b7280);
+}
+
+.dark-theme .method-title {
+  color: #f9fafb;
+}
+
+.dark-theme .connection-info {
+  background: linear-gradient(135deg, #374151, #4b5563);
+  border-color: #4b5563;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Modal Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile Responsive for Enhanced Voice Calls */
+@media (max-width: 768px) {
+  .voice-call-enhanced-message {
+    max-width: 100%;
+    padding: 12px;
+  }
+  
+  .voice-call-method-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+  
+  .call-method-selector-modal {
+    width: 95%;
+    padding: 20px;
+    max-height: 85vh;
+  }
+  
+  .call-method-option {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .method-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 28px;
+  }
 }
 /* Mobile Responsive for Attachments */
 @media (max-width: 768px) {

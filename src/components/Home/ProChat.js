@@ -9,6 +9,8 @@ import HelpModal from './HelpModal';
 import SmartTextContent from './SmartTextContent';
 import MessageActions from './MessageActions';
 import messageService from '../../services/messageService';
+import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
+import connectionService from '../../services/connectionService';
 import { feedbackService } from '../../services/feedbackService';
 import PropTypes from 'prop-types';
 
@@ -150,6 +152,21 @@ const ProChat = ({
   useEffect(() => {
     scrollToBottom();
   }, [chatMessages, scrollToBottom]);
+
+  // Initialize connection monitoring
+  useEffect(() => {
+    const updateConnectionStatus = () => {
+      setConnectionStatus(connectionService.getConnectionStatus());
+    };
+
+    // Initial status
+    updateConnectionStatus();
+
+    // Update every 10 seconds
+    const interval = setInterval(updateConnectionStatus, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Auto-collapse sidebar on mobile screens (but preserve content)
   useEffect(() => {
@@ -599,6 +616,15 @@ const ProChat = ({
     minimized: false, 
     audioOnly: false 
   });
+  const [voiceCallState, setVoiceCallState] = useState({ 
+    active: false, 
+    withUser: null, 
+    minimized: false, 
+    audioOnly: true 
+  });
+  const [connectionStatus, setConnectionStatus] = useState(null);
+  const [availableCallMethods, setAvailableCallMethods] = useState([]);
+  const [showCallMethodSelector, setShowCallMethodSelector] = useState(false);
   
   // Reaction system state already defined above
 
@@ -928,6 +954,74 @@ const ProChat = ({
     setVideoCallState(prev => ({ ...prev, minimized: !prev.minimized }));
   }, []);
 
+  // Enhanced voice call handlers
+  const handleStartVoiceCall = useCallback(async () => {
+    const currentUser = currentSelectedConversation || currentConversation;
+    if (!currentUser) return;
+
+    try {
+      // Get available call methods
+      const methods = await enhancedVoiceCallService.getAvailableCallMethods(currentUser);
+      setAvailableCallMethods(methods);
+      
+      // If multiple methods available, show selector
+      if (methods.length > 1) {
+        setShowCallMethodSelector(true);
+        return;
+      }
+      
+      // Start call with best method
+      await startEnhancedVoiceCall(currentUser, 'auto');
+    } catch (error) {
+      console.error('Failed to start voice call:', error);
+    }
+  }, [currentSelectedConversation, currentConversation]);
+
+  const startEnhancedVoiceCall = useCallback(async (targetUser, method = 'auto') => {
+    try {
+      const callInstance = await enhancedVoiceCallService.initiateEnhancedCall(targetUser, method);
+      
+      // Update voice call state
+      setVoiceCallState({
+        active: true,
+        withUser: {
+          name: targetUser.name,
+          avatar: targetUser.avatar,
+          phone: targetUser.phone
+        },
+        minimized: false,
+        audioOnly: true,
+        callInstance
+      });
+
+      // Add enhanced voice call message to chat
+      const voiceCallMessage = {
+        id: callInstance.callId,
+        text: `📞 ${callInstance.method.description} with ${targetUser.name}`,
+        user: 'You',
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        type: 'voice_call_enhanced',
+        callStatus: callInstance.status,
+        callMethod: callInstance.method,
+        connectionQuality: callInstance.connectionStatus.quality,
+        isSystemMessage: true
+      };
+
+      setChatMessages(prev => [...prev, voiceCallMessage]);
+      setShowCallMethodSelector(false);
+    } catch (error) {
+      console.error('Failed to start enhanced voice call:', error);
+    }
+  }, []);
+
+  const handleEndVoiceCall = useCallback(() => {
+    setVoiceCallState(prev => ({ ...prev, active: false }));
+  }, []);
+
+  const handleToggleVoiceMinimize = useCallback(() => {
+    setVoiceCallState(prev => ({ ...prev, minimized: !prev.minimized }));
+  }, []);
+
   // Video call component
   const MemoizedVideoCall = useMemo(() => (
     <VideoCall 
@@ -936,6 +1030,15 @@ const ProChat = ({
       onToggleMinimize={handleToggleMinimize}
     />
   ), [videoCallState, handleEndCall, handleToggleMinimize]);
+
+  // Voice call component (using VideoCall in audio-only mode)
+  const MemoizedVoiceCall = useMemo(() => (
+    <VideoCall 
+      callState={voiceCallState}
+      onEndCall={handleEndVoiceCall}
+      onToggleMinimize={handleToggleVoiceMinimize}
+    />
+  ), [voiceCallState, handleEndVoiceCall, handleToggleVoiceMinimize]);
 
   // Enhanced smart content preview function
   const getSmartPreview = useCallback((message) => {
@@ -1027,6 +1130,9 @@ const ProChat = ({
       
       {/* Video Call Component */}
       {MemoizedVideoCall}
+      
+      {/* Voice Call Component */}
+      {MemoizedVoiceCall}
       
       {/* Enhanced Sidebar */}
       <div className={`pro-sidebar enhanced-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
@@ -1284,8 +1390,20 @@ const ProChat = ({
             <button className="action-btn video-call-btn" title="Start video call">
               📹
             </button>
-            <button className="action-btn voice-call-btn" title="Start voice call">
+            <button 
+              className="action-btn voice-call-btn" 
+              title={`Start voice call (${connectionStatus?.quality || 'checking'} connection)`}
+              onClick={handleStartVoiceCall}
+            >
               📞
+              {connectionStatus && (
+                <span 
+                  className="connection-indicator"
+                  style={{color: connectionStatus.color}}
+                >
+                  {connectionStatus.icon}
+                </span>
+              )}
             </button>
             <button className="action-btn info-btn" title="Chat info">
               ℹ️
@@ -1511,6 +1629,73 @@ const ProChat = ({
                     <div className="voice-icon">🎤</div>
                     <div className="voice-duration">{formatRecordingTime(message.duration || 0)}</div>
                     <button className="play-voice-btn">▶️</button>
+                  </div>
+                )}
+                
+                {/* Voice Call Message Display */}
+                {message.type === 'voice_call' && (
+                  <div className="voice-call-message">
+                    <div className="voice-call-icon">📞</div>
+                    <div className="voice-call-info">
+                      <div className="voice-call-text">{message.text}</div>
+                      <div className="voice-call-status">
+                        Status: {message.callStatus}
+                      </div>
+                    </div>
+                    <div className="voice-call-controls">
+                      {message.callStatus === 'connecting' && (
+                        <button 
+                          className="voice-call-btn-small end-call"
+                          onClick={() => handleEndVoiceCall()}
+                          title="End call"
+                        >
+                          End
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Enhanced Voice Call Message Display */}
+                {message.type === 'voice_call_enhanced' && (
+                  <div className="voice-call-enhanced-message">
+                    <div className="voice-call-enhanced-header">
+                      <div className="voice-call-method-icon">{message.callMethod?.icon || '📞'}</div>
+                      <div className="voice-call-enhanced-info">
+                        <div className="voice-call-enhanced-text">{message.text}</div>
+                        <div className="voice-call-method-description">
+                          {message.callMethod?.description}
+                        </div>
+                        <div className="voice-call-quality-info">
+                          <span className="connection-quality" style={{color: connectionService.getConnectionStatus().color}}>
+                            {message.callMethod?.estimated_quality} {message.connectionQuality}
+                          </span>
+                          {message.callMethod?.latency && (
+                            <span className="latency-info">• {Math.round(message.callMethod.latency)}ms</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="voice-call-enhanced-controls">
+                      <div className="call-status-indicator">
+                        <div className={`status-dot ${message.callStatus}`}></div>
+                        <span className="status-text">{message.callStatus}</span>
+                      </div>
+                      {(message.callStatus === 'connecting' || message.callStatus === 'connected') && (
+                        <button 
+                          className="voice-call-btn-small end-call-enhanced"
+                          onClick={() => handleEndVoiceCall()}
+                          title="End call"
+                        >
+                          End Call
+                        </button>
+                      )}
+                    </div>
+                    {message.callMethod?.note && (
+                      <div className="call-method-note">
+                        ℹ️ {message.callMethod.note}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -2012,6 +2197,59 @@ const ProChat = ({
         isOpen={helpModal}
         onClose={() => setHelpModal(false)}
       />
+
+      {/* Call Method Selector Modal */}
+      {showCallMethodSelector && (
+        <div className="call-method-selector-overlay">
+          <div className="call-method-selector-modal">
+            <div className="call-method-header">
+              <h3>Choose Call Method</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowCallMethodSelector(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="call-method-list">
+              {availableCallMethods.map((method, index) => (
+                <div 
+                  key={index}
+                  className={`call-method-option ${method.quality}`}
+                  onClick={() => {
+                    const currentUser = currentSelectedConversation || currentConversation;
+                    startEnhancedVoiceCall(currentUser, method.type);
+                  }}
+                >
+                  <div className="method-icon">{method.icon}</div>
+                  <div className="method-info">
+                    <div className="method-title">{method.description}</div>
+                    <div className="method-quality">{method.estimated_quality}</div>
+                    {method.targetPhone && (
+                      <div className="method-phone">📱 {method.targetPhone}</div>
+                    )}
+                    {method.note && (
+                      <div className="method-note">{method.note}</div>
+                    )}
+                    {method.estimatedLatency && (
+                      <div className="method-latency">⚡ {Math.round(method.estimatedLatency)}ms</div>
+                    )}
+                  </div>
+                  <div className="method-quality-badge">
+                    {method.quality}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="connection-info">
+              <div className="current-connection">
+                📶 Current: {connectionService.getConnectionStatus().quality} 
+                ({connectionService.getConnectionStatus().type})
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

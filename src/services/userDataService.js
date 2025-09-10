@@ -147,6 +147,8 @@ const getUserProfileFromAPI = async () => {
 
 // Update user profile via backend
 const updateUserProfileAPI = async (profileData) => {
+  console.log('🌐 Making API call to update profile with data:', profileData);
+  
   return await apiCall('/users/profile', {
     method: 'PUT',
     headers: getAuthHeaders(),
@@ -699,20 +701,57 @@ const clearAllUserData = async () => {
  */
 const fetchUserProfile = async (userId) => {
   try {
-    // In a real application, this would call the API
-    // For now, returning mock data
+    // Try to get real user data from API first (for the current user)
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+    
+    // If this is the current user and we have a token, try to get real data from API
+    if (token && (userId === currentUser.id || userId === currentUser.username)) {
+      try {
+        console.log('🔍 Fetching real user profile from API for current user...');
+        const realProfile = await getUserProfileFromAPI();
+        if (realProfile && realProfile.user) {
+          const userData = {
+            ...realProfile.user,
+            userId: realProfile.user.id,
+            username: realProfile.user.username,
+            displayName: realProfile.user.displayName || realProfile.user.name,
+            bio: realProfile.user.bio || '',
+            avatarUrl: realProfile.user.avatar,
+            uploadCount: 0, // Could be enhanced to get real count
+            connectionCount: 0, // Could be enhanced to get real count
+            activityScore: 0, // Could be enhanced to get real score
+            joinDate: realProfile.user.createdAt,
+            isOnline: true, // Current user is always online
+            status: realProfile.user.status || 'online'
+          };
+          console.log('✅ Real user profile fetched successfully:', userData);
+          return userData;
+        }
+      } catch (apiError) {
+        console.warn('⚠️ Failed to fetch real profile from API, falling back to mock data:', apiError);
+      }
+    }
+    
+    // Fallback to mock data for other users or if API fails
+    console.log('📋 Using mock data for user profile...');
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+    
+    // For the current user, set online status to true
+    const isCurrentUser = userId === currentUser.id || userId === currentUser.username;
     
     return {
       userId,
-      username: `user${userId}`,
-      displayName: `User ${userId}`,
-      bio: `This is the bio for user ${userId}. They are a valued member of our community.`,
-      avatarUrl: `https://randomuser.me/api/portraits/${userId % 2 === 0 ? 'men' : 'women'}/${userId % 10}.jpg`,
+      username: isCurrentUser ? (currentUser.username || `user${userId}`) : `user${userId}`,
+      displayName: isCurrentUser ? (currentUser.displayName || currentUser.name || `User ${userId}`) : `User ${userId}`,
+      bio: isCurrentUser ? (currentUser.bio || `This is the bio for ${currentUser.name || 'the user'}.`) : `This is the bio for user ${userId}. They are a valued member of our community.`,
+      avatarUrl: isCurrentUser ? currentUser.avatar : `https://randomuser.me/api/portraits/${userId % 2 === 0 ? 'men' : 'women'}/${userId % 10}.jpg`,
       uploadCount: Math.floor(Math.random() * 50),
       connectionCount: Math.floor(Math.random() * 100),
       activityScore: Math.floor(Math.random() * 1000),
-      joinDate: new Date(Date.now() - (Math.random() * 10000000000)).toISOString()
+      joinDate: isCurrentUser ? currentUser.createdAt : new Date(Date.now() - (Math.random() * 10000000000)).toISOString(),
+      isOnline: isCurrentUser ? true : Math.random() > 0.3, // Current user is always online, others are randomly online
+      status: isCurrentUser ? 'online' : (Math.random() > 0.3 ? 'online' : 'offline')
     };
   } catch (error) {
     console.error(`Error fetching user profile for user ${userId}:`, error);
