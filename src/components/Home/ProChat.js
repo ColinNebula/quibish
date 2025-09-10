@@ -1360,25 +1360,6 @@ const ProChat = ({
                 />
               </div>
               <div className="message-content" onClick={() => handleMessageClick(message.id)}>
-                {/* Reactions Display - Moved above message content */}
-                {message.reactions && message.reactions.length > 0 && (
-                  <div className="message-reactions">
-                    {message.reactions.map((reaction, index) => (
-                      <button
-                        key={index}
-                        className="reaction-bubble"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReactionAdd(message.id, reaction.emoji);
-                        }}
-                      >
-                        <span className="reaction-emoji">{reaction.emoji}</span>
-                        <span className="reaction-count">{reaction.count}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                
                 <div className="message-header">
                   <span className="user-name">{message.user.name}</span>
                 </div>
@@ -1534,9 +1515,29 @@ const ProChat = ({
                 )}
               </div>
               
-              {/* Message Timestamp */}
-              <div className="message-timestamp">
-                {new Date(message.timestamp).toLocaleTimeString()}
+              {/* Message Timestamp with Reactions */}
+              <div className="message-timestamp-with-reactions">
+                <div className="message-timestamp">
+                  {new Date(message.timestamp).toLocaleTimeString()}
+                </div>
+                {message.reactions && message.reactions.length > 0 && (
+                  <div className="message-reactions-inline">
+                    {message.reactions.map((reaction, index) => (
+                      <button
+                        key={index}
+                        className="reaction-bubble-inline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReactionAdd(message.id, reaction.emoji);
+                        }}
+                        title={`${reaction.emoji} ${reaction.count}`}
+                      >
+                        <span className="reaction-emoji">{reaction.emoji}</span>
+                        <span className="reaction-count">{reaction.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               
               {/* Context-Aware Message Actions */}
