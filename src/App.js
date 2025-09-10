@@ -8,6 +8,7 @@ import Register from './components/Register';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 import DynamicSplashScreen from './components/UI/DynamicSplashScreen';
 import ErrorBoundary from './components/ErrorHandling/ErrorBoundary';
+import PWAStatus from './components/ServiceWorker/PWAStatus';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 
@@ -201,6 +202,9 @@ const App = () => {
           )}
         </div>
       </div>
+      
+      {/* PWA Status (development only) */}
+      <PWAStatus />
     </ErrorBoundary>
   );
 };

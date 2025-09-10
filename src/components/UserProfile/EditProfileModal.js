@@ -122,7 +122,27 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
     console.log('👤 User profile:', userProfile);
     
     setLoading(true);
+    setErrors({}); // Clear previous errors
+    
     try {
+      // Check authentication first
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      if (!token) {
+        console.log('🔐 No authentication token found, attempting auto-authentication...');
+        try {
+          const authHelper = await import('../../utils/authHelper');
+          const authenticated = await authHelper.ensureAuthenticated();
+          if (!authenticated) {
+            throw new Error('Authentication failed. Please log in again.');
+          }
+        } catch (authError) {
+          console.error('❌ Authentication error:', authError);
+          setErrors({ general: 'Authentication failed. Please refresh the page and try again.' });
+          setLoading(false);
+          return;
+        }
+      }
+
       // Validate all fields
       const validationErrors = {};
       Object.keys(formData).forEach(key => {
@@ -180,7 +200,21 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
     } catch (error) {
       console.error('❌ Error saving profile:', error);
       console.error('❌ Error details:', error.message, error.stack);
-      setErrors({ general: 'Failed to save profile. Please try again.' });
+      
+      let errorMessage = 'Failed to save profile. Please try again.';
+      
+      // Provide more specific error messages based on the error type
+      if (error.message.includes('Authentication')) {
+        errorMessage = 'Authentication failed. Please refresh the page and log in again.';
+      } else if (error.message.includes('Network Error') || error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your connection and ensure the server is running.';
+      } else if (error.message.includes('500')) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.message.includes('400')) {
+        errorMessage = 'Invalid profile data. Please check your inputs.';
+      }
+      
+      setErrors({ general: errorMessage });
     } finally {
       setLoading(false);
       console.log('🏁 Profile save process completed');

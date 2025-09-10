@@ -728,7 +728,7 @@ const fetchUserProfile = async (userId) => {
 const fetchUserUploads = async (userId) => {
   try {
     // In a real application, this would call the API
-    // For now, returning mock data
+    // For now, returning mock data with proper URLs
     await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
     
     const types = ['image', 'video', 'document', 'gif'];
@@ -739,14 +739,48 @@ const fetchUserUploads = async (userId) => {
       const type = types[Math.floor(Math.random() * types.length)];
       const date = new Date(Date.now() - (Math.random() * 5000000000)).toISOString();
       
+      let url = null;
+      let thumbnailUrl = null;
+      
+      // Generate appropriate URLs for each type
+      switch (type) {
+        case 'image':
+          url = `https://picsum.photos/seed/${userId}_${i}/800/600`;
+          break;
+        case 'video':
+          // Using sample video URLs from the internet
+          const videoSamples = [
+            'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4'
+          ];
+          url = videoSamples[i % videoSamples.length];
+          thumbnailUrl = `https://picsum.photos/seed/${userId}_${i}_thumb/400/300`;
+          break;
+        case 'gif':
+          // Using placeholder GIF URLs
+          url = `https://picsum.photos/seed/${userId}_${i}/400/300.gif`;
+          break;
+        case 'document':
+          // For documents, we'll use a sample PDF
+          url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+          break;
+      }
+      
       uploads.push({
         id: `upload_${userId}_${i}`,
         name: `${type}_file_${i}.${type === 'image' ? 'jpg' : type === 'video' ? 'mp4' : type === 'gif' ? 'gif' : 'pdf'}`,
         type,
         size: Math.floor(Math.random() * 10000000),
         date,
-        url: type === 'image' ? `https://picsum.photos/seed/${userId}_${i}/300/300` : null,
-        thumbnailUrl: type === 'video' ? `https://picsum.photos/seed/${userId}_${i}_thumb/300/300` : null
+        uploadedAt: date,
+        url,
+        thumbnailUrl,
+        mimeType: type === 'video' ? 'video/mp4' : type === 'image' ? 'image/jpeg' : type === 'gif' ? 'image/gif' : 'application/pdf',
+        dimensions: type === 'image' || type === 'video' ? `${400 + Math.floor(Math.random() * 800)}x${300 + Math.floor(Math.random() * 600)}` : null,
+        duration: type === 'video' ? Math.floor(Math.random() * 300) + 30 : null // 30-330 seconds
       });
     }
     
