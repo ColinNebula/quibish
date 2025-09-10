@@ -1741,23 +1741,23 @@
     bottom: 0;
     left: 0;
     right: 0;
-    width: 100vw;
-    max-width: 100vw;
-    padding: 12px 16px;
+    width: 100%;
+    max-width: 100%;
+    padding: 12px 8px;
     padding-bottom: max(12px, env(safe-area-inset-bottom));
-    margin: 0 auto;
     box-sizing: border-box;
-    justify-content: center;
+    overflow: hidden;
+    margin: 0;
     z-index: 1001;
   }
   
   .input-wrapper {
     width: 100%;
-    max-width: calc(100vw - 32px);
+    max-width: 100%;
     margin: 0 auto;
-    justify-content: center;
     gap: 6px;
     display: flex;
+    box-sizing: border-box;
     align-items: center;
     padding: 0 16px;
   }
@@ -2260,23 +2260,30 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .pro-chat-input-container.enhanced {
-    padding: 16px 20px;
+    padding: 16px 12px;
+    box-sizing: border-box;
   }
   .input-wrapper.enhanced {
-    gap: 8px;
+    gap: 6px;
+    max-width: 100%;
+    overflow: hidden;
   }
   .input-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    flex-shrink: 0;
   }
   .send-button.enhanced {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
   }
   .message-input.enhanced {
     font-size: 16px; /* Prevent zoom on iOS */
-    min-height: 40px;
+    min-height: 36px;
+    flex: 1;
+    min-width: 0; /* Allow flex shrinking */
   }
   .emoji-picker {
     padding: 16px;
@@ -2289,6 +2296,73 @@
     width: 36px;
     height: 36px;
     font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pro-chat-input-container.enhanced {
+    padding: 8px 4px !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    overflow: hidden !important;
+  }
+  .input-wrapper.enhanced {
+    gap: 2px !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .input-actions {
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+  }
+  .input-actions.left {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    max-width: 140px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  .input-actions.left::-webkit-scrollbar {
+    display: none !important;
+  }
+  .input-btn {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 10px !important;
+    border-radius: 6px !important;
+    flex-shrink: 0 !important;
+    min-width: 24px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .send-button.enhanced {
+    width: 28px !important;
+    height: 28px !important;
+    flex-shrink: 0 !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .message-input.enhanced {
+    font-size: 14px !important;
+    min-height: 28px !important;
+    padding: 6px 8px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
   }
 }
 /* Message Attachments Styling */
@@ -7660,10 +7734,119 @@
   font-weight: 400;
   letter-spacing: 0.025em;
   transition: opacity 0.2s ease;
+  flex-shrink: 0; /* Prevent timestamp from shrinking */
+}
+
+@media (max-width: 768px) {
+  .message-timestamp {
+    margin-left: 40px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-timestamp {
+    margin-left: 32px;
+    font-size: 9px;
+    margin-bottom: 2px;
+  }
 }
 
 .message-timestamp:hover {
   opacity: 1;
+}
+
+/* New combined timestamp and reactions container */
+.message-timestamp-with-reactions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  margin-left: 52px; /* Align with message content, accounting for avatar */
+  flex-wrap: wrap;
+  max-width: calc(100% - 60px); /* Prevent overflow */
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .message-timestamp-with-reactions {
+    margin-left: 40px;
+    gap: 6px;
+    max-width: calc(100% - 48px);
+  }
+}
+
+@media (max-width: 480px) {
+  .message-timestamp-with-reactions {
+    margin-left: 32px;
+    gap: 4px;
+    max-width: calc(100% - 40px);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Inline reactions styling */
+.message-reactions-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .message-reactions-inline {
+    gap: 2px;
+    margin-top: 2px;
+  }
+}
+
+.reaction-bubble-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 10px;
+  padding: 1px 4px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 16px;
+  opacity: 0.8;
+  flex-shrink: 0; /* Prevent reactions from shrinking */
+  max-width: 60px; /* Limit reaction width */
+  overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .reaction-bubble-inline {
+    padding: 1px 3px;
+    font-size: 9px;
+    min-height: 14px;
+    border-radius: 8px;
+    max-width: 50px;
+  }
+}
+
+.reaction-bubble-inline:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+  opacity: 1;
+}
+
+.reaction-bubble-inline .reaction-emoji {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.reaction-bubble-inline .reaction-count {
+  color: #3b82f6;
+  font-weight: 500;
+  font-size: 9px;
 }
 /* Dynamic message text scaling based on content length */
 .message-text {
@@ -8028,6 +8211,21 @@
 
 .dark-theme .message-timestamp {
   color: #94a3b8;
+}
+
+/* Dark theme support for inline reactions */
+.dark-theme .reaction-bubble-inline {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.dark-theme .reaction-bubble-inline:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.dark-theme .reaction-bubble-inline .reaction-count {
+  color: #a855f7;
 }
 .dark-theme .message-text {
   color: #e2e8f0;
@@ -8901,15 +9099,9 @@
     opacity: 1;
   }
 }
-/* Message Reactions Display */
+/* Message Reactions Display - Hidden since moved to timestamp area */
 .message-reactions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 8px;
-  margin-top: 0;
-  padding: 4px 0;
-  order: -1; /* Ensure reactions appear first in flex container */
+  display: none; /* Reactions now appear inline with timestamp */
 }
 .reaction-bubble {
   display: inline-flex;
@@ -9218,4 +9410,65 @@
 
 .dark-mode .no-messages-indicator {
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* Critical Mobile Overflow Fixes */
+@media (max-width: 480px) {
+  * {
+    box-sizing: border-box !important;
+  }
+  
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+  }
+  
+  .pro-layout {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+  }
+  
+  .pro-main {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  .pro-chat-input-container,
+  .pro-chat-input-container.enhanced {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 6px 4px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  
+  .input-wrapper,
+  .input-wrapper.enhanced {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    gap: 1px !important;
+  }
+  
+  .input-actions.left {
+    max-width: 120px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  
+  .message-input,
+  .message-input.enhanced {
+    flex: 1 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
 }
