@@ -9,6 +9,8 @@ import HelpModal from './HelpModal';
 import SmartTextContent from './SmartTextContent';
 import MessageActions from './MessageActions';
 import messageService from '../../services/messageService';
+import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
+import connectionService from '../../services/connectionService';
 import { feedbackService } from '../../services/feedbackService';
 import PropTypes from 'prop-types';
 
@@ -84,91 +86,58 @@ const ProChat = ({
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
-  // Chat messages state - moved here to be available for useEffect
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: 1,
-      text: "Hey! 👋",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 300000).toISOString(),
-      reactions: [
-        { emoji: '👋', count: 2, userId: 'user2' },
-        { emoji: '😊', count: 1, userId: 'user3' }
-      ]
-    },
-    {
-      id: 2,
-      text: "Welcome to the enhanced chat application! This is a medium-length message to demonstrate how the message cards scale based on content length.",
-      user: { id: 'system', name: 'System', avatar: null },
-      timestamp: new Date(Date.now() - 240000).toISOString(),
-      reactions: [
-        { emoji: '👍', count: 3, userId: 'user1' },
-        { emoji: '🎉', count: 1, userId: 'user2' }
-      ]
-    },
-    {
-      id: 3,
-      text: "This is a longer message that demonstrates the chat application's ability to handle various message lengths gracefully. The card automatically adjusts its height and the content flows naturally within the card boundaries.",
-      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 180000).toISOString(),
-      reactions: [
-        { emoji: '💯', count: 1, userId: 'user1' }
-      ]
-    },
-    {
-      id: 4,
-      text: "Short one! 😄",
-      user: { id: 'user3', name: 'Charlie Brown', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 120000).toISOString(),
-      reactions: [
-        { emoji: '😄', count: 2, userId: 'user1' },
-        { emoji: '❤️', count: 1, userId: 'user2' }
-      ]
-    },
-    {
-      id: 5,
-      text: "The chat interface supports real-time messaging, file uploads, voice messages, and many other features that make communication seamless and enjoyable.",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 60000).toISOString(),
-      reactions: []
-    },
-    {
-      id: 6,
-      text: "🎭 GIF: celebration.gif",
-      user: { id: 'user2', name: 'Bob Smith', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 30000).toISOString(),
-      reactions: [
-        { emoji: '🎉', count: 3, userId: 'user1' },
-        { emoji: '🔥', count: 2, userId: 'user3' }
-      ],
-      file: {
-        name: 'celebration.gif',
-        size: 245760, // 240 KB
-        type: 'image/gif',
-        url: 'https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif',
-        isGif: true
-      }
-    },
-    {
-      id: 7,
-      text: "🎬 Check out this demo video!",
-      user: { id: 'user1', name: 'Alice Johnson', avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face' },
-      timestamp: new Date(Date.now() - 15000).toISOString(),
-      reactions: [],
-      file: {
-        name: 'demo-video.mp4',
-        size: 1024000, // 1MB
-        type: 'video/mp4',
-        url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
-        thumbnail: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
-      }
-    }
-  ]);
+  // Chat messages state - loaded from database
+  const [chatMessages, setChatMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [messagesError, setMessagesError] = useState(null);
   
   // Reaction system state - moved here to be available for functions
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   
+  // Computed value for current conversation based on selectedConversation
+  const currentSelectedConversation = selectedConversation 
+    ? conversations.find(conv => conv.id === selectedConversation) || null
+    : null;
+  
+  // Load messages from database on component mount
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        setMessagesLoading(true);
+        setMessagesError(null);
+        
+        // Load messages from the message service
+        const messages = await messageService.getMessages({ limit: 50 });
+        
+        if (Array.isArray(messages)) {
+          setChatMessages(messages);
+        } else {
+          console.warn('Invalid messages format received:', messages);
+          setChatMessages([]);
+        }
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+        setMessagesError('Failed to load messages');
+        
+        // Try to load from localStorage as fallback
+        try {
+          const cachedMessages = messageService.loadMessagesFromStorage();
+          if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+            setChatMessages(cachedMessages);
+            console.log('Loaded messages from local storage');
+          }
+        } catch (storageError) {
+          console.error('Failed to load from storage:', storageError);
+        }
+      } finally {
+        setMessagesLoading(false);
+      }
+    };
+
+    loadMessages();
+  }, []);
+
   // Auto-scroll to bottom function
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -183,6 +152,21 @@ const ProChat = ({
   useEffect(() => {
     scrollToBottom();
   }, [chatMessages, scrollToBottom]);
+
+  // Initialize connection monitoring
+  useEffect(() => {
+    const updateConnectionStatus = () => {
+      setConnectionStatus(connectionService.getConnectionStatus());
+    };
+
+    // Initial status
+    updateConnectionStatus();
+
+    // Update every 10 seconds
+    const interval = setInterval(updateConnectionStatus, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Auto-collapse sidebar on mobile screens (but preserve content)
   useEffect(() => {
@@ -204,6 +188,26 @@ const ProChat = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Manage body scroll lock when emoji picker is open on mobile
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 480;
+    if (isMobile) {
+      if (showEmojiPicker || showReactionPicker) {
+        // Add class to body to prevent scrolling
+        document.body.classList.add('emoji-picker-open');
+        // Store original overflow style
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        
+        return () => {
+          // Cleanup: restore original overflow and remove class
+          document.body.classList.remove('emoji-picker-open');
+          document.body.style.overflow = originalOverflow;
+        };
+      }
+    }
+  }, [showEmojiPicker, showReactionPicker]);
+
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
   }, []);
@@ -215,8 +219,54 @@ const ProChat = ({
     }
   }, []);
 
-  const handleConversationSelect = useCallback((conversationId) => {
+  const handleConversationSelect = useCallback(async (conversationId) => {
     setSelectedConversation(conversationId);
+    
+    // Load messages for the selected conversation
+    try {
+      setMessagesLoading(true);
+      setMessagesError(null);
+      
+      console.log('Loading messages for conversation:', conversationId);
+      
+      // Load messages from the message service for this conversation
+      const conversationMessages = await messageService.getMessages({ 
+        conversationId: conversationId,
+        limit: 50 
+      });
+      
+      if (Array.isArray(conversationMessages)) {
+        setChatMessages(conversationMessages);
+        console.log('Loaded conversation messages:', conversationMessages.length);
+        
+        // Scroll to bottom after loading messages
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+      } else {
+        console.warn('Invalid conversation messages format received:', conversationMessages);
+        setChatMessages([]);
+      }
+    } catch (error) {
+      console.error('Failed to load conversation messages:', error);
+      setMessagesError('Failed to load conversation messages');
+      
+      // Try to load from localStorage as fallback
+      try {
+        const cachedMessages = messageService.loadMessagesFromStorage(conversationId);
+        if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+          setChatMessages(cachedMessages);
+          console.log('Loaded conversation messages from cache');
+        } else {
+          setChatMessages([]);
+        }
+      } catch (storageError) {
+        console.error('Error loading conversation messages from storage:', storageError);
+        setChatMessages([]);
+      }
+    } finally {
+      setMessagesLoading(false);
+    }
   }, []);
 
   const handleSearchChange = useCallback((e) => {
@@ -404,7 +454,8 @@ const ProChat = ({
   }, []);
 
   // Handle adding reactions to messages
-  const handleReactionAdd = useCallback((messageId, emoji) => {
+  const handleReactionAdd = useCallback(async (messageId, emoji) => {
+    // Update local state immediately for responsive UI
     setChatMessages(prev => prev.map(message => {
       if (message.id === messageId) {
         const existingReaction = message.reactions.find(r => r.emoji === emoji);
@@ -428,6 +479,16 @@ const ProChat = ({
       }
       return message;
     }));
+
+    // Try to sync with backend
+    try {
+      if (messageService.addReaction) {
+        await messageService.addReaction(messageId, emoji);
+      }
+    } catch (error) {
+      console.error('Failed to sync reaction with backend:', error);
+      // Reaction already added to local state, so no rollback needed
+    }
   }, [user.id]);
 
   const handleEmojiClick = useCallback((emoji) => {
@@ -555,29 +616,76 @@ const ProChat = ({
     minimized: false, 
     audioOnly: false 
   });
+  const [voiceCallState, setVoiceCallState] = useState({ 
+    active: false, 
+    withUser: null, 
+    minimized: false, 
+    audioOnly: true 
+  });
+  const [connectionStatus, setConnectionStatus] = useState(null);
+  const [availableCallMethods, setAvailableCallMethods] = useState([]);
+  const [showCallMethodSelector, setShowCallMethodSelector] = useState(false);
   
   // Reaction system state already defined above
 
   // Message input handlers
-  const handleSendMessage = useCallback(() => {
+  const handleSendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
     
-    const newMessage = {
-      id: Date.now(),
-      text: inputText,
-      user: user,
-      timestamp: new Date().toISOString(),
-      reactions: []
-    };
-    
-    setChatMessages(prev => [...prev, newMessage]);
-    setInputText('');
-    
-    // Auto-scroll to the new message
-    setTimeout(() => {
-      scrollToBottom();
-    }, 100);
-  }, [inputText, user, scrollToBottom]);
+    try {
+      // Send message via service with conversation context
+      const messageData = {
+        text: inputText.trim(),
+        conversationId: selectedConversation,
+        user: user?.name || 'User'
+      };
+      
+      const sentMessage = await messageService.sendMessage(messageData.text, messageData.user, messageData.conversationId);
+      
+      // Add to local state immediately for responsive UI
+      const newMessage = {
+        id: sentMessage.id || Date.now(),
+        text: inputText.trim(),
+        user: user,
+        timestamp: sentMessage.timestamp || new Date().toISOString(),
+        reactions: sentMessage.reactions || [],
+        conversationId: selectedConversation
+      };
+      
+      setChatMessages(prev => [...prev, newMessage]);
+      setInputText('');
+      
+      // Auto-scroll to the new message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      
+      // Still add to local state for offline persistence
+      const fallbackMessage = {
+        id: Date.now(),
+        text: inputText.trim(),
+        user: user,
+        timestamp: new Date().toISOString(),
+        reactions: [],
+        pending: true, // Mark as pending/failed
+        conversationId: selectedConversation
+      };
+      
+      setChatMessages(prev => [...prev, fallbackMessage]);
+      setInputText('');
+      
+      // Auto-scroll to the new message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+      // Optionally show error message to user
+      console.warn('Message sent offline, will sync when connection is restored');
+    }
+  }, [inputText, user, selectedConversation, scrollToBottom]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -846,6 +954,74 @@ const ProChat = ({
     setVideoCallState(prev => ({ ...prev, minimized: !prev.minimized }));
   }, []);
 
+  // Enhanced voice call handlers
+  const handleStartVoiceCall = useCallback(async () => {
+    const currentUser = currentSelectedConversation || currentConversation;
+    if (!currentUser) return;
+
+    try {
+      // Get available call methods
+      const methods = await enhancedVoiceCallService.getAvailableCallMethods(currentUser);
+      setAvailableCallMethods(methods);
+      
+      // If multiple methods available, show selector
+      if (methods.length > 1) {
+        setShowCallMethodSelector(true);
+        return;
+      }
+      
+      // Start call with best method
+      await startEnhancedVoiceCall(currentUser, 'auto');
+    } catch (error) {
+      console.error('Failed to start voice call:', error);
+    }
+  }, [currentSelectedConversation, currentConversation]);
+
+  const startEnhancedVoiceCall = useCallback(async (targetUser, method = 'auto') => {
+    try {
+      const callInstance = await enhancedVoiceCallService.initiateEnhancedCall(targetUser, method);
+      
+      // Update voice call state
+      setVoiceCallState({
+        active: true,
+        withUser: {
+          name: targetUser.name,
+          avatar: targetUser.avatar,
+          phone: targetUser.phone
+        },
+        minimized: false,
+        audioOnly: true,
+        callInstance
+      });
+
+      // Add enhanced voice call message to chat
+      const voiceCallMessage = {
+        id: callInstance.callId,
+        text: `📞 ${callInstance.method.description} with ${targetUser.name}`,
+        user: 'You',
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        type: 'voice_call_enhanced',
+        callStatus: callInstance.status,
+        callMethod: callInstance.method,
+        connectionQuality: callInstance.connectionStatus.quality,
+        isSystemMessage: true
+      };
+
+      setChatMessages(prev => [...prev, voiceCallMessage]);
+      setShowCallMethodSelector(false);
+    } catch (error) {
+      console.error('Failed to start enhanced voice call:', error);
+    }
+  }, []);
+
+  const handleEndVoiceCall = useCallback(() => {
+    setVoiceCallState(prev => ({ ...prev, active: false }));
+  }, []);
+
+  const handleToggleVoiceMinimize = useCallback(() => {
+    setVoiceCallState(prev => ({ ...prev, minimized: !prev.minimized }));
+  }, []);
+
   // Video call component
   const MemoizedVideoCall = useMemo(() => (
     <VideoCall 
@@ -855,14 +1031,83 @@ const ProChat = ({
     />
   ), [videoCallState, handleEndCall, handleToggleMinimize]);
 
-  // Function to determine message length category for dynamic styling
-  const getMessageLengthCategory = (text) => {
+  // Voice call component (using VideoCall in audio-only mode)
+  const MemoizedVoiceCall = useMemo(() => (
+    <VideoCall 
+      callState={voiceCallState}
+      onEndCall={handleEndVoiceCall}
+      onToggleMinimize={handleToggleVoiceMinimize}
+    />
+  ), [voiceCallState, handleEndVoiceCall, handleToggleVoiceMinimize]);
+
+  // Enhanced smart content preview function
+  const getSmartPreview = useCallback((message) => {
+    const { text, file, reactions } = message;
+    
+    // Handle different content types
+    if (file?.type.startsWith('image/')) {
+      return `📸 Image: ${file.name}`;
+    }
+    if (file?.type.startsWith('video/')) {
+      return `🎥 Video: ${file.name}`;
+    }
+    if (file?.type.startsWith('audio/')) {
+      return `🎵 Audio: ${file.name}`;
+    }
+    if (file && !file.type.startsWith('image/') && !file.type.startsWith('video/') && !file.type.startsWith('audio/')) {
+      return `📎 File: ${file.name}`;
+    }
+    
+    // Handle text content
+    if (text.includes('```')) {
+      return `💻 Code snippet`;
+    }
+    if (text.match(/https?:\/\/[^\s]+/)) {
+      return `🔗 ${text.substring(0, 60)}...`;
+    }
+    if (text.includes('@')) {
+      const mentions = text.match(/@\w+/g);
+      return `💬 ${text.replace(/@\w+/g, '@user')}${mentions?.length > 1 ? ` (+${mentions.length - 1} mentions)` : ''}`;
+    }
+    if (reactions?.length > 0) {
+      return `${text.substring(0, 60)}... (${reactions.length} ${reactions.length === 1 ? 'reaction' : 'reactions'})`;
+    }
+    
+    return text.length > 100 ? text.substring(0, 100) + '...' : text;
+  }, []);
+
+  // Advanced message categorization with multiple factors
+  const getAdvancedMessageCategory = useCallback((message) => {
+    const { text, file, user, reactions = [] } = message;
+    const length = text.length;
+    
+    const categories = {
+      length: length <= 50 ? 'short' : length <= 200 ? 'medium' : length <= 500 ? 'long' : 'very-long',
+      type: file ? (file.type.startsWith('image/') ? 'image' : 
+                   file.type.startsWith('video/') ? 'video' : 
+                   file.type.startsWith('audio/') ? 'audio' : 'file') : 'text',
+      priority: user.role === 'admin' ? 'high' : user.role === 'moderator' ? 'medium' : 'normal',
+      hasMedia: !!file,
+      hasReactions: reactions.length > 0,
+      hasCode: text.includes('```') || text.includes('`'),
+      hasLinks: /https?:\/\/[^\s]+/.test(text),
+      hasMentions: /@\w+/.test(text),
+      sentiment: text.includes('!') && text.includes('urgent') ? 'urgent' : 
+                text.includes('?') ? 'question' : 
+                /[😀😃😄😁😆😅😂🤣😊😇🙂😉😌😍🥰😘😗😙😚😋😛😝😜🤪🤨🧐🤓😎🤩🥳😏😒😞😔😟😕🙁☹️😣😖😫😩🥺😢😭😤😠😡🤬🤯😳🥵🥶😱😨😰😥😓🤗🤔🤭🤫🤥😶😐😑😬🙄😯😦😧😮😲🥱😴🤤😪😵🤐🥴🤢🤮🤧😷🤒🤕🤑🤠😈👿👹👺🤡💩👻💀☠️👽👾🤖🎃😺😸😹😻😼😽🙀😿😾]/.test(text) ? 'emoji' : 'neutral'
+    };
+    
+    return categories;
+  }, []);
+
+  // Function to determine message length category for dynamic styling (enhanced)
+  const getMessageLengthCategory = useCallback((text) => {
     const length = text.length;
     if (length <= 50) return 'short';
     if (length <= 200) return 'medium';
     if (length <= 500) return 'long';
     return 'very-long';
-  };
+  }, []);
 
   return (
     <div className="pro-layout">
@@ -886,12 +1131,15 @@ const ProChat = ({
       {/* Video Call Component */}
       {MemoizedVideoCall}
       
+      {/* Voice Call Component */}
+      {MemoizedVoiceCall}
+      
       {/* Enhanced Sidebar */}
       <div className={`pro-sidebar enhanced-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         {/* Sidebar Header */}
         <div className="pro-sidebar-header">
           <div className="sidebar-logo">
-            <div className="logo-icon">
+            <div className="logo-icon" data-tooltip="Quibish Chat">
               💬
               {totalUnreadCount > 0 && (
                 <div className="logo-unread-badge">{totalUnreadCount > 99 ? '99+' : totalUnreadCount}</div>
@@ -911,12 +1159,20 @@ const ProChat = ({
 
         {/* User Profile Section */}
         <div className="sidebar-user-profile">
-          <div className="user-avatar">
+          <div 
+            className={`user-avatar ${user?.role === 'admin' ? 'admin-user' : ''}`} 
+            data-tooltip={user?.role === 'admin' ? `${user?.name || 'Admin'} (Administrator)` : user?.name || 'User Profile'}
+          >
             <img 
               src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=4f46e5&color=fff&size=40`}
               alt={user?.name || 'User'}
             />
             <div className="status-indicator online"></div>
+            {user?.role === 'admin' && (
+              <div className="admin-badge" title="Administrator">
+                👑
+              </div>
+            )}
           </div>
           {!sidebarCollapsed && (
             <div className="user-info">
@@ -1002,7 +1258,7 @@ const ProChat = ({
                 className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
                 onClick={() => handleConversationSelect(conv.id)}
               >
-                <div className="conversation-avatar">
+                <div className="conversation-avatar" data-tooltip={conv.name}>
                   <img 
                     src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
                     alt={conv.name}
@@ -1099,19 +1355,21 @@ const ProChat = ({
           <div className="header-left">
             <div className="conversation-avatar">
               <img 
-                src={currentConversation?.avatar || `https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=40&h=40&fit=crop&crop=face`}
-                alt={currentConversation?.name || 'Chat'}
+                src={currentSelectedConversation?.avatar || currentConversation?.avatar || `https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=40&h=40&fit=crop&crop=face`}
+                alt={currentSelectedConversation?.name || currentConversation?.name || 'Chat'}
               />
               <div className={`online-indicator ${isConnected ? 'online' : 'offline'}`}></div>
             </div>
             <div className="conversation-info">
-              <h3 className="conversation-title">{currentConversation?.name || 'General Chat'}</h3>
+              <h3 className="conversation-title">
+                {currentSelectedConversation?.name || currentConversation?.name || (selectedConversation ? 'Loading conversation...' : 'Select a conversation')}
+              </h3>
               <div className="conversation-status">
                 <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
                   {isConnected ? '● Online' : '● Disconnected'}
                 </span>
                 <span className="participant-count">
-                  {currentConversation?.participants || 5} participants
+                  {currentSelectedConversation?.participants || currentConversation?.participants || (currentSelectedConversation ? 2 : 0)} participants
                 </span>
               </div>
             </div>
@@ -1132,8 +1390,20 @@ const ProChat = ({
             <button className="action-btn video-call-btn" title="Start video call">
               📹
             </button>
-            <button className="action-btn voice-call-btn" title="Start voice call">
+            <button 
+              className="action-btn voice-call-btn" 
+              title={`Start voice call (${connectionStatus?.quality || 'checking'} connection)`}
+              onClick={handleStartVoiceCall}
+            >
               📞
+              {connectionStatus && (
+                <span 
+                  className="connection-indicator"
+                  style={{color: connectionStatus.color}}
+                >
+                  {connectionStatus.icon}
+                </span>
+              )}
             </button>
             <button className="action-btn info-btn" title="Chat info">
               ℹ️
@@ -1163,6 +1433,41 @@ const ProChat = ({
 
         {/* Messages */}
         <div className="pro-message-list" ref={messagesContainerRef}>
+          {messagesLoading && (
+            <div className="message-loading-indicator">
+              <div className="loading-spinner"></div>
+              <span>Loading messages...</span>
+            </div>
+          )}
+          
+          {messagesError && !messagesLoading && (
+            <div className="message-error-indicator">
+              <span>⚠️ {messagesError}</span>
+              <button 
+                className="retry-button"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+          
+          {!messagesLoading && !messagesError && chatMessages.length === 0 && (
+            <div className="no-messages-indicator">
+              {selectedConversation ? (
+                <>
+                  <span>💬 No messages yet in this conversation</span>
+                  <p>Be the first to send a message!</p>
+                </>
+              ) : (
+                <>
+                  <span>👈 Select a conversation to view messages</span>
+                  <p>Choose a conversation from the sidebar to start chatting.</p>
+                </>
+              )}
+            </div>
+          )}
+          
           {chatMessages.map(message => (
             <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
               <div className="message-avatar">
@@ -1175,17 +1480,25 @@ const ProChat = ({
               <div className="message-content" onClick={() => handleMessageClick(message.id)}>
                 <div className="message-header">
                   <span className="user-name">{message.user.name}</span>
-                  <span className="timestamp">
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </span>
                 </div>
                 
-                {/* Message Text */}
+                {/* Enhanced Message Text with Smart Content */}
                 <div 
                   className="message-text" 
                   data-length={getMessageLengthCategory(message.text)}
+                  data-content-type={getAdvancedMessageCategory(message).type}
+                  data-has-code={getAdvancedMessageCategory(message).hasCode}
+                  data-has-links={getAdvancedMessageCategory(message).hasLinks}
+                  data-has-mentions={getAdvancedMessageCategory(message).hasMentions}
+                  data-sentiment={getAdvancedMessageCategory(message).sentiment}
                 >
-                  {message.text}
+                  <SmartTextContent 
+                    text={message.text}
+                    maxLength={300}
+                    showWordCount={message.text.length > 500}
+                    enableSmartBreaks={true}
+                    className="message-smart-text"
+                  />
                 </div>
                 
                 {/* File/Image Display */}
@@ -1319,17 +1632,90 @@ const ProChat = ({
                   </div>
                 )}
                 
-                {/* Reactions Display */}
+                {/* Voice Call Message Display */}
+                {message.type === 'voice_call' && (
+                  <div className="voice-call-message">
+                    <div className="voice-call-icon">📞</div>
+                    <div className="voice-call-info">
+                      <div className="voice-call-text">{message.text}</div>
+                      <div className="voice-call-status">
+                        Status: {message.callStatus}
+                      </div>
+                    </div>
+                    <div className="voice-call-controls">
+                      {message.callStatus === 'connecting' && (
+                        <button 
+                          className="voice-call-btn-small end-call"
+                          onClick={() => handleEndVoiceCall()}
+                          title="End call"
+                        >
+                          End
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Enhanced Voice Call Message Display */}
+                {message.type === 'voice_call_enhanced' && (
+                  <div className="voice-call-enhanced-message">
+                    <div className="voice-call-enhanced-header">
+                      <div className="voice-call-method-icon">{message.callMethod?.icon || '📞'}</div>
+                      <div className="voice-call-enhanced-info">
+                        <div className="voice-call-enhanced-text">{message.text}</div>
+                        <div className="voice-call-method-description">
+                          {message.callMethod?.description}
+                        </div>
+                        <div className="voice-call-quality-info">
+                          <span className="connection-quality" style={{color: connectionService.getConnectionStatus().color}}>
+                            {message.callMethod?.estimated_quality} {message.connectionQuality}
+                          </span>
+                          {message.callMethod?.latency && (
+                            <span className="latency-info">• {Math.round(message.callMethod.latency)}ms</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="voice-call-enhanced-controls">
+                      <div className="call-status-indicator">
+                        <div className={`status-dot ${message.callStatus}`}></div>
+                        <span className="status-text">{message.callStatus}</span>
+                      </div>
+                      {(message.callStatus === 'connecting' || message.callStatus === 'connected') && (
+                        <button 
+                          className="voice-call-btn-small end-call-enhanced"
+                          onClick={() => handleEndVoiceCall()}
+                          title="End call"
+                        >
+                          End Call
+                        </button>
+                      )}
+                    </div>
+                    {message.callMethod?.note && (
+                      <div className="call-method-note">
+                        ℹ️ {message.callMethod.note}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Message Timestamp with Reactions */}
+              <div className="message-timestamp-with-reactions">
+                <div className="message-timestamp">
+                  {new Date(message.timestamp).toLocaleTimeString()}
+                </div>
                 {message.reactions && message.reactions.length > 0 && (
-                  <div className="message-reactions">
+                  <div className="message-reactions-inline">
                     {message.reactions.map((reaction, index) => (
                       <button
                         key={index}
-                        className="reaction-bubble"
+                        className="reaction-bubble-inline"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleReactionAdd(message.id, reaction.emoji);
                         }}
+                        title={`${reaction.emoji} ${reaction.count}`}
                       >
                         <span className="reaction-emoji">{reaction.emoji}</span>
                         <span className="reaction-count">{reaction.count}</span>
@@ -1338,6 +1724,17 @@ const ProChat = ({
                   </div>
                 )}
               </div>
+              
+              {/* Context-Aware Message Actions */}
+              <MessageActions
+                message={message}
+                currentUser={user}
+                onReply={(messageId) => console.log('Reply to:', messageId)}
+                onReact={handleReactionAdd}
+                onEdit={(messageId) => console.log('Edit message:', messageId)}
+                onDelete={(messageId) => console.log('Delete message:', messageId)}
+                onTranslate={(messageId) => console.log('Translate message:', messageId)}
+              />
             </div>
           ))}
           {/* Auto-scroll anchor element */}
@@ -1480,6 +1877,13 @@ const ProChat = ({
                   placeholder="Type your message..."
                   className="message-input enhanced"
                   rows="1"
+                  autoComplete="off"
+                  autoCorrect="on"
+                  autoCapitalize="sentences"
+                  spellCheck="true"
+                  inputMode="text"
+                  aria-label="Type your message"
+                  data-testid="message-input"
                 />
 
                 {/* Send Button */}
@@ -1488,8 +1892,11 @@ const ProChat = ({
                   disabled={!inputText.trim()}
                   className="send-button enhanced"
                   type="button"
+                  aria-label="Send message"
+                  title="Send message"
+                  data-testid="send-button"
                 >
-                  <span className="send-icon">➤</span>
+                  <span className="send-icon" aria-hidden="true">➤</span>
                 </button>
               </>
             )}
@@ -1790,6 +2197,59 @@ const ProChat = ({
         isOpen={helpModal}
         onClose={() => setHelpModal(false)}
       />
+
+      {/* Call Method Selector Modal */}
+      {showCallMethodSelector && (
+        <div className="call-method-selector-overlay">
+          <div className="call-method-selector-modal">
+            <div className="call-method-header">
+              <h3>Choose Call Method</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowCallMethodSelector(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="call-method-list">
+              {availableCallMethods.map((method, index) => (
+                <div 
+                  key={index}
+                  className={`call-method-option ${method.quality}`}
+                  onClick={() => {
+                    const currentUser = currentSelectedConversation || currentConversation;
+                    startEnhancedVoiceCall(currentUser, method.type);
+                  }}
+                >
+                  <div className="method-icon">{method.icon}</div>
+                  <div className="method-info">
+                    <div className="method-title">{method.description}</div>
+                    <div className="method-quality">{method.estimated_quality}</div>
+                    {method.targetPhone && (
+                      <div className="method-phone">📱 {method.targetPhone}</div>
+                    )}
+                    {method.note && (
+                      <div className="method-note">{method.note}</div>
+                    )}
+                    {method.estimatedLatency && (
+                      <div className="method-latency">⚡ {Math.round(method.estimatedLatency)}ms</div>
+                    )}
+                  </div>
+                  <div className="method-quality-badge">
+                    {method.quality}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="connection-info">
+              <div className="current-connection">
+                📶 Current: {connectionService.getConnectionStatus().quality} 
+                ({connectionService.getConnectionStatus().type})
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

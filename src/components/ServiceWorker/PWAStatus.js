@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import swManager from '../../utils/serviceWorkerManager';
+import './PWAStatus.css';
 
 const PWAStatus = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [swStatus, setSwStatus] = useState('checking');
   const [cacheStatus, setCacheStatus] = useState({});
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
     // Monitor online/offline status
@@ -70,62 +72,93 @@ const PWAStatus = () => {
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '10px',
-      left: '10px',
-      background: 'rgba(0, 0, 0, 0.8)',
-      color: 'white',
-      padding: '8px 12px',
-      borderRadius: '8px',
-      fontSize: '12px',
-      fontFamily: 'monospace',
-      zIndex: 9999,
-      backdropFilter: 'blur(10px)',
-      maxWidth: '200px'
-    }}>
-      <div>🌐 {isOnline ? 'Online' : 'Offline'}</div>
-      <div>⚙️ SW: {swStatus}</div>
-      
-      {Object.keys(cacheStatus).length > 0 && (
-        <div>💾 Cache: {Object.keys(cacheStatus).length} items</div>
+    <div 
+      className={`pwa-status-indicator ${isMinimized ? 'minimized' : ''}`}
+      onClick={() => setIsMinimized(!isMinimized)}
+      title={isMinimized ? 'Click to expand PWA status' : 'Click to minimize PWA status'}
+    >
+      {isMinimized ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          <span style={{ fontSize: '8px' }}>📱</span>
+        </div>
+      ) : (
+        <>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '4px',
+            lineHeight: '1.2'
+          }}>
+            <span style={{ fontSize: '8px' }}>🌐</span>
+            <span>{isOnline ? 'On' : 'Off'}</span>
+          </div>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '4px',
+            lineHeight: '1.2'
+          }}>
+            <span style={{ fontSize: '8px' }}>⚙️</span>
+            <span>SW: {swStatus === 'checking' ? 'chk' : swStatus.slice(0, 3)}</span>
+          </div>
+        </>
       )}
       
-      {updateAvailable && (
+      {!isMinimized && Object.keys(cacheStatus).length > 0 && (
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '4px',
+          lineHeight: '1.2'
+        }}>
+          <span style={{ fontSize: '8px' }}>💾</span>
+          <span>{Object.keys(cacheStatus).length}</span>
+        </div>
+      )}
+      
+      {!isMinimized && updateAvailable && (
         <button 
-          onClick={handleUpdate}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleUpdate();
+          }}
           style={{
             background: '#4f46e5',
             color: 'white',
             border: 'none',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            fontSize: '10px',
+            padding: '2px 4px',
+            borderRadius: '3px',
+            fontSize: '9px',
             cursor: 'pointer',
-            marginTop: '4px',
+            marginTop: '3px',
             width: '100%'
           }}
         >
-          Update App
+          Update
         </button>
       )}
       
-      <button 
-        onClick={handleClearCache}
-        style={{
-          background: '#dc2626',
-          color: 'white',
-          border: 'none',
-          padding: '2px 6px',
-          borderRadius: '4px',
-          fontSize: '10px',
-          cursor: 'pointer',
-          marginTop: '4px',
-          width: '100%'
-        }}
-      >
-        Clear Cache
-      </button>
+      {!isMinimized && (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClearCache();
+          }}
+          style={{
+            background: '#dc2626',
+            color: 'white',
+            border: 'none',
+            padding: '1px 4px',
+            borderRadius: '3px',
+            fontSize: '8px',
+            cursor: 'pointer',
+            marginTop: '2px',
+            width: '100%'
+          }}
+        >
+          Clear
+        </button>
+      )}
     </div>
   );
 };

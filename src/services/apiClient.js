@@ -392,7 +392,10 @@ const performOfflineLogin = (username, password) => {
         id: Date.now(),
         username: user.username,
         email: user.email,
-        name: user.name
+        name: user.name,
+        isOnline: true,
+        status: 'online',
+        lastActive: new Date().toISOString()
       },
       token: 'offline-demo-token-' + Date.now(),
       success: true
@@ -404,7 +407,10 @@ const performOfflineLogin = (username, password) => {
         id: Date.now(),
         username: username,
         email: username.includes('@') ? username : username + '@demo.com',
-        name: username.charAt(0).toUpperCase() + username.slice(1)
+        name: username.charAt(0).toUpperCase() + username.slice(1),
+        isOnline: true,
+        status: 'online',
+        lastActive: new Date().toISOString()
       },
       token: 'offline-token-' + Date.now(),
       success: true
@@ -732,16 +738,30 @@ export const authService = {
     const storage = remember ? localStorage : sessionStorage;
     
     try {
-      storage.setItem('user', JSON.stringify(user));
+      // Ensure the user is marked as online when saving session
+      const userWithOnlineStatus = {
+        ...user,
+        isOnline: true,
+        status: 'online',
+        lastActive: new Date().toISOString()
+      };
+      
+      storage.setItem('user', JSON.stringify(userWithOnlineStatus));
       storage.setItem('authToken', token);
-      console.log(`User session saved in ${remember ? 'localStorage' : 'sessionStorage'}`);
+      console.log(`User session saved in ${remember ? 'localStorage' : 'sessionStorage'} with online status`);
       return true;
     } catch (error) {
       console.error('Error saving user session:', error);
       // Fallback to the other storage if the primary one fails
       try {
         const fallbackStorage = remember ? sessionStorage : localStorage;
-        fallbackStorage.setItem('user', JSON.stringify(user));
+        const userWithOnlineStatus = {
+          ...user,
+          isOnline: true,
+          status: 'online',
+          lastActive: new Date().toISOString()
+        };
+        fallbackStorage.setItem('user', JSON.stringify(userWithOnlineStatus));
         fallbackStorage.setItem('authToken', token);
         console.log('User session saved in fallback storage');
         return true;
