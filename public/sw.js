@@ -288,4 +288,160 @@ async function syncMessages() {
   }
 }
 
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+  console.log('🔔 Notification clicked:', event);
+  
+  event.notification.close();
+  
+  const data = event.notification.data || {};
+  const action = event.action;
+  
+  if (action) {
+    // Handle notification actions
+    event.waitUntil(handleNotificationAction(action, data));
+  } else {
+    // Handle simple notification click
+    event.waitUntil(handleNotificationClick(data));
+  }
+});
+
+// Handle notification close
+self.addEventListener('notificationclose', (event) => {
+  console.log('🔔 Notification closed:', event);
+  
+  // Send message to main thread
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'notification-close',
+        data: event.notification.data
+      });
+    });
+  });
+});
+
+// Handle notification actions
+function handleNotificationAction(action, data) {
+  console.log('🔔 Notification action:', action, data);
+  
+  // Send message to main thread
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'notification-action',
+        data: { action, notificationData: data }
+      });
+    });
+  });
+  
+  // Open app window based on action
+  const urlToOpen = getUrlForAction(action, data);
+  
+  return self.clients.matchAll({ type: 'window' }).then(clients => {
+    // Check if app is already open
+    for (const client of clients) {
+      if (client.url.includes(self.location.origin)) {
+        client.focus();
+        client.navigate(urlToOpen);
+        return client;
+      }
+    }
+    
+    // Open new window if app is not open
+    return self.clients.openWindow(urlToOpen);
+  });
+}
+
+// Handle simple notification click
+function handleNotificationClick(data) {
+  console.log('🔔 Simple notification click:', data);
+  
+  // Send message to main thread
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'notification-click',
+        data: data
+      });
+    });
+  });
+  
+  const urlToOpen = data.url || '/';
+  
+  return self.clients.matchAll({ type: 'window' }).then(clients => {
+    // Check if app is already open
+    for (const client of clients) {
+      if (client.url.includes(self.location.origin)) {
+        client.focus();
+        client.navigate(urlToOpen);
+        return client;
+      }
+    }
+    
+    // Open new window if app is not open
+    return self.clients.openWindow(urlToOpen);
+  });
+}
+
+// Get URL for specific action
+function getUrlForAction(action, data) {
+  const baseUrl = self.location.origin;
+  
+  switch (action) {
+    case 'reply':
+      return `${baseUrl}/?conversation=${data.conversationId}&action=reply`;
+    case 'mark-read':
+      return `${baseUrl}/?conversation=${data.conversationId}`;
+    case 'answer':
+      return `${baseUrl}/?call=${data.callId}&action=answer`;
+    case 'decline':
+      return `${baseUrl}/?call=${data.callId}&action=decline`;
+    default:
+      return data.url || baseUrl;
+  }
+}
+
+// Handle push messages
+self.addEventListener('push', (event) => {
+  console.log('📨 Push message received:', event);
+  
+  if (!event.data) {
+    console.log('📨 Push message has no data');
+    return;
+  }
+  
+  try {
+    const data = event.data.json();
+    console.log('📨 Push data:', data);
+    
+    const options = {
+      body: data.body || 'You have a new notification',
+      icon: data.icon || '/logo192.png',
+      badge: data.badge || '/logo192.png',
+      tag: data.tag || 'default',
+      data: data.data || {},
+      vibrate: data.vibrate || [200, 100, 200],
+      requireInteraction: data.requireInteraction || false,
+      actions: data.actions || [],
+      timestamp: Date.now()
+    };
+    
+    event.waitUntil(
+      self.registration.showNotification(data.title || 'Quibish', options)
+    );
+  } catch (error) {
+    console.error('❌ Failed to process push message:', error);
+    
+    // Fallback notification
+    event.waitUntil(
+      self.registration.showNotification('Quibish', {
+        body: 'You have a new notification',
+        icon: '/logo192.png',
+        badge: '/logo192.png'
+      })
+    );
+  }
+});
+
 console.log('🚀 Quibish Service Worker loaded and ready!');

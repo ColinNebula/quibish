@@ -306,9 +306,9 @@ const simulateDemoPreferencesUpdate = (userId, preferences) => {
   });
 };
 
-// Request interceptor for adding auth token
+// Request interceptor for adding auth token (standardized on 'authToken')
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -325,7 +325,8 @@ API.interceptors.response.use(
   async (error) => {
     // Handle common errors here (e.g., 401 Unauthorized)
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
       localStorage.removeItem('user');
       window.location.href = '/'; // Redirect to login
       return Promise.reject(error);
@@ -1408,3 +1409,6 @@ const apiClient = {
 };
 
 export default apiClient;
+
+
+

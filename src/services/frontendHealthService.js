@@ -194,15 +194,19 @@ class FrontendHealthService {
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
       
-      // Test basic connectivity
+      // Test basic connectivity with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+      
       const response = await fetch(`${backendUrl}/api/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         },
-        // Short timeout for health check
-        signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`API health check failed with status: ${response.status}`);
@@ -227,9 +231,12 @@ class FrontendHealthService {
         `API connected to ${backendUrl}, health: ${healthData.status || 'ok'}`);
     } catch (error) {
       // Don't fail completely on API connectivity issues
-      console.warn('⚠️ API connectivity issues detected:', error.message);
+      // Only log non-connection errors to reduce console noise
+      if (error.name !== 'AbortError' && !error.message.includes('Failed to fetch')) {
+        console.warn('⚠️ API connectivity issues detected:', error.message);
+      }
       this.addStep(stepName, 'warning', 
-        `API connectivity limited: ${error.message} - offline mode available`);
+        `Backend offline - running in standalone mode`);
     }
   }
 

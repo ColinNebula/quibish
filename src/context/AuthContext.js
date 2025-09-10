@@ -44,12 +44,18 @@ export const AuthProvider = ({ children }) => {
           
           // Try to fetch fresh user profile data from backend to get latest settings
           try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+            
             const response = await fetch('http://localhost:5001/api/users/profile', {
               headers: {
                 'Authorization': `Bearer ${storedToken}`,
                 'Content-Type': 'application/json'
-              }
+              },
+              signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
             
             if (response.ok) {
               const profileData = await response.json();
@@ -78,10 +84,13 @@ export const AuthProvider = ({ children }) => {
               throw new Error('Invalid token');
             }
           } catch (fetchError) {
-            console.warn('Could not fetch fresh profile, using stored data:', fetchError.message);
+            // Only log specific errors that aren't connection-related
+            if (fetchError.name !== 'AbortError' && !fetchError.message.includes('Failed to fetch')) {
+              console.warn('Could not fetch fresh profile, using stored data:', fetchError.message);
+            }
             // Fallback to stored user data
             setCurrentUser(userData);
-            console.log('Used stored session data (offline/error):', { remembered: isRemembered, user: userData.username });
+            console.log('Used stored session data (offline mode):', { remembered: isRemembered, user: userData.username });
           }
         } catch (error) {
           console.error('Error parsing stored user data:', error);

@@ -234,7 +234,10 @@ router.get('/profile', authenticateToken, async (req, res) => {
     const databaseType = process.env.DATABASE_TYPE || 'mongodb';
     let user;
     
-    if (databaseType.toLowerCase() === 'mysql') {
+    // Check if we're using in-memory storage first
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      user = global.inMemoryStorage.users.find(u => u.id === req.user.id || u.id === req.user.id.toString());
+    } else if (databaseType.toLowerCase() === 'mysql') {
       // MySQL/Sequelize query
       user = await User.findOne({ where: { id: req.user.id } });
     } else {
@@ -249,14 +252,18 @@ router.get('/profile', authenticateToken, async (req, res) => {
       });
     }
 
-    // Format user object based on database type
+    // Format user object based on storage type
     let userObject;
-    if (databaseType.toLowerCase() === 'mysql') {
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      userObject = { ...user };
+      delete userObject.password;
+    } else if (databaseType.toLowerCase() === 'mysql') {
       userObject = user.toJSON();
+      delete userObject.password;
     } else {
       userObject = user.toObject();
+      delete userObject.password;
     }
-    delete userObject.password;
     
     res.json({
       success: true,

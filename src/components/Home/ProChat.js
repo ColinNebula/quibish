@@ -8,9 +8,12 @@ import FeedbackModal from './FeedbackModal';
 import HelpModal from './HelpModal';
 import SmartTextContent from './SmartTextContent';
 import MessageActions from './MessageActions';
+import NativeCamera from '../NativeFeatures/NativeCamera';
+import NativeContactPicker from '../NativeFeatures/NativeContactPicker';
 import messageService from '../../services/messageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import connectionService from '../../services/connectionService';
+import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
 import { feedbackService } from '../../services/feedbackService';
 import PropTypes from 'prop-types';
 
@@ -66,6 +69,11 @@ const ProChat = ({
   // GIF picker state
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [showMobileUploadMenu, setShowMobileUploadMenu] = useState(false);
+
+  // Native features state
+  const [showNativeCamera, setShowNativeCamera] = useState(false);
+  const [showContactPicker, setShowContactPicker] = useState(false);
+  const [nativeCameraMode, setNativeCameraMode] = useState('photo'); // 'photo' or 'video'
 
   // Upload progress state
   // eslint-disable-next-line no-unused-vars
@@ -451,6 +459,84 @@ const ProChat = ({
 
   const handleMobileUploadMenu = useCallback(() => {
     setShowMobileUploadMenu(true);
+  }, []);
+
+  // Native Features Handlers
+  const handleOpenNativeCamera = useCallback((mode = 'photo') => {
+    setNativeCameraMode(mode);
+    setShowNativeCamera(true);
+    setShowMobileUploadMenu(false);
+  }, []);
+
+  const handleCloseNativeCamera = useCallback(() => {
+    setShowNativeCamera(false);
+  }, []);
+
+  const handleCameraCapture = useCallback(async (blob, type, metadata) => {
+    try {
+      // Create a file from the blob
+      const file = new File([blob], `${type}-${Date.now()}.${type === 'photo' ? 'jpg' : 'mp4'}`, {
+        type: blob.type
+      });
+
+      // Handle file upload (reuse existing file upload logic)
+      await handleFileChange({ target: { files: [file] } });
+      
+      // Close camera
+      setShowNativeCamera(false);
+      
+      // Add success message
+      handleSendMessage({
+        text: `📸 ${type === 'photo' ? 'Photo' : 'Video'} captured from camera`,
+        type: 'system',
+        metadata: metadata
+      });
+    } catch (error) {
+      console.error('Failed to handle camera capture:', error);
+      // Add error message
+      handleSendMessage({
+        text: '❌ Failed to upload captured media',
+        type: 'system'
+      });
+    }
+  }, []);
+
+  const handleOpenContactPicker = useCallback(() => {
+    setShowContactPicker(true);
+    setShowMobileUploadMenu(false);
+  }, []);
+
+  const handleCloseContactPicker = useCallback(() => {
+    setShowContactPicker(false);
+  }, []);
+
+  const handleContactSelect = useCallback((contacts) => {
+    try {
+      // Format contacts for sharing
+      const contactText = contacts.map(contact => {
+        const parts = [];
+        if (contact.name) parts.push(contact.name);
+        if (contact.phone) parts.push(`📱 ${contact.phone}`);
+        if (contact.email) parts.push(`📧 ${contact.email}`);
+        return parts.join('\n');
+      }).join('\n\n');
+
+      // Send contact information as message
+      handleSendMessage({
+        text: `👥 Shared Contact${contacts.length > 1 ? 's' : ''}:\n\n${contactText}`,
+        type: 'contact',
+        metadata: { contacts, shared: true }
+      });
+
+      // Close contact picker
+      setShowContactPicker(false);
+    } catch (error) {
+      console.error('Failed to share contacts:', error);
+      handleSendMessage({
+        text: '❌ Failed to share contacts',
+        type: 'system'
+      });
+    }
   }, []);
 
   // Handle adding reactions to messages
@@ -1110,7 +1196,7 @@ const ProChat = ({
   }, []);
 
   return (
-    <div className="pro-layout">
+    <div className="pro-layout mobile-optimized smartphone-optimized">
       {/* Dynamic Animated Background */}
       <div className="dynamic-background">
         <div className="gradient-orb orb-1"></div>
@@ -1432,7 +1518,7 @@ const ProChat = ({
         </div>
 
         {/* Messages */}
-        <div className="pro-message-list" ref={messagesContainerRef}>
+        <div className="pro-message-list mobile-optimized pull-to-refresh" ref={messagesContainerRef}>
           {messagesLoading && (
             <div className="message-loading-indicator">
               <div className="loading-spinner"></div>
@@ -1742,8 +1828,8 @@ const ProChat = ({
         </div>
 
         {/* Enhanced Input Area with Voice and File Upload */}
-        <div className="pro-chat-input-container enhanced">
-          <div className="input-wrapper enhanced">
+        <div className="pro-chat-input-container enhanced mobile-input-bar keyboard-avoiding">
+          <div className="input-wrapper enhanced touch-target">
             {/* Voice Recording Interface */}
             {isRecording && (
               <div className="recording-interface">
@@ -1820,7 +1906,7 @@ const ProChat = ({
                 <div className="input-actions left">
                   {/* File Attachment Button */}
                   <button 
-                    className="input-btn attachment-btn"
+                    className="input-btn attachment-btn mobile-action-button touch-target touch-ripple haptic-light"
                     onClick={isMobileDevice() ? handleMobileUploadMenu : () => fileInputRef.current?.click()}
                     type="button"
                     title={isMobileDevice() ? "Upload menu" : "Attach files"}
@@ -1830,7 +1916,7 @@ const ProChat = ({
 
                   {/* GIF Picker Button */}
                   <button 
-                    className="input-btn gif-btn"
+                    className="input-btn gif-btn mobile-action-button touch-target touch-ripple haptic-light"
                     onClick={handleShowGifPicker}
                     type="button"
                     title="Choose GIF"
@@ -1850,7 +1936,7 @@ const ProChat = ({
 
                   {/* Voice Input Button */}
                   <button 
-                    className="input-btn voice-btn"
+                    className="input-btn voice-btn mobile-action-button touch-target touch-ripple haptic-light"
                     onClick={startRecording}
                     type="button"
                     title="Voice message"
@@ -1858,9 +1944,33 @@ const ProChat = ({
                     🎤
                   </button>
 
+                  {/* Native Camera Button (Mobile) */}
+                  {nativeDeviceFeaturesService.isSupported('camera') && (
+                    <button 
+                      className="input-btn camera-btn mobile-action-button touch-target touch-ripple haptic-light"
+                      onClick={() => handleOpenNativeCamera('photo')}
+                      type="button"
+                      title="Take photo/video"
+                    >
+                      📷
+                    </button>
+                  )}
+
+                  {/* Contact Picker Button (Mobile) */}
+                  {nativeDeviceFeaturesService.isSupported('contacts') && (
+                    <button 
+                      className="input-btn contact-btn mobile-action-button touch-target touch-ripple haptic-light"
+                      onClick={handleOpenContactPicker}
+                      type="button"
+                      title="Share contacts"
+                    >
+                      👥
+                    </button>
+                  )}
+
                   {/* Emoji Button */}
                   <button 
-                    className="input-btn emoji-btn"
+                    className="input-btn emoji-btn mobile-action-button touch-target touch-ripple haptic-light"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     type="button"
                     title="Add emoji"
@@ -1875,7 +1985,7 @@ const ProChat = ({
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Type your message..."
-                  className="message-input enhanced"
+                  className="message-input enhanced mobile-message-input touch-target"
                   rows="1"
                   autoComplete="off"
                   autoCorrect="on"
@@ -1890,7 +2000,7 @@ const ProChat = ({
                 <button 
                   onClick={handleSendMessage}
                   disabled={!inputText.trim()}
-                  className="send-button enhanced"
+                  className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light"
                   type="button"
                   aria-label="Send message"
                   title="Send message"
@@ -2249,6 +2359,23 @@ const ProChat = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Native Camera Component */}
+      {showNativeCamera && (
+        <NativeCamera
+          mode={nativeCameraMode}
+          onCapture={handleCameraCapture}
+          onClose={handleCloseNativeCamera}
+        />
+      )}
+
+      {/* Native Contact Picker Component */}
+      {showContactPicker && (
+        <NativeContactPicker
+          onContactSelect={handleContactSelect}
+          onClose={handleCloseContactPicker}
+        />
       )}
     </div>
   );

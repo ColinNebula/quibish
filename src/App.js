@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import './AppProfessional.css';
+import './styles/mobile-first-responsive.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';
@@ -9,9 +10,15 @@ import LoadingSpinner from './components/UI/LoadingSpinner';
 import DynamicSplashScreen from './components/UI/DynamicSplashScreen';
 import ErrorBoundary from './components/ErrorHandling/ErrorBoundary';
 import PWAStatus from './components/ServiceWorker/PWAStatus';
+import InstallPrompt from './components/PWA/InstallPrompt';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 import frontendHealthService from './services/frontendHealthService';
+import pwaShortcutService, { pwaUtils } from './services/pwaShortcutService';
+import mobileInteractionService, { mobileUtils } from './services/mobileInteractionService';
+import memoryManager from './services/memoryManagementService';
+import lazyLoadingService from './services/lazyLoadingService';
+// Note: imageOptimizationService is auto-initialized
 
 const App = () => {
   const { isAuthenticated, user, loading: authLoading, logout, updateUser } = useAuth();
@@ -28,35 +35,7 @@ const App = () => {
   const [appInitialized, setAppInitialized] = useState(false);
   const [initializationError, setInitializationError] = useState(null);
 
-  // Sync dark mode with user's theme preference
-  useEffect(() => {
-    if (user && user.theme) {
-      const isDark = user.theme === 'dark';
-      setDarkMode(isDark);
-      localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
-    }
-  }, [user?.theme]);
-
-  // Initialize frontend health service
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        console.log('🚀 Initializing Quibish Frontend...');
-        await frontendHealthService.initialize();
-        setAppInitialized(true);
-        console.log('✅ Frontend initialization completed successfully');
-      } catch (error) {
-        console.error('❌ Frontend initialization failed:', error);
-        setInitializationError(error.message);
-        // Don't prevent app loading, just log the error
-        setAppInitialized(true);
-      }
-    };
-
-    initializeApp();
-  }, []);
-
-  // Mock conversations data
+  // Mock conversations data - moved up before useEffect that uses it
   const [conversations] = useState([
     {
       id: 1,
@@ -126,6 +105,150 @@ const App = () => {
   ]);
 
   const [currentConversation] = useState(conversations[0]);
+
+  // Sync dark mode with user's theme preference
+  useEffect(() => {
+    if (user && user.theme) {
+      const isDark = user.theme === 'dark';
+      setDarkMode(isDark);
+      localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
+    }
+  }, [user?.theme]);
+
+  // Initialize frontend health service
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        console.log('🚀 Initializing Quibish Frontend...');
+        
+        // Initialize core services
+        await frontendHealthService.initialize();
+        
+        // Initialize performance optimization services
+        console.log('⚡ Initializing performance services...');
+        
+        // Memory management setup
+        memoryManager.registerCacheManager('lazy-components', lazyLoadingService);
+        memoryManager.addMemoryPressureListener((event) => {
+          console.log('🧠 Memory pressure detected, optimizing performance');
+          // Trigger component cleanup
+          lazyLoadingService.cleanupUnusedComponents();
+        });
+        
+        // Set up service worker for advanced caching
+        if ('serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.register('/sw-advanced.js');
+            console.log('🔧 Advanced Service Worker registered:', registration);
+          } catch (error) {
+            console.warn('Failed to register advanced service worker, using basic SW:', error);
+          }
+        }
+        
+        // Preload critical resources
+        const criticalResources = [
+          '/static/css/main.css',
+          '/static/js/main.js',
+          '/manifest.json'
+        ];
+        
+        navigator.serviceWorker?.controller?.postMessage({
+          type: 'PREFETCH_RESOURCES',
+          payload: { urls: criticalResources }
+        });
+        
+        setAppInitialized(true);
+        console.log('✅ Frontend initialization completed successfully');
+        console.log('📊 Performance optimizations active');
+      } catch (error) {
+        console.error('❌ Frontend initialization failed:', error);
+        setInitializationError(error.message);
+        // Don't prevent app loading, just log the error
+        setAppInitialized(true);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  // Handle PWA shortcuts and deep links
+  useEffect(() => {
+    const handlePWAEvents = () => {
+      // Handle new chat shortcut
+      window.addEventListener('pwa-new-chat', (event) => {
+        console.log('📱 PWA: New chat shortcut triggered');
+        if (isAuthenticated) {
+          setView('home');
+          // You can add additional logic here to open a new chat
+        }
+      });
+
+      // Handle voice call shortcut
+      window.addEventListener('pwa-voice-call', (event) => {
+        console.log('📱 PWA: Voice call shortcut triggered', event.detail);
+        if (isAuthenticated) {
+          setView('home');
+          // Trigger voice call functionality
+          pwaUtils.triggerShortcut('voice-call', { initiated: 'shortcut' });
+        }
+      });
+
+      // Handle video call shortcut
+      window.addEventListener('pwa-video-call', (event) => {
+        console.log('📱 PWA: Video call shortcut triggered', event.detail);
+        if (isAuthenticated) {
+          setView('home');
+          // Trigger video call functionality
+          pwaUtils.triggerShortcut('video-call', { initiated: 'shortcut' });
+        }
+      });
+
+      // Handle file sharing
+      window.addEventListener('pwa-files-shared', (event) => {
+        console.log('📁 PWA: Files shared', event.detail);
+        if (isAuthenticated) {
+          setView('home');
+          // Handle shared files
+          const { files } = event.detail;
+          console.log('Processing shared files:', files);
+        }
+      });
+
+      // Handle share target
+      window.addEventListener('pwa-share-received', (event) => {
+        console.log('📤 PWA: Content shared', event.detail);
+        if (isAuthenticated) {
+          setView('home');
+          // Handle shared content
+          const { title, text, url } = event.detail;
+          console.log('Processing shared content:', { title, text, url });
+        }
+      });
+
+      // Handle app installation
+      window.addEventListener('pwa-installed', (event) => {
+        console.log('📱 PWA: App installed', event.detail);
+        // Show welcome message or setup flow
+      });
+    };
+
+    handlePWAEvents();
+
+    // Update app shortcuts based on frequent contacts
+    if (isAuthenticated && conversations.length > 0) {
+      const frequentContacts = conversations
+        .filter(conv => conv.lastMessageTime)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 4)
+        .map(conv => ({
+          id: conv.id,
+          name: conv.name,
+          avatar: conv.avatar
+        }));
+      
+      pwaShortcutService.updateShortcuts(frequentContacts);
+    }
+  }, [isAuthenticated, conversations]);
   
   // Dark mode persistence and CSS class management
   useEffect(() => {
@@ -205,7 +328,7 @@ const App = () => {
   
   return (
     <ErrorBoundary>
-      <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
+      <div className={`app smartphone-optimized ${darkMode ? 'dark-mode' : ''}`}>
         <div className="app-content">
           {isAuthenticated && user && !authLoading ? (
             <>
@@ -240,6 +363,9 @@ const App = () => {
       
       {/* PWA Status (development only) */}
       <PWAStatus />
+      
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </ErrorBoundary>
   );
 };

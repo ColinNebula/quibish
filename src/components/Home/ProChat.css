@@ -2024,6 +2024,36 @@
   background: rgba(245, 158, 11, 0.1);
   border-color: rgba(245, 158, 11, 0.3);
 }
+
+/* Native Camera Button */
+.camera-btn {
+  position: relative;
+}
+
+.camera-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.camera-btn:active {
+  background: rgba(16, 185, 129, 0.2);
+  transform: scale(0.95);
+}
+
+/* Contact Picker Button */
+.contact-btn {
+  position: relative;
+}
+
+.contact-btn:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.contact-btn:active {
+  background: rgba(139, 92, 246, 0.2);
+  transform: scale(0.95);
+}
 /* Enhanced Message Input */
 .message-input.enhanced {
   flex: 1;
