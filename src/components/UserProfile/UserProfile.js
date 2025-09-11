@@ -173,16 +173,6 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   };
 
   // Contact management functions
-  const handleAddContact = () => {
-    setSelectedContact(null);
-    setShowContactModal(true);
-  };
-
-  const handleEditContact = (contact) => {
-    setSelectedContact(contact);
-    setShowContactModal(true);
-  };
-
   const handleContactSave = (contactData) => {
     // In a real app, this would save to backend
     if (selectedContact) {
@@ -199,49 +189,6 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
     }
     setShowContactModal(false);
     setSelectedContact(null);
-  };
-
-  const renderContactsList = () => {
-    if (contacts.length === 0) {
-      return (
-        <div className="empty-contacts-state">
-          <div className="empty-icon">👥</div>
-          <p>No contacts yet</p>
-          <button className="add-contact-btn" onClick={handleAddContact}>
-            + Add Contact
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="contacts-list">
-        <div className="contacts-header">
-          <button className="add-contact-btn" onClick={handleAddContact}>
-            + Add Contact
-          </button>
-        </div>
-        <div className="contacts-grid">
-          {contacts.map((contact) => (
-            <div key={contact.id} className="contact-card" onClick={() => handleEditContact(contact)}>
-              <div className="contact-avatar">
-                {contact.avatar ? (
-                  <img src={contact.avatar} alt={contact.name} />
-                ) : (
-                  <div className="contact-initials">
-                    {contact.name ? contact.name.charAt(0).toUpperCase() : '?'}
-                  </div>
-                )}
-              </div>
-              <div className="contact-info">
-                <h4>{contact.name || 'Unnamed Contact'}</h4>
-                <p>{contact.company || contact.emails?.[0]?.value || contact.phones?.[0]?.value || 'No details'}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
   };
 
   const getFileIcon = (fileType) => {
@@ -528,7 +475,10 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
             </button>
             <button 
               className={`tab-btn ${activeTab === 'contacts' ? 'active' : ''}`}
-              onClick={() => handleTabChange('contacts')}
+              onClick={() => {
+                setSelectedContact(null);
+                setShowContactModal(true);
+              }}
             >
               <span className="tab-icon">👥</span>
               <span className="tab-label">Contacts</span>
@@ -578,12 +528,6 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
                 <div className="history-container">
                   <h3>View History</h3>
                   {renderViewHistory()}
-                </div>
-              )}
-              {activeTab === 'contacts' && (
-                <div className="contacts-container">
-                  <h3>Contact Management</h3>
-                  {renderContactsList()}
                 </div>
               )}
             </div>
