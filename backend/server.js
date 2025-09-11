@@ -10,6 +10,7 @@ const http = require('http');
 const { connectToMySQL } = require('./config/mysql');
 const startupService = require('./services/startupService');
 const healthCheck = require('./middleware/healthCheck');
+const securityMiddleware = require('./middleware/security');
 const { router: signalingRouter, signalingServer } = require('./routes/signaling');
 require('dotenv').config();
 
@@ -257,16 +258,8 @@ const connectToDatabase = async () => {
   }
 };
 
-// Security middleware
-app.use(helmet());
-
-// CORS configuration (before rate limiting)
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Enhanced security middleware
+securityMiddleware(app);
 
 // Health check endpoints (before rate limiting)
 app.use('/api', healthRoutes);
