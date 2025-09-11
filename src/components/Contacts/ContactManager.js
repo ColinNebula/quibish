@@ -453,6 +453,7 @@ const ContactManager = ({
           <ContactModal
             isOpen={showContactModal}
             contact={editingContact}
+            allContacts={filteredContacts}
             onClose={() => {
               setShowContactModal(false);
               setEditingContact(null);
