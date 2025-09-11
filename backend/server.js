@@ -6,9 +6,11 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const mongoose = require('mongoose');
+const http = require('http');
 const { connectToMySQL } = require('./config/mysql');
 const startupService = require('./services/startupService');
 const healthCheck = require('./middleware/healthCheck');
+const { router: signalingRouter, signalingServer } = require('./routes/signaling');
 require('dotenv').config();
 
 // Initialize global in-memory storage BEFORE importing databaseService
@@ -367,14 +369,24 @@ app.use((err, req, res, next) => {
       global.inMemoryStorage.seedDefaultUsers();
     }
 
+    // Add signaling routes
+    app.use('/api/signaling', signalingRouter);
+
+    // Create HTTP server for WebSocket support
+    const server = http.createServer(app);
+
+    // Initialize WebRTC signaling server
+    signalingServer.initialize(server);
+
     // Start server
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`✅ Quibish Backend Server successfully running on port ${PORT}`);
       console.log(`📱 Frontend should connect to: http://localhost:${PORT}`);
       console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
       console.log(`⚕️  Health Check: http://localhost:${PORT}/api/health`);
       console.log(`📊 Startup Status: http://localhost:${PORT}/api/startup`);
       console.log(`🔍 Detailed Health: http://localhost:${PORT}/api/health/detailed`);
+      console.log(`🎙️  Voice Call Signaling: ws://localhost:${PORT}/signaling`);
       
       // Log startup summary
       const status = startupService.getInitializationStatus();

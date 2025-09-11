@@ -12,6 +12,8 @@ import NativeCamera from '../NativeFeatures/NativeCamera';
 import NativeContactPicker from '../NativeFeatures/NativeContactPicker';
 import messageService from '../../services/messageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
+import globalVoiceCallService from '../../services/globalVoiceCallService';
+import GlobalUsers from '../Voice/GlobalUsers';
 import connectionService from '../../services/connectionService';
 import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
 import { feedbackService } from '../../services/feedbackService';
@@ -43,6 +45,7 @@ const ProChat = ({
   
   // Enhanced input state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [lightboxModal, setLightboxModal] = useState({ 
@@ -539,6 +542,61 @@ const ProChat = ({
     }
   }, []);
 
+  // Handle avatar image loading errors
+  const handleAvatarError = useCallback(() => {
+    setAvatarError(true);
+  }, []);
+
+  // Handle global voice call start
+  const handleStartGlobalCall = useCallback((call) => {
+    setGlobalCall(call);
+    setVoiceCallState({
+      active: true,
+      withUser: {
+        name: call.targetUser.name,
+        avatar: call.targetUser.avatar,
+        id: call.targetUser.id
+      },
+      minimized: false,
+      audioOnly: true,
+      callInstance: call
+    });
+
+    // Add global call message to chat
+    const callMessage = {
+      id: call.id,
+      text: `🌍 Global voice call ${call.type === 'outgoing' ? 'to' : 'from'} ${call.targetUser.name}`,
+      user: 'System',
+      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      type: 'global_voice_call',
+      callStatus: call.status,
+      isSystemMessage: true
+    };
+
+    setChatMessages(prev => [...prev, callMessage]);
+  }, []);
+
+  // Handle ending global voice call
+  const handleEndGlobalCall = useCallback(() => {
+    if (globalCall) {
+      globalVoiceCallService.endCall();
+      setGlobalCall(null);
+      setVoiceCallState(prev => ({ ...prev, active: false }));
+
+      // Add call ended message
+      const endMessage = {
+        id: `end_${Date.now()}`,
+        text: `📞 Global call ended`,
+        user: 'System',
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        type: 'system',
+        isSystemMessage: true
+      };
+
+      setChatMessages(prev => [...prev, endMessage]);
+    }
+  }, [globalCall]);
+
   // Handle adding reactions to messages
   const handleReactionAdd = useCallback(async (messageId, emoji) => {
     // Update local state immediately for responsive UI
@@ -708,6 +766,7 @@ const ProChat = ({
     minimized: false, 
     audioOnly: true 
   });
+  const [globalCall, setGlobalCall] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [availableCallMethods, setAvailableCallMethods] = useState([]);
   const [showCallMethodSelector, setShowCallMethodSelector] = useState(false);
@@ -1250,8 +1309,44 @@ const ProChat = ({
             data-tooltip={user?.role === 'admin' ? `${user?.name || 'Admin'} (Administrator)` : user?.name || 'User Profile'}
           >
             <img 
-              src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=4f46e5&color=fff&size=40`}
+              src={
+                avatarError ? 
+                  '/default-avatar.png' : 
+                  user?.avatar || 
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&size=80&bold=true&format=png`
+              }
               alt={user?.name || 'User'}
+              onError={(e) => {
+                // Multiple fallback handling
+                if (!avatarError) {
+                  console.log('Avatar load failed, trying fallback:', e.target.src);
+                  handleAvatarError();
+                  // If it's already trying ui-avatars, fallback to default
+                  if (e.target.src.includes('ui-avatars.com')) {
+                    e.target.src = '/default-avatar.png';
+                  }
+                } else {
+                  // Last resort - if even default fails, show a colored div
+                  e.target.style.display = 'none';
+                  const fallbackDiv = document.createElement('div');
+                  fallbackDiv.className = 'avatar-fallback';
+                  fallbackDiv.style.cssText = `
+                    width: 40px; 
+                    height: 40px; 
+                    border-radius: 50%; 
+                    background: linear-gradient(135deg, #4f46e5, #7c3aed); 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    color: white; 
+                    font-weight: bold;
+                    font-size: 16px;
+                  `;
+                  fallbackDiv.textContent = (user?.name || 'U').charAt(0).toUpperCase();
+                  e.target.parentNode.insertBefore(fallbackDiv, e.target);
+                }
+              }}
+              onLoad={() => setAvatarError(false)}
             />
             <div className="status-indicator online"></div>
             {user?.role === 'admin' && (
@@ -1374,6 +1469,14 @@ const ProChat = ({
               </div>
             ))}
           </div>
+
+          {/* Global Voice Calls */}
+          {!sidebarCollapsed && (
+            <GlobalUsers 
+              onStartCall={handleStartGlobalCall}
+              currentCall={globalCall}
+            />
+          )}
         </div>
 
         {/* Sidebar Footer */}

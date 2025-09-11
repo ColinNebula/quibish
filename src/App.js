@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import './AppProfessional.css';
 import './styles/mobile-first-responsive.css';
+import './styles/input-container-responsive-fix.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';

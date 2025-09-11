@@ -37,7 +37,8 @@
     "sequelize": "^6.37.7",
     "sequelize-cli": "^6.6.3",
     "speakeasy": "^2.0.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

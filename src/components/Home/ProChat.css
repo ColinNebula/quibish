@@ -5928,6 +5928,23 @@
     max-width: 300px;
     min-width: 200px;
   }
+  
+  /* Fix input container for desktop */
+  .pro-chat-input-container.enhanced.mobile-input-bar {
+    position: sticky;
+    bottom: 0;
+    left: auto;
+    right: auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+  
+  .pro-chat-input-container.keyboard-avoiding {
+    position: sticky;
+    bottom: 0;
+  }
 }
 /* Tablet screens */
 @media (max-width: 1023px) and (min-width: 768px) {
@@ -5938,6 +5955,22 @@
   .pro-attachment-gif {
     max-width: 250px;
     min-width: 180px;
+  }
+  
+  /* Fix input container for tablet */
+  .pro-chat-input-container.enhanced.mobile-input-bar {
+    position: sticky;
+    bottom: 0;
+    left: auto;
+    right: auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+  
+  .pro-chat-input-container.keyboard-avoiding {
+    position: sticky;
+    bottom: 0;
   }
 }
 /* Mobile screens */

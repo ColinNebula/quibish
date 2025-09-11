@@ -259,6 +259,88 @@
   overscroll-behavior: none;
 }
 
+/* Mobile user profile - round avatar only */
+@media screen and (max-width: 768px) {
+  .sidebar-user-profile {
+    padding: 12px;
+    justify-content: center;
+    border-radius: 20px;
+    margin: 8px;
+    background: rgba(79, 70, 229, 0.08);
+  }
+  
+  .user-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .user-avatar img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50% !important;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .user-avatar:hover img {
+    transform: scale(1.1);
+    border-color: var(--pro-accent, #4f46e5);
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+  }
+  
+  /* Hide text elements on mobile */
+  .user-info,
+  .user-actions {
+    display: none !important;
+  }
+  
+  /* Enhance status indicator for mobile */
+  .status-indicator {
+    width: 14px;
+    height: 14px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: #10b981;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+  }
+  
+  /* Admin badge adjustments for mobile */
+  .admin-badge {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    top: -3px;
+    right: -3px;
+  }
+}
+
+/* Small mobile devices */
+@media screen and (max-width: 480px) {
+  .sidebar-user-profile {
+    padding: 10px;
+    margin: 6px;
+  }
+  
+  .user-avatar img {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .admin-badge {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+  }
+}
+
 /* Touch-optimized action buttons */
 .mobile-action-button {
   width: var(--touch-target-min);
@@ -467,6 +549,28 @@
   
   .desktop-only {
     display: block;
+  }
+  
+  /* Fix mobile-input-bar for desktop/tablet */
+  .mobile-input-bar {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+  
+  /* Ensure input container stays within chat bounds */
+  .pro-chat-input-container.mobile-input-bar {
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    left: auto;
+    right: auto;
+    margin: 0 auto;
   }
 }
 
