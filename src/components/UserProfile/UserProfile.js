@@ -6,7 +6,7 @@ import PrivacySettings from './PrivacySettings';
 import ProfileAnalytics from './ProfileAnalytics';
 import EnhancedMediaGallery from './EnhancedMediaGallery';
 import AvatarUpload from './AvatarUpload';
-import ContactManager from '../Contacts/ContactManager';
+import ContactModal from '../Contacts/ContactModal';
 
 const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -18,6 +18,9 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contacts, setContacts] = useState([]);
+  const [selectedContact, setSelectedContact] = useState(null);
 
   // Check if this is the current user's profile
   const getCurrentUserId = () => {
@@ -167,6 +170,78 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
     } catch (error) {
       console.error('Failed to update avatar:', error);
     }
+  };
+
+  // Contact management functions
+  const handleAddContact = () => {
+    setSelectedContact(null);
+    setShowContactModal(true);
+  };
+
+  const handleEditContact = (contact) => {
+    setSelectedContact(contact);
+    setShowContactModal(true);
+  };
+
+  const handleContactSave = (contactData) => {
+    // In a real app, this would save to backend
+    if (selectedContact) {
+      // Update existing contact
+      setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, ...contactData } : c));
+    } else {
+      // Add new contact
+      const newContact = {
+        ...contactData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      setContacts(prev => [...prev, newContact]);
+    }
+    setShowContactModal(false);
+    setSelectedContact(null);
+  };
+
+  const renderContactsList = () => {
+    if (contacts.length === 0) {
+      return (
+        <div className="empty-contacts-state">
+          <div className="empty-icon">👥</div>
+          <p>No contacts yet</p>
+          <button className="add-contact-btn" onClick={handleAddContact}>
+            + Add Contact
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="contacts-list">
+        <div className="contacts-header">
+          <button className="add-contact-btn" onClick={handleAddContact}>
+            + Add Contact
+          </button>
+        </div>
+        <div className="contacts-grid">
+          {contacts.map((contact) => (
+            <div key={contact.id} className="contact-card" onClick={() => handleEditContact(contact)}>
+              <div className="contact-avatar">
+                {contact.avatar ? (
+                  <img src={contact.avatar} alt={contact.name} />
+                ) : (
+                  <div className="contact-initials">
+                    {contact.name ? contact.name.charAt(0).toUpperCase() : '?'}
+                  </div>
+                )}
+              </div>
+              <div className="contact-info">
+                <h4>{contact.name || 'Unnamed Contact'}</h4>
+                <p>{contact.company || contact.emails?.[0]?.value || contact.phones?.[0]?.value || 'No details'}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const getFileIcon = (fileType) => {
@@ -508,7 +583,7 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
               {activeTab === 'contacts' && (
                 <div className="contacts-container">
                   <h3>Contact Management</h3>
-                  <ContactManager />
+                  {renderContactsList()}
                 </div>
               )}
             </div>
@@ -539,6 +614,19 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
         <ProfileAnalytics
           userProfile={userProfile}
           onClose={() => setShowAnalyticsModal(false)}
+        />
+      )}
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <ContactModal
+          contact={selectedContact}
+          allContacts={contacts}
+          onSave={handleContactSave}
+          onClose={() => {
+            setShowContactModal(false);
+            setSelectedContact(null);
+          }}
         />
       )}
     </div>
