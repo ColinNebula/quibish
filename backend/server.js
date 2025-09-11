@@ -120,6 +120,7 @@ const healthRoutes = require('./routes/health');
 const uploadRoutes = require('./routes/upload');
 const twoFactorRoutes = require('./routes/twoFactor');
 const feedbackRoutes = require('./routes/feedback');
+const encryptionRoutes = require('./routes/encryption');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -341,6 +342,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/encryption', encryptionRoutes);
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

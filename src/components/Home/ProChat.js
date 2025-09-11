@@ -12,6 +12,7 @@ import NativeCamera from '../NativeFeatures/NativeCamera';
 import NativeContactPicker from '../NativeFeatures/NativeContactPicker';
 import ContactManager from '../Contacts/ContactManager';
 import messageService from '../../services/messageService';
+import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import globalVoiceCallService from '../../services/globalVoiceCallService';
 import GlobalUsers from '../Voice/GlobalUsers';
@@ -29,6 +30,7 @@ import './ProSidebar.css';
 import './ProHeader.css';
 import './ProChat.css';
 import './ResponsiveFix.css';
+import './EncryptionStyles.css';
 
 const ProChat = ({ 
   user = { id: 'user1', name: 'Current User', avatar: null },
@@ -83,6 +85,11 @@ const ProChat = ({
   // Contact manager state
   const [showContactManager, setShowContactManager] = useState(false);
 
+  // Encryption state
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false);
+  const [encryptionStatus, setEncryptionStatus] = useState({ enabled: false });
+  const [defaultEncryption, setDefaultEncryption] = useState(true);
+
   // Upload progress state
   // eslint-disable-next-line no-unused-vars
   const [uploadProgress, setUploadProgress] = useState({
@@ -123,8 +130,23 @@ const ProChat = ({
         setMessagesLoading(true);
         setMessagesError(null);
         
-        // Load messages from the message service
-        const messages = await messageService.getMessages({ limit: 50 });
+        // Initialize encryption service first
+        try {
+          const encryptionInit = await encryptedMessageService.initializeEncryption(user.id);
+          setEncryptionEnabled(encryptionInit);
+          
+          if (encryptionInit) {
+            const status = encryptedMessageService.getEncryptionStatus();
+            setEncryptionStatus(status);
+            console.log('🔒 Encryption initialized for ProChat');
+          }
+        } catch (encryptError) {
+          console.warn('⚠️ Encryption initialization failed:', encryptError);
+          setEncryptionEnabled(false);
+        }
+        
+        // Load messages using encrypted service
+        const messages = await encryptedMessageService.getMessages({ limit: 50 });
         
         if (Array.isArray(messages)) {
           setChatMessages(messages);
@@ -152,7 +174,7 @@ const ProChat = ({
     };
 
     loadMessages();
-  }, []);
+  }, [user.id]);
 
   // Auto-scroll to bottom function
   const scrollToBottom = useCallback(() => {
@@ -1023,14 +1045,23 @@ const ProChat = ({
     if (!inputText.trim()) return;
     
     try {
-      // Send message via service with conversation context
+      // Send message via encrypted service with conversation context
       const messageData = {
         text: inputText.trim(),
         conversationId: selectedConversation,
         user: user?.name || 'User'
       };
       
-      const sentMessage = await messageService.sendMessage(messageData.text, messageData.user, messageData.conversationId);
+      // Get conversation participants for encryption
+      const conversationParticipants = currentSelectedConversation?.participants || [];
+      const recipientId = conversationParticipants.find(p => p !== user.id);
+      
+      // Send with encryption options
+      const sentMessage = await encryptedMessageService.sendMessage(messageData, {
+        encrypt: defaultEncryption && encryptionEnabled,
+        recipientId: recipientId,
+        conversationParticipants: conversationParticipants
+      });
       
       // Add to local state immediately for responsive UI
       const newMessage = {
@@ -1039,7 +1070,9 @@ const ProChat = ({
         user: user,
         timestamp: sentMessage.timestamp || new Date().toISOString(),
         reactions: sentMessage.reactions || [],
-        conversationId: selectedConversation
+        conversationId: selectedConversation,
+        isEncrypted: sentMessage.isEncrypted || false,
+        encryptionStatus: sentMessage.encryptionStatus
       };
       
       setChatMessages(prev => [...prev, newMessage]);
@@ -1075,7 +1108,7 @@ const ProChat = ({
       // Optionally show error message to user
       console.warn('Message sent offline, will sync when connection is restored');
     }
-  }, [inputText, user, selectedConversation, scrollToBottom]);
+  }, [inputText, user, selectedConversation, scrollToBottom, currentSelectedConversation, defaultEncryption, encryptionEnabled]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1978,6 +2011,17 @@ const ProChat = ({
               <div className="message-content" onClick={() => handleMessageClick(message.id)}>
                 <div className="message-header">
                   <span className="user-name">{message.user.name}</span>
+                  {/* Encryption Status Indicator */}
+                  {message.isEncrypted && (
+                    <span 
+                      className={`encryption-indicator ${message.encryptionStatus}`} 
+                      title={`Message is encrypted (${message.encryptionStatus})`}
+                    >
+                      {message.encryptionStatus === 'decrypted' ? '🔓' : 
+                       message.encryptionStatus === 'failed' ? '⚠️' : 
+                       message.encryptionStatus === 'sent' ? '🔒' : '🔐'}
+                    </span>
+                  )}
                 </div>
                 
                 {/* Enhanced Message Text with Smart Content */}
@@ -2389,6 +2433,18 @@ const ProChat = ({
                   >
                     😊
                   </button>
+
+                  {/* Encryption Toggle */}
+                  {encryptionEnabled && (
+                    <button 
+                      className={`input-btn encryption-btn mobile-action-button touch-target touch-ripple haptic-light ${defaultEncryption ? 'active' : ''}`}
+                      onClick={() => setDefaultEncryption(!defaultEncryption)}
+                      type="button"
+                      title={defaultEncryption ? "Encryption enabled" : "Encryption disabled"}
+                    >
+                      {defaultEncryption ? '🔒' : '🔓'}
+                    </button>
+                  )}
                 </div>
 
                 {/* Text Input */}

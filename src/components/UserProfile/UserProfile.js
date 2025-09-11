@@ -7,6 +7,7 @@ import ProfileAnalytics from './ProfileAnalytics';
 import EnhancedMediaGallery from './EnhancedMediaGallery';
 import AvatarUpload from './AvatarUpload';
 import ContactModal from '../Contacts/ContactModal';
+import EncryptionSettings from '../Encryption/EncryptionSettings';
 
 const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -21,6 +22,7 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
+  const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
 
   // Check if this is the current user's profile
   const getCurrentUserId = () => {
@@ -483,6 +485,15 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
               <span className="tab-icon">👥</span>
               <span className="tab-label">Contacts</span>
             </button>
+            {isOwnProfile && (
+              <button 
+                className={`tab-btn ${activeTab === 'encryption' ? 'active' : ''}`}
+                onClick={() => setShowEncryptionSettings(true)}
+              >
+                <span className="tab-icon">🔒</span>
+                <span className="tab-label">Security</span>
+              </button>
+            )}
             <div className="tab-indicator"></div>
           </div>
         </div>
@@ -571,6 +582,14 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
             setShowContactModal(false);
             setSelectedContact(null);
           }}
+        />
+      )}
+
+      {/* Encryption Settings Modal */}
+      {showEncryptionSettings && (
+        <EncryptionSettings
+          userId={userId}
+          onClose={() => setShowEncryptionSettings(false)}
         />
       )}
     </div>
