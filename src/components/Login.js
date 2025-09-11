@@ -141,7 +141,7 @@ const Login = ({ onLogin, switchToRegister }) => {
             name: demoUser.name
           };
           
-          authService.saveUserSession(userData, 'demo-token-local', rememberMe);
+          login(userData, 'demo-token-local', rememberMe); // Use AuthContext login
           onLogin(userData, 'demo-token-local');
           return;
         } else {
@@ -181,7 +181,7 @@ const Login = ({ onLogin, switchToRegister }) => {
       
       // Save user session and notify parent component
       console.log('Login Component - Login successful, saving session');
-      authService.saveUserSession(data.user, data.token, rememberMe);
+      login(data.user, data.token, rememberMe); // Use AuthContext login
       onLogin(data.user, data.token);
       
       console.log('Login Component - Session saved and parent notified');
@@ -251,7 +251,7 @@ const Login = ({ onLogin, switchToRegister }) => {
       
       // Save user session and notify parent component
       console.log('Login Component - 2FA successful, completing login');
-      authService.saveUserSession(loginResponse.user, loginResponse.token, rememberMe);
+      login(loginResponse.user, loginResponse.token, rememberMe); // Use AuthContext login
       onLogin(loginResponse.user, loginResponse.token);
       
     } catch (error) {
