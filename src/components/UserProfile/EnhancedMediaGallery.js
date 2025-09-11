@@ -14,6 +14,14 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
   const [loading, setLoading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null); // For video/image viewer modal
 
+  // Debug logging
+  console.log('🎨 EnhancedMediaGallery props:', {
+    userUploadsLength: userUploads?.length || 0,
+    userId,
+    isOwnProfile,
+    userUploads: userUploads
+  });
+
   // Filter and sort uploads
   useEffect(() => {
     let filtered = [...(userUploads || [])];
@@ -374,9 +382,18 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
                   
                   if (!item.url) {
                     console.error('❌ No URL found for media item:', item);
+                    return;
                   }
                   
-                  // Open media viewer modal for images and videos
+                  // For documents and PDFs, open in new tab if URL available
+                  if (item.type === 'document' || item.type === 'pdf') {
+                    const fullUrl = item.url.startsWith('http') ? item.url : `http://localhost:5001${item.url}`;
+                    console.log('📄 Opening document in new tab:', fullUrl);
+                    window.open(fullUrl, '_blank');
+                    return;
+                  }
+                  
+                  // Open media viewer modal for images, videos, and GIFs
                   setSelectedMedia(item);
                 } catch (error) {
                   console.error('💥 Error opening media viewer:', error);
