@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 
 // In-memory storage for demonstration (use database in production)
 let userPublicKeys = new Map();
@@ -15,7 +15,7 @@ let keyFingerprints = new Map();
  * Share/update user's public key
  * POST /api/encryption/public-key
  */
-router.post('/public-key', auth, async (req, res) => {
+router.post('/public-key', authenticateToken, async (req, res) => {
   try {
     const { publicKeyBase64, fingerprint } = req.body;
     const userId = req.user.id;
@@ -67,7 +67,7 @@ router.post('/public-key', auth, async (req, res) => {
  * Get a user's public key
  * GET /api/encryption/public-key/:userId
  */
-router.get('/public-key/:userId', auth, async (req, res) => {
+router.get('/public-key/:userId', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
     const requestingUserId = req.user.id;
@@ -104,7 +104,7 @@ router.get('/public-key/:userId', auth, async (req, res) => {
  * Get multiple users' public keys
  * POST /api/encryption/public-keys
  */
-router.post('/public-keys', auth, async (req, res) => {
+router.post('/public-keys', authenticateToken, async (req, res) => {
   try {
     const { userIds } = req.body;
     const requestingUserId = req.user.id;
@@ -152,7 +152,7 @@ router.post('/public-keys', auth, async (req, res) => {
  * Get user's own public key
  * GET /api/encryption/my-public-key
  */
-router.get('/my-public-key', auth, async (req, res) => {
+router.get('/my-public-key', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const keyData = userPublicKeys.get(userId);
@@ -183,7 +183,7 @@ router.get('/my-public-key', auth, async (req, res) => {
  * Delete user's public key
  * DELETE /api/encryption/public-key
  */
-router.delete('/public-key', auth, async (req, res) => {
+router.delete('/public-key', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -210,7 +210,7 @@ router.delete('/public-key', auth, async (req, res) => {
  * Verify key fingerprint
  * POST /api/encryption/verify-fingerprint
  */
-router.post('/verify-fingerprint', auth, async (req, res) => {
+router.post('/verify-fingerprint', authenticateToken, async (req, res) => {
   try {
     const { userId, fingerprint } = req.body;
     const requestingUserId = req.user.id;
@@ -246,7 +246,7 @@ router.post('/verify-fingerprint', auth, async (req, res) => {
  * Get encryption status and statistics
  * GET /api/encryption/status
  */
-router.get('/status', auth, async (req, res) => {
+router.get('/status', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const hasPublicKey = userPublicKeys.has(userId);

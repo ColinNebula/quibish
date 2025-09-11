@@ -2358,8 +2358,8 @@ const ProChat = ({
                   onChange={handleFileChange}
                 />
 
-                {/* Input Actions - Left Side */}
-                <div className="input-actions left">
+                {/* Top Row - Action Icons */}
+                <div className="input-actions-row">
                   {/* File Attachment Button */}
                   <button 
                     className="input-btn attachment-btn mobile-action-button touch-target touch-ripple haptic-light"
@@ -2447,35 +2447,38 @@ const ProChat = ({
                   )}
                 </div>
 
-                {/* Text Input */}
-                <textarea
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
-                  className="message-input enhanced mobile-message-input touch-target"
-                  rows="1"
-                  autoComplete="off"
-                  autoCorrect="on"
-                  autoCapitalize="sentences"
-                  spellCheck="true"
-                  inputMode="text"
-                  aria-label="Type your message"
-                  data-testid="message-input"
-                />
+                {/* Bottom Row - Message Input and Send */}
+                <div className="message-input-row">
+                  {/* Text Input */}
+                  <textarea
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message..."
+                    className="message-input enhanced mobile-message-input touch-target"
+                    rows="1"
+                    autoComplete="off"
+                    autoCorrect="on"
+                    autoCapitalize="sentences"
+                    spellCheck="true"
+                    inputMode="text"
+                    aria-label="Type your message"
+                    data-testid="message-input"
+                  />
 
-                {/* Send Button */}
-                <button 
-                  onClick={handleSendMessage}
-                  disabled={!inputText.trim()}
-                  className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light"
-                  type="button"
-                  aria-label="Send message"
-                  title="Send message"
-                  data-testid="send-button"
-                >
-                  <span className="send-icon" aria-hidden="true">➤</span>
-                </button>
+                  {/* Send Button */}
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={!inputText.trim()}
+                    className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light"
+                    type="button"
+                    aria-label="Send message"
+                    title="Send message"
+                    data-testid="send-button"
+                  >
+                    <span className="send-icon" aria-hidden="true">➤</span>
+                  </button>
+                </div>
               </>
             )}
           </div>

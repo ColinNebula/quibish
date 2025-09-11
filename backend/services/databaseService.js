@@ -9,6 +9,14 @@ let mysqlModels = null;
 async function loadMySQLModels() {
   if (mysqlModels) return mysqlModels;
   
+  // Check if memory-only mode is enabled
+  const useMemoryOnly = process.env.USE_MEMORY_ONLY === 'true';
+  if (useMemoryOnly) {
+    console.log('⚠️ Memory-only mode enabled, skipping MySQL model loading');
+    mysqlConnected = false;
+    return null;
+  }
+  
   try {
     const mysql = require('../config/mysql');
     await mysql.connectToMySQL();
@@ -49,12 +57,15 @@ class DatabaseService {
     console.log('🔧 Initializing database service...');
     
     // Check if we should force memory mode
+    const useMemoryOnly = process.env.USE_MEMORY_ONLY === 'true';
     const databaseType = process.env.DATABASE_TYPE || 'mysql';
-    if (databaseType === 'memory') {
-      console.log('⚠️ Memory database mode enabled, skipping MySQL');
+    
+    if (useMemoryOnly || databaseType === 'memory') {
+      console.log('⚠️ Memory-only mode enabled, skipping MySQL connection');
       mysqlConnected = false;
       global.inMemoryStorage.usingInMemory = true;
       global.inMemoryStorage.seedDefaultUsers();
+      console.log('✅ Database service initialized with in-memory storage');
       return false;
     }
     
@@ -82,6 +93,7 @@ class DatabaseService {
   async getStats() {
     const stats = {
       mysql: mysqlConnected,
+      inMemory: global.inMemoryStorage?.usingInMemory || false,
       users: 0,
       messages: 0,
       media: 0
@@ -92,6 +104,11 @@ class DatabaseService {
         stats.users = await mysqlModels.User.count();
         stats.messages = await mysqlModels.Message.count({ where: { deleted: false } });
         stats.media = await mysqlModels.Media.count({ where: { deleted: false } });
+      } else if (global.inMemoryStorage?.usingInMemory) {
+        // Check in-memory storage stats
+        stats.users = global.inMemoryStorage.users?.length || 0;
+        stats.messages = global.inMemoryStorage.messages?.length || 0;
+        stats.media = global.inMemoryStorage.media?.length || 0;
       }
     } catch (error) {
       console.error('Error getting database stats:', error);
@@ -316,6 +333,32 @@ class DatabaseService {
 
   async createMedia(mediaData) {
     try {
+      if (global.inMemoryStorage.usingInMemory) {
+        // Handle in-memory storage for media
+        const media = {
+          id: uuidv4(),
+          filename: mediaData.filename,
+          originalName: mediaData.originalName,
+          mimeType: mediaData.mimeType,
+          size: mediaData.size,
+          filePath: mediaData.filePath,
+          url: mediaData.url,
+          mediaType: mediaData.mediaType || 'file',
+          userId: mediaData.userId,
+          messageId: mediaData.messageId,
+          deleted: false,
+          createdAt: new Date().toISOString()
+        };
+        
+        if (!global.inMemoryStorage.media) {
+          global.inMemoryStorage.media = [];
+        }
+        
+        global.inMemoryStorage.media.push(media);
+        console.log(`✅ Media created in memory: ${media.filename} (${media.id})`);
+        return media;
+      }
+      
       if (mysqlConnected && mysqlModels) {
         const media = await mysqlModels.Media.create({
           id: uuidv4(),
@@ -340,6 +383,55 @@ class DatabaseService {
       console.error(' Error creating media:', error.message);
       throw error;
     }
+  }
+
+  // Get all users
+  async getUsers(query = {}, options = {}) {
+    try {
+      if (global.inMemoryStorage.usingInMemory) {
+        // Handle in-memory storage
+        let users = [...global.inMemoryStorage.users];
+        
+        // Apply query filters if any
+        if (query.id) {
+          users = users.filter(user => user.id === query.id);
+        }
+        if (query.username) {
+          users = users.filter(user => user.username === query.username);
+        }
+        if (query.email) {
+          users = users.filter(user => user.email === query.email);
+        }
+        
+        // Apply options
+        if (options.limit) {
+          users = users.slice(0, options.limit);
+        }
+        
+        console.log(`📊 Retrieved ${users.length} users from memory`);
+        return users;
+      }
+      
+      if (mysqlConnected && mysqlModels) {
+        const users = await mysqlModels.User.findAll({
+          where: query,
+          ...options
+        });
+        
+        console.log(`📊 Retrieved ${users.length} users from MySQL`);
+        return users;
+      }
+      
+      throw new Error('No database connection available');
+    } catch (error) {
+      console.error(' Error getting users:', error.message);
+      throw error;
+    }
+  }
+
+  // Check if service is properly initialized
+  isInitialized() {
+    return global.inMemoryStorage.usingInMemory || mysqlConnected;
   }
 }
 

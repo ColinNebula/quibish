@@ -2,18 +2,21 @@ import React, { useState, useEffect } from 'react';
 import encryptionService from '../../services/encryptionService';
 import './EncryptionSettings.css';
 
-const EncryptionSettings = ({ isOpen, onClose, currentUser }) => {
+const EncryptionSettings = ({ isOpen, onClose, currentUser, userId }) => {
   const [encryptionStatus, setEncryptionStatus] = useState(null);
   const [keyFingerprint, setKeyFingerprint] = useState('');
   const [publicKey, setPublicKey] = useState('');
   const [isInitializing, setIsInitializing] = useState(false);
   const [showPublicKey, setShowPublicKey] = useState(false);
 
+  // Support both currentUser.id and userId props
+  const effectiveUserId = currentUser?.id || userId;
+
   useEffect(() => {
-    if (isOpen && currentUser) {
+    if (isOpen && effectiveUserId) {
       loadEncryptionStatus();
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, effectiveUserId]);
 
   const loadEncryptionStatus = async () => {
     try {
@@ -37,7 +40,7 @@ const EncryptionSettings = ({ isOpen, onClose, currentUser }) => {
   const initializeEncryption = async () => {
     setIsInitializing(true);
     try {
-      const success = await encryptionService.initialize(currentUser.id);
+      const success = await encryptionService.initialize(effectiveUserId);
       if (success) {
         await loadEncryptionStatus();
         alert('✅ End-to-end encryption has been enabled for your account!');

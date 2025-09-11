@@ -588,7 +588,8 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
       {/* Encryption Settings Modal */}
       {showEncryptionSettings && (
         <EncryptionSettings
-          userId={userId}
+          isOpen={showEncryptionSettings}
+          currentUser={{ id: userId, username: username }}
           onClose={() => setShowEncryptionSettings(false)}
         />
       )}
