@@ -547,6 +547,9 @@ const ProChat = ({
     setAvatarError(true);
   }, []);
 
+  // Global call state - must be declared before callbacks that use it
+  const [globalCall, setGlobalCall] = useState(null);
+
   // Handle global voice call start
   const handleStartGlobalCall = useCallback((call) => {
     setGlobalCall(call);
@@ -766,7 +769,6 @@ const ProChat = ({
     minimized: false, 
     audioOnly: true 
   });
-  const [globalCall, setGlobalCall] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [availableCallMethods, setAvailableCallMethods] = useState([]);
   const [showCallMethodSelector, setShowCallMethodSelector] = useState(false);
