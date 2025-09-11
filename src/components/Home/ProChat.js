@@ -10,6 +10,7 @@ import SmartTextContent from './SmartTextContent';
 import MessageActions from './MessageActions';
 import NativeCamera from '../NativeFeatures/NativeCamera';
 import NativeContactPicker from '../NativeFeatures/NativeContactPicker';
+import ContactManager from '../Contacts/ContactManager';
 import messageService from '../../services/messageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import globalVoiceCallService from '../../services/globalVoiceCallService';
@@ -17,6 +18,7 @@ import GlobalUsers from '../Voice/GlobalUsers';
 import connectionService from '../../services/connectionService';
 import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
 import { feedbackService } from '../../services/feedbackService';
+import { contactService } from '../../services/contactService';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -71,13 +73,15 @@ const ProChat = ({
 
   // GIF picker state
   const [showGifPicker, setShowGifPicker] = useState(false);
-  const [showMobileUploadMenu, setShowMobileUploadMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Native features state
   const [showNativeCamera, setShowNativeCamera] = useState(false);
   const [showContactPicker, setShowContactPicker] = useState(false);
   const [nativeCameraMode, setNativeCameraMode] = useState('photo'); // 'photo' or 'video'
+
+  // Contact manager state
+  const [showContactManager, setShowContactManager] = useState(false);
 
   // Upload progress state
   // eslint-disable-next-line no-unused-vars
@@ -462,14 +466,14 @@ const ProChat = ({
   }, []);
 
   const handleMobileUploadMenu = useCallback(() => {
-    setShowMobileUploadMenu(true);
+    // Mobile upload menu removed for memory optimization
   }, []);
 
   // Native Features Handlers
   const handleOpenNativeCamera = useCallback((mode = 'photo') => {
     setNativeCameraMode(mode);
     setShowNativeCamera(true);
-    setShowMobileUploadMenu(false);
+    // Mobile upload menu removed for memory optimization
   }, []);
 
   const handleCloseNativeCamera = useCallback(() => {
@@ -507,7 +511,7 @@ const ProChat = ({
 
   const handleOpenContactPicker = useCallback(() => {
     setShowContactPicker(true);
-    setShowMobileUploadMenu(false);
+    // Mobile upload menu removed for memory optimization
   }, []);
 
   const handleCloseContactPicker = useCallback(() => {
@@ -677,6 +681,73 @@ const ProChat = ({
         isSystemMessage: true
       };
       setChatMessages([clearMessage]);
+    }
+  }, []);
+
+  // Handle contact manager
+  const handleOpenContactManager = useCallback(() => {
+    setShowContactManager(true);
+    setShowMoreMenu(false);
+  }, []);
+
+  // Handle contact selection for starting a chat
+  const handleContactToChat = useCallback(async (contact) => {
+    try {
+      // Create a new chat message to indicate starting chat with contact
+      const chatMessage = {
+        id: `contact_chat_${Date.now()}`,
+        text: `💬 Starting chat with ${contact.name}`,
+        user: 'System',
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        type: 'system',
+        isSystemMessage: true,
+        contactId: contact.id
+      };
+      
+      setChatMessages(prev => [...prev, chatMessage]);
+      
+      // Close contact manager
+      setShowContactManager(false);
+      
+      // Update contact analytics
+      await contactService.updateContactInteraction(contact.id, 'chat_started');
+      
+    } catch (error) {
+      console.error('Error starting chat with contact:', error);
+    }
+  }, []);
+
+  // Handle contact call
+  const handleContactCall = useCallback(async (contact) => {
+    try {
+      // Use the enhanced voice call service to initiate call
+      if (contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+        const primaryPhone = contact.phoneNumbers[0];
+        
+        // Create call message
+        const callMessage = {
+          id: `contact_call_${Date.now()}`,
+          text: `📞 Calling ${contact.name} at ${primaryPhone.number}`,
+          user: 'System',
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          type: 'system',
+          isSystemMessage: true,
+          contactId: contact.id
+        };
+        
+        setChatMessages(prev => [...prev, callMessage]);
+        
+        // Update contact analytics
+        await contactService.updateContactInteraction(contact.id, 'call_made');
+        
+        // Close contact manager
+        setShowContactManager(false);
+        
+      } else {
+        alert('No phone number available for this contact');
+      }
+    } catch (error) {
+      console.error('Error calling contact:', error);
     }
   }, []);
 
@@ -1802,6 +1873,11 @@ const ProChat = ({
                     Search in Chat
                   </button>
                   
+                  <button className="dropdown-item" onClick={handleOpenContactManager}>
+                    <span className="dropdown-icon">👥</span>
+                    Contacts
+                  </button>
+                  
                   <button className="dropdown-item" onClick={handleExportChat}>
                     <span className="dropdown-icon">📥</span>
                     Export Chat
@@ -2711,6 +2787,18 @@ const ProChat = ({
         <NativeContactPicker
           onContactSelect={handleContactSelect}
           onClose={handleCloseContactPicker}
+        />
+      )}
+
+      {/* Contact Manager Component */}
+      {showContactManager && (
+        <ContactManager
+          isOpen={showContactManager}
+          onClose={() => setShowContactManager(false)}
+          onStartChat={handleContactToChat}
+          onStartCall={handleContactCall}
+          currentUser={user}
+          darkMode={darkMode}
         />
       )}
     </div>
