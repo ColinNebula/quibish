@@ -72,6 +72,7 @@ const ProChat = ({
   // GIF picker state
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [showMobileUploadMenu, setShowMobileUploadMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Native features state
   const [showNativeCamera, setShowNativeCamera] = useState(false);
@@ -599,6 +600,177 @@ const ProChat = ({
       setChatMessages(prev => [...prev, endMessage]);
     }
   }, [globalCall]);
+
+  // Handle more menu toggle
+  const handleMoreMenuToggle = useCallback(() => {
+    setShowMoreMenu(prev => !prev);
+  }, []);
+
+  // Handle export chat
+  const handleExportChat = useCallback(() => {
+    const chatData = {
+      conversation: currentSelectedConversation?.name || 'Chat Export',
+      messages: chatMessages,
+      exportDate: new Date().toISOString(),
+      totalMessages: chatMessages.length
+    };
+    
+    const dataStr = JSON.stringify(chatData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `chat-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setShowMoreMenu(false);
+    
+    // Show success message
+    const exportMessage = {
+      id: `export_${Date.now()}`,
+      text: '📥 Chat exported successfully',
+      user: 'System',
+      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      type: 'system',
+      isSystemMessage: true
+    };
+    setChatMessages(prev => [...prev, exportMessage]);
+  }, [chatMessages, currentSelectedConversation]);
+
+  // Handle mute notifications
+  const handleMuteNotifications = useCallback(() => {
+    const currentlyMuted = localStorage.getItem('notificationsMuted') === 'true';
+    const newMutedState = !currentlyMuted;
+    
+    localStorage.setItem('notificationsMuted', newMutedState.toString());
+    
+    setShowMoreMenu(false);
+    
+    // Show status message
+    const muteMessage = {
+      id: `mute_${Date.now()}`,
+      text: `🔔 Notifications ${newMutedState ? 'muted' : 'unmuted'}`,
+      user: 'System',
+      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      type: 'system',
+      isSystemMessage: true
+    };
+    setChatMessages(prev => [...prev, muteMessage]);
+  }, []);
+
+  // Handle clear chat
+  const handleClearChat = useCallback(() => {
+    const confirmed = window.confirm('Are you sure you want to clear this chat? This action cannot be undone.');
+    if (confirmed) {
+      setChatMessages([]);
+      setShowMoreMenu(false);
+      
+      // Show clear message
+      const clearMessage = {
+        id: `clear_${Date.now()}`,
+        text: '🧹 Chat cleared',
+        user: 'System',
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        type: 'system',
+        isSystemMessage: true
+      };
+      setChatMessages([clearMessage]);
+    }
+  }, []);
+
+  // Handle search in chat
+  const handleSearchInChat = useCallback(() => {
+    const searchTerm = prompt('Search in chat:');
+    if (searchTerm && searchTerm.trim()) {
+      const matchingMessages = chatMessages.filter(msg => 
+        msg.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        msg.user.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      
+      setShowMoreMenu(false);
+      
+      if (matchingMessages.length > 0) {
+        const searchMessage = {
+          id: `search_${Date.now()}`,
+          text: `🔍 Found ${matchingMessages.length} message(s) containing "${searchTerm}"`,
+          user: 'System',
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          type: 'system',
+          isSystemMessage: true,
+          searchResults: matchingMessages
+        };
+        setChatMessages(prev => [...prev, searchMessage]);
+      } else {
+        const noResultsMessage = {
+          id: `search_${Date.now()}`,
+          text: `🔍 No messages found containing "${searchTerm}"`,
+          user: 'System',
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          type: 'system',
+          isSystemMessage: true
+        };
+        setChatMessages(prev => [...prev, noResultsMessage]);
+      }
+    }
+  }, [chatMessages]);
+
+  // Handle print chat
+  const handlePrintChat = useCallback(() => {
+    const printContent = chatMessages.map(msg => 
+      `[${msg.timestamp}] ${msg.user}: ${msg.text}`
+    ).join('\n');
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Chat Print - ${currentSelectedConversation?.name || 'Chat'}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { border-bottom: 2px solid #ccc; margin-bottom: 20px; padding-bottom: 10px; }
+            .message { margin-bottom: 10px; padding: 8px; border-left: 3px solid #007bff; }
+            .timestamp { color: #666; font-size: 0.9em; }
+            .user { font-weight: bold; color: #333; }
+            .text { margin-top: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Chat: ${currentSelectedConversation?.name || 'Conversation'}</h1>
+            <p>Exported on: ${new Date().toLocaleString()}</p>
+            <p>Total Messages: ${chatMessages.length}</p>
+          </div>
+          <div class="messages">
+            ${chatMessages.map(msg => `
+              <div class="message">
+                <div class="timestamp">${msg.timestamp}</div>
+                <div class="user">${msg.user}</div>
+                <div class="text">${msg.text}</div>
+              </div>
+            `).join('')}
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+    
+    setShowMoreMenu(false);
+  }, [chatMessages, currentSelectedConversation]);
+
+  // Close more menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showMoreMenu && !event.target.closest('.header-menu')) {
+        setShowMoreMenu(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMoreMenu]);
 
   // Handle adding reactions to messages
   const handleReactionAdd = useCallback(async (messageId, emoji) => {
@@ -1606,18 +1778,77 @@ const ProChat = ({
               🚪
             </button>
             <div className="header-menu">
-              <button className="action-btn menu-btn" title="More options">
+              <button 
+                className="action-btn menu-btn" 
+                title="More options"
+                onClick={handleMoreMenuToggle}
+              >
                 ⋮
               </button>
-              <div className="dropdown-menu">
-                <button className="dropdown-item" onClick={handleQuickSettings}>Settings</button>
-                <button className="dropdown-item">Export Chat</button>
-                <button className="dropdown-item">Mute Notifications</button>
-                <hr className="dropdown-divider" />
-                <button onClick={onLogout} className="dropdown-item logout-item">
-                  Logout
-                </button>
-              </div>
+              {showMoreMenu && (
+                <div className="dropdown-menu active">
+                  <div className="dropdown-header">
+                    <span>More Options</span>
+                    <button 
+                      className="close-dropdown" 
+                      onClick={() => setShowMoreMenu(false)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  
+                  <button className="dropdown-item" onClick={handleSearchInChat}>
+                    <span className="dropdown-icon">🔍</span>
+                    Search in Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleExportChat}>
+                    <span className="dropdown-icon">📥</span>
+                    Export Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handlePrintChat}>
+                    <span className="dropdown-icon">🖨️</span>
+                    Print Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleMuteNotifications}>
+                    <span className="dropdown-icon">
+                      {localStorage.getItem('notificationsMuted') === 'true' ? '🔔' : '🔕'}
+                    </span>
+                    {localStorage.getItem('notificationsMuted') === 'true' ? 'Unmute' : 'Mute'} Notifications
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleClearChat}>
+                    <span className="dropdown-icon">🗑️</span>
+                    Clear Chat
+                  </button>
+                  
+                  <hr className="dropdown-divider" />
+                  
+                  <button className="dropdown-item" onClick={handleQuickSettings}>
+                    <span className="dropdown-icon">⚙️</span>
+                    Settings
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={() => setHelpModal(true)}>
+                    <span className="dropdown-icon">❓</span>
+                    Help & Support
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={() => setFeedbackModal(true)}>
+                    <span className="dropdown-icon">💬</span>
+                    Send Feedback
+                  </button>
+                  
+                  <hr className="dropdown-divider" />
+                  
+                  <button onClick={onLogout} className="dropdown-item logout-item">
+                    <span className="dropdown-icon">🚪</span>
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

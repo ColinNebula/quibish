@@ -107,6 +107,19 @@ const App = () => {
 
   const [currentConversation] = useState(conversations[0]);
 
+  // Handle view changes based on authentication state
+  useEffect(() => {
+    if (isAuthenticated && user && !authLoading) {
+      console.log('App - User authenticated, setting view to home');
+      setView('home');
+    } else if (!isAuthenticated && !authLoading) {
+      console.log('App - User not authenticated, ensuring login view');
+      if (view === 'home') {
+        setView('login');
+      }
+    }
+  }, [isAuthenticated, user, authLoading, view]);
+
   // Sync dark mode with user's theme preference
   useEffect(() => {
     if (user && user.theme) {
@@ -262,9 +275,19 @@ const App = () => {
     }
   }, [darkMode]);
   
-  const handleLogin = () => setView('home');
+  const handleLogin = () => {
+    console.log('App - handleLogin called, waiting for auth state update');
+    // Don't immediately set view to 'home', let the auth state update handle it
+  };
   const handleLogout = () => { logout(); setView('login'); };
-  const handleRegister = () => setView('register');
+  const handleRegister = () => {
+    console.log('App - handleRegister called, redirecting to login');
+    setView('login'); // After successful registration, go to login
+  };
+  const switchToRegister = () => {
+    console.log('App - switchToRegister called');
+    setView('register');
+  };
   const handleBackToLogin = () => setView('login');
   
   const toggleDarkMode = async () => {
@@ -343,17 +366,19 @@ const App = () => {
                 onToggleDarkMode={toggleDarkMode}
               />
             </>
+          ) : authLoading ? (
+            <LoadingSpinner size="large" message="Signing you in..." />
           ) : (
             <div className="auth-container">
               {view === 'login' && (
                 <Login 
                   onLogin={handleLogin} 
-                  switchToRegister={handleRegister}
+                  switchToRegister={switchToRegister}
                 />
               )}
               {view === 'register' && (
                 <Register 
-                  onRegister={handleLogin} 
+                  onRegisterSuccess={handleRegister} 
                   switchToLogin={handleBackToLogin}
                 />
               )}
