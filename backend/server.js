@@ -8,11 +8,15 @@ const path = require('path');
 const mongoose = require('mongoose');
 const http = require('http');
 const { connectToMySQL } = require('./config/mysql');
+const { MemoryMonitor } = require('./config/memory');
 const startupService = require('./services/startupService');
 const healthCheck = require('./middleware/healthCheck');
 const securityMiddleware = require('./middleware/security');
 const { router: signalingRouter, signalingServer } = require('./routes/signaling');
 require('dotenv').config();
+
+// Initialize memory monitor
+const memoryMonitor = new MemoryMonitor();
 
 // Initialize global in-memory storage BEFORE importing databaseService
 global.inMemoryStorage = {
@@ -120,6 +124,36 @@ const feedbackRoutes = require('./routes/feedback');
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Memory optimization settings
+app.set('trust proxy', 1);
+if (process.env.NODE_ENV === 'production') {
+  // Enable garbage collection in production
+  if (global.gc) {
+    setInterval(() => {
+      global.gc();
+    }, 30000); // Every 30 seconds
+  }
+}
+
+// Memory cleanup on process termination
+process.on('SIGTERM', () => {
+  console.log('🔄 SIGTERM received, cleaning up...');
+  memoryMonitor.cleanup();
+  if (global.gc) {
+    global.gc();
+  }
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('🔄 SIGINT received, cleaning up...');
+  memoryMonitor.cleanup();
+  if (global.gc) {
+    global.gc();
+  }
+  process.exit(0);
+});
+
 // MongoDB connection with fallback mechanism
 const connectToMongoDB = async () => {
   // Check if we should skip MongoDB and use memory only
@@ -132,13 +166,18 @@ const connectToMongoDB = async () => {
 
   try {
     // Set fallback mode before attempting connection
-    // This ensures we don't try to use MongoDB at all if connection fails
     global.inMemoryStorage.usingInMemory = true;
     
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quibish', {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      connectTimeoutMS: 10000, // Give up initial connection after 10s
-    });
+    // Limit connection pool to reduce memory usage
+    const mongooseOptions = {
+      maxPoolSize: 5, // Maintain up to 5 socket connections
+      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      bufferMaxEntries: 0, // Disable mongoose buffering
+      bufferCommands: false // Disable mongoose buffering
+    };
+    
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quibish', mongooseOptions);
     
     // If we reach here, connection succeeded
     console.log('📊 MongoDB connected successfully');
@@ -380,6 +419,11 @@ app.use((err, req, res, next) => {
       console.log(`📊 Startup Status: http://localhost:${PORT}/api/startup`);
       console.log(`🔍 Detailed Health: http://localhost:${PORT}/api/health/detailed`);
       console.log(`🎙️  Voice Call Signaling: ws://localhost:${PORT}/signaling`);
+      
+      // Start memory monitoring
+      memoryMonitor.startMonitoring();
+      const initialMemory = memoryMonitor.getMemoryUsage();
+      console.log(`📊 Memory Monitor started - Initial usage: ${initialMemory.heapUsed}MB (${initialMemory.percentage}%)`);
       
       // Log startup summary
       const status = startupService.getInitializationStatus();

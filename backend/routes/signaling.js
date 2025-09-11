@@ -371,6 +371,21 @@ class SignalingServer {
         userId: ws.userId
       });
     }
+    
+    // Memory cleanup for disconnected WebSocket
+    if (ws) {
+      ws.removeAllListeners();
+      ws.userId = null;
+      ws.userData = null;
+      
+      // Force garbage collection if available and client count is low
+      if (global.gc && this.clients.size === 0) {
+        setTimeout(() => {
+          global.gc();
+          console.log('🗑️ Forced garbage collection after last user disconnected');
+        }, 1000);
+      }
+    }
   }
 
   /**
