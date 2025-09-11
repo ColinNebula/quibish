@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { mobileUtils } from '../../services/mobileInteractionService';
 import './ContactModal.css';
 
@@ -239,7 +239,7 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
     // Phone validation
     formData.phones.forEach((phone, index) => {
       if (phone.value) {
-        const cleanPhone = phone.value.replace(/[\s\-\(\)\+]/g, '');
+        const cleanPhone = phone.value.replace(/[\s\-()\\+]/g, '');
         if (!/^[0-9]{7,15}$/.test(cleanPhone)) {
           newErrors[`phone_${index}`] = 'Invalid phone number (7-15 digits)';
         }
@@ -283,6 +283,9 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
             break;
           case 'discord':
             isValid = /^.{2,32}#[0-9]{4}$/.test(value);
+            break;
+          default:
+            // Other platforms are allowed without specific validation
             break;
         }
         if (!isValid) {

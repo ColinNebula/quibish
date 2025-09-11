@@ -6,6 +6,7 @@ import PrivacySettings from './PrivacySettings';
 import ProfileAnalytics from './ProfileAnalytics';
 import EnhancedMediaGallery from './EnhancedMediaGallery';
 import AvatarUpload from './AvatarUpload';
+import ContactManager from '../Contacts/ContactManager';
 
 const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -450,6 +451,13 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
               <span className="tab-icon">📚</span>
               <span className="tab-label">History</span>
             </button>
+            <button 
+              className={`tab-btn ${activeTab === 'contacts' ? 'active' : ''}`}
+              onClick={() => handleTabChange('contacts')}
+            >
+              <span className="tab-icon">👥</span>
+              <span className="tab-label">Contacts</span>
+            </button>
             <div className="tab-indicator"></div>
           </div>
         </div>
@@ -495,6 +503,12 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
                 <div className="history-container">
                   <h3>View History</h3>
                   {renderViewHistory()}
+                </div>
+              )}
+              {activeTab === 'contacts' && (
+                <div className="contacts-container">
+                  <h3>Contact Management</h3>
+                  <ContactManager />
                 </div>
               )}
             </div>
