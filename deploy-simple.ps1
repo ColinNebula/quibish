@@ -21,6 +21,12 @@ Remove-Item -Recurse -Force static/ -ErrorAction SilentlyContinue
 Remove-Item *.html, asset-manifest.json, manifest.json, robots.txt, favicon.ico, logo192.png, logo512.png -ErrorAction SilentlyContinue
 Copy-Item -Recurse build/* .
 
+# Ensure .nojekyll file exists to disable Jekyll processing
+if (!(Test-Path ".nojekyll")) {
+    New-Item -ItemType File -Name ".nojekyll" -Force | Out-Null
+    Write-Host "Created .nojekyll file to disable Jekyll processing" -ForegroundColor Green
+}
+
 # Check for changes
 $status = git status --porcelain
 if ($status) {
