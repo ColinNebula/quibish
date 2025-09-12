@@ -220,7 +220,19 @@ router.delete('/avatar', authenticateToken, async (req, res) => {
 // GET /api/users/profile - get current user profile
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findOne({ id: req.user.id });
+    const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+    let user;
+    
+    // Check if we're using in-memory storage first
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      user = global.inMemoryStorage.users.find(u => u.id === req.user.id || u.id === req.user.id.toString());
+    } else if (databaseType.toLowerCase() === 'mysql') {
+      // MySQL/Sequelize query
+      user = await User.findOne({ where: { id: req.user.id } });
+    } else {
+      // MongoDB query
+      user = await User.findOne({ id: req.user.id });
+    }
     
     if (!user) {
       return res.status(404).json({
@@ -229,8 +241,18 @@ router.get('/profile', authenticateToken, async (req, res) => {
       });
     }
 
-    const userObject = user.toObject();
-    delete userObject.password;
+    // Format user object based on storage type
+    let userObject;
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      userObject = { ...user };
+      delete userObject.password;
+    } else if (databaseType.toLowerCase() === 'mysql') {
+      userObject = user.toJSON();
+      delete userObject.password;
+    } else {
+      userObject = user.toObject();
+      delete userObject.password;
+    }
     
     res.json({
       success: true,

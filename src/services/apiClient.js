@@ -194,121 +194,15 @@ websocketService.addConnectionListener((connected) => {
 // Start the connection checker
 startConnectionChecker();
 
-// Helper functions for demo mode
-const simulateDemoUserUpdate = (userId, userData, isFormData) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      try {
-        // Get current user
-        const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user'));
-        if (!currentUser) {
-          reject(new Error('User not found'));
-          return;
-        }
-        
-        // Process form data if needed
-        let dataObj = userData;
-        if (isFormData) {
-          dataObj = {};
-          for (const [key, value] of userData.entries()) {
-            // Handle file type (avatar)
-            if (key === 'avatar' && value instanceof File) {
-              // In a real app we'd upload this file, but for demo we'll use FileReader
-              // to convert to data URL and store that
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                dataObj[key] = reader.result;
-              };
-              reader.readAsDataURL(value);
-            } else {
-              dataObj[key] = value;
-            }
-          }
-        }
-        
-        // Update user data
-        const updatedUser = { ...currentUser, ...dataObj };
-        
-        // Store updated user
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        
-        resolve(updatedUser);
-      } catch (error) {
-        reject(new Error('Error updating user in demo mode'));
-      }
-    }, 500);
-  });
-};
 
-const simulateDemoPasswordChange = (userId, currentPassword, newPassword) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // Get demo users
-      const demoUsers = JSON.parse(localStorage.getItem('demoUsers') || '[]');
-      const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user'));
-      
-      if (!currentUser) {
-        reject(new Error('User not found'));
-        return;
-      }
-      
-      // Find the user in demo users
-      const userIndex = demoUsers.findIndex(u => u.id === userId || u.username === currentUser.username);
-      
-      if (userIndex === -1) {
-        reject(new Error('User not found in demo database'));
-        return;
-      }
-      
-      // Verify current password
-      if (demoUsers[userIndex].password !== currentPassword) {
-        reject(new Error('Current password is incorrect'));
-        return;
-      }
-      
-      // Update password
-      demoUsers[userIndex].password = newPassword;
-      localStorage.setItem('demoUsers', JSON.stringify(demoUsers));
-      
-      resolve({ success: true, message: 'Password updated successfully' });
-    }, 500);
-  });
-};
 
-const simulateDemoPreferencesUpdate = (userId, preferences) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      try {
-        // Get current user
-        const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user'));
-        if (!currentUser) {
-          reject(new Error('User not found'));
-          return;
-        }
-        
-        // Update user preferences
-        const updatedUser = {
-          ...currentUser,
-          preferences: {
-            ...(currentUser.preferences || {}),
-            ...preferences
-          }
-        };
-        
-        // Store updated user
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        
-        resolve({ success: true, user: updatedUser });
-      } catch (error) {
-        reject(new Error('Error updating preferences in demo mode'));
-      }
-    }, 500);
-  });
-};
 
-// Request interceptor for adding auth token
+
+
+
+// Request interceptor for adding auth token (standardized on 'authToken')
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -325,7 +219,8 @@ API.interceptors.response.use(
   async (error) => {
     // Handle common errors here (e.g., 401 Unauthorized)
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
       localStorage.removeItem('user');
       window.location.href = '/'; // Redirect to login
       return Promise.reject(error);
@@ -369,53 +264,24 @@ API.interceptors.response.use(
   }
 );
 
-// Offline/Demo authentication function
+// Offline authentication function
 const performOfflineLogin = (username, password) => {
   console.log('Performing offline authentication for:', username);
   
-  // Demo users for offline mode
-  const demoUsers = [
-    { username: 'demo', password: 'demo', email: 'demo@quibish.com', name: 'Demo User' },
-    { username: 'john', password: 'password', email: 'john@example.com', name: 'John Doe' },
-    { username: 'jane', password: 'password', email: 'jane@example.com', name: 'Jane Smith' },
-    { username: 'admin', password: 'admin', email: 'admin@quibish.com', name: 'Admin User' }
-  ];
-  
-  // Find matching user
-  const user = demoUsers.find(u => 
-    (u.username === username || u.email === username) && u.password === password
-  );
-  
-  if (user) {
-    return {
-      user: {
-        id: Date.now(),
-        username: user.username,
-        email: user.email,
-        name: user.name,
-        isOnline: true,
-        status: 'online',
-        lastActive: new Date().toISOString()
-      },
-      token: 'offline-demo-token-' + Date.now(),
-      success: true
-    };
-  } else {
-    // Allow any credentials in demo mode, but use generic user
-    return {
-      user: {
-        id: Date.now(),
-        username: username,
-        email: username.includes('@') ? username : username + '@demo.com',
-        name: username.charAt(0).toUpperCase() + username.slice(1),
-        isOnline: true,
-        status: 'online',
-        lastActive: new Date().toISOString()
-      },
-      token: 'offline-token-' + Date.now(),
-      success: true
-    };
-  }
+  // In offline mode, create a temporary user with the provided credentials
+  return {
+    user: {
+      id: Date.now(),
+      username: username,
+      email: username.includes('@') ? username : username + '@offline.com',
+      name: username.charAt(0).toUpperCase() + username.slice(1),
+      isOnline: false,
+      status: 'offline',
+      lastActive: new Date().toISOString()
+    },
+    token: 'offline-token-' + Date.now(),
+    success: true
+  };
 };
 
 // Auth service
@@ -456,8 +322,25 @@ export const authService = {
       
       // For demo mode, simulate API
       if (!await checkApiConnection()) {
-        console.log('API offline, using demo mode for updateUser');
-        return simulateDemoUserUpdate(userId, userData, isFormData);
+        console.log('API offline, using offline mode for updateUser');
+        // In offline mode, just update local storage
+        const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user'));
+        if (!currentUser) {
+          throw new Error('User not found');
+        }
+        
+        let dataObj = userData;
+        if (isFormData) {
+          dataObj = {};
+          for (const [key, value] of userData.entries()) {
+            dataObj[key] = value;
+          }
+        }
+        
+        const updatedUser = { ...currentUser, ...dataObj };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        return updatedUser;
       }
       
       const response = await API.put(`/users/${userId}`, userData, config);
@@ -473,8 +356,8 @@ export const authService = {
     try {
       // For demo mode, simulate API
       if (!await checkApiConnection()) {
-        console.log('API offline, using demo mode for changePassword');
-        return simulateDemoPasswordChange(userId, currentPassword, newPassword);
+        console.log('API offline, password changes not available in offline mode');
+        throw new Error('Password changes are not available when offline');
       }
       
       const response = await API.post(`/users/${userId}/change-password`, {
@@ -494,7 +377,22 @@ export const authService = {
       // For demo mode, simulate API
       if (!await checkApiConnection()) {
         console.log('API offline, using demo mode for updatePreferences');
-        return simulateDemoPreferencesUpdate(userId, preferences);
+        console.log('API offline, updating preferences locally');
+        const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user'));
+        if (!currentUser) {
+          throw new Error('User not found');
+        }
+        
+        const updatedUser = {
+          ...currentUser,
+          preferences: {
+            ...currentUser.preferences,
+            ...preferences
+          }
+        };
+        
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        return updatedUser;
       }
 
       const response = await API.put(`/users/${userId}/preferences`, preferences);
@@ -1408,3 +1306,6 @@ const apiClient = {
 };
 
 export default apiClient;
+
+
+

@@ -8,10 +8,21 @@ import FeedbackModal from './FeedbackModal';
 import HelpModal from './HelpModal';
 import SmartTextContent from './SmartTextContent';
 import MessageActions from './MessageActions';
+import NativeCamera from '../NativeFeatures/NativeCamera';
+import NativeContactPicker from '../NativeFeatures/NativeContactPicker';
+import ContactManager from '../Contacts/ContactManager';
+import InternationalDialer from '../Voice/InternationalDialer';
+import DonationModal from '../Donation/DonationModal';
+import DonationPrompt from '../Donation/DonationPrompt';
 import messageService from '../../services/messageService';
+import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
+import globalVoiceCallService from '../../services/globalVoiceCallService';
+import GlobalUsers from '../Voice/GlobalUsers';
 import connectionService from '../../services/connectionService';
+import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
 import { feedbackService } from '../../services/feedbackService';
+import { contactService } from '../../services/contactService';
 import PropTypes from 'prop-types';
 
 // CSS imports
@@ -22,6 +33,7 @@ import './ProSidebar.css';
 import './ProHeader.css';
 import './ProChat.css';
 import './ResponsiveFix.css';
+import './EncryptionStyles.css';
 
 const ProChat = ({ 
   user = { id: 'user1', name: 'Current User', avatar: null },
@@ -40,8 +52,10 @@ const ProChat = ({
   
   // Enhanced input state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [mobileGlobalVoiceModal, setMobileGlobalVoiceModal] = useState(false);
   const [lightboxModal, setLightboxModal] = useState({ 
     open: false, 
     imageUrl: null, 
@@ -65,7 +79,27 @@ const ProChat = ({
 
   // GIF picker state
   const [showGifPicker, setShowGifPicker] = useState(false);
-  const [showMobileUploadMenu, setShowMobileUploadMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Native features state
+  const [showNativeCamera, setShowNativeCamera] = useState(false);
+  const [showContactPicker, setShowContactPicker] = useState(false);
+  const [nativeCameraMode, setNativeCameraMode] = useState('photo'); // 'photo' or 'video'
+
+  // Contact manager state
+  const [showContactManager, setShowContactManager] = useState(false);
+  
+  // International dialer state
+  const [showCallOptions, setShowCallOptions] = useState(false);
+  const [showInternationalDialer, setShowInternationalDialer] = useState(false);
+
+  // Donation modal state
+  const [showDonationModal, setShowDonationModal] = useState(false);
+
+  // Encryption state
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false);
+  const [encryptionStatus, setEncryptionStatus] = useState({ enabled: false });
+  const [defaultEncryption, setDefaultEncryption] = useState(true);
 
   // Upload progress state
   // eslint-disable-next-line no-unused-vars
@@ -107,8 +141,23 @@ const ProChat = ({
         setMessagesLoading(true);
         setMessagesError(null);
         
-        // Load messages from the message service
-        const messages = await messageService.getMessages({ limit: 50 });
+        // Initialize encryption service first
+        try {
+          const encryptionInit = await encryptedMessageService.initializeEncryption(user.id);
+          setEncryptionEnabled(encryptionInit);
+          
+          if (encryptionInit) {
+            const status = encryptedMessageService.getEncryptionStatus();
+            setEncryptionStatus(status);
+            console.log('🔒 Encryption initialized for ProChat');
+          }
+        } catch (encryptError) {
+          console.warn('⚠️ Encryption initialization failed:', encryptError);
+          setEncryptionEnabled(false);
+        }
+        
+        // Load messages using encrypted service
+        const messages = await encryptedMessageService.getMessages({ limit: 50 });
         
         if (Array.isArray(messages)) {
           setChatMessages(messages);
@@ -136,7 +185,7 @@ const ProChat = ({
     };
 
     loadMessages();
-  }, []);
+  }, [user.id]);
 
   // Auto-scroll to bottom function
   const scrollToBottom = useCallback(() => {
@@ -174,11 +223,17 @@ const ProChat = ({
       // Only auto-collapse on very small screens (like phone portrait)
       if (window.innerWidth <= 480) {
         setSidebarCollapsed(true);
+        // Close mobile global voice modal if screen gets smaller
+        setMobileGlobalVoiceModal(false);
       } else if (window.innerWidth > 768) {
-        // Auto-expand on larger screens
+        // Auto-expand on larger screens and close mobile modal
         setSidebarCollapsed(false);
+        setMobileGlobalVoiceModal(false);
       }
-      // For tablets (481-768px), maintain current state
+      // For tablets (481-768px), maintain current state but close mobile modal
+      if (window.innerWidth > 480) {
+        setMobileGlobalVoiceModal(false);
+      }
     };
 
     // Set initial state
@@ -211,6 +266,13 @@ const ProChat = ({
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
   }, []);
+
+  const handleMobileGlobalVoice = useCallback(() => {
+    setMobileGlobalVoiceModal(!mobileGlobalVoiceModal);
+    if (window.innerWidth <= 480) {
+      setSidebarCollapsed(true);
+    }
+  }, [mobileGlobalVoiceModal]);
 
   // Close sidebar when clicking outside on mobile
   const handleOverlayClick = useCallback(() => {
@@ -450,8 +512,382 @@ const ProChat = ({
   }, []);
 
   const handleMobileUploadMenu = useCallback(() => {
-    setShowMobileUploadMenu(true);
+    // Mobile upload menu removed for memory optimization
   }, []);
+
+  // Native Features Handlers
+  const handleOpenNativeCamera = useCallback((mode = 'photo') => {
+    setNativeCameraMode(mode);
+    setShowNativeCamera(true);
+    // Mobile upload menu removed for memory optimization
+  }, []);
+
+  const handleCloseNativeCamera = useCallback(() => {
+    setShowNativeCamera(false);
+  }, []);
+
+  const handleCameraCapture = useCallback(async (blob, type, metadata) => {
+    try {
+      // Create a file from the blob
+      const file = new File([blob], `${type}-${Date.now()}.${type === 'photo' ? 'jpg' : 'mp4'}`, {
+        type: blob.type
+      });
+
+      // Handle file upload (reuse existing file upload logic)
+      await handleFileChange({ target: { files: [file] } });
+      
+      // Close camera
+      setShowNativeCamera(false);
+      
+      // Add success message
+      handleSendMessage({
+        text: `📸 ${type === 'photo' ? 'Photo' : 'Video'} captured from camera`,
+        type: 'system',
+        metadata: metadata
+      });
+    } catch (error) {
+      console.error('Failed to handle camera capture:', error);
+      // Add error message
+      handleSendMessage({
+        text: '❌ Failed to upload captured media',
+        type: 'system'
+      });
+    }
+  }, []);
+
+  const handleOpenContactPicker = useCallback(() => {
+    setShowContactPicker(true);
+    // Mobile upload menu removed for memory optimization
+  }, []);
+
+  const handleCloseContactPicker = useCallback(() => {
+    setShowContactPicker(false);
+  }, []);
+
+  const handleContactSelect = useCallback((contacts) => {
+    try {
+      // Format contacts for sharing
+      const contactText = contacts.map(contact => {
+        const parts = [];
+        if (contact.name) parts.push(contact.name);
+        if (contact.phone) parts.push(`📱 ${contact.phone}`);
+        if (contact.email) parts.push(`📧 ${contact.email}`);
+        return parts.join('\n');
+      }).join('\n\n');
+
+      // Send contact information as message
+      handleSendMessage({
+        text: `👥 Shared Contact${contacts.length > 1 ? 's' : ''}:\n\n${contactText}`,
+        type: 'contact',
+        metadata: { contacts, shared: true }
+      });
+
+      // Close contact picker
+      setShowContactPicker(false);
+    } catch (error) {
+      console.error('Failed to share contacts:', error);
+      handleSendMessage({
+        text: '❌ Failed to share contacts',
+        type: 'system'
+      });
+    }
+  }, []);
+
+  // Handle avatar image loading errors
+  const handleAvatarError = useCallback(() => {
+    setAvatarError(true);
+  }, []);
+
+  // Global call state - must be declared before callbacks that use it
+  const [globalCall, setGlobalCall] = useState(null);
+
+  // Handle global voice call start
+  const handleStartGlobalCall = useCallback((call) => {
+    setGlobalCall(call);
+    setVoiceCallState({
+      active: true,
+      withUser: {
+        name: call.targetUser.name,
+        avatar: call.targetUser.avatar,
+        id: call.targetUser.id
+      },
+      minimized: false,
+      audioOnly: true,
+      callInstance: call
+    });
+
+    // Add global call message to chat
+    const callMessage = {
+      id: call.id,
+      text: `🌍 Global voice call ${call.type === 'outgoing' ? 'to' : 'from'} ${call.targetUser.name}`,
+      user: 'System',
+      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      type: 'global_voice_call',
+      callStatus: call.status,
+      isSystemMessage: true
+    };
+
+    setChatMessages(prev => [...prev, callMessage]);
+  }, []);
+
+  // Handle ending global voice call
+  const handleEndGlobalCall = useCallback(() => {
+    if (globalCall) {
+      globalVoiceCallService.endCall();
+      setGlobalCall(null);
+      setVoiceCallState(prev => ({ ...prev, active: false }));
+
+      // Add call ended message
+      const endMessage = {
+        id: `end_${Date.now()}`,
+        text: `📞 Global call ended`,
+        user: 'System',
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        type: 'system',
+        isSystemMessage: true
+      };
+
+      setChatMessages(prev => [...prev, endMessage]);
+    }
+  }, [globalCall]);
+
+  // Handle more menu toggle
+  const handleMoreMenuToggle = useCallback(() => {
+    setShowMoreMenu(prev => !prev);
+  }, []);
+
+  // Handle export chat
+  const handleExportChat = useCallback(() => {
+    const chatData = {
+      conversation: currentSelectedConversation?.name || 'Chat Export',
+      messages: chatMessages,
+      exportDate: new Date().toISOString(),
+      totalMessages: chatMessages.length
+    };
+    
+    const dataStr = JSON.stringify(chatData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `chat-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setShowMoreMenu(false);
+    
+    // Show success message
+    const exportMessage = {
+      id: `export_${Date.now()}`,
+      text: '📥 Chat exported successfully',
+      user: 'System',
+      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      type: 'system',
+      isSystemMessage: true
+    };
+    setChatMessages(prev => [...prev, exportMessage]);
+  }, [chatMessages, currentSelectedConversation]);
+
+  // Handle mute notifications
+  const handleMuteNotifications = useCallback(() => {
+    const currentlyMuted = localStorage.getItem('notificationsMuted') === 'true';
+    const newMutedState = !currentlyMuted;
+    
+    localStorage.setItem('notificationsMuted', newMutedState.toString());
+    
+    setShowMoreMenu(false);
+    
+    // Show status message
+    const muteMessage = {
+      id: `mute_${Date.now()}`,
+      text: `🔔 Notifications ${newMutedState ? 'muted' : 'unmuted'}`,
+      user: 'System',
+      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      type: 'system',
+      isSystemMessage: true
+    };
+    setChatMessages(prev => [...prev, muteMessage]);
+  }, []);
+
+  // Handle clear chat
+  const handleClearChat = useCallback(() => {
+    const confirmed = window.confirm('Are you sure you want to clear this chat? This action cannot be undone.');
+    if (confirmed) {
+      setChatMessages([]);
+      setShowMoreMenu(false);
+      
+      // Show clear message
+      const clearMessage = {
+        id: `clear_${Date.now()}`,
+        text: '🧹 Chat cleared',
+        user: 'System',
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        type: 'system',
+        isSystemMessage: true
+      };
+      setChatMessages([clearMessage]);
+    }
+  }, []);
+
+  // Handle contact manager
+  const handleOpenContactManager = useCallback(() => {
+    setShowContactManager(true);
+    setShowMoreMenu(false);
+  }, []);
+
+  // Handle contact selection for starting a chat
+  const handleContactToChat = useCallback(async (contact) => {
+    try {
+      // Create a new chat message to indicate starting chat with contact
+      const chatMessage = {
+        id: `contact_chat_${Date.now()}`,
+        text: `💬 Starting chat with ${contact.name}`,
+        user: 'System',
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        type: 'system',
+        isSystemMessage: true,
+        contactId: contact.id
+      };
+      
+      setChatMessages(prev => [...prev, chatMessage]);
+      
+      // Close contact manager
+      setShowContactManager(false);
+      
+      // Update contact analytics
+      await contactService.updateContactInteraction(contact.id, 'chat_started');
+      
+    } catch (error) {
+      console.error('Error starting chat with contact:', error);
+    }
+  }, []);
+
+  // Handle contact call
+  const handleContactCall = useCallback(async (contact) => {
+    try {
+      // Use the enhanced voice call service to initiate call
+      if (contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+        const primaryPhone = contact.phoneNumbers[0];
+        
+        // Create call message
+        const callMessage = {
+          id: `contact_call_${Date.now()}`,
+          text: `📞 Calling ${contact.name} at ${primaryPhone.number}`,
+          user: 'System',
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          type: 'system',
+          isSystemMessage: true,
+          contactId: contact.id
+        };
+        
+        setChatMessages(prev => [...prev, callMessage]);
+        
+        // Update contact analytics
+        await contactService.updateContactInteraction(contact.id, 'call_made');
+        
+        // Close contact manager
+        setShowContactManager(false);
+        
+      } else {
+        alert('No phone number available for this contact');
+      }
+    } catch (error) {
+      console.error('Error calling contact:', error);
+    }
+  }, []);
+
+  // Handle search in chat
+  const handleSearchInChat = useCallback(() => {
+    const searchTerm = prompt('Search in chat:');
+    if (searchTerm && searchTerm.trim()) {
+      const matchingMessages = chatMessages.filter(msg => 
+        msg.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        msg.user.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      
+      setShowMoreMenu(false);
+      
+      if (matchingMessages.length > 0) {
+        const searchMessage = {
+          id: `search_${Date.now()}`,
+          text: `🔍 Found ${matchingMessages.length} message(s) containing "${searchTerm}"`,
+          user: 'System',
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          type: 'system',
+          isSystemMessage: true,
+          searchResults: matchingMessages
+        };
+        setChatMessages(prev => [...prev, searchMessage]);
+      } else {
+        const noResultsMessage = {
+          id: `search_${Date.now()}`,
+          text: `🔍 No messages found containing "${searchTerm}"`,
+          user: 'System',
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          type: 'system',
+          isSystemMessage: true
+        };
+        setChatMessages(prev => [...prev, noResultsMessage]);
+      }
+    }
+  }, [chatMessages]);
+
+  // Handle print chat
+  const handlePrintChat = useCallback(() => {
+    const printContent = chatMessages.map(msg => 
+      `[${msg.timestamp}] ${msg.user}: ${msg.text}`
+    ).join('\n');
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Chat Print - ${currentSelectedConversation?.name || 'Chat'}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { border-bottom: 2px solid #ccc; margin-bottom: 20px; padding-bottom: 10px; }
+            .message { margin-bottom: 10px; padding: 8px; border-left: 3px solid #007bff; }
+            .timestamp { color: #666; font-size: 0.9em; }
+            .user { font-weight: bold; color: #333; }
+            .text { margin-top: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Chat: ${currentSelectedConversation?.name || 'Conversation'}</h1>
+            <p>Exported on: ${new Date().toLocaleString()}</p>
+            <p>Total Messages: ${chatMessages.length}</p>
+          </div>
+          <div class="messages">
+            ${chatMessages.map(msg => `
+              <div class="message">
+                <div class="timestamp">${msg.timestamp}</div>
+                <div class="user">${msg.user}</div>
+                <div class="text">${msg.text}</div>
+              </div>
+            `).join('')}
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+    
+    setShowMoreMenu(false);
+  }, [chatMessages, currentSelectedConversation]);
+
+  // Close more menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showMoreMenu && !event.target.closest('.header-menu')) {
+        setShowMoreMenu(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMoreMenu]);
 
   // Handle adding reactions to messages
   const handleReactionAdd = useCallback(async (messageId, emoji) => {
@@ -633,14 +1069,23 @@ const ProChat = ({
     if (!inputText.trim()) return;
     
     try {
-      // Send message via service with conversation context
+      // Send message via encrypted service with conversation context
       const messageData = {
         text: inputText.trim(),
         conversationId: selectedConversation,
         user: user?.name || 'User'
       };
       
-      const sentMessage = await messageService.sendMessage(messageData.text, messageData.user, messageData.conversationId);
+      // Get conversation participants for encryption
+      const conversationParticipants = currentSelectedConversation?.participants || [];
+      const recipientId = conversationParticipants.find(p => p !== user.id);
+      
+      // Send with encryption options
+      const sentMessage = await encryptedMessageService.sendMessage(messageData, {
+        encrypt: defaultEncryption && encryptionEnabled,
+        recipientId: recipientId,
+        conversationParticipants: conversationParticipants
+      });
       
       // Add to local state immediately for responsive UI
       const newMessage = {
@@ -649,7 +1094,9 @@ const ProChat = ({
         user: user,
         timestamp: sentMessage.timestamp || new Date().toISOString(),
         reactions: sentMessage.reactions || [],
-        conversationId: selectedConversation
+        conversationId: selectedConversation,
+        isEncrypted: sentMessage.isEncrypted || false,
+        encryptionStatus: sentMessage.encryptionStatus
       };
       
       setChatMessages(prev => [...prev, newMessage]);
@@ -685,7 +1132,7 @@ const ProChat = ({
       // Optionally show error message to user
       console.warn('Message sent offline, will sync when connection is restored');
     }
-  }, [inputText, user, selectedConversation, scrollToBottom]);
+  }, [inputText, user, selectedConversation, scrollToBottom, currentSelectedConversation, defaultEncryption, encryptionEnabled]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1018,6 +1465,21 @@ const ProChat = ({
     setVoiceCallState(prev => ({ ...prev, active: false }));
   }, []);
 
+  // Unified call handler for both international and app calls
+  const handleUnifiedCall = useCallback(() => {
+    setShowCallOptions(true);
+  }, []);
+
+  const handleInternationalCall = useCallback(() => {
+    setShowCallOptions(false);
+    setShowInternationalDialer(true);
+  }, []);
+
+  const handleAppCall = useCallback(async () => {
+    setShowCallOptions(false);
+    await handleStartVoiceCall();
+  }, [handleStartVoiceCall]);
+
   const handleToggleVoiceMinimize = useCallback(() => {
     setVoiceCallState(prev => ({ ...prev, minimized: !prev.minimized }));
   }, []);
@@ -1110,7 +1572,7 @@ const ProChat = ({
   }, []);
 
   return (
-    <div className="pro-layout">
+    <div className="pro-layout mobile-optimized smartphone-optimized">
       {/* Dynamic Animated Background */}
       <div className="dynamic-background">
         <div className="gradient-orb orb-1"></div>
@@ -1164,8 +1626,44 @@ const ProChat = ({
             data-tooltip={user?.role === 'admin' ? `${user?.name || 'Admin'} (Administrator)` : user?.name || 'User Profile'}
           >
             <img 
-              src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=4f46e5&color=fff&size=40`}
+              src={
+                avatarError ? 
+                  '/default-avatar.png' : 
+                  user?.avatar || 
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&size=80&bold=true&format=png`
+              }
               alt={user?.name || 'User'}
+              onError={(e) => {
+                // Multiple fallback handling
+                if (!avatarError) {
+                  console.log('Avatar load failed, trying fallback:', e.target.src);
+                  handleAvatarError();
+                  // If it's already trying ui-avatars, fallback to default
+                  if (e.target.src.includes('ui-avatars.com')) {
+                    e.target.src = '/default-avatar.png';
+                  }
+                } else {
+                  // Last resort - if even default fails, show a colored div
+                  e.target.style.display = 'none';
+                  const fallbackDiv = document.createElement('div');
+                  fallbackDiv.className = 'avatar-fallback';
+                  fallbackDiv.style.cssText = `
+                    width: 40px; 
+                    height: 40px; 
+                    border-radius: 50%; 
+                    background: linear-gradient(135deg, #4f46e5, #7c3aed); 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center; 
+                    color: white; 
+                    font-weight: bold;
+                    font-size: 16px;
+                  `;
+                  fallbackDiv.textContent = (user?.name || 'U').charAt(0).toUpperCase();
+                  e.target.parentNode.insertBefore(fallbackDiv, e.target);
+                }
+              }}
+              onLoad={() => setAvatarError(false)}
             />
             <div className="status-indicator online"></div>
             {user?.role === 'admin' && (
@@ -1288,6 +1786,14 @@ const ProChat = ({
               </div>
             ))}
           </div>
+
+          {/* Global Voice Calls */}
+          {!sidebarCollapsed && (
+            <GlobalUsers 
+              onStartCall={handleStartGlobalCall}
+              currentCall={globalCall}
+            />
+          )}
         </div>
 
         {/* Sidebar Footer */}
@@ -1387,13 +1893,10 @@ const ProChat = ({
           </div>
           
           <div className="header-actions">
-            <button className="action-btn video-call-btn" title="Start video call">
-              📹
-            </button>
             <button 
-              className="action-btn voice-call-btn" 
-              title={`Start voice call (${connectionStatus?.quality || 'checking'} connection)`}
-              onClick={handleStartVoiceCall}
+              className="action-btn unified-call-btn" 
+              title="📞 Make Calls - International phone calls & app-to-app voice calls"
+              onClick={handleUnifiedCall}
             >
               📞
               {connectionStatus && (
@@ -1405,6 +1908,16 @@ const ProChat = ({
                 </span>
               )}
             </button>
+            <button 
+              className="action-btn donation-btn" 
+              title="💝 Support Our Free App - Help us keep it free for everyone!"
+              onClick={() => setShowDonationModal(true)}
+            >
+              💝
+            </button>
+            <button className="action-btn video-call-btn" title="Start video call">
+              📹
+            </button>
             <button className="action-btn info-btn" title="Chat info">
               ℹ️
             </button>
@@ -1415,24 +1928,88 @@ const ProChat = ({
               🚪
             </button>
             <div className="header-menu">
-              <button className="action-btn menu-btn" title="More options">
+              <button 
+                className="action-btn menu-btn" 
+                title="More options"
+                onClick={handleMoreMenuToggle}
+              >
                 ⋮
               </button>
-              <div className="dropdown-menu">
-                <button className="dropdown-item" onClick={handleQuickSettings}>Settings</button>
-                <button className="dropdown-item">Export Chat</button>
-                <button className="dropdown-item">Mute Notifications</button>
-                <hr className="dropdown-divider" />
-                <button onClick={onLogout} className="dropdown-item logout-item">
-                  Logout
-                </button>
-              </div>
+              {showMoreMenu && (
+                <div className="dropdown-menu active">
+                  <div className="dropdown-header">
+                    <span>More Options</span>
+                    <button 
+                      className="close-dropdown" 
+                      onClick={() => setShowMoreMenu(false)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  
+                  <button className="dropdown-item" onClick={handleSearchInChat}>
+                    <span className="dropdown-icon">🔍</span>
+                    Search in Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleOpenContactManager}>
+                    <span className="dropdown-icon">👥</span>
+                    Contacts
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleExportChat}>
+                    <span className="dropdown-icon">📥</span>
+                    Export Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handlePrintChat}>
+                    <span className="dropdown-icon">🖨️</span>
+                    Print Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleMuteNotifications}>
+                    <span className="dropdown-icon">
+                      {localStorage.getItem('notificationsMuted') === 'true' ? '🔔' : '🔕'}
+                    </span>
+                    {localStorage.getItem('notificationsMuted') === 'true' ? 'Unmute' : 'Mute'} Notifications
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleClearChat}>
+                    <span className="dropdown-icon">🗑️</span>
+                    Clear Chat
+                  </button>
+                  
+                  <hr className="dropdown-divider" />
+                  
+                  <button className="dropdown-item" onClick={handleQuickSettings}>
+                    <span className="dropdown-icon">⚙️</span>
+                    Settings
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={() => setHelpModal(true)}>
+                    <span className="dropdown-icon">❓</span>
+                    Help & Support
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={() => setFeedbackModal(true)}>
+                    <span className="dropdown-icon">💬</span>
+                    Send Feedback
+                  </button>
+                  
+                  <hr className="dropdown-divider" />
+                  
+                  <button onClick={onLogout} className="dropdown-item logout-item">
+                    <span className="dropdown-icon">🚪</span>
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="pro-message-list" ref={messagesContainerRef}>
+        <div className="pro-message-list mobile-optimized pull-to-refresh" ref={messagesContainerRef}>
           {messagesLoading && (
             <div className="message-loading-indicator">
               <div className="loading-spinner"></div>
@@ -1480,6 +2057,17 @@ const ProChat = ({
               <div className="message-content" onClick={() => handleMessageClick(message.id)}>
                 <div className="message-header">
                   <span className="user-name">{message.user.name}</span>
+                  {/* Encryption Status Indicator */}
+                  {message.isEncrypted && (
+                    <span 
+                      className={`encryption-indicator ${message.encryptionStatus}`} 
+                      title={`Message is encrypted (${message.encryptionStatus})`}
+                    >
+                      {message.encryptionStatus === 'decrypted' ? '🔓' : 
+                       message.encryptionStatus === 'failed' ? '⚠️' : 
+                       message.encryptionStatus === 'sent' ? '🔒' : '🔐'}
+                    </span>
+                  )}
                 </div>
                 
                 {/* Enhanced Message Text with Smart Content */}
@@ -1742,8 +2330,8 @@ const ProChat = ({
         </div>
 
         {/* Enhanced Input Area with Voice and File Upload */}
-        <div className="pro-chat-input-container enhanced">
-          <div className="input-wrapper enhanced">
+        <div className="pro-chat-input-container enhanced mobile-input-bar keyboard-avoiding">
+          <div className="input-wrapper enhanced touch-target">
             {/* Voice Recording Interface */}
             {isRecording && (
               <div className="recording-interface">
@@ -1816,11 +2404,11 @@ const ProChat = ({
                   onChange={handleFileChange}
                 />
 
-                {/* Input Actions - Left Side */}
-                <div className="input-actions left">
+                {/* Top Row - Action Icons */}
+                <div className="input-actions-row">
                   {/* File Attachment Button */}
                   <button 
-                    className="input-btn attachment-btn"
+                    className="input-btn attachment-btn mobile-action-button touch-target touch-ripple haptic-light"
                     onClick={isMobileDevice() ? handleMobileUploadMenu : () => fileInputRef.current?.click()}
                     type="button"
                     title={isMobileDevice() ? "Upload menu" : "Attach files"}
@@ -1830,7 +2418,7 @@ const ProChat = ({
 
                   {/* GIF Picker Button */}
                   <button 
-                    className="input-btn gif-btn"
+                    className="input-btn gif-btn mobile-action-button touch-target touch-ripple haptic-light"
                     onClick={handleShowGifPicker}
                     type="button"
                     title="Choose GIF"
@@ -1850,7 +2438,7 @@ const ProChat = ({
 
                   {/* Voice Input Button */}
                   <button 
-                    className="input-btn voice-btn"
+                    className="input-btn voice-btn mobile-action-button touch-target touch-ripple haptic-light"
                     onClick={startRecording}
                     type="button"
                     title="Voice message"
@@ -1858,46 +2446,97 @@ const ProChat = ({
                     🎤
                   </button>
 
+                  {/* Mobile Global Voice Calls Button (when sidebar collapsed) */}
+                  {sidebarCollapsed && window.innerWidth <= 768 && (
+                    <button 
+                      className="input-btn global-voice-btn mobile-action-button touch-target touch-ripple haptic-light"
+                      onClick={handleMobileGlobalVoice}
+                      type="button"
+                      title="Global Voice Calls"
+                    >
+                      🌍
+                    </button>
+                  )}
+
+                  {/* Native Camera Button (Mobile) */}
+                  {nativeDeviceFeaturesService.isSupported('camera') && (
+                    <button 
+                      className="input-btn camera-btn mobile-action-button touch-target touch-ripple haptic-light"
+                      onClick={() => handleOpenNativeCamera('photo')}
+                      type="button"
+                      title="Take photo/video"
+                    >
+                      📷
+                    </button>
+                  )}
+
+                  {/* Contact Picker Button (Mobile) */}
+                  {nativeDeviceFeaturesService.isSupported('contacts') && (
+                    <button 
+                      className="input-btn contact-btn mobile-action-button touch-target touch-ripple haptic-light"
+                      onClick={handleOpenContactPicker}
+                      type="button"
+                      title="Share contacts"
+                    >
+                      👥
+                    </button>
+                  )}
+
                   {/* Emoji Button */}
                   <button 
-                    className="input-btn emoji-btn"
+                    className="input-btn emoji-btn mobile-action-button touch-target touch-ripple haptic-light"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     type="button"
                     title="Add emoji"
                   >
                     😊
                   </button>
+
+                  {/* Encryption Toggle */}
+                  {encryptionEnabled && (
+                    <button 
+                      className={`input-btn encryption-btn mobile-action-button touch-target touch-ripple haptic-light ${defaultEncryption ? 'active' : ''}`}
+                      onClick={() => setDefaultEncryption(!defaultEncryption)}
+                      type="button"
+                      title={defaultEncryption ? "Encryption enabled" : "Encryption disabled"}
+                    >
+                      {defaultEncryption ? '🔒' : '🔓'}
+                    </button>
+                  )}
                 </div>
 
-                {/* Text Input */}
-                <textarea
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
-                  className="message-input enhanced"
-                  rows="1"
-                  autoComplete="off"
-                  autoCorrect="on"
-                  autoCapitalize="sentences"
-                  spellCheck="true"
-                  inputMode="text"
-                  aria-label="Type your message"
-                  data-testid="message-input"
-                />
+                {/* Bottom Row - Message Input and Send */}
+                <div className="message-input-row">
+                  {/* Text Input */}
+                  <textarea
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message..."
+                    className="message-input enhanced mobile-message-input touch-target"
+                    rows="1"
+                    autoComplete="off"
+                    autoCorrect="on"
+                    autoCapitalize="sentences"
+                    spellCheck="true"
+                    inputMode="text"
+                    aria-label="Type your message"
+                    data-testid="message-input"
+                  />
 
-                {/* Send Button */}
-                <button 
-                  onClick={handleSendMessage}
-                  disabled={!inputText.trim()}
-                  className="send-button enhanced"
-                  type="button"
-                  aria-label="Send message"
-                  title="Send message"
-                  data-testid="send-button"
-                >
-                  <span className="send-icon" aria-hidden="true">➤</span>
-                </button>
+                  {/* Send Button */}
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={!inputText.trim()}
+                    className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light"
+                    type="button"
+                    aria-label="Send message"
+                    title="Send message"
+                    data-testid="send-button"
+                  >
+                    <span className="send-icon" aria-hidden="true">➤</span>
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -2250,6 +2889,132 @@ const ProChat = ({
           </div>
         </div>
       )}
+
+      {/* Native Camera Component */}
+      {showNativeCamera && (
+        <NativeCamera
+          mode={nativeCameraMode}
+          onCapture={handleCameraCapture}
+          onClose={handleCloseNativeCamera}
+        />
+      )}
+
+      {/* Native Contact Picker Component */}
+      {showContactPicker && (
+        <NativeContactPicker
+          onContactSelect={handleContactSelect}
+          onClose={handleCloseContactPicker}
+        />
+      )}
+
+      {/* Contact Manager Component */}
+      {showContactManager && (
+        <ContactManager
+          isOpen={showContactManager}
+          onClose={() => setShowContactManager(false)}
+          onStartChat={handleContactToChat}
+          onStartCall={handleContactCall}
+          currentUser={user}
+          darkMode={darkMode}
+        />
+      )}
+
+      {/* Mobile Global Voice Calls Modal */}
+      {mobileGlobalVoiceModal && (
+        <div className="mobile-global-voice-modal-overlay" onClick={() => setMobileGlobalVoiceModal(false)}>
+          <div className="mobile-global-voice-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3>🌍 Global Voice Calls</h3>
+              <button 
+                className="mobile-modal-close" 
+                onClick={() => setMobileGlobalVoiceModal(false)}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mobile-modal-content">
+              <GlobalUsers 
+                onStartCall={(call) => {
+                  handleStartGlobalCall(call);
+                  setMobileGlobalVoiceModal(false);
+                }}
+                currentCall={globalCall}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Call Options Modal */}
+      {showCallOptions && (
+        <div className="modal-overlay" onClick={() => setShowCallOptions(false)}>
+          <div className="modal-content call-options-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Choose Call Type</h3>
+              <button className="close-btn" onClick={() => setShowCallOptions(false)}>×</button>
+            </div>
+            <div className="call-options-content">
+              <button 
+                className="call-option-btn international-option"
+                onClick={handleInternationalCall}
+              >
+                <span className="call-option-icon">🌍</span>
+                <div className="call-option-info">
+                  <h4>International Phone Call</h4>
+                  <p>Call any phone number worldwide - completely FREE!</p>
+                </div>
+              </button>
+              <button 
+                className="call-option-btn app-call-option"
+                onClick={handleAppCall}
+              >
+                <span className="call-option-icon">💬</span>
+                <div className="call-option-info">
+                  <h4>App-to-App Voice Call</h4>
+                  <p>High-quality voice call with other Quibish users</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* International Dialer Modal */}
+      {showInternationalDialer && (
+        <InternationalDialer
+          isOpen={showInternationalDialer}
+          onClose={() => setShowInternationalDialer(false)}
+          darkMode={darkMode}
+        />
+      )}
+
+      {/* Donation Modal */}
+      {showDonationModal && (
+        <DonationModal
+          isOpen={showDonationModal}
+          onClose={() => setShowDonationModal(false)}
+          darkMode={darkMode}
+          userStats={{
+            callsMade: globalCall ? 1 : 0,
+            messagesSent: currentConversation?.messages?.length || 0,
+            daysUsed: 1
+          }}
+        />
+      )}
+
+      {/* Donation Prompt - Non-intrusive encouragement */}
+      <DonationPrompt
+        userStats={{
+          callsMade: globalCall ? 1 : 0,
+          messagesSent: currentConversation?.messages?.length || 0,
+          daysUsed: 1
+        }}
+        darkMode={darkMode}
+        onOpenDonation={() => setShowDonationModal(true)}
+        position="bottom-right"
+        autoShow={true}
+      />
     </div>
   );
 };

@@ -6,6 +6,8 @@ import PrivacySettings from './PrivacySettings';
 import ProfileAnalytics from './ProfileAnalytics';
 import EnhancedMediaGallery from './EnhancedMediaGallery';
 import AvatarUpload from './AvatarUpload';
+import ContactModal from '../Contacts/ContactModal';
+import EncryptionSettings from '../Encryption/EncryptionSettings';
 
 const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -17,6 +19,10 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contacts, setContacts] = useState([]);
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
 
   // Check if this is the current user's profile
   const getCurrentUserId = () => {
@@ -166,6 +172,25 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
     } catch (error) {
       console.error('Failed to update avatar:', error);
     }
+  };
+
+  // Contact management functions
+  const handleContactSave = (contactData) => {
+    // In a real app, this would save to backend
+    if (selectedContact) {
+      // Update existing contact
+      setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, ...contactData } : c));
+    } else {
+      // Add new contact
+      const newContact = {
+        ...contactData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      setContacts(prev => [...prev, newContact]);
+    }
+    setShowContactModal(false);
+    setSelectedContact(null);
   };
 
   const getFileIcon = (fileType) => {
@@ -450,6 +475,25 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
               <span className="tab-icon">📚</span>
               <span className="tab-label">History</span>
             </button>
+            <button 
+              className={`tab-btn ${activeTab === 'contacts' ? 'active' : ''}`}
+              onClick={() => {
+                setSelectedContact(null);
+                setShowContactModal(true);
+              }}
+            >
+              <span className="tab-icon">👥</span>
+              <span className="tab-label">Contacts</span>
+            </button>
+            {isOwnProfile && (
+              <button 
+                className={`tab-btn ${activeTab === 'encryption' ? 'active' : ''}`}
+                onClick={() => setShowEncryptionSettings(true)}
+              >
+                <span className="tab-icon">🔒</span>
+                <span className="tab-label">Security</span>
+              </button>
+            )}
             <div className="tab-indicator"></div>
           </div>
         </div>
@@ -525,6 +569,28 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
         <ProfileAnalytics
           userProfile={userProfile}
           onClose={() => setShowAnalyticsModal(false)}
+        />
+      )}
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <ContactModal
+          contact={selectedContact}
+          allContacts={contacts}
+          onSave={handleContactSave}
+          onClose={() => {
+            setShowContactModal(false);
+            setSelectedContact(null);
+          }}
+        />
+      )}
+
+      {/* Encryption Settings Modal */}
+      {showEncryptionSettings && (
+        <EncryptionSettings
+          isOpen={showEncryptionSettings}
+          currentUser={{ id: userId, username: username }}
+          onClose={() => setShowEncryptionSettings(false)}
         />
       )}
     </div>
