@@ -15,7 +15,7 @@ const Login = ({ onLogin, switchToRegister }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formTouched, setFormTouched] = useState(false);
-  const [demoMode, setDemoMode] = useState(false);
+
   const [serverStatus, setServerStatus] = useState('checking');
   
   // 2FA specific state
@@ -37,42 +37,11 @@ const Login = ({ onLogin, switchToRegister }) => {
       
       if (!isConnected) {
         console.log('API server appears to be offline');
-        setError('🌐 No backend server detected. The app is running in demo mode - you can still log in and use all features!');
+        setError('🌐 Unable to connect to server. Please check your connection and try again.');
         setServerStatus('offline');
-        setDemoMode(true);
       } else {
         console.log('API server is online');
         setServerStatus('online');
-        
-        // Auto-login with demo credentials for development
-        console.log('🔐 Auto-logging in with demo credentials...');
-        setUsername('demo');
-        setPassword('demo');
-        setRememberMe(true);
-        
-        // Trigger automatic login after form fields are set
-        setTimeout(async () => {
-          try {
-            setLoading(true);
-            setError(null);
-            
-            const response = await authService.login('demo', 'demo');
-            
-            if (response.success) {
-              console.log('✅ Auto-login successful');
-              login(response.user, response.token, true);
-              if (onLogin) onLogin();
-            } else {
-              console.log('❌ Auto-login failed:', response.error);
-              setError('Auto-login failed. Please login manually.');
-            }
-          } catch (error) {
-            console.error('❌ Auto-login error:', error);
-            setError('Auto-login failed. Please login manually.');
-          } finally {
-            setLoading(false);
-          }
-        }, 500);
       }
     };
     
@@ -93,47 +62,15 @@ const Login = ({ onLogin, switchToRegister }) => {
       return false;
     }
     
-    // Allow demo credentials to bypass length requirement
-    const isDemoCredential = ['demo', 'admin', 'password'].includes(password);
-    if (!isDemoCredential && password.length < 6) {
-      setError('Password must be at least 6 characters (or use demo credentials)');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
       return false;
     }
     
     return true;
   };
 
-  // Handle demo mode login
-  // eslint-disable-next-line no-unused-vars
-  const handleDemoLogin = () => {
-    console.log('Using demo mode login');
-    
-    // Find a matching demo user based on username and password
-    const demoUsers = [
-      { username: 'demo', password: 'demo', email: 'demo@quibish.com' },
-      { username: 'john', password: 'password', email: 'john@example.com' },
-      { username: 'jane', password: 'password', email: 'jane@example.com' },
-      { username: 'admin', password: 'admin', email: 'admin@quibish.com' },
-      { username: 'alice', password: 'password123', email: 'alice@example.com' },
-      { username: 'bob', password: 'password456', email: 'bob@example.com' }
-    ];
-    
-    const demoUser = demoUsers.find(u => 
-      (u.username === username || u.email === username) && u.password === password
-    );
-    
-    if (demoUser) {
-      const userData = { 
-        username: demoUser.username, 
-        email: demoUser.email 
-      };
-      
-      login(userData, 'demo-token-local', rememberMe); // Use AuthContext login
-      onLogin(userData, 'demo-token-local');
-    } else {
-      setError('💡 Try these demo credentials: demo/demo, john/password, jane/password, admin/admin, alice/password123, bob/password456, or any username/password combination!');
-    }
-  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -149,39 +86,7 @@ const Login = ({ onLogin, switchToRegister }) => {
     try {
       console.log('Login Component - Attempting login with:', { username });
       
-      // If in demo mode, handle login directly
-      if (demoMode) {
-        console.log('Demo mode active, using offline authentication');
-        
-        // Find a matching demo user
-        const demoUsers = [
-          { username: 'demo', password: 'demo', email: 'demo@quibish.com', name: 'Demo User' },
-          { username: 'john', password: 'password', email: 'john@example.com', name: 'John Doe' },
-          { username: 'jane', password: 'password', email: 'jane@example.com', name: 'Jane Smith' },
-          { username: 'admin', password: 'admin', email: 'admin@quibish.com', name: 'Admin User' },
-          { username: 'alice', password: 'password123', email: 'alice@example.com', name: 'Alice Cooper' },
-          { username: 'bob', password: 'password456', email: 'bob@example.com', name: 'Bob Wilson' }
-        ];
-        
-        const demoUser = demoUsers.find(u => 
-          (u.username === username || u.email === username) && u.password === password
-        );
-        
-        if (demoUser) {
-          const userData = { 
-            id: Date.now(),
-            username: demoUser.username, 
-            email: demoUser.email,
-            name: demoUser.name
-          };
-          
-          login(userData, 'demo-token-local', rememberMe); // Use AuthContext login
-          onLogin(userData, 'demo-token-local');
-          return;
-        } else {
-          throw new Error('Invalid demo credentials');
-        }
-      }
+
       
       // Call the auth service (it will handle offline mode automatically)
       const data = await authService.login(username, password);
@@ -247,7 +152,7 @@ const Login = ({ onLogin, switchToRegister }) => {
         // Let's check API connection and provide more helpful message
         checkApiConnection().then(isConnected => {
           if (!isConnected) {
-            setError('Server appears to be offline. Please try again later or use demo mode.');
+            setError('Server appears to be offline. Please try again later.');
           }
         });
       } else {
@@ -324,7 +229,7 @@ const Login = ({ onLogin, switchToRegister }) => {
           <div className={`server-status ${serverStatus}`}>
             <div className="status-indicator"></div>
             <div className="status-text">
-              {serverStatus === 'online' ? 'Server Online' : 'Server Offline - Demo Mode'}
+              {serverStatus === 'online' ? 'Server Online' : 'Server Offline'}
             </div>
           </div>
         )}
@@ -431,67 +336,9 @@ const Login = ({ onLogin, switchToRegister }) => {
           </button>
         </div>
         
-        <div className="demo-mode-switch">
-          <label className="checkbox-container">
-            <input
-              type="checkbox"
-              checked={demoMode}
-              onChange={e => setDemoMode(e.target.checked)}
-            />
-            <span className="checkmark"></span>
-            Use Demo Mode {demoMode && "(Server connection will be ignored)"}
-          </label>
-        </div>
+
         
-        <div className="demo-accounts">
-          <p className="demo-title">Quick Login with Demo Accounts</p>
-          <div className="demo-cards">
-            <div 
-              className="demo-card" 
-              onClick={() => {
-                setUsername('demo');
-                setPassword('demo');
-                setError(null);
-              }}
-            >
-              <div className="demo-avatar">D</div>
-              <div className="demo-info">
-                <div className="demo-name">Demo</div>
-                <div className="demo-creds">demo / demo</div>
-              </div>
-            </div>
-            
-            <div 
-              className="demo-card" 
-              onClick={() => {
-                setUsername('alice');
-                setPassword('password123');
-                setError(null);
-              }}
-            >
-              <div className="demo-avatar">A</div>
-              <div className="demo-info">
-                <div className="demo-name">Alice</div>
-                <div className="demo-creds">alice / password123</div>
-              </div>
-            </div>
-            
-            <div 
-              className="demo-card" 
-              onClick={() => {
-                setUsername('bob');
-                setPassword('password456');
-                setError(null);
-              }}
-            >
-              <div className="demo-avatar">B</div>
-              <div className="demo-info">
-                <div className="demo-name">Bob</div>
-                <div className="demo-creds">bob / password456</div>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
       
       {/* Two-Factor Authentication Modal */}

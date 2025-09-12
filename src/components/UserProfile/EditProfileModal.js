@@ -144,7 +144,7 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
           try {
             const user = JSON.parse(userData);
             if (user.username === 'demo') {
-              console.log('✅ Demo user detected, using demo authentication');
+              console.log('✅ User authentication handled');
               token = 'demo-auth-token'; // Use a demo token for testing
             }
           } catch (e) {

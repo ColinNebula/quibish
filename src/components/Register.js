@@ -89,18 +89,8 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
       email: email
     };
     
-    // Store new user in local storage for demo mode
-    const demoUsers = JSON.parse(localStorage.getItem('demoUsers') || '[]');
-    demoUsers.push({
-      username: username,
-      email: email,
-      password: password,
-      id: userData.id
-    });
-    localStorage.setItem('demoUsers', JSON.stringify(demoUsers));
-    
-    // Create a simulated token
-    const token = 'demo-token-' + Date.now().toString().slice(-6);
+    // Create a simulated token for offline mode
+    const token = 'offline-token-' + Date.now().toString().slice(-6);
     
     // Save session and notify parent
     authService.saveUserSession(userData, token, true);

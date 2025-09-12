@@ -84,23 +84,6 @@ class GlobalVoiceCallService {
   setupLocalFallback() {
     this.isConnected = false;
     console.log('Using local fallback mode for voice calls');
-    
-    // Simulate some online users for demonstration
-    this.onlineUsers.set('demo-user-1', {
-      id: 'demo-user-1',
-      name: 'Demo User 1',
-      avatar: 'https://ui-avatars.com/api/?name=Demo+User+1&background=4f46e5&color=fff',
-      status: 'online',
-      location: 'Virtual Network'
-    });
-
-    this.onlineUsers.set('demo-user-2', {
-      id: 'demo-user-2',
-      name: 'Demo User 2',
-      avatar: 'https://ui-avatars.com/api/?name=Demo+User+2&background=7c3aed&color=fff',
-      status: 'online',
-      location: 'Global Network'
-    });
   }
 
   /**

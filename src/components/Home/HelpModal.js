@@ -10,7 +10,7 @@ const helpSections = [
     content: [
       {
         question: 'How do I start using Quibish?',
-        answer: 'Welcome to Quibish! To get started, simply log in with your credentials. If you\'re new, you can create an account or use the demo account (username: demo, password: demo).',
+        answer: 'Welcome to Quibish! To get started, simply log in with your credentials. If you\'re new, you can create an account by clicking the Sign Up button.',
         tags: ['login', 'account', 'demo']
       },
       {

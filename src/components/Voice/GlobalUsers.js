@@ -116,7 +116,7 @@ const GlobalUsers = ({ onStartCall, currentCall }) => {
                 ) : (
                   <div className="local-mode-message">
                     <p>🔧 Running in local mode</p>
-                    <p>Demo users shown for testing</p>
+                    <p>No users currently online</p>
                     <small>Backend signaling server not available</small>
                   </div>
                 )}
@@ -171,7 +171,7 @@ const GlobalUsers = ({ onStartCall, currentCall }) => {
               <small>
                 {connectionStats.isConnected 
                   ? 'Connected to global network' 
-                  : 'Local mode - demo users only'
+                  : 'Local mode - no users online'
                 }
               </small>
             </div>
