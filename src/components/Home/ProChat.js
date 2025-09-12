@@ -12,6 +12,7 @@ import NativeCamera from '../NativeFeatures/NativeCamera';
 import NativeContactPicker from '../NativeFeatures/NativeContactPicker';
 import ContactManager from '../Contacts/ContactManager';
 import messageService from '../../services/messageService';
+import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import globalVoiceCallService from '../../services/globalVoiceCallService';
 import GlobalUsers from '../Voice/GlobalUsers';
@@ -29,6 +30,7 @@ import './ProSidebar.css';
 import './ProHeader.css';
 import './ProChat.css';
 import './ResponsiveFix.css';
+import './EncryptionStyles.css';
 
 const ProChat = ({ 
   user = { id: 'user1', name: 'Current User', avatar: null },
@@ -50,6 +52,7 @@ const ProChat = ({
   const [avatarError, setAvatarError] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [mobileGlobalVoiceModal, setMobileGlobalVoiceModal] = useState(false);
   const [lightboxModal, setLightboxModal] = useState({ 
     open: false, 
     imageUrl: null, 
@@ -82,6 +85,11 @@ const ProChat = ({
 
   // Contact manager state
   const [showContactManager, setShowContactManager] = useState(false);
+
+  // Encryption state
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false);
+  const [encryptionStatus, setEncryptionStatus] = useState({ enabled: false });
+  const [defaultEncryption, setDefaultEncryption] = useState(true);
 
   // Upload progress state
   // eslint-disable-next-line no-unused-vars
@@ -123,8 +131,23 @@ const ProChat = ({
         setMessagesLoading(true);
         setMessagesError(null);
         
-        // Load messages from the message service
-        const messages = await messageService.getMessages({ limit: 50 });
+        // Initialize encryption service first
+        try {
+          const encryptionInit = await encryptedMessageService.initializeEncryption(user.id);
+          setEncryptionEnabled(encryptionInit);
+          
+          if (encryptionInit) {
+            const status = encryptedMessageService.getEncryptionStatus();
+            setEncryptionStatus(status);
+            console.log('🔒 Encryption initialized for ProChat');
+          }
+        } catch (encryptError) {
+          console.warn('⚠️ Encryption initialization failed:', encryptError);
+          setEncryptionEnabled(false);
+        }
+        
+        // Load messages using encrypted service
+        const messages = await encryptedMessageService.getMessages({ limit: 50 });
         
         if (Array.isArray(messages)) {
           setChatMessages(messages);
@@ -152,7 +175,7 @@ const ProChat = ({
     };
 
     loadMessages();
-  }, []);
+  }, [user.id]);
 
   // Auto-scroll to bottom function
   const scrollToBottom = useCallback(() => {
@@ -190,11 +213,17 @@ const ProChat = ({
       // Only auto-collapse on very small screens (like phone portrait)
       if (window.innerWidth <= 480) {
         setSidebarCollapsed(true);
+        // Close mobile global voice modal if screen gets smaller
+        setMobileGlobalVoiceModal(false);
       } else if (window.innerWidth > 768) {
-        // Auto-expand on larger screens
+        // Auto-expand on larger screens and close mobile modal
         setSidebarCollapsed(false);
+        setMobileGlobalVoiceModal(false);
       }
-      // For tablets (481-768px), maintain current state
+      // For tablets (481-768px), maintain current state but close mobile modal
+      if (window.innerWidth > 480) {
+        setMobileGlobalVoiceModal(false);
+      }
     };
 
     // Set initial state
@@ -227,6 +256,13 @@ const ProChat = ({
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
   }, []);
+
+  const handleMobileGlobalVoice = useCallback(() => {
+    setMobileGlobalVoiceModal(!mobileGlobalVoiceModal);
+    if (window.innerWidth <= 480) {
+      setSidebarCollapsed(true);
+    }
+  }, [mobileGlobalVoiceModal]);
 
   // Close sidebar when clicking outside on mobile
   const handleOverlayClick = useCallback(() => {
@@ -1023,14 +1059,23 @@ const ProChat = ({
     if (!inputText.trim()) return;
     
     try {
-      // Send message via service with conversation context
+      // Send message via encrypted service with conversation context
       const messageData = {
         text: inputText.trim(),
         conversationId: selectedConversation,
         user: user?.name || 'User'
       };
       
-      const sentMessage = await messageService.sendMessage(messageData.text, messageData.user, messageData.conversationId);
+      // Get conversation participants for encryption
+      const conversationParticipants = currentSelectedConversation?.participants || [];
+      const recipientId = conversationParticipants.find(p => p !== user.id);
+      
+      // Send with encryption options
+      const sentMessage = await encryptedMessageService.sendMessage(messageData, {
+        encrypt: defaultEncryption && encryptionEnabled,
+        recipientId: recipientId,
+        conversationParticipants: conversationParticipants
+      });
       
       // Add to local state immediately for responsive UI
       const newMessage = {
@@ -1039,7 +1084,9 @@ const ProChat = ({
         user: user,
         timestamp: sentMessage.timestamp || new Date().toISOString(),
         reactions: sentMessage.reactions || [],
-        conversationId: selectedConversation
+        conversationId: selectedConversation,
+        isEncrypted: sentMessage.isEncrypted || false,
+        encryptionStatus: sentMessage.encryptionStatus
       };
       
       setChatMessages(prev => [...prev, newMessage]);
@@ -1075,7 +1122,7 @@ const ProChat = ({
       // Optionally show error message to user
       console.warn('Message sent offline, will sync when connection is restored');
     }
-  }, [inputText, user, selectedConversation, scrollToBottom]);
+  }, [inputText, user, selectedConversation, scrollToBottom, currentSelectedConversation, defaultEncryption, encryptionEnabled]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1978,6 +2025,17 @@ const ProChat = ({
               <div className="message-content" onClick={() => handleMessageClick(message.id)}>
                 <div className="message-header">
                   <span className="user-name">{message.user.name}</span>
+                  {/* Encryption Status Indicator */}
+                  {message.isEncrypted && (
+                    <span 
+                      className={`encryption-indicator ${message.encryptionStatus}`} 
+                      title={`Message is encrypted (${message.encryptionStatus})`}
+                    >
+                      {message.encryptionStatus === 'decrypted' ? '🔓' : 
+                       message.encryptionStatus === 'failed' ? '⚠️' : 
+                       message.encryptionStatus === 'sent' ? '🔒' : '🔐'}
+                    </span>
+                  )}
                 </div>
                 
                 {/* Enhanced Message Text with Smart Content */}
@@ -2314,8 +2372,8 @@ const ProChat = ({
                   onChange={handleFileChange}
                 />
 
-                {/* Input Actions - Left Side */}
-                <div className="input-actions left">
+                {/* Top Row - Action Icons */}
+                <div className="input-actions-row">
                   {/* File Attachment Button */}
                   <button 
                     className="input-btn attachment-btn mobile-action-button touch-target touch-ripple haptic-light"
@@ -2356,6 +2414,18 @@ const ProChat = ({
                     🎤
                   </button>
 
+                  {/* Mobile Global Voice Calls Button (when sidebar collapsed) */}
+                  {sidebarCollapsed && window.innerWidth <= 768 && (
+                    <button 
+                      className="input-btn global-voice-btn mobile-action-button touch-target touch-ripple haptic-light"
+                      onClick={handleMobileGlobalVoice}
+                      type="button"
+                      title="Global Voice Calls"
+                    >
+                      🌍
+                    </button>
+                  )}
+
                   {/* Native Camera Button (Mobile) */}
                   {nativeDeviceFeaturesService.isSupported('camera') && (
                     <button 
@@ -2389,37 +2459,52 @@ const ProChat = ({
                   >
                     😊
                   </button>
+
+                  {/* Encryption Toggle */}
+                  {encryptionEnabled && (
+                    <button 
+                      className={`input-btn encryption-btn mobile-action-button touch-target touch-ripple haptic-light ${defaultEncryption ? 'active' : ''}`}
+                      onClick={() => setDefaultEncryption(!defaultEncryption)}
+                      type="button"
+                      title={defaultEncryption ? "Encryption enabled" : "Encryption disabled"}
+                    >
+                      {defaultEncryption ? '🔒' : '🔓'}
+                    </button>
+                  )}
                 </div>
 
-                {/* Text Input */}
-                <textarea
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
-                  className="message-input enhanced mobile-message-input touch-target"
-                  rows="1"
-                  autoComplete="off"
-                  autoCorrect="on"
-                  autoCapitalize="sentences"
-                  spellCheck="true"
-                  inputMode="text"
-                  aria-label="Type your message"
-                  data-testid="message-input"
-                />
+                {/* Bottom Row - Message Input and Send */}
+                <div className="message-input-row">
+                  {/* Text Input */}
+                  <textarea
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message..."
+                    className="message-input enhanced mobile-message-input touch-target"
+                    rows="1"
+                    autoComplete="off"
+                    autoCorrect="on"
+                    autoCapitalize="sentences"
+                    spellCheck="true"
+                    inputMode="text"
+                    aria-label="Type your message"
+                    data-testid="message-input"
+                  />
 
-                {/* Send Button */}
-                <button 
-                  onClick={handleSendMessage}
-                  disabled={!inputText.trim()}
-                  className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light"
-                  type="button"
-                  aria-label="Send message"
-                  title="Send message"
-                  data-testid="send-button"
-                >
-                  <span className="send-icon" aria-hidden="true">➤</span>
-                </button>
+                  {/* Send Button */}
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={!inputText.trim()}
+                    className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light"
+                    type="button"
+                    aria-label="Send message"
+                    title="Send message"
+                    data-testid="send-button"
+                  >
+                    <span className="send-icon" aria-hidden="true">➤</span>
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -2800,6 +2885,33 @@ const ProChat = ({
           currentUser={user}
           darkMode={darkMode}
         />
+      )}
+
+      {/* Mobile Global Voice Calls Modal */}
+      {mobileGlobalVoiceModal && (
+        <div className="mobile-global-voice-modal-overlay" onClick={() => setMobileGlobalVoiceModal(false)}>
+          <div className="mobile-global-voice-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3>🌍 Global Voice Calls</h3>
+              <button 
+                className="mobile-modal-close" 
+                onClick={() => setMobileGlobalVoiceModal(false)}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mobile-modal-content">
+              <GlobalUsers 
+                onStartCall={(call) => {
+                  handleStartGlobalCall(call);
+                  setMobileGlobalVoiceModal(false);
+                }}
+                currentCall={globalCall}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

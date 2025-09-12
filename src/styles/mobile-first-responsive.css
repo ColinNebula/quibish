@@ -235,6 +235,14 @@
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
 }
 
+/* Mobile message list spacing fix */
+.mobile-optimized.pro-message-list {
+  /* Account for fixed mobile input bar height */
+  padding-bottom: calc(var(--input-height-mobile) + 40px) !important;
+  /* Ensure smooth scrolling to bottom */
+  scroll-padding-bottom: calc(var(--input-height-mobile) + 20px);
+}
+
 /* Enhanced mobile bottom bar */
 .mobile-input-bar {
   position: fixed;
@@ -257,6 +265,25 @@
   
   /* Prevent overscroll */
   overscroll-behavior: none;
+}
+
+/* Ensure content doesn't get cut off behind mobile input bar */
+.mobile-input-bar ~ .pro-message-list,
+body:has(.mobile-input-bar) .pro-message-list {
+  margin-bottom: calc(var(--input-height-mobile) + 20px);
+}
+
+/* Additional fix for mobile optimization */
+@media (max-width: 768px) {
+  .pro-message-list.mobile-optimized {
+    padding-bottom: calc(var(--input-height-mobile) + 60px) !important;
+    box-sizing: border-box;
+  }
+  
+  /* Ensure messages are always visible above input bar */
+  .pro-chat-input-container.mobile-input-bar {
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  }
 }
 
 /* Mobile user profile - round avatar only */
