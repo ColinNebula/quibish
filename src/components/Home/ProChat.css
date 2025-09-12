@@ -1710,7 +1710,7 @@
   justify-content: center;
   gap: 16px;
   position: sticky;
-  bottom: 0;
+  bottom: 4px;
   z-index: 999 !important;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);

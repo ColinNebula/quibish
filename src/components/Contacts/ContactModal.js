@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { mobileUtils } from '../../services/mobileInteractionService';
+import { contactService } from '../../services/contactService';
+import InternationalDialer from '../Voice/InternationalDialer';
 import './ContactModal.css';
 
 const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allContacts = [] }) => {
@@ -34,6 +36,10 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
   const [saving, setSaving] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [activeTab, setActiveTab] = useState('basic');
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [potentialDuplicates, setPotentialDuplicates] = useState([]);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [showInternationalDialer, setShowInternationalDialer] = useState(false);
 
   // Initialize form data when contact changes
   useEffect(() => {
@@ -218,8 +224,8 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
     mobileUtils?.haptic?.('light');
   }, []);
 
-  // Enhanced validation
-  const validateForm = useCallback(() => {
+  // Enhanced validation with duplicate checking
+  const validateForm = useCallback(async () => {
     const newErrors = {};
 
     // Name validation
@@ -294,15 +300,35 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
       }
     });
 
+    // Check for duplicates
+    try {
+      const duplicates = await contactService.findDuplicates(formData, contact?.id);
+      if (duplicates.length > 0) {
+        setDuplicateWarning({
+          message: `Similar contact found: ${duplicates[0].name}`,
+          duplicates: duplicates
+        });
+      } else {
+        setDuplicateWarning(null);
+      }
+
+      // Check for potential duplicates with similarity scoring
+      const potentials = await contactService.getPotentialDuplicates(formData, 0.6);
+      setPotentialDuplicates(potentials.filter(p => p.contact.id !== contact?.id));
+    } catch (error) {
+      console.error('Error checking duplicates:', error);
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  }, [formData, contact?.id]);
 
   // Handle form submission
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    const isValid = await validateForm();
+    if (!isValid) {
       mobileUtils?.haptic?.('error');
       return;
     }
@@ -339,6 +365,12 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
       mobileUtils?.haptic?.('success');
     } catch (error) {
       console.error('Failed to save contact:', error);
+      if (error.message.includes('Duplicate contact found')) {
+        setDuplicateWarning({
+          message: error.message,
+          duplicates: []
+        });
+      }
       mobileUtils?.haptic?.('error');
     } finally {
       setSaving(false);
@@ -360,6 +392,63 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
       mobileUtils?.haptic?.('light');
     }
   }, []);
+
+  // Handle merging with existing contact
+  const handleMergeContact = async (existingContact) => {
+    try {
+      setSaving(true);
+      
+      // Merge current form data with existing contact
+      const mergedData = {
+        ...existingContact,
+        ...formData,
+        // Merge arrays
+        emails: [
+          ...(existingContact.emails || []),
+          ...formData.emails.filter(newEmail => 
+            !(existingContact.emails || []).some(existingEmail => 
+              existingEmail.value.toLowerCase() === newEmail.value.toLowerCase()
+            )
+          )
+        ],
+        phones: [
+          ...(existingContact.phones || []),
+          ...formData.phones.filter(newPhone => 
+            !(existingContact.phones || []).some(existingPhone => 
+              contactService.normalizePhone(existingPhone.value) === contactService.normalizePhone(newPhone.value)
+            )
+          )
+        ],
+        tags: [...new Set([...(existingContact.tags || []), ...(formData.tags || [])])],
+        socialLinks: {
+          ...existingContact.socialLinks,
+          ...formData.socialLinks
+        }
+      };
+
+      await onSave(mergedData);
+      setShowDuplicateModal(false);
+      setDuplicateWarning(null);
+      setPotentialDuplicates([]);
+      mobileUtils?.haptic?.('success');
+    } catch (error) {
+      console.error('Failed to merge contacts:', error);
+      mobileUtils?.haptic?.('error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Get contact data for international dialer
+  const getContactForDialer = () => {
+    if (formData.phones.length > 0 && formData.phones[0].value) {
+      return {
+        name: formData.name || 'Contact',
+        phone: formData.phones[0].value
+      };
+    }
+    return null;
+  };
 
   if (!isOpen) return null;
 
@@ -408,6 +497,41 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
           </div>
 
           <div className="form-content">
+            {/* Duplicate Warning */}
+            {duplicateWarning && (
+              <div className="duplicate-warning">
+                <div className="warning-header">
+                  <span className="warning-icon">⚠️</span>
+                  <span className="warning-text">{duplicateWarning.message}</span>
+                </div>
+                {duplicateWarning.duplicates.length > 0 && (
+                  <div className="duplicate-actions">
+                    <button
+                      type="button"
+                      className="view-duplicates-btn"
+                      onClick={() => setShowDuplicateModal(true)}
+                    >
+                      View Similar Contacts
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Potential Duplicates Info */}
+            {potentialDuplicates.length > 0 && !duplicateWarning && (
+              <div className="potential-duplicates-info">
+                <span className="info-icon">💡</span>
+                <span>Found {potentialDuplicates.length} potentially similar contact{potentialDuplicates.length > 1 ? 's' : ''}</span>
+                <button
+                  type="button"
+                  className="view-potential-btn"
+                  onClick={() => setShowDuplicateModal(true)}
+                >
+                  Review
+                </button>
+              </div>
+            )}
             {activeTab === 'basic' && (
               <>
                 {/* Avatar Section */}
@@ -624,6 +748,16 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
                           placeholder="+1 (555) 123-4567"
                           className={errors[`phone_${index}`] ? 'error' : ''}
                         />
+                        {phone.value && phone.value.trim() && (
+                          <button
+                            type="button"
+                            className="call-phone-btn"
+                            onClick={() => setShowInternationalDialer(true)}
+                            title="Call this number"
+                          >
+                            📞
+                          </button>
+                        )}
                         {formData.phones.length > 1 && (
                           <button
                             type="button"
@@ -886,6 +1020,120 @@ const ContactModal = ({ isOpen, contact, onClose, onSave, darkMode = false, allC
           </div>
         </form>
       </div>
+
+      {/* Duplicate Contacts Modal */}
+      {showDuplicateModal && (
+        <div className="duplicate-modal-overlay">
+          <div className="duplicate-modal">
+            <div className="duplicate-modal-header">
+              <h3>Similar Contacts Found</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setShowDuplicateModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="duplicate-modal-content">
+              {duplicateWarning?.duplicates?.length > 0 && (
+                <>
+                  <h4>🚫 Exact Duplicates</h4>
+                  <div className="duplicate-list">
+                    {duplicateWarning.duplicates.map((duplicate, index) => (
+                      <div key={index} className="duplicate-item exact">
+                        <div className="duplicate-info">
+                          <div className="duplicate-avatar">
+                            {duplicate.avatar ? (
+                              <img src={duplicate.avatar} alt={duplicate.name} />
+                            ) : (
+                              <span>{duplicate.name.charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div className="duplicate-details">
+                            <div className="duplicate-name">{duplicate.name}</div>
+                            <div className="duplicate-contact">
+                              {duplicate.emails?.[0]?.value || duplicate.email || 
+                               duplicate.phones?.[0]?.value || duplicate.phone}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="duplicate-actions">
+                          <button
+                            className="merge-btn"
+                            onClick={() => handleMergeContact(duplicate)}
+                          >
+                            Merge
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {potentialDuplicates.length > 0 && (
+                <>
+                  <h4>🔍 Potential Duplicates</h4>
+                  <div className="duplicate-list">
+                    {potentialDuplicates.map((potential, index) => (
+                      <div key={index} className="duplicate-item potential">
+                        <div className="duplicate-info">
+                          <div className="duplicate-avatar">
+                            {potential.contact.avatar ? (
+                              <img src={potential.contact.avatar} alt={potential.contact.name} />
+                            ) : (
+                              <span>{potential.contact.name.charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div className="duplicate-details">
+                            <div className="duplicate-name">{potential.contact.name}</div>
+                            <div className="duplicate-contact">
+                              {potential.contact.emails?.[0]?.value || potential.contact.email || 
+                               potential.contact.phones?.[0]?.value || potential.contact.phone}
+                            </div>
+                            <div className="similarity-score">
+                              {Math.round(potential.score * 100)}% similar
+                            </div>
+                            <div className="similarity-reasons">
+                              {potential.reasons.join(', ')}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="duplicate-actions">
+                          <button
+                            className="merge-btn"
+                            onClick={() => handleMergeContact(potential.contact)}
+                          >
+                            Merge
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="duplicate-modal-footer">
+              <button
+                className="cancel-btn"
+                onClick={() => setShowDuplicateModal(false)}
+              >
+                Keep Separate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* International Dialer */}
+      <InternationalDialer
+        isOpen={showInternationalDialer}
+        onClose={() => setShowInternationalDialer(false)}
+        contact={getContactForDialer()}
+        darkMode={darkMode}
+      />
     </div>
   );
 };
