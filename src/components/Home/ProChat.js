@@ -90,6 +90,7 @@ const ProChat = ({
   const [showContactManager, setShowContactManager] = useState(false);
   
   // International dialer state
+  const [showCallOptions, setShowCallOptions] = useState(false);
   const [showInternationalDialer, setShowInternationalDialer] = useState(false);
 
   // Donation modal state
@@ -1464,6 +1465,21 @@ const ProChat = ({
     setVoiceCallState(prev => ({ ...prev, active: false }));
   }, []);
 
+  // Unified call handler for both international and app calls
+  const handleUnifiedCall = useCallback(() => {
+    setShowCallOptions(true);
+  }, []);
+
+  const handleInternationalCall = useCallback(() => {
+    setShowCallOptions(false);
+    setShowInternationalDialer(true);
+  }, []);
+
+  const handleAppCall = useCallback(async () => {
+    setShowCallOptions(false);
+    await handleStartVoiceCall();
+  }, [handleStartVoiceCall]);
+
   const handleToggleVoiceMinimize = useCallback(() => {
     setVoiceCallState(prev => ({ ...prev, minimized: !prev.minimized }));
   }, []);
@@ -1878,33 +1894,9 @@ const ProChat = ({
           
           <div className="header-actions">
             <button 
-              className="action-btn international-dialer-btn" 
-              title="FREE International Phone Calls - Call any number worldwide at no cost!"
-              onClick={() => setShowInternationalDialer(true)}
-            >
-              ☎️
-            </button>
-            <button 
-              className="action-btn donation-btn" 
-              title="💝 Support Our Free App - Help us keep it free for everyone!"
-              onClick={() => setShowDonationModal(true)}
-            >
-              💝
-            </button>
-            <button 
-              className="action-btn donation-btn" 
-              title="Support Our Free App - Help us keep it free for everyone!"
-              onClick={() => setShowDonationModal(true)}
-            >
-              💝
-            </button>
-            <button className="action-btn video-call-btn" title="Start video call">
-              📹
-            </button>
-            <button 
-              className="action-btn voice-call-btn" 
-              title={`Start voice call (${connectionStatus?.quality || 'checking'} connection)`}
-              onClick={handleStartVoiceCall}
+              className="action-btn unified-call-btn" 
+              title="📞 Make Calls - International phone calls & app-to-app voice calls"
+              onClick={handleUnifiedCall}
             >
               📞
               {connectionStatus && (
@@ -1915,6 +1907,16 @@ const ProChat = ({
                   {connectionStatus.icon}
                 </span>
               )}
+            </button>
+            <button 
+              className="action-btn donation-btn" 
+              title="💝 Support Our Free App - Help us keep it free for everyone!"
+              onClick={() => setShowDonationModal(true)}
+            >
+              💝
+            </button>
+            <button className="action-btn video-call-btn" title="Start video call">
+              📹
             </button>
             <button className="action-btn info-btn" title="Chat info">
               ℹ️
@@ -2939,6 +2941,40 @@ const ProChat = ({
                 }}
                 currentCall={globalCall}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Call Options Modal */}
+      {showCallOptions && (
+        <div className="modal-overlay" onClick={() => setShowCallOptions(false)}>
+          <div className="modal-content call-options-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Choose Call Type</h3>
+              <button className="close-btn" onClick={() => setShowCallOptions(false)}>×</button>
+            </div>
+            <div className="call-options-content">
+              <button 
+                className="call-option-btn international-option"
+                onClick={handleInternationalCall}
+              >
+                <span className="call-option-icon">🌍</span>
+                <div className="call-option-info">
+                  <h4>International Phone Call</h4>
+                  <p>Call any phone number worldwide - completely FREE!</p>
+                </div>
+              </button>
+              <button 
+                className="call-option-btn app-call-option"
+                onClick={handleAppCall}
+              >
+                <span className="call-option-icon">💬</span>
+                <div className="call-option-info">
+                  <h4>App-to-App Voice Call</h4>
+                  <p>High-quality voice call with other Quibish users</p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
