@@ -27,7 +27,8 @@
   "scripts": {
     "start": "react-scripts start",
     "start:memory": "node memory-start.js --frontend",
-    "build": "GENERATE_SOURCEMAP=false react-scripts build",
+    "build": "react-scripts build",
+    "build:no-sourcemap": "GENERATE_SOURCEMAP=false react-scripts build",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "smoke-check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/smoke-check.ps1",

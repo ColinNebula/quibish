@@ -10798,7 +10798,7 @@ body.dark-theme .call-option-info p {
   /* Touch feedback optimizations */
   .touchable-element {
     -webkit-tap-highlight-color: rgba(var(--pro-accent-rgb), 0.2);
-    tap-highlight-color: rgba(var(--pro-accent-rgb), 0.2);
+    -webkit-tap-highlight-color: rgba(var(--pro-accent-rgb), 0.2);
   }
 
   /* Performance optimizations */
