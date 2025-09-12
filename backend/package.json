@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "start:optimized": "node optimized-server.js",
+    "start:simple": "node simple-server.js",
     "dev": "nodemon server.js",
+    "dev:optimized": "nodemon optimized-server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
