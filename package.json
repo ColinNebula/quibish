@@ -2,7 +2,7 @@
   "name": "quibish",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://colinNebula.github.io/quibish",
+  "homepage": "https://colinnebula.github.io/quibish",
   "dependencies": {
     "@apollo/client": "^4.0.1",
     "@testing-library/dom": "^10.4.1",
