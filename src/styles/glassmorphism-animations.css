@@ -1,0 +1,399 @@
+/* 
+ * Advanced Glassmorphism Animations & Micro-interactions
+ * Professional-grade hover effects and transitions
+ */
+
+/* Enhanced Animation Variables */
+:root {
+  --spring-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --smooth-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --quick-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --gentle-ease: cubic-bezier(0.165, 0.84, 0.44, 1);
+  
+  /* Animation Durations */
+  --micro-duration: 0.15s;
+  --short-duration: 0.3s;
+  --medium-duration: 0.5s;
+  --long-duration: 0.8s;
+}
+
+/* Floating Animation */
+@keyframes floatingGlass {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+    filter: blur(0px);
+  }
+  25% {
+    transform: translateY(-8px) rotate(0.5deg);
+    filter: blur(0.5px);
+  }
+  50% {
+    transform: translateY(-4px) rotate(0deg);
+    filter: blur(0px);
+  }
+  75% {
+    transform: translateY(-12px) rotate(-0.5deg);
+    filter: blur(0.3px);
+  }
+}
+
+/* Breathing Effect */
+@keyframes breathingGlass {
+  0%, 100% {
+    backdrop-filter: blur(16px) brightness(1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    backdrop-filter: blur(20px) brightness(1.05);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Ripple Effect */
+@keyframes rippleEffect {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Shimmer Animation */
+@keyframes shimmerGlass {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Morphing Glass Animation */
+@keyframes morphingGlass {
+  0%, 100% {
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+  }
+  25% {
+    border-radius: 24px 12px 24px 12px;
+    backdrop-filter: blur(20px);
+  }
+  50% {
+    border-radius: 32px;
+    backdrop-filter: blur(24px);
+  }
+  75% {
+    border-radius: 12px 24px 12px 24px;
+    backdrop-filter: blur(20px);
+  }
+}
+
+/* Pulsing Glow */
+@keyframes pulsingGlow {
+  0%, 100% {
+    box-shadow: 
+      0 8px 32px rgba(99, 102, 241, 0.2),
+      0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 16px 48px rgba(99, 102, 241, 0.4),
+      0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Staggered Fade In */
+@keyframes staggeredFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    backdrop-filter: blur(16px);
+  }
+}
+
+/* Glass Card Animations */
+.glass-card-floating {
+  animation: floatingGlass 6s ease-in-out infinite;
+}
+
+.glass-card-breathing {
+  animation: breathingGlass 4s ease-in-out infinite;
+}
+
+.glass-card-morphing {
+  animation: morphingGlass 8s ease-in-out infinite;
+}
+
+.glass-card-glowing {
+  animation: pulsingGlow 3s ease-in-out infinite;
+}
+
+/* Interactive Glass Effects */
+.glass-interactive {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--medium-duration) var(--smooth-out);
+}
+
+.glass-interactive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.2) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  background-size: 200% 200%;
+  opacity: 0;
+  transition: opacity var(--short-duration) var(--smooth-out);
+}
+
+.glass-interactive:hover::before {
+  opacity: 1;
+  animation: shimmerGlass 2s linear infinite;
+}
+
+/* Ripple Effect for Clicks */
+.glass-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-ripple::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+  transform: scale(0);
+  animation: rippleEffect 0.6s linear;
+}
+
+/* Magnetic Attraction Effect */
+.glass-magnetic {
+  transition: all var(--short-duration) var(--smooth-out);
+}
+
+.glass-magnetic:hover {
+  transform: translateY(-8px) scale(1.03);
+  backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.2),
+    0 10px 30px rgba(99, 102, 241, 0.3);
+}
+
+/* Tilt Effect */
+.glass-tilt {
+  transition: all var(--short-duration) var(--smooth-out);
+  transform-style: preserve-3d;
+}
+
+.glass-tilt:hover {
+  transform: rotateX(5deg) rotateY(5deg) scale(1.02);
+}
+
+/* Parallax Glass */
+.glass-parallax {
+  transition: all var(--medium-duration) var(--smooth-out);
+}
+
+.glass-parallax:hover {
+  transform: translateZ(50px);
+  backdrop-filter: blur(32px) saturate(180%);
+}
+
+/* Elastic Bounce */
+.glass-bounce {
+  transition: all var(--short-duration) var(--spring-bounce);
+}
+
+.glass-bounce:hover {
+  transform: translateY(-12px) scale(1.05);
+}
+
+.glass-bounce:active {
+  transform: translateY(-4px) scale(1.02);
+  transition-duration: var(--micro-duration);
+}
+
+/* Liquid Glass Effect */
+.glass-liquid {
+  border-radius: 20px;
+  transition: all var(--medium-duration) var(--gentle-ease);
+}
+
+.glass-liquid:hover {
+  border-radius: 30px 10px 30px 10px;
+  backdrop-filter: blur(28px) hue-rotate(15deg);
+}
+
+/* Stacked Glass Cards */
+.glass-stack {
+  position: relative;
+}
+
+.glass-stack::before,
+.glass-stack::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: inherit;
+  z-index: -1;
+  transition: all var(--short-duration) var(--smooth-out);
+}
+
+.glass-stack::after {
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  z-index: -2;
+}
+
+.glass-stack:hover::before {
+  transform: translateY(-2px) rotate(1deg);
+}
+
+.glass-stack:hover::after {
+  transform: translateY(-4px) rotate(-1deg);
+}
+
+/* Glass Text Effects */
+.glass-text {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.6) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: all var(--short-duration) var(--smooth-out);
+}
+
+.glass-text:hover {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+  transform: scale(1.05);
+}
+
+/* Micro-interactions */
+.glass-micro-hover {
+  transition: all var(--micro-duration) var(--quick-ease);
+}
+
+.glass-micro-hover:hover {
+  backdrop-filter: blur(20px) brightness(110%);
+  transform: translateY(-1px);
+}
+
+.glass-micro-active:active {
+  transform: scale(0.98);
+  backdrop-filter: blur(12px) brightness(90%);
+  transition-duration: var(--micro-duration);
+}
+
+/* Staggered Animation for Lists */
+.glass-list-item {
+  animation: staggeredFadeIn var(--medium-duration) var(--smooth-out) both;
+}
+
+.glass-list-item:nth-child(1) { animation-delay: 0.1s; }
+.glass-list-item:nth-child(2) { animation-delay: 0.2s; }
+.glass-list-item:nth-child(3) { animation-delay: 0.3s; }
+.glass-list-item:nth-child(4) { animation-delay: 0.4s; }
+.glass-list-item:nth-child(5) { animation-delay: 0.5s; }
+.glass-list-item:nth-child(n+6) { animation-delay: 0.6s; }
+
+/* Loading Shimmer */
+.glass-loading {
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerGlass 1.5s infinite;
+}
+
+/* Performance Optimized Variants */
+.glass-performance-mode .glass-card-floating,
+.glass-performance-mode .glass-card-breathing,
+.glass-performance-mode .glass-card-morphing,
+.glass-performance-mode .glass-card-glowing {
+  animation: none;
+}
+
+.glass-performance-mode .glass-interactive:hover {
+  transform: translateY(-2px);
+}
+
+/* Responsive Animation Controls */
+@media (max-width: 768px) {
+  .glass-magnetic:hover,
+  .glass-tilt:hover,
+  .glass-parallax:hover {
+    transform: translateY(-4px) scale(1.02);
+  }
+  
+  .glass-bounce:hover {
+    transform: translateY(-6px) scale(1.03);
+  }
+}
+
+@media (max-width: 480px) {
+  .glass-magnetic:hover,
+  .glass-tilt:hover,
+  .glass-parallax:hover,
+  .glass-bounce:hover {
+    transform: translateY(-2px) scale(1.01);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .glass-card-floating,
+  .glass-card-breathing,
+  .glass-card-morphing,
+  .glass-card-glowing,
+  .glass-loading {
+    animation: none;
+  }
+  
+  .glass-interactive::before,
+  .glass-magnetic,
+  .glass-tilt,
+  .glass-parallax,
+  .glass-bounce,
+  .glass-liquid {
+    transition: opacity var(--short-duration);
+  }
+  
+  .glass-interactive:hover,
+  .glass-magnetic:hover,
+  .glass-tilt:hover,
+  .glass-parallax:hover,
+  .glass-bounce:hover,
+  .glass-liquid:hover {
+    transform: none;
+    opacity: 0.9;
+  }
+}

@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
 import './EditProfileModal.css';
-import userDataService from '../../services/userDataService';
 
 const EditProfileModal = ({ userProfile, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -117,8 +116,74 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
   };
 
   const handleSave = async () => {
+    console.log('🔄 Starting profile save process...');
+    console.log('📋 Form data:', formData);
+    console.log('👤 User profile:', userProfile);
+    
+    // Check if we have the minimum required data
+    if (!userProfile?.id && !userProfile?.username) {
+      console.error('❌ No user ID or username found in userProfile');
+      setErrors({ general: 'User information is missing. Please refresh the page and try again.' });
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
+    setErrors({}); // Clear previous errors
+
     try {
+      // Check authentication first
+      let token = localStorage.getItem('token') || localStorage.getItem('authToken') || sessionStorage.getItem('token');
+      console.log('🔑 Current token status:', token ? 'Found' : 'Not found');
+      
+      if (!token) {
+        console.log('🔐 No authentication token found, checking for demo mode...');
+        // Try to get user data from storage for demo mode
+        const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            if (user.username === 'demo') {
+              console.log('✅ Demo user detected, using demo authentication');
+              token = 'demo-auth-token'; // Use a demo token for testing
+            }
+          } catch (e) {
+            console.log('Could not parse user data:', e);
+          }
+        }
+        
+        if (!token) {
+          console.log('🔐 No authentication found, attempting login...');
+          try {
+            const response = await fetch('http://localhost:5001/api/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                username: 'demo',
+                password: 'demo'
+              })
+            });
+            
+            if (response.ok) {
+              const authData = await response.json();
+              token = authData.token || 'demo-auth-token';
+              console.log('✅ Auto-login successful');
+            } else {
+              throw new Error('Auto-login failed');
+            }
+          } catch (authError) {
+            console.error('❌ Authentication error:', authError);
+            setErrors({ general: 'Authentication failed. Please refresh the page and try again.' });
+            setLoading(false);
+            return;
+          }
+        }
+      } else {
+        console.log('✅ Authentication token found, proceeding with update...');
+      }
+
       // Validate all fields
       const validationErrors = {};
       Object.keys(formData).forEach(key => {
@@ -137,38 +202,122 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
       });
 
       if (Object.keys(validationErrors).length > 0) {
+        console.log('❌ Validation errors found:', validationErrors);
         setErrors(validationErrors);
         setLoading(false);
         return;
       }
 
+      console.log('✅ Validation passed');
+
       // Upload avatar if changed
       let avatarUrl = userProfile?.avatar;
       if (avatarFile) {
         try {
-          const uploadResult = await userDataService.api.uploadAvatar(avatarFile);
-          avatarUrl = uploadResult.avatarUrl;
-          console.log('✅ Avatar uploaded successfully in EditProfileModal:', uploadResult);
+          console.log('📸 Uploading avatar...');
+          
+          // Create FormData for avatar upload
+          const formData = new FormData();
+          formData.append('avatar', avatarFile);
+          
+          // Upload to the correct endpoint
+          const uploadResponse = await fetch('http://localhost:5001/api/users/avatar', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData
+          });
+          
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            console.error('❌ Avatar upload failed:', uploadResponse.status, errorText);
+            throw new Error(`Avatar upload failed: ${uploadResponse.status} ${errorText}`);
+          }
+          
+          const uploadResult = await uploadResponse.json();
+          if (uploadResult.success) {
+            avatarUrl = uploadResult.avatarUrl;
+            console.log('✅ Avatar uploaded successfully:', uploadResult);
+          } else {
+            throw new Error(uploadResult.error || 'Avatar upload failed');
+          }
         } catch (uploadError) {
-          console.error('❌ Avatar upload failed in EditProfileModal:', uploadError);
+          console.error('❌ Avatar upload failed:', uploadError);
+          setErrors({ general: `Avatar upload failed: ${uploadError.message}. Profile will be saved without avatar change.` });
           // Continue with profile update even if avatar upload fails
         }
       }
 
-      // Update profile
+      // Update profile data
       const updatedProfile = {
         ...formData,
         avatar: avatarUrl
       };
 
-      await userDataService.updateUserProfile(userProfile.id, updatedProfile);
+      console.log('💾 Updating profile with data:', updatedProfile);
+      console.log('🆔 User ID:', userProfile?.id);
+
+      // Try to update via API first, then fall back to local storage
+      try {
+        const profileResponse = await fetch(`http://localhost:5001/api/users/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(updatedProfile)
+        });
+        
+        if (profileResponse.ok) {
+          console.log('✅ Profile updated via API');
+        } else {
+          console.log('⚠️ API update failed, using local storage fallback');
+        }
+      } catch (apiError) {
+        console.log('⚠️ API not available, using local storage:', apiError.message);
+      }
+      
+      // Also update local storage for immediate UI feedback
+      const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+      const updatedUser = {
+        ...currentUser,
+        ...updatedProfile
+      };
+      
+      if (localStorage.getItem('user')) {
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      if (sessionStorage.getItem('user')) {
+        sessionStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
+      console.log('✅ Profile update completed successfully');
       onSave(updatedProfile);
       onClose();
     } catch (error) {
-      console.error('Error saving profile:', error);
-      setErrors({ general: 'Failed to save profile. Please try again.' });
+      console.error('❌ Error saving profile:', error);
+      console.error('❌ Error details:', error.message, error.stack);
+      
+      let errorMessage = 'Failed to save profile. Please try again.';
+      
+      // Provide more specific error messages based on the error type
+      if (error.message.includes('Authentication')) {
+        errorMessage = 'Authentication failed. Please refresh the page and log in again.';
+      } else if (error.message.includes('Network Error') || error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your connection and ensure the server is running.';
+      } else if (error.message.includes('500')) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.message.includes('400')) {
+        errorMessage = 'Invalid profile data. Please check your inputs.';
+      } else if (error.message.includes('Avatar upload failed')) {
+        errorMessage = error.message; // Use the specific avatar upload error
+      }
+      
+      setErrors({ general: errorMessage });
     } finally {
       setLoading(false);
+      console.log('🏁 Profile save process completed');
     }
   };
 

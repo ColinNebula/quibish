@@ -5,15 +5,45 @@
 
 import axios from 'axios';
 import websocketService from './websocketService';
+import localStorageService from './localStorageService';
+import authHelper from '../utils/authHelper';
 
 // Create an axios instance for messages API
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'http://localhost:5001/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   }
 });
+
+// Add request interceptor to include auth token
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    console.log('🔑 API request with auth:', config.url, token ? 'Token present' : 'No token');
+    return config;
+  },
+  (error) => {
+    console.error('❌ Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for better error handling
+API.interceptors.response.use(
+  (response) => {
+    console.log('✅ API response success:', response.config.url, response.status);
+    return response;
+  },
+  (error) => {
+    console.error('❌ API response error:', error.config?.url, error.response?.status, error.message);
+    return Promise.reject(error);
+  }
+);
 
 class MessageService {
   constructor() {
@@ -51,6 +81,9 @@ class MessageService {
    * @param {Object} message - Incoming message
    */
   handleIncomingMessage(message) {
+    // Save to localStorage for persistence
+    localStorageService.addMessage(message);
+    
     // Notify all message listeners
     this.messageListeners.forEach(listener => {
       try {
@@ -114,10 +147,20 @@ class MessageService {
   /**
    * Get messages from server
    * @param {Object} options - Options for fetching messages
+   * @param {string} options.conversationId - Filter messages by conversation ID
+   * @param {number} options.limit - Maximum number of messages to fetch
+   * @param {number} options.page - Page number for pagination
    * @returns {Promise<Array>} - Array of messages
    */
   async getMessages(options = {}) {
     try {
+      // Ensure user is authenticated before making API calls
+      const isAuth = await authHelper.ensureAuthenticated();
+      if (!isAuth) {
+        console.warn('⚠️ Authentication failed, using cached messages only');
+        return this.loadMessagesFromStorage(options.conversationId) || [];
+      }
+
       // Build query params
       const params = {};
       
@@ -131,10 +174,31 @@ class MessageService {
         params.limit = options.limit;
       }
       
+      // Add conversation ID filter if provided
+      if (options.conversationId) {
+        params.conversationId = options.conversationId;
+      }
+      
       const response = await API.get('/messages', { params });
-      return response.data;
+      const messages = response.data.messages || response.data || [];
+      
+      // Cache messages for offline access
+      this.cacheMessages(messages, options.conversationId);
+      
+      return messages;
     } catch (error) {
       console.error('Error fetching messages:', error);
+      
+      // Try to load from cache as fallback
+      try {
+        const cachedMessages = this.loadMessagesFromStorage(options.conversationId);
+        if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+          console.log('Loaded messages from cache');
+          return cachedMessages;
+        }
+      } catch (storageError) {
+        console.error('Error loading messages from storage:', storageError);
+      }
       
       // Return cached messages if available
       const cachedMessages = localStorage.getItem('cachedMessages');
@@ -146,30 +210,89 @@ class MessageService {
       return [];
     }
   }
+
+  /**
+   * Cache messages in localStorage
+   * @param {Array} messages - Messages to cache
+   * @param {string} conversationId - Conversation ID for scoped caching
+   */
+  cacheMessages(messages, conversationId = null) {
+    try {
+      const cacheKey = conversationId ? `messages_${conversationId}` : 'cachedMessages';
+      localStorage.setItem(cacheKey, JSON.stringify(messages));
+    } catch (error) {
+      console.error('Error caching messages:', error);
+    }
+  }
+
+  /**
+   * Load messages from localStorage
+   * @param {string} conversationId - Conversation ID for scoped loading
+   * @returns {Array} - Cached messages
+   */
+  loadMessagesFromStorage(conversationId = null) {
+    try {
+      const cacheKey = conversationId ? `messages_${conversationId}` : 'cachedMessages';
+      const cachedMessages = localStorage.getItem(cacheKey);
+      
+      if (cachedMessages) {
+        return JSON.parse(cachedMessages);
+      }
+      
+      // Fallback to general messages cache if conversation-specific cache is empty
+      if (conversationId) {
+        const generalCache = localStorage.getItem('cachedMessages');
+        if (generalCache) {
+          const allMessages = JSON.parse(generalCache);
+          return allMessages.filter(msg => msg.conversationId === conversationId);
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error loading messages from storage:', error);
+      return [];
+    }
+  }
   
   /**
    * Send a message
    * @param {string} text - Message text
    * @param {string} sender - Message sender
+   * @param {string|null} conversationId - Conversation ID for the message
    * @param {Object} replyTo - Message being replied to (optional)
    * @returns {Promise<Object>} - Sent message
    */
-  async sendMessage(text, sender, replyTo = null) {
+  async sendMessage(text, sender, conversationId = null, replyTo = null) {
     const messageData = {
       text,
       sender,
+      conversationId,
       type: 'text',
       timestamp: new Date().toISOString(),
       replyTo
     };
     
     try {
+      // Save to localStorage immediately for offline persistence
+      localStorageService.addMessage({
+        ...messageData,
+        senderId: sender,
+        senderName: sender,
+        id: Date.now().toString(),
+        local: true // Mark as locally stored
+      });
+      
       // Try to send via WebSocket first for better real-time experience
       const wsSuccess = websocketService.send('newMessage', messageData);
       
       // If WebSocket send failed or we're not connected, fall back to HTTP
       if (!wsSuccess) {
         const response = await API.post('/messages', messageData);
+        // Update localStorage with server response
+        if (response.data.message) {
+          localStorageService.addMessage({...response.data.message, local: false});
+        }
         return response.data;
       }
       
@@ -418,6 +541,22 @@ class MessageService {
       console.error('Reconnection failed:', error);
       return false;
     }
+  }
+
+  /**
+   * Get storage info for debugging
+   * @returns {Object} - Storage information
+   */
+  getStorageInfo() {
+    return localStorageService.getStorageInfo();
+  }
+
+  /**
+   * Clear all stored messages
+   * @returns {boolean} - Whether clear was successful
+   */
+  clearStoredMessages() {
+    return localStorageService.clearAllData();
   }
 }
 

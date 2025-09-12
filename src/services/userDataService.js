@@ -88,6 +88,7 @@ const initDB = () => {
 // API utility functions
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+  console.log('🔑 Auth token for API call:', token ? 'Present' : 'Missing');
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -110,17 +111,24 @@ const apiCall = async (endpoint, options = {}) => {
     ...options
   };
 
+  console.log('🌐 Making API call to:', url, 'with options:', defaultOptions);
+
   try {
     const response = await fetch(url, defaultOptions);
     
+    console.log('📡 API response status:', response.status, 'for', endpoint);
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('❌ API call failed with error data:', errorData);
       throw new Error(errorData.error || `API call failed: ${response.status}`);
     }
     
-    return await response.json();
+    const responseData = await response.json();
+    console.log('✅ API call successful for', endpoint, ':', responseData);
+    return responseData;
   } catch (error) {
-    console.error(`API call to ${endpoint} failed:`, error);
+    console.error(`❌ API call to ${endpoint} failed:`, error);
     throw error;
   }
 };
@@ -139,6 +147,8 @@ const getUserProfileFromAPI = async () => {
 
 // Update user profile via backend
 const updateUserProfileAPI = async (profileData) => {
+  console.log('🌐 Making API call to update profile with data:', profileData);
+  
   return await apiCall('/users/profile', {
     method: 'PUT',
     headers: getAuthHeaders(),
@@ -691,20 +701,57 @@ const clearAllUserData = async () => {
  */
 const fetchUserProfile = async (userId) => {
   try {
-    // In a real application, this would call the API
-    // For now, returning mock data
+    // Try to get real user data from API first (for the current user)
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+    
+    // If this is the current user and we have a token, try to get real data from API
+    if (token && (userId === currentUser.id || userId === currentUser.username)) {
+      try {
+        console.log('🔍 Fetching real user profile from API for current user...');
+        const realProfile = await getUserProfileFromAPI();
+        if (realProfile && realProfile.user) {
+          const userData = {
+            ...realProfile.user,
+            userId: realProfile.user.id,
+            username: realProfile.user.username,
+            displayName: realProfile.user.displayName || realProfile.user.name,
+            bio: realProfile.user.bio || '',
+            avatarUrl: realProfile.user.avatar,
+            uploadCount: 0, // Could be enhanced to get real count
+            connectionCount: 0, // Could be enhanced to get real count
+            activityScore: 0, // Could be enhanced to get real score
+            joinDate: realProfile.user.createdAt,
+            isOnline: true, // Current user is always online
+            status: realProfile.user.status || 'online'
+          };
+          console.log('✅ Real user profile fetched successfully:', userData);
+          return userData;
+        }
+      } catch (apiError) {
+        console.warn('⚠️ Failed to fetch real profile from API, falling back to mock data:', apiError);
+      }
+    }
+    
+    // Fallback to mock data for other users or if API fails
+    console.log('📋 Using mock data for user profile...');
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+    
+    // For the current user, set online status to true
+    const isCurrentUser = userId === currentUser.id || userId === currentUser.username;
     
     return {
       userId,
-      username: `user${userId}`,
-      displayName: `User ${userId}`,
-      bio: `This is the bio for user ${userId}. They are a valued member of our community.`,
-      avatarUrl: `https://randomuser.me/api/portraits/${userId % 2 === 0 ? 'men' : 'women'}/${userId % 10}.jpg`,
+      username: isCurrentUser ? (currentUser.username || `user${userId}`) : `user${userId}`,
+      displayName: isCurrentUser ? (currentUser.displayName || currentUser.name || `User ${userId}`) : `User ${userId}`,
+      bio: isCurrentUser ? (currentUser.bio || `This is the bio for ${currentUser.name || 'the user'}.`) : `This is the bio for user ${userId}. They are a valued member of our community.`,
+      avatarUrl: isCurrentUser ? currentUser.avatar : `https://randomuser.me/api/portraits/${userId % 2 === 0 ? 'men' : 'women'}/${userId % 10}.jpg`,
       uploadCount: Math.floor(Math.random() * 50),
       connectionCount: Math.floor(Math.random() * 100),
       activityScore: Math.floor(Math.random() * 1000),
-      joinDate: new Date(Date.now() - (Math.random() * 10000000000)).toISOString()
+      joinDate: isCurrentUser ? currentUser.createdAt : new Date(Date.now() - (Math.random() * 10000000000)).toISOString(),
+      isOnline: isCurrentUser ? true : Math.random() > 0.3, // Current user is always online, others are randomly online
+      status: isCurrentUser ? 'online' : (Math.random() > 0.3 ? 'online' : 'offline')
     };
   } catch (error) {
     console.error(`Error fetching user profile for user ${userId}:`, error);
@@ -720,7 +767,7 @@ const fetchUserProfile = async (userId) => {
 const fetchUserUploads = async (userId) => {
   try {
     // In a real application, this would call the API
-    // For now, returning mock data
+    // For now, returning mock data with proper URLs
     await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
     
     const types = ['image', 'video', 'document', 'gif'];
@@ -731,14 +778,48 @@ const fetchUserUploads = async (userId) => {
       const type = types[Math.floor(Math.random() * types.length)];
       const date = new Date(Date.now() - (Math.random() * 5000000000)).toISOString();
       
+      let url = null;
+      let thumbnailUrl = null;
+      
+      // Generate appropriate URLs for each type
+      switch (type) {
+        case 'image':
+          url = `https://picsum.photos/seed/${userId}_${i}/800/600`;
+          break;
+        case 'video':
+          // Using sample video URLs from the internet
+          const videoSamples = [
+            'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4'
+          ];
+          url = videoSamples[i % videoSamples.length];
+          thumbnailUrl = `https://picsum.photos/seed/${userId}_${i}_thumb/400/300`;
+          break;
+        case 'gif':
+          // Using placeholder GIF URLs
+          url = `https://picsum.photos/seed/${userId}_${i}/400/300.gif`;
+          break;
+        case 'document':
+          // For documents, we'll use a sample PDF
+          url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+          break;
+      }
+      
       uploads.push({
         id: `upload_${userId}_${i}`,
         name: `${type}_file_${i}.${type === 'image' ? 'jpg' : type === 'video' ? 'mp4' : type === 'gif' ? 'gif' : 'pdf'}`,
         type,
         size: Math.floor(Math.random() * 10000000),
         date,
-        url: type === 'image' ? `https://picsum.photos/seed/${userId}_${i}/300/300` : null,
-        thumbnailUrl: type === 'video' ? `https://picsum.photos/seed/${userId}_${i}_thumb/300/300` : null
+        uploadedAt: date,
+        url,
+        thumbnailUrl,
+        mimeType: type === 'video' ? 'video/mp4' : type === 'image' ? 'image/jpeg' : type === 'gif' ? 'image/gif' : 'application/pdf',
+        dimensions: type === 'image' || type === 'video' ? `${400 + Math.floor(Math.random() * 800)}x${300 + Math.floor(Math.random() * 600)}` : null,
+        duration: type === 'video' ? Math.floor(Math.random() * 300) + 30 : null // 30-330 seconds
       });
     }
     
@@ -839,17 +920,27 @@ const fetchUserAnalytics = async (userId, timeframe = 'month') => {
  * @returns {Promise<Object>} - Updated profile data
  */
 const updateUserProfile = async (userId, profileData) => {
+  console.log('🔄 Starting profile update for user:', userId, 'with data:', profileData);
+  
   try {
     // Try to update via API first
-    if (localStorage.getItem('token')) {
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    console.log('🔑 Token check:', token ? 'Found' : 'Not found');
+    
+    if (token) {
       try {
+        console.log('🌐 Attempting API update...');
         const result = await updateUserProfileAPI(profileData);
+        console.log('✅ API update successful:', result);
+        
         // Also update local storage with the result
         await saveUserProfile({ ...result, userId });
         return result;
       } catch (apiError) {
-        console.warn('API update failed, falling back to local storage:', apiError);
+        console.warn('⚠️ API update failed, falling back to local storage:', apiError);
       }
+    } else {
+      console.log('📴 No token found, using local storage only');
     }
     
     // Fallback to local storage update
@@ -861,6 +952,7 @@ const updateUserProfile = async (userId, profileData) => {
       lastUpdated: new Date().toISOString()
     };
     
+    console.log('💾 Saving to local storage:', updatedProfile);
     await saveUserProfile(updatedProfile);
     return updatedProfile;
   } catch (error) {

@@ -1139,29 +1139,49 @@
   margin-bottom: 6px;
 }
 
+/* Enhanced avatar styling */
 .pro-blurb-left .pro-blurb-avatar,
 .pro-blurb-avatar {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 4px 12px rgba(102, 126, 234, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pro-blurb-avatar:hover {
+  transform: scale(1.05);
+  border-color: rgba(102, 126, 234, 0.4);
+  box-shadow: 
+    0 6px 20px rgba(102, 126, 234, 0.25),
+    0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
 .pro-blurb-body {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  min-width: 0;
 }
 
 .pro-blurb-text {
   display: -webkit-box;
-  -webkit-line-clamp: 4; /* default desktop clamp */
+  -webkit-line-clamp: 4;
   line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.35;
+  line-height: 1.6;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 1024px) {
@@ -1171,12 +1191,128 @@
   .pro-blurb-text { -webkit-line-clamp: 2; line-clamp: 2; }
 }
 
-.pro-blurb-attachments { display: flex; gap: 10px; align-items: center; }
-.pro-blurb-attachment { flex: 0 0 auto; width: 140px; height: 120px; overflow: hidden; border-radius: 12px; }
-.pro-blurb-attachment img { width: 100%; height: 100%; object-fit: cover; display:block; }
-.pro-blurb-more { display:flex; align-items:center; justify-content:center; width:140px; height:120px; border-radius:12px; background:rgba(0,0,0,0.04); font-weight:700; }
+/* Enhanced sender and timestamp styling */
+.pro-blurb-sender {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
 
-.pro-blurb-right { display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+.pro-blurb-time {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.01em;
+  opacity: 0.9;
+}
+
+.pro-blurb-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  gap: 8px;
+}
+
+.pro-blurb-attachments { 
+  display: flex; 
+  gap: 12px; 
+  align-items: center; 
+  margin-top: 10px;
+}
+
+.pro-blurb-attachment { 
+  flex: 0 0 auto; 
+  width: 140px; 
+  height: 120px; 
+  overflow: hidden; 
+  border-radius: 16px; 
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pro-blurb-attachment:hover {
+  transform: scale(1.02);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.15),
+    0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.pro-blurb-attachment img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  display: block; 
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pro-blurb-attachment:hover img {
+  transform: scale(1.05);
+}
+
+.pro-blurb-more { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  width: 140px; 
+  height: 120px; 
+  border-radius: 16px; 
+  background: rgba(255, 255, 255, 0.1); 
+  font-weight: 600; 
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pro-blurb-more:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.02);
+}
+
+.pro-blurb-right { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  align-items: flex-end; 
+}
+
+/* Enhanced dark theme support for message blurbs */
+.dark-theme .pro-message-blurb {
+  background: rgba(17, 24, 39, 0.8);
+  border-color: rgba(75, 85, 99, 0.3);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dark-theme .pro-message-blurb:hover {
+  background: rgba(17, 24, 39, 0.9);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark-theme .pro-blurb-avatar {
+  border-color: rgba(75, 85, 99, 0.4);
+}
+
+.dark-theme .pro-blurb-avatar:hover {
+  border-color: rgba(102, 126, 234, 0.5);
+}
 
 .pro-blurb-actions { display:flex; gap:6px; }
 .pro-blurb-action-btn { background: transparent; border: none; cursor: pointer; padding:6px; border-radius:8px; font-size:14px; }
@@ -1885,36 +2021,48 @@
   background-color: rgba(255, 255, 255, 0.12);
 }
 
-/* Compact blurb style for message list */
+/* Elegant compact blurb style for message list - UNIFIED BASE */
 .pro-message-blurb {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 14px;
+  padding: 14px 18px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  position: relative; /* allow absolute child actions */
+  /* background removed - let MessagePositionStyles handle colors */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
   z-index: 5;
-  margin-bottom: 8px;
-  box-shadow: var(--pro-shadow-sm);
-  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, opacity 300ms ease;
-  /* Animation ready state */
+  margin-bottom: 12px;
+  box-shadow: 
+    0 4px 12px rgba(102, 126, 234, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   opacity: 1;
   transform: translateY(0) translateX(0) scale(1);
+  font-weight: 400;
+  line-height: 1.5;
+  cursor: pointer;
 }
 
-/* Enhanced hover effects for message cards */
+/* DISABLED - Conflicting hover effects - handled in MessagePositionStyles.css */
+/* 
 .pro-message-blurb:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.5);
-  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 12px 32px rgba(102, 126, 234, 0.15),
+    0 4px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(102, 126, 234, 0.2);
+  backdrop-filter: blur(25px);
 }
+*/
 
 .pro-message-blurb:active {
-  transform: translateY(0) scale(0.99);
-  transition: transform 100ms ease;
+  transform: translateY(-1px) scale(1.01);
+  transition: all 0.1s ease;
 }
 
 /* Last message focus indicator */
@@ -2277,13 +2425,13 @@
 
 /* Background styles only - positioning is controlled in MessagePositionStyles.css */
 .pro-blurb-outgoing {
-  background: #00796b !important; /* Teal color for current device user's messages */
+  /* background handled by MessagePositionStyles.css */
   border: 1px solid rgba(255, 255, 255, 0.5) !important;
   color: #fff !important;
 }
 
 .pro-blurb-incoming {
-  background: #8a2be2 !important; /* Purple color for other users' messages */
+  /* background handled by MessagePositionStyles.css */
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
   color: #fff !important;
 }

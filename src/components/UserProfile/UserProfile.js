@@ -6,6 +6,8 @@ import PrivacySettings from './PrivacySettings';
 import ProfileAnalytics from './ProfileAnalytics';
 import EnhancedMediaGallery from './EnhancedMediaGallery';
 import AvatarUpload from './AvatarUpload';
+import ContactModal from '../Contacts/ContactModal';
+import EncryptionSettings from '../Encryption/EncryptionSettings';
 
 const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -17,6 +19,10 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contacts, setContacts] = useState([]);
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
 
   // Check if this is the current user's profile
   const getCurrentUserId = () => {
@@ -62,8 +68,38 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
       try {
         setLoading(true);
         
-        // Fetch basic user profile data
+        // For the current user's own profile, try to get real data first
+        if (isOwnProfile) {
+          try {
+            // Try to get current user data from localStorage/sessionStorage
+            const localUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+            if (localUser) {
+              const userData = JSON.parse(localUser);
+              console.log('📋 Setting current user profile from local storage:', userData);
+              setUserProfile({
+                ...userData,
+                userId: userData.id,
+                username: userData.username,
+                displayName: userData.displayName || userData.name,
+                bio: userData.bio || '',
+                avatarUrl: userData.avatar,
+                uploadCount: 0,
+                connectionCount: 0,
+                activityScore: 0,
+                joinDate: userData.createdAt,
+                isOnline: true, // Current user is always online
+                status: 'online'
+              });
+            }
+          } catch (error) {
+            console.warn('⚠️ Could not parse user data from storage:', error);
+          }
+        }
+        
+        // Fetch user profile data (this will either get real API data or mock data)
+        console.log('🔍 Fetching user profile for:', userId, isOwnProfile ? '(own profile)' : '(other user)');
         const profileData = await userDataService.fetchUserProfile(userId);
+        console.log('✅ Profile data received:', profileData);
         setUserProfile(profileData);
         
         // Fetch user uploads based on active tab
@@ -87,17 +123,45 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
     };
 
     loadUserData();
-  }, [userId, activeTab]);
+  }, [userId, activeTab, isOwnProfile]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
 
   const handleProfileSave = (updatedProfile) => {
+    console.log('💾 Saving updated profile:', updatedProfile);
     setUserProfile(prev => ({
       ...prev,
-      ...updatedProfile
+      ...updatedProfile,
+      // Ensure online status is maintained for current user
+      isOnline: isOwnProfile ? true : prev?.isOnline,
+      status: isOwnProfile ? 'online' : prev?.status
     }));
+    
+    // Also update localStorage if this is the current user
+    if (isOwnProfile) {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+        const updatedUser = {
+          ...currentUser,
+          ...updatedProfile,
+          isOnline: true,
+          status: 'online'
+        };
+        
+        // Update both localStorage and sessionStorage
+        if (localStorage.getItem('user')) {
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+        if (sessionStorage.getItem('user')) {
+          sessionStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+        console.log('✅ Updated user data in local storage');
+      } catch (error) {
+        console.warn('⚠️ Could not update user data in storage:', error);
+      }
+    }
   };
 
   const handleAvatarChange = async (newAvatarUrl) => {
@@ -108,6 +172,25 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
     } catch (error) {
       console.error('Failed to update avatar:', error);
     }
+  };
+
+  // Contact management functions
+  const handleContactSave = (contactData) => {
+    // In a real app, this would save to backend
+    if (selectedContact) {
+      // Update existing contact
+      setContacts(prev => prev.map(c => c.id === selectedContact.id ? { ...c, ...contactData } : c));
+    } else {
+      // Add new contact
+      const newContact = {
+        ...contactData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      setContacts(prev => [...prev, newContact]);
+    }
+    setShowContactModal(false);
+    setSelectedContact(null);
   };
 
   const getFileIcon = (fileType) => {
@@ -392,6 +475,25 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
               <span className="tab-icon">📚</span>
               <span className="tab-label">History</span>
             </button>
+            <button 
+              className={`tab-btn ${activeTab === 'contacts' ? 'active' : ''}`}
+              onClick={() => {
+                setSelectedContact(null);
+                setShowContactModal(true);
+              }}
+            >
+              <span className="tab-icon">👥</span>
+              <span className="tab-label">Contacts</span>
+            </button>
+            {isOwnProfile && (
+              <button 
+                className={`tab-btn ${activeTab === 'encryption' ? 'active' : ''}`}
+                onClick={() => setShowEncryptionSettings(true)}
+              >
+                <span className="tab-icon">🔒</span>
+                <span className="tab-label">Security</span>
+              </button>
+            )}
             <div className="tab-indicator"></div>
           </div>
         </div>
@@ -467,6 +569,28 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
         <ProfileAnalytics
           userProfile={userProfile}
           onClose={() => setShowAnalyticsModal(false)}
+        />
+      )}
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <ContactModal
+          contact={selectedContact}
+          allContacts={contacts}
+          onSave={handleContactSave}
+          onClose={() => {
+            setShowContactModal(false);
+            setSelectedContact(null);
+          }}
+        />
+      )}
+
+      {/* Encryption Settings Modal */}
+      {showEncryptionSettings && (
+        <EncryptionSettings
+          isOpen={showEncryptionSettings}
+          currentUser={{ id: userId, username: username }}
+          onClose={() => setShowEncryptionSettings(false)}
         />
       )}
     </div>

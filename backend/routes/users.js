@@ -4,8 +4,19 @@ const path = require('path');
 const fs = require('fs');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
-const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+
+// Dynamic User model import based on database type
+const getUserModel = () => {
+  const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+  if (databaseType.toLowerCase() === 'mysql') {
+    return require('../models/mysql/User');
+  } else {
+    return require('../models/User'); // MongoDB model
+  }
+};
+
+const User = getUserModel();
 
 // Configure multer for avatar uploads
 const avatarStorage = multer.diskStorage({
@@ -220,7 +231,19 @@ router.delete('/avatar', authenticateToken, async (req, res) => {
 // GET /api/users/profile - get current user profile
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findOne({ id: req.user.id });
+    const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+    let user;
+    
+    // Check if we're using in-memory storage first
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      user = global.inMemoryStorage.users.find(u => u.id === req.user.id || u.id === req.user.id.toString());
+    } else if (databaseType.toLowerCase() === 'mysql') {
+      // MySQL/Sequelize query
+      user = await User.findOne({ where: { id: req.user.id } });
+    } else {
+      // MongoDB query
+      user = await User.findOne({ id: req.user.id });
+    }
     
     if (!user) {
       return res.status(404).json({
@@ -229,8 +252,18 @@ router.get('/profile', authenticateToken, async (req, res) => {
       });
     }
 
-    const userObject = user.toObject();
-    delete userObject.password;
+    // Format user object based on storage type
+    let userObject;
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      userObject = { ...user };
+      delete userObject.password;
+    } else if (databaseType.toLowerCase() === 'mysql') {
+      userObject = user.toJSON();
+      delete userObject.password;
+    } else {
+      userObject = user.toObject();
+      delete userObject.password;
+    }
     
     res.json({
       success: true,
@@ -312,8 +345,17 @@ router.put('/profile', authenticateToken, async (req, res) => {
       });
     }
 
-    // Handle MongoDB storage
-    const user = await User.findOne({ id: req.user.id });
+    // Handle MySQL or MongoDB storage
+    const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+    let user;
+    
+    if (databaseType.toLowerCase() === 'mysql') {
+      // MySQL/Sequelize query
+      user = await User.findOne({ where: { id: req.user.id } });
+    } else {
+      // MongoDB query
+      user = await User.findOne({ id: req.user.id });
+    }
     
     if (!user) {
       return res.status(404).json({
@@ -337,31 +379,61 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
     // Handle nested objects properly
     if (req.body.socialLinks) {
-      Object.keys(req.body.socialLinks).forEach(key => {
-        user.socialLinks[key] = req.body.socialLinks[key];
-      });
+      if (databaseType.toLowerCase() === 'mysql') {
+        // For MySQL, ensure the object exists first
+        if (!user.socialLinks) user.socialLinks = {};
+        Object.assign(user.socialLinks, req.body.socialLinks);
+      } else {
+        // For MongoDB
+        Object.keys(req.body.socialLinks).forEach(key => {
+          user.socialLinks[key] = req.body.socialLinks[key];
+        });
+      }
     }
     
     if (req.body.notifications) {
-      Object.keys(req.body.notifications).forEach(key => {
-        user.notifications[key] = req.body.notifications[key];
-      });
+      if (databaseType.toLowerCase() === 'mysql') {
+        // For MySQL, ensure the object exists first
+        if (!user.notifications) user.notifications = {};
+        Object.assign(user.notifications, req.body.notifications);
+      } else {
+        // For MongoDB
+        Object.keys(req.body.notifications).forEach(key => {
+          user.notifications[key] = req.body.notifications[key];
+        });
+      }
     }
     
     if (req.body.privacy) {
-      Object.keys(req.body.privacy).forEach(key => {
-        user.privacy[key] = req.body.privacy[key];
-      });
+      if (databaseType.toLowerCase() === 'mysql') {
+        // For MySQL, ensure the object exists first
+        if (!user.privacy) user.privacy = {};
+        Object.assign(user.privacy, req.body.privacy);
+      } else {
+        // For MongoDB
+        Object.keys(req.body.privacy).forEach(key => {
+          user.privacy[key] = req.body.privacy[key];
+        });
+      }
     }
 
     // Update timestamp
-    user.updatedAt = new Date();
+    if (databaseType.toLowerCase() === 'mysql') {
+      user.updatedAt = new Date();
+    } else {
+      user.updatedAt = new Date();
+    }
     
     // Save changes to database
     await user.save();
     
     // Return updated user object
-    const userObject = user.toObject();
+    let userObject;
+    if (databaseType.toLowerCase() === 'mysql') {
+      userObject = user.toJSON();
+    } else {
+      userObject = user.toObject();
+    }
     delete userObject.password;
     
     res.json({
@@ -432,8 +504,17 @@ router.put('/preferences', authenticateToken, async (req, res) => {
       });
     }
 
-    // Handle MongoDB storage
-    const user = await User.findOne({ id: req.user.id });
+    // Handle MySQL or MongoDB storage
+    const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+    let user;
+    
+    if (databaseType.toLowerCase() === 'mysql') {
+      // MySQL/Sequelize query
+      user = await User.findOne({ where: { id: req.user.id } });
+    } else {
+      // MongoDB query
+      user = await User.findOne({ id: req.user.id });
+    }
     
     if (!user) {
       return res.status(404).json({
@@ -451,15 +532,29 @@ router.put('/preferences', authenticateToken, async (req, res) => {
     
     // Update nested objects
     if (notifications) {
-      Object.keys(notifications).forEach(key => {
-        user.notifications[key] = notifications[key];
-      });
+      if (databaseType.toLowerCase() === 'mysql') {
+        // For MySQL, ensure the object exists first
+        if (!user.notifications) user.notifications = {};
+        Object.assign(user.notifications, notifications);
+      } else {
+        // For MongoDB
+        Object.keys(notifications).forEach(key => {
+          user.notifications[key] = notifications[key];
+        });
+      }
     }
     
     if (privacy) {
-      Object.keys(privacy).forEach(key => {
-        user.privacy[key] = privacy[key];
-      });
+      if (databaseType.toLowerCase() === 'mysql') {
+        // For MySQL, ensure the object exists first
+        if (!user.privacy) user.privacy = {};
+        Object.assign(user.privacy, privacy);
+      } else {
+        // For MongoDB
+        Object.keys(privacy).forEach(key => {
+          user.privacy[key] = privacy[key];
+        });
+      }
     }
 
     // Update timestamp
@@ -469,7 +564,12 @@ router.put('/preferences', authenticateToken, async (req, res) => {
     await user.save();
     
     // Return updated user
-    const userObject = user.toObject();
+    let userObject;
+    if (databaseType.toLowerCase() === 'mysql') {
+      userObject = user.toJSON();
+    } else {
+      userObject = user.toObject();
+    }
     delete userObject.password;
     
     res.json({

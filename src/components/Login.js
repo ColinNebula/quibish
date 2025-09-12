@@ -31,8 +31,10 @@ const Login = ({ onLogin, switchToRegister }) => {
       usernameRef.current.focus();
     }
     
-    // Check server connection on load
-    checkApiConnection().then(isConnected => {
+    const autoLogin = async () => {
+      // Check server connection on load
+      const isConnected = await checkApiConnection();
+      
       if (!isConnected) {
         console.log('API server appears to be offline');
         setError('🌐 No backend server detected. The app is running in demo mode - you can still log in and use all features!');
@@ -41,9 +43,41 @@ const Login = ({ onLogin, switchToRegister }) => {
       } else {
         console.log('API server is online');
         setServerStatus('online');
+        
+        // Auto-login with demo credentials for development
+        console.log('🔐 Auto-logging in with demo credentials...');
+        setUsername('demo');
+        setPassword('demo');
+        setRememberMe(true);
+        
+        // Trigger automatic login after form fields are set
+        setTimeout(async () => {
+          try {
+            setLoading(true);
+            setError(null);
+            
+            const response = await authService.login('demo', 'demo');
+            
+            if (response.success) {
+              console.log('✅ Auto-login successful');
+              login(response.user, response.token, true);
+              if (onLogin) onLogin();
+            } else {
+              console.log('❌ Auto-login failed:', response.error);
+              setError('Auto-login failed. Please login manually.');
+            }
+          } catch (error) {
+            console.error('❌ Auto-login error:', error);
+            setError('Auto-login failed. Please login manually.');
+          } finally {
+            setLoading(false);
+          }
+        }, 500);
       }
-    });
-  }, []);
+    };
+    
+    autoLogin();
+  }, []); // Empty dependency array to run only once
 
   // Validate form fields
   const validateForm = () => {
@@ -141,7 +175,7 @@ const Login = ({ onLogin, switchToRegister }) => {
             name: demoUser.name
           };
           
-          authService.saveUserSession(userData, 'demo-token-local', rememberMe);
+          login(userData, 'demo-token-local', rememberMe); // Use AuthContext login
           onLogin(userData, 'demo-token-local');
           return;
         } else {
@@ -181,7 +215,7 @@ const Login = ({ onLogin, switchToRegister }) => {
       
       // Save user session and notify parent component
       console.log('Login Component - Login successful, saving session');
-      authService.saveUserSession(data.user, data.token, rememberMe);
+      login(data.user, data.token, rememberMe); // Use AuthContext login
       onLogin(data.user, data.token);
       
       console.log('Login Component - Session saved and parent notified');
@@ -251,7 +285,7 @@ const Login = ({ onLogin, switchToRegister }) => {
       
       // Save user session and notify parent component
       console.log('Login Component - 2FA successful, completing login');
-      authService.saveUserSession(loginResponse.user, loginResponse.token, rememberMe);
+      login(loginResponse.user, loginResponse.token, rememberMe); // Use AuthContext login
       onLogin(loginResponse.user, loginResponse.token);
       
     } catch (error) {

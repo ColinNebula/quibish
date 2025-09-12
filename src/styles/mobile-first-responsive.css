@@ -1,0 +1,647 @@
+/* Enhanced Mobile-First Responsive Design for Smartphones */
+
+/* Custom properties for smartphone optimization */
+:root {
+  /* Dynamic viewport units for proper mobile height handling */
+  --app-height: 100vh;
+  --app-height-mobile: 100dvh; /* Dynamic viewport height - accounts for mobile browser UI */
+  --app-width: 100vw;
+  --app-width-mobile: 100dvw; /* Dynamic viewport width */
+  
+  /* Touch-optimized spacing */
+  --touch-target-min: 44px; /* Minimum touch target size per Apple/Google guidelines */
+  --touch-spacing: 16px; /* Comfortable spacing between touch elements */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  
+  /* Enhanced mobile typography */
+  --text-base-mobile: 16px; /* Prevents zoom on iOS */
+  --text-small-mobile: 14px;
+  --text-large-mobile: 18px;
+  --line-height-comfortable: 1.6;
+  
+  /* Gesture-friendly zones */
+  --gesture-zone-height: 60px;
+  --nav-height-mobile: calc(56px + var(--safe-area-inset-top));
+  --input-height-mobile: calc(60px + var(--safe-area-inset-bottom));
+  
+  /* Performance optimizations */
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 250ms ease-out;
+  --transition-slow: 350ms ease-out;
+  
+  /* Mobile shadows and blur effects */
+  --shadow-mobile: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --shadow-elevated-mobile: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --backdrop-blur-mobile: blur(20px);
+}
+
+/* Set app height correctly for mobile devices */
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
+}
+
+/* Base mobile-first container */
+.smartphone-optimized {
+  height: var(--app-height);
+  width: var(--app-width);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  
+  /* Safe area handling for notched devices */
+  padding-top: var(--safe-area-inset-top);
+  padding-bottom: var(--safe-area-inset-bottom);
+  padding-left: var(--safe-area-inset-left);
+  padding-right: var(--safe-area-inset-right);
+  
+  /* Prevent overscroll bounce on iOS */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Enhanced touch targets */
+.touch-target {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  
+  /* Touch feedback */
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-target:active {
+  transform: scale(0.95);
+  opacity: 0.7;
+}
+
+/* Enhanced ripple effect for touch feedback */
+.touch-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.touch-ripple::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width var(--transition-normal), height var(--transition-normal);
+  pointer-events: none;
+}
+
+.touch-ripple:active::before {
+  width: 200%;
+  height: 200%;
+}
+
+/* Mobile navigation with gesture support */
+.mobile-navigation {
+  height: var(--nav-height-mobile);
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  backdrop-filter: var(--backdrop-blur-mobile);
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--touch-spacing);
+  box-sizing: border-box;
+  
+  /* Smooth transitions */
+  transition: transform var(--transition-normal);
+}
+
+/* Hide navigation on scroll down, show on scroll up */
+.mobile-navigation.hidden {
+  transform: translateY(-100%);
+}
+
+/* Enhanced swipe gesture support */
+.swipeable {
+  touch-action: pan-x;
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(90deg, #ff6b6b, #ee5a52);
+  transform: translateX(100%);
+  transition: transform var(--transition-normal);
+}
+
+.swipeable.swiped .swipe-actions {
+  transform: translateX(0);
+}
+
+/* Enhanced pull-to-refresh */
+.pull-to-refresh {
+  position: relative;
+  overflow: hidden;
+}
+
+.pull-indicator {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  transition: top var(--transition-normal), transform var(--transition-normal);
+  backdrop-filter: var(--backdrop-blur-mobile);
+}
+
+.pull-to-refresh.pulling .pull-indicator {
+  top: 20px;
+}
+
+.pull-to-refresh.refreshing .pull-indicator {
+  animation: spin 1s linear infinite;
+}
+
+/* Virtual keyboard handling */
+.keyboard-avoiding {
+  transition: transform var(--transition-normal);
+}
+
+.keyboard-avoiding.keyboard-open {
+  transform: translateY(-50px); /* Adjust based on keyboard height */
+}
+
+/* Enhanced message input for mobile */
+.mobile-message-input {
+  width: 100%;
+  min-height: 44px;
+  max-height: 120px;
+  font-size: var(--text-base-mobile);
+  line-height: var(--line-height-comfortable);
+  padding: 12px 16px;
+  border: none;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: var(--backdrop-blur-mobile);
+  
+  /* Prevent zoom on iOS */
+  font-size: 16px;
+  
+  /* Enhanced touch scrolling */
+  -webkit-overflow-scrolling: touch;
+  resize: none;
+  
+  /* Smooth transitions */
+  transition: box-shadow var(--transition-fast);
+}
+
+.mobile-message-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* Mobile message list spacing fix */
+.mobile-optimized.pro-message-list {
+  /* Account for fixed mobile input bar height */
+  padding-bottom: calc(var(--input-height-mobile) + 40px) !important;
+  /* Ensure smooth scrolling to bottom */
+  scroll-padding-bottom: calc(var(--input-height-mobile) + 20px);
+}
+
+/* Enhanced mobile bottom bar */
+.mobile-input-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  min-height: var(--input-height-mobile);
+  padding: 12px var(--touch-spacing);
+  padding-bottom: calc(12px + var(--safe-area-inset-bottom));
+  
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: var(--backdrop-blur-mobile);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  
+  /* Prevent overscroll */
+  overscroll-behavior: none;
+}
+
+/* Ensure content doesn't get cut off behind mobile input bar */
+.mobile-input-bar ~ .pro-message-list,
+body:has(.mobile-input-bar) .pro-message-list {
+  margin-bottom: calc(var(--input-height-mobile) + 20px);
+}
+
+/* Additional fix for mobile optimization */
+@media (max-width: 768px) {
+  .pro-message-list.mobile-optimized {
+    padding-bottom: calc(var(--input-height-mobile) + 60px) !important;
+    box-sizing: border-box;
+  }
+  
+  /* Ensure messages are always visible above input bar */
+  .pro-chat-input-container.mobile-input-bar {
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Mobile user profile - round avatar only */
+@media screen and (max-width: 768px) {
+  .sidebar-user-profile {
+    padding: 12px;
+    justify-content: center;
+    border-radius: 20px;
+    margin: 8px;
+    background: rgba(79, 70, 229, 0.08);
+  }
+  
+  .user-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .user-avatar img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50% !important;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .user-avatar:hover img {
+    transform: scale(1.1);
+    border-color: var(--pro-accent, #4f46e5);
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+  }
+  
+  /* Hide text elements on mobile */
+  .user-info,
+  .user-actions {
+    display: none !important;
+  }
+  
+  /* Enhance status indicator for mobile */
+  .status-indicator {
+    width: 14px;
+    height: 14px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: #10b981;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+  }
+  
+  /* Admin badge adjustments for mobile */
+  .admin-badge {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    top: -3px;
+    right: -3px;
+  }
+}
+
+/* Small mobile devices */
+@media screen and (max-width: 480px) {
+  .sidebar-user-profile {
+    padding: 10px;
+    margin: 6px;
+  }
+  
+  .user-avatar img {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .admin-badge {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+  }
+}
+
+/* Touch-optimized action buttons */
+.mobile-action-button {
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  border-radius: 50%;
+  border: none;
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  
+  /* Enhanced touch feedback */
+  transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mobile-action-button:active {
+  transform: scale(0.9);
+  background: rgba(99, 102, 241, 0.2);
+}
+
+/* Haptic feedback class - used by JavaScript to trigger haptic feedback */
+.haptic-light {
+  /* This class is used by JavaScript to identify elements that should trigger haptic feedback */
+  position: relative;
+}
+
+/* Enhanced mobile gestures */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch device specific styles */
+  
+  .hover-effect:hover {
+    /* Remove hover effects on touch devices */
+    background: initial;
+    transform: initial;
+  }
+  
+  /* Enhanced touch targets */
+  button, .clickable {
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+  }
+  
+  /* Prevent text selection on touch */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Device orientation handling */
+@media screen and (orientation: landscape) and (max-height: 600px) {
+  .mobile-navigation {
+    height: 48px;
+    padding: 0 12px;
+  }
+  
+  .mobile-input-bar {
+    min-height: 48px;
+    padding: 8px 12px;
+    padding-bottom: calc(8px + var(--safe-area-inset-bottom));
+  }
+  
+  .mobile-message-input {
+    min-height: 36px;
+    padding: 8px 12px;
+  }
+  
+  .mobile-action-button {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}
+
+/* Specific iPhone models */
+@media screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) {
+  /* iPhone 12/13/14 Pro */
+  :root {
+    --safe-area-inset-top: 47px;
+    --safe-area-inset-bottom: 34px;
+  }
+}
+
+@media screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) {
+  /* iPhone 12/13/14 Pro Max */
+  :root {
+    --safe-area-inset-top: 47px;
+    --safe-area-inset-bottom: 34px;
+  }
+}
+
+/* Android specific optimizations */
+@media screen and (max-width: 768px) {
+  .android-optimized {
+    /* Prevent overscroll glow */
+    overscroll-behavior: none;
+    
+    /* Optimize scrolling performance */
+    will-change: scroll-position;
+    
+    /* Material Design touch ripples */
+    overflow: hidden;
+    position: relative;
+  }
+}
+
+/* Performance optimizations for mobile */
+.mobile-optimized {
+  /* GPU acceleration for smooth animations */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+  
+  /* Optimize repaints */
+  contain: layout style paint;
+  
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .touch-target:active {
+    transform: none;
+  }
+  
+  .touch-ripple::before {
+    display: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mobile-navigation {
+    background: #ffffff;
+    border-bottom: 2px solid #000000;
+  }
+  
+  .mobile-input-bar {
+    background: #ffffff;
+    border-top: 2px solid #000000;
+  }
+  
+  .mobile-action-button {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Dark mode mobile optimizations */
+@media (prefers-color-scheme: dark) {
+  .smartphone-optimized {
+    background: #000000;
+    color: #ffffff;
+  }
+  
+  .mobile-navigation {
+    background: rgba(0, 0, 0, 0.95);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .mobile-input-bar {
+    background: rgba(0, 0, 0, 0.95);
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .mobile-message-input {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+  
+  .mobile-action-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+}
+
+/* Utility classes for mobile development */
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media screen and (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+  
+  /* Fix mobile-input-bar for desktop/tablet */
+  .mobile-input-bar {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+  
+  /* Ensure input container stays within chat bounds */
+  .pro-chat-input-container.mobile-input-bar {
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    left: auto;
+    right: auto;
+    margin: 0 auto;
+  }
+}
+
+/* Animation keyframes for mobile interactions */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

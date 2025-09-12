@@ -3,7 +3,18 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
-const User = require('../models/User');
+
+// Dynamic User model import based on database type
+const getUserModel = () => {
+  const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+  if (databaseType.toLowerCase() === 'mysql') {
+    return require('../models/mysql/User');
+  } else {
+    return require('../models/User'); // MongoDB model
+  }
+};
+
+const User = getUserModel();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 
@@ -94,13 +105,29 @@ const findUser = async (identifier) => {
     );
   }
   
-  // Otherwise use MongoDB
-  return await User.findOne({
-    $or: [
-      { username: identifier },
-      { email: identifier }
-    ]
-  });
+  // Check database type and use appropriate query
+  const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+  
+  if (databaseType.toLowerCase() === 'mysql') {
+    // MySQL/Sequelize query
+    const { Op } = require('sequelize');
+    return await User.findOne({
+      where: {
+        [Op.or]: [
+          { username: identifier },
+          { email: identifier }
+        ]
+      }
+    });
+  } else {
+    // MongoDB query
+    return await User.findOne({
+      $or: [
+        { username: identifier },
+        { email: identifier }
+      ]
+    });
+  }
 };
 
 // POST /api/auth/login - matches what frontend expects
@@ -152,7 +179,7 @@ router.post('/login', async (req, res) => {
     user.lastActive = new Date();
     user.status = 'online';
     
-    // Handle in-memory vs MongoDB
+    // Handle database updates based on storage mode
     if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
       // Update in-memory user
       const userIndex = global.inMemoryStorage.users.findIndex(
@@ -167,7 +194,7 @@ router.post('/login', async (req, res) => {
         };
       }
     } else {
-      // Save to MongoDB
+      // Save to MySQL or MongoDB
       await user.save();
     }
 
@@ -180,7 +207,12 @@ router.post('/login', async (req, res) => {
       userObject = { ...user };
       delete userObject.password;
     } else {
-      userObject = user.toObject();
+      const databaseType = process.env.DATABASE_TYPE || 'mongodb';
+      if (databaseType.toLowerCase() === 'mysql') {
+        userObject = user.toJSON();
+      } else {
+        userObject = user.toObject();
+      }
       delete userObject.password;
     }
     
@@ -446,7 +478,9 @@ router.get('/verify', async (req, res) => {
       });
     }
 
+    console.log('Verifying token for request...');
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('Token decoded successfully, user ID:', decoded.id);
     
     let user;
     let userObject;
@@ -457,6 +491,7 @@ router.get('/verify', async (req, res) => {
       user = global.inMemoryStorage.users.find(u => u.id === decoded.id);
       
       if (!user) {
+        console.log('User not found in memory storage');
         return res.status(401).json({
           success: false,
           error: 'Invalid token'
@@ -472,30 +507,59 @@ router.get('/verify', async (req, res) => {
       userObject = { ...user };
       delete userObject.password;
     } else {
-      // Find in MongoDB
-      user = await User.findOne({ id: decoded.id });
+      // Find in database (MySQL or MongoDB)
+      const dbType = process.env.DATABASE_TYPE || 'mongodb';
+      console.log('Looking up user in database, type:', dbType);
       
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid token'
-        });
+      if (dbType.toLowerCase() === 'mysql') {
+        // MySQL/Sequelize query using primary key
+        user = await User.findByPk(decoded.id);
+        console.log('MySQL findByPk result:', user ? 'Found' : 'Not found');
+        
+        if (!user) {
+          return res.status(401).json({
+            success: false,
+            error: 'Invalid token'
+          });
+        }
+        
+        // Update last active timestamp
+        user.lastActive = new Date();
+        await user.save();
+      } else {
+        // MongoDB query
+        user = await User.findOne({ id: decoded.id });
+        console.log('MongoDB findOne result:', user ? 'Found' : 'Not found');
+        
+        if (!user) {
+          return res.status(401).json({
+            success: false,
+            error: 'Invalid token'
+          });
+        }
+        
+        // Update last active timestamp
+        user.lastActive = new Date();
+        await user.save();
       }
       
-      // Update last active timestamp
-      user.lastActive = new Date();
-      await user.save();
-      
-      userObject = user.toObject();
+      // Create userObject based on database type
+      if (dbType.toLowerCase() === 'mysql') {
+        userObject = user.toJSON();
+      } else {
+        userObject = user.toObject();
+      }
       delete userObject.password;
     }
     
+    console.log('Token verification successful for user:', userObject.username);
     res.json({
       success: true,
       user: userObject
     });
 
   } catch (error) {
+    console.error('Token verification error:', error.message);
     res.status(401).json({
       success: false,
       error: 'Invalid token'
