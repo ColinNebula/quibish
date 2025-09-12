@@ -10,6 +10,7 @@
 @import './mobile-emoji-fixes.css';
 @import './mobile-emoji-picker-fix.css';
 @import './mobile-input-center-fix.css';
+@import './styles/iphone-pro-max-responsive.css';
 
 /* Import enhanced glassmorphism system */
 @import './styles/glassmorphism-system.css';
