@@ -8,15 +8,15 @@ const path = require('path');
 const mongoose = require('mongoose');
 const http = require('http');
 const { connectToMySQL } = require('./config/mysql');
-const { MemoryMonitor } = require('./config/memory');
+const { MemoryMonitor, memoryMonitor } = require('./config/memory');
 const startupService = require('./services/startupService');
 const healthCheck = require('./middleware/healthCheck');
 const securityMiddleware = require('./middleware/security');
 const { router: signalingRouter, signalingServer } = require('./routes/signaling');
 require('dotenv').config();
 
-// Initialize memory monitor
-const memoryMonitor = new MemoryMonitor();
+// Memory monitor is auto-initialized from config
+// const memoryMonitor = new MemoryMonitor(); // Now using exported instance
 
 // Initialize global in-memory storage BEFORE importing databaseService
 global.inMemoryStorage = {
@@ -121,6 +121,7 @@ const uploadRoutes = require('./routes/upload');
 const twoFactorRoutes = require('./routes/twoFactor');
 const feedbackRoutes = require('./routes/feedback');
 const encryptionRoutes = require('./routes/encryption');
+const enhancedStorageRoutes = require('./routes/enhancedStorage');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -343,6 +344,44 @@ app.use('/api/conversations', conversationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/encryption', encryptionRoutes);
+app.use('/api/storage', enhancedStorageRoutes);
+
+// Memory monitoring routes
+app.get('/api/memory/report', (req, res) => {
+  try {
+    const report = memoryMonitor.getMemoryReport();
+    res.json({
+      success: true,
+      data: report,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error generating memory report:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate memory report'
+    });
+  }
+});
+
+// Memory cleanup endpoint (admin only)
+app.post('/api/memory/cleanup', (req, res) => {
+  try {
+    memoryMonitor.cleanup();
+    const report = memoryMonitor.getMemoryReport();
+    res.json({
+      success: true,
+      message: 'Memory cleanup completed',
+      data: report.current
+    });
+  } catch (error) {
+    console.error('Error during memory cleanup:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to perform memory cleanup'
+    });
+  }
+});
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

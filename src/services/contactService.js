@@ -78,15 +78,6 @@ class ContactService {
         // Calculate stats
         const stats = this.calculateContactStats(contacts);
         
-        // If no contacts exist, add some demo data
-        if (contacts.length === 0) {
-          this.seedDemoContacts().then(() => {
-            // Recursively call to get the demo data
-            this.getAllContacts().then(resolve).catch(reject);
-          });
-          return;
-        }
-
         resolve({
           contacts: contacts.sort((a, b) => a.name.localeCompare(b.name)),
           stats
@@ -120,9 +111,167 @@ class ContactService {
     };
   }
 
+  // Find duplicate contacts based on name, email, or phone
+  async findDuplicates(contactData, excludeId = null) {
+    const { contacts } = await this.getAllContacts();
+    
+    const duplicates = contacts.filter(contact => {
+      // Skip the contact being updated
+      if (excludeId && contact.id === excludeId) return false;
+      
+      // Check for exact name match (case insensitive)
+      if (contactData.name && contact.name && 
+          contactData.name.toLowerCase().trim() === contact.name.toLowerCase().trim()) {
+        return true;
+      }
+      
+      // Check for email matches
+      if (contactData.emails && contact.emails) {
+        const newEmails = contactData.emails.map(e => e.value.toLowerCase().trim()).filter(e => e);
+        const existingEmails = contact.emails.map(e => e.value.toLowerCase().trim()).filter(e => e);
+        if (newEmails.some(email => existingEmails.includes(email))) {
+          return true;
+        }
+      }
+      
+      // Backward compatibility - check legacy email field
+      if (contactData.email && contact.email && 
+          contactData.email.toLowerCase().trim() === contact.email.toLowerCase().trim()) {
+        return true;
+      }
+      
+      // Check for phone matches
+      if (contactData.phones && contact.phones) {
+        const newPhones = contactData.phones.map(p => this.normalizePhone(p.value)).filter(p => p);
+        const existingPhones = contact.phones.map(p => this.normalizePhone(p.value)).filter(p => p);
+        if (newPhones.some(phone => existingPhones.includes(phone))) {
+          return true;
+        }
+      }
+      
+      // Backward compatibility - check legacy phone field
+      if (contactData.phone && contact.phone && 
+          this.normalizePhone(contactData.phone) === this.normalizePhone(contact.phone)) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    return duplicates;
+  }
+
+  // Normalize phone number for comparison
+  normalizePhone(phone) {
+    if (!phone) return '';
+    return phone.replace(/[\s\-()\\+]/g, '').replace(/^1/, ''); // Remove formatting and leading 1
+  }
+
+  // Get potential duplicates with similarity scoring
+  async getPotentialDuplicates(contactData, threshold = 0.7) {
+    const { contacts } = await this.getAllContacts();
+    
+    const potentialDuplicates = contacts.map(contact => {
+      let score = 0;
+      let reasons = [];
+      
+      // Name similarity
+      const nameSimilarity = this.calculateSimilarity(
+        contactData.name?.toLowerCase() || '', 
+        contact.name?.toLowerCase() || ''
+      );
+      if (nameSimilarity > 0.8) {
+        score += nameSimilarity * 0.4;
+        reasons.push(`Name similarity: ${Math.round(nameSimilarity * 100)}%`);
+      }
+      
+      // Email matches
+      const emails1 = contactData.emails?.map(e => e.value.toLowerCase()) || [];
+      const emails2 = contact.emails?.map(e => e.value.toLowerCase()) || [];
+      if (contactData.email) emails1.push(contactData.email.toLowerCase());
+      if (contact.email) emails2.push(contact.email.toLowerCase());
+      
+      const emailMatches = emails1.filter(e1 => emails2.includes(e1));
+      if (emailMatches.length > 0) {
+        score += 0.5;
+        reasons.push(`Matching emails: ${emailMatches.join(', ')}`);
+      }
+      
+      // Phone matches
+      const phones1 = contactData.phones?.map(p => this.normalizePhone(p.value)) || [];
+      const phones2 = contact.phones?.map(p => this.normalizePhone(p.value)) || [];
+      if (contactData.phone) phones1.push(this.normalizePhone(contactData.phone));
+      if (contact.phone) phones2.push(this.normalizePhone(contact.phone));
+      
+      const phoneMatches = phones1.filter(p1 => phones2.includes(p1));
+      if (phoneMatches.length > 0) {
+        score += 0.4;
+        reasons.push(`Matching phones: ${phoneMatches.length} match(es)`);
+      }
+      
+      return {
+        contact,
+        score,
+        reasons,
+        isDuplicate: score >= threshold
+      };
+    }).filter(result => result.score >= threshold);
+    
+    return potentialDuplicates.sort((a, b) => b.score - a.score);
+  }
+
+  // Calculate string similarity using Levenshtein distance
+  calculateSimilarity(str1, str2) {
+    if (!str1 || !str2) return 0;
+    if (str1 === str2) return 1;
+    
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1;
+    
+    const editDistance = this.levenshteinDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+  }
+
+  // Levenshtein distance algorithm
+  levenshteinDistance(str1, str2) {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            matrix[i][j - 1] + 1,
+            matrix[i - 1][j] + 1
+          );
+        }
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  }
+
   // Create new contact
   async createContact(contactData) {
     await this.ensureReady();
+
+    // Check for duplicates before creating
+    const duplicates = await this.findDuplicates(contactData);
+    if (duplicates.length > 0) {
+      throw new Error(`Duplicate contact found: ${duplicates[0].name} (${duplicates[0].email || duplicates[0].phone})`);
+    }
 
     const contact = {
       id: `contact_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -154,6 +303,12 @@ class ContactService {
   // Update existing contact
   async updateContact(contactId, updateData) {
     await this.ensureReady();
+
+    // Check for duplicates before updating (excluding current contact)
+    const duplicates = await this.findDuplicates(updateData, contactId);
+    if (duplicates.length > 0) {
+      throw new Error(`Duplicate contact found: ${duplicates[0].name} (${duplicates[0].email || duplicates[0].phone})`);
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([STORE_NAME], 'readwrite');
@@ -189,6 +344,141 @@ class ContactService {
         reject(getRequest.error);
       };
     });
+  }
+
+  // Merge two contacts
+  async mergeContacts(primaryContactId, secondaryContactId, mergeStrategy = 'primary') {
+    await this.ensureReady();
+
+    const { contacts } = await this.getAllContacts();
+    const primaryContact = contacts.find(c => c.id === primaryContactId);
+    const secondaryContact = contacts.find(c => c.id === secondaryContactId);
+
+    if (!primaryContact || !secondaryContact) {
+      throw new Error('One or both contacts not found');
+    }
+
+    let mergedContact;
+
+    switch (mergeStrategy) {
+      case 'primary':
+        // Keep primary contact, add missing fields from secondary
+        mergedContact = this.mergePrimaryStrategy(primaryContact, secondaryContact);
+        break;
+      case 'secondary':
+        // Keep secondary contact, add missing fields from primary
+        mergedContact = this.mergePrimaryStrategy(secondaryContact, primaryContact);
+        break;
+      case 'newest':
+        // Keep the newer contact
+        const newerContact = new Date(primaryContact.createdAt) > new Date(secondaryContact.createdAt) 
+          ? primaryContact : secondaryContact;
+        const olderContact = newerContact === primaryContact ? secondaryContact : primaryContact;
+        mergedContact = this.mergePrimaryStrategy(newerContact, olderContact);
+        break;
+      case 'mostComplete':
+        // Keep the contact with more complete information
+        const primaryScore = this.calculateCompletenessScore(primaryContact);
+        const secondaryScore = this.calculateCompletenessScore(secondaryContact);
+        const moreComplete = primaryScore >= secondaryScore ? primaryContact : secondaryContact;
+        const lessComplete = moreComplete === primaryContact ? secondaryContact : primaryContact;
+        mergedContact = this.mergePrimaryStrategy(moreComplete, lessComplete);
+        break;
+      default:
+        mergedContact = this.mergePrimaryStrategy(primaryContact, secondaryContact);
+    }
+
+    // Update the primary contact with merged data
+    await this.updateContact(primaryContactId, mergedContact);
+    
+    // Delete the secondary contact
+    await this.deleteContact(secondaryContactId);
+
+    console.log('🔗 Contacts merged successfully');
+    return mergedContact;
+  }
+
+  // Merge strategy: keep primary, add missing from secondary
+  mergePrimaryStrategy(primary, secondary) {
+    const merged = { ...primary };
+
+    // Merge emails
+    const primaryEmails = primary.emails || [];
+    const secondaryEmails = secondary.emails || [];
+    const allEmails = [...primaryEmails];
+    
+    secondaryEmails.forEach(secEmail => {
+      if (!primaryEmails.some(primEmail => 
+        primEmail.value.toLowerCase() === secEmail.value.toLowerCase())) {
+        allEmails.push(secEmail);
+      }
+    });
+    merged.emails = allEmails;
+
+    // Merge phones
+    const primaryPhones = primary.phones || [];
+    const secondaryPhones = secondary.phones || [];
+    const allPhones = [...primaryPhones];
+    
+    secondaryPhones.forEach(secPhone => {
+      if (!primaryPhones.some(primPhone => 
+        this.normalizePhone(primPhone.value) === this.normalizePhone(secPhone.value))) {
+        allPhones.push(secPhone);
+      }
+    });
+    merged.phones = allPhones;
+
+    // Merge tags
+    const primaryTags = primary.tags || [];
+    const secondaryTags = secondary.tags || [];
+    merged.tags = [...new Set([...primaryTags, ...secondaryTags])];
+
+    // Merge social links
+    merged.socialLinks = {
+      ...secondary.socialLinks,
+      ...primary.socialLinks // Primary takes precedence
+    };
+
+    // Fill in missing fields from secondary
+    Object.keys(secondary).forEach(key => {
+      if (!merged[key] && secondary[key] && 
+          !['id', 'createdAt', 'updatedAt', 'emails', 'phones', 'tags', 'socialLinks'].includes(key)) {
+        merged[key] = secondary[key];
+      }
+    });
+
+    // Merge contact analytics
+    merged.contactCount = (primary.contactCount || 0) + (secondary.contactCount || 0);
+    merged.isFavorite = primary.isFavorite || secondary.isFavorite;
+    
+    // Keep the most recent contact date
+    if (secondary.lastContacted && (!primary.lastContacted || 
+        new Date(secondary.lastContacted) > new Date(primary.lastContacted))) {
+      merged.lastContacted = secondary.lastContacted;
+    }
+
+    merged.updatedAt = new Date().toISOString();
+    return merged;
+  }
+
+  // Calculate completeness score for merge strategy
+  calculateCompletenessScore(contact) {
+    let score = 0;
+    
+    if (contact.name) score += 10;
+    if (contact.emails && contact.emails.length > 0) score += 8;
+    if (contact.phones && contact.phones.length > 0) score += 8;
+    if (contact.company) score += 5;
+    if (contact.jobTitle) score += 3;
+    if (contact.location) score += 3;
+    if (contact.website) score += 2;
+    if (contact.avatar) score += 5;
+    if (contact.birthdate) score += 3;
+    if (contact.notes) score += 2;
+    if (contact.socialLinks && Object.values(contact.socialLinks).some(link => link)) score += 4;
+    if (contact.tags && contact.tags.length > 0) score += 2;
+    
+    return score;
   }
 
   // Delete contact
@@ -641,6 +931,71 @@ class ContactService {
         reject(request.error);
       };
     });
+  }
+
+  // Get contact statistics with duplicate detection
+  async getContactStatistics() {
+    const { contacts } = await this.getAllContacts();
+    const stats = this.calculateContactStats(contacts);
+    
+    // Find all potential duplicates
+    const allDuplicates = [];
+    for (let i = 0; i < contacts.length; i++) {
+      const contact = contacts[i];
+      const duplicates = await this.findDuplicates(contact, contact.id);
+      if (duplicates.length > 0) {
+        allDuplicates.push({
+          contact,
+          duplicates
+        });
+      }
+    }
+    
+    return {
+      ...stats,
+      duplicates: {
+        count: allDuplicates.length,
+        contacts: allDuplicates
+      }
+    };
+  }
+
+  // Batch cleanup duplicates
+  async cleanupDuplicates(strategy = 'mostComplete') {
+    const { contacts } = await this.getAllContacts();
+    const processed = new Set();
+    const cleanupResults = {
+      merged: 0,
+      deleted: 0,
+      errors: []
+    };
+
+    for (const contact of contacts) {
+      if (processed.has(contact.id)) continue;
+      
+      try {
+        const duplicates = await this.findDuplicates(contact, contact.id);
+        if (duplicates.length > 0) {
+          for (const duplicate of duplicates) {
+            if (!processed.has(duplicate.id)) {
+              await this.mergeContacts(contact.id, duplicate.id, strategy);
+              processed.add(duplicate.id);
+              cleanupResults.merged++;
+            }
+          }
+        }
+        processed.add(contact.id);
+      } catch (error) {
+        cleanupResults.errors.push({
+          contactId: contact.id,
+          contactName: contact.name,
+          error: error.message
+        });
+      }
+    }
+
+    console.log(`🧹 Duplicate cleanup completed: ${cleanupResults.merged} merged, ${cleanupResults.errors.length} errors`);
+    return cleanupResults;
   }
 }
 

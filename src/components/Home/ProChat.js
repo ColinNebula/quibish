@@ -11,6 +11,9 @@ import MessageActions from './MessageActions';
 import NativeCamera from '../NativeFeatures/NativeCamera';
 import NativeContactPicker from '../NativeFeatures/NativeContactPicker';
 import ContactManager from '../Contacts/ContactManager';
+import InternationalDialer from '../Voice/InternationalDialer';
+import DonationModal from '../Donation/DonationModal';
+import DonationPrompt from '../Donation/DonationPrompt';
 import messageService from '../../services/messageService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
@@ -85,6 +88,12 @@ const ProChat = ({
 
   // Contact manager state
   const [showContactManager, setShowContactManager] = useState(false);
+  
+  // International dialer state
+  const [showInternationalDialer, setShowInternationalDialer] = useState(false);
+
+  // Donation modal state
+  const [showDonationModal, setShowDonationModal] = useState(false);
 
   // Encryption state
   const [encryptionEnabled, setEncryptionEnabled] = useState(false);
@@ -1868,6 +1877,27 @@ const ProChat = ({
           </div>
           
           <div className="header-actions">
+            <button 
+              className="action-btn international-dialer-btn" 
+              title="FREE International Phone Calls - Call any number worldwide at no cost!"
+              onClick={() => setShowInternationalDialer(true)}
+            >
+              ☎️
+            </button>
+            <button 
+              className="action-btn donation-btn" 
+              title="💝 Support Our Free App - Help us keep it free for everyone!"
+              onClick={() => setShowDonationModal(true)}
+            >
+              💝
+            </button>
+            <button 
+              className="action-btn donation-btn" 
+              title="Support Our Free App - Help us keep it free for everyone!"
+              onClick={() => setShowDonationModal(true)}
+            >
+              💝
+            </button>
             <button className="action-btn video-call-btn" title="Start video call">
               📹
             </button>
@@ -2913,6 +2943,42 @@ const ProChat = ({
           </div>
         </div>
       )}
+
+      {/* International Dialer Modal */}
+      {showInternationalDialer && (
+        <InternationalDialer
+          isOpen={showInternationalDialer}
+          onClose={() => setShowInternationalDialer(false)}
+          darkMode={darkMode}
+        />
+      )}
+
+      {/* Donation Modal */}
+      {showDonationModal && (
+        <DonationModal
+          isOpen={showDonationModal}
+          onClose={() => setShowDonationModal(false)}
+          darkMode={darkMode}
+          userStats={{
+            callsMade: globalCall ? 1 : 0,
+            messagesSent: messages?.length || 0,
+            daysUsed: 1
+          }}
+        />
+      )}
+
+      {/* Donation Prompt - Non-intrusive encouragement */}
+      <DonationPrompt
+        userStats={{
+          callsMade: globalCall ? 1 : 0,
+          messagesSent: messages?.length || 0,
+          daysUsed: 1
+        }}
+        darkMode={darkMode}
+        onOpenDonation={() => setShowDonationModal(true)}
+        position="bottom-right"
+        autoShow={true}
+      />
     </div>
   );
 };

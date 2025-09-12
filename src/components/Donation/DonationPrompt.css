@@ -1,0 +1,300 @@
+/* Donation Prompt Styles */
+
+.donation-prompt {
+  position: fixed;
+  z-index: 1500;
+  max-width: 320px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  animation: slideInPrompt 0.4s ease-out;
+  overflow: hidden;
+}
+
+/* Position variants */
+.donation-prompt.bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.donation-prompt.bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+.donation-prompt.top-right {
+  top: 80px;
+  right: 20px;
+}
+
+.donation-prompt.top-left {
+  top: 80px;
+  left: 20px;
+}
+
+.prompt-content {
+  padding: 20px;
+}
+
+.prompt-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.prompt-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.prompt-text {
+  flex: 1;
+}
+
+.prompt-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 4px;
+}
+
+.prompt-subtitle {
+  font-size: 14px;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
+.prompt-close {
+  background: none;
+  border: none;
+  color: #718096;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.prompt-close:hover {
+  background: #f7fafc;
+  color: #2d3748;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.donate-now-btn {
+  flex: 1;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.donate-now-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(240, 147, 251, 0.4);
+}
+
+.maybe-later-btn {
+  padding: 12px 16px;
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.maybe-later-btn:hover {
+  background: #edf2f7;
+  color: #2d3748;
+}
+
+.prompt-stats {
+  background: #f7fafc;
+  padding: 12px 20px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #4a5568;
+  text-align: center;
+}
+
+/* Supporter Badge Display */
+.supporter-badge-display {
+  position: fixed;
+  z-index: 1000;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  animation: fadeInBadge 0.3s ease-out;
+}
+
+.supporter-badge-display.bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.supporter-badge-display.bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+.supporter-badge-display.top-right {
+  top: 80px;
+  right: 20px;
+}
+
+.supporter-badge-display.top-left {
+  top: 80px;
+  left: 20px;
+}
+
+.badge-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+}
+
+.badge-icon {
+  font-size: 18px;
+}
+
+.badge-title {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Dark Mode */
+.donation-prompt.dark {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+.donation-prompt.dark .prompt-title {
+  color: #e2e8f0;
+}
+
+.donation-prompt.dark .prompt-subtitle {
+  color: #cbd5e0;
+}
+
+.donation-prompt.dark .prompt-close {
+  color: #a0aec0;
+}
+
+.donation-prompt.dark .prompt-close:hover {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+.donation-prompt.dark .maybe-later-btn {
+  background: #4a5568;
+  color: #cbd5e0;
+  border-color: #718096;
+}
+
+.donation-prompt.dark .maybe-later-btn:hover {
+  background: #718096;
+  color: #e2e8f0;
+}
+
+.donation-prompt.dark .prompt-stats {
+  background: #4a5568;
+  border-color: #718096;
+  color: #cbd5e0;
+}
+
+/* Animations */
+@keyframes slideInPrompt {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeInBadge {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .donation-prompt {
+    max-width: calc(100vw - 40px);
+    margin: 0 20px;
+  }
+  
+  .donation-prompt.bottom-right,
+  .donation-prompt.bottom-left {
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+  }
+  
+  .donation-prompt.top-right,
+  .donation-prompt.top-left {
+    top: 80px;
+    left: 20px;
+    right: 20px;
+  }
+  
+  .prompt-content {
+    padding: 16px;
+  }
+  
+  .prompt-actions {
+    flex-direction: column;
+  }
+  
+  .supporter-badge-display.bottom-right,
+  .supporter-badge-display.bottom-left {
+    bottom: 20px;
+    right: 20px;
+  }
+  
+  .supporter-badge-display.top-right,
+  .supporter-badge-display.top-left {
+    top: 80px;
+    right: 20px;
+  }
+}
