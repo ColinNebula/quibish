@@ -2961,7 +2961,7 @@ const ProChat = ({
           darkMode={darkMode}
           userStats={{
             callsMade: globalCall ? 1 : 0,
-            messagesSent: messages?.length || 0,
+            messagesSent: currentConversation?.messages?.length || 0,
             daysUsed: 1
           }}
         />
@@ -2971,7 +2971,7 @@ const ProChat = ({
       <DonationPrompt
         userStats={{
           callsMade: globalCall ? 1 : 0,
-          messagesSent: messages?.length || 0,
+          messagesSent: currentConversation?.messages?.length || 0,
           daysUsed: 1
         }}
         darkMode={darkMode}
