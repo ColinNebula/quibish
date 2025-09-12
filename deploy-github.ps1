@@ -70,19 +70,21 @@ if ($status) {
     git add .
     
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $commitMessage = "🚀 DEPLOY: GitHub Pages update - $timestamp
+    $commitMessage = @"
+🚀 DEPLOY: GitHub Pages update - $timestamp
 
 ✨ Latest features:
-- International calling (80+ countries)
-- Free calling system
-- Donation support system
-- End-to-end encryption
-- PWA capabilities
-- Voice calling with WebRTC
-- Responsive design
-- File sharing & media
+• International calling (80+ countries)
+• Free calling system
+• Donation support system
+• End-to-end encryption
+• PWA capabilities
+• Voice calling with WebRTC
+• Responsive design
+• File sharing & media
 
-🌐 Live at: https://colinnebula.github.io/quibish/"
+🌐 Live at: https://colinnebula.github.io/quibish/
+"@
 
     Write-Host "💾 Committing changes..." -ForegroundColor Blue
     git commit -m $commitMessage
