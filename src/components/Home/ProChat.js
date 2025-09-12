@@ -52,6 +52,7 @@ const ProChat = ({
   const [avatarError, setAvatarError] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [mobileGlobalVoiceModal, setMobileGlobalVoiceModal] = useState(false);
   const [lightboxModal, setLightboxModal] = useState({ 
     open: false, 
     imageUrl: null, 
@@ -212,11 +213,17 @@ const ProChat = ({
       // Only auto-collapse on very small screens (like phone portrait)
       if (window.innerWidth <= 480) {
         setSidebarCollapsed(true);
+        // Close mobile global voice modal if screen gets smaller
+        setMobileGlobalVoiceModal(false);
       } else if (window.innerWidth > 768) {
-        // Auto-expand on larger screens
+        // Auto-expand on larger screens and close mobile modal
         setSidebarCollapsed(false);
+        setMobileGlobalVoiceModal(false);
       }
-      // For tablets (481-768px), maintain current state
+      // For tablets (481-768px), maintain current state but close mobile modal
+      if (window.innerWidth > 480) {
+        setMobileGlobalVoiceModal(false);
+      }
     };
 
     // Set initial state
@@ -249,6 +256,13 @@ const ProChat = ({
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
   }, []);
+
+  const handleMobileGlobalVoice = useCallback(() => {
+    setMobileGlobalVoiceModal(!mobileGlobalVoiceModal);
+    if (window.innerWidth <= 480) {
+      setSidebarCollapsed(true);
+    }
+  }, [mobileGlobalVoiceModal]);
 
   // Close sidebar when clicking outside on mobile
   const handleOverlayClick = useCallback(() => {
@@ -2400,6 +2414,18 @@ const ProChat = ({
                     🎤
                   </button>
 
+                  {/* Mobile Global Voice Calls Button (when sidebar collapsed) */}
+                  {sidebarCollapsed && window.innerWidth <= 768 && (
+                    <button 
+                      className="input-btn global-voice-btn mobile-action-button touch-target touch-ripple haptic-light"
+                      onClick={handleMobileGlobalVoice}
+                      type="button"
+                      title="Global Voice Calls"
+                    >
+                      🌍
+                    </button>
+                  )}
+
                   {/* Native Camera Button (Mobile) */}
                   {nativeDeviceFeaturesService.isSupported('camera') && (
                     <button 
@@ -2859,6 +2885,33 @@ const ProChat = ({
           currentUser={user}
           darkMode={darkMode}
         />
+      )}
+
+      {/* Mobile Global Voice Calls Modal */}
+      {mobileGlobalVoiceModal && (
+        <div className="mobile-global-voice-modal-overlay" onClick={() => setMobileGlobalVoiceModal(false)}>
+          <div className="mobile-global-voice-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-modal-header">
+              <h3>🌍 Global Voice Calls</h3>
+              <button 
+                className="mobile-modal-close" 
+                onClick={() => setMobileGlobalVoiceModal(false)}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mobile-modal-content">
+              <GlobalUsers 
+                onStartCall={(call) => {
+                  handleStartGlobalCall(call);
+                  setMobileGlobalVoiceModal(false);
+                }}
+                currentCall={globalCall}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

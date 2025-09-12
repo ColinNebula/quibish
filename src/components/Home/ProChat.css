@@ -10228,3 +10228,149 @@
     margin: 0 !important;
   }
 }
+
+/* Mobile Global Voice Calls Modal */
+.mobile-global-voice-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mobile-global-voice-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+  max-height: 80vh;
+  width: 100%;
+  overflow: hidden;
+  animation: modal-slide-up 0.3s ease;
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mobile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.mobile-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.mobile-modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.mobile-modal-content {
+  padding: 0;
+  max-height: calc(80vh - 80px);
+  overflow-y: auto;
+}
+
+/* Override global users styles in mobile modal */
+.mobile-global-voice-modal .global-users {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.mobile-global-voice-modal .global-users-header {
+  display: none; /* Hide header since we have modal header */
+}
+
+.mobile-global-voice-modal .global-users-content {
+  padding: 20px;
+}
+
+.mobile-global-voice-modal .global-users.expanded .global-users-content {
+  display: block; /* Always show content in modal */
+}
+
+/* Global Voice Button in Input Bar */
+.input-btn.global-voice-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.input-btn.global-voice-btn:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b4f9a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Dark theme support */
+[data-theme="dark"] .mobile-global-voice-modal {
+  background: #1f2937;
+  color: white;
+}
+
+[data-theme="dark"] .mobile-modal-header {
+  border-bottom-color: #374151;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .mobile-global-voice-modal-overlay {
+    padding: 10px;
+  }
+  
+  .mobile-global-voice-modal {
+    max-width: 95vw;
+    max-height: 85vh;
+  }
+  
+  .mobile-modal-header {
+    padding: 12px 16px;
+  }
+  
+  .mobile-modal-header h3 {
+    font-size: 16px;
+  }
+  
+  .mobile-modal-content {
+    max-height: calc(85vh - 60px);
+  }
+}
