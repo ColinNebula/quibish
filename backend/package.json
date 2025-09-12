@@ -4,12 +4,17 @@
   "description": "Backend server for Quibish messaging app",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node stable-server.js",
+    "start:stable": "node stable-server.js",
     "start:optimized": "node optimized-server.js",
     "start:simple": "node simple-server.js",
-    "dev": "nodemon server.js",
+    "start:original": "node server.js",
+    "start:managed": "powershell -File start-server.ps1 -ServerType stable -AutoRestart",
+    "start:monitor": "powershell -File start-server.ps1 -ServerType stable -Monitor",
+    "dev": "nodemon stable-server.js",
     "dev:optimized": "nodemon optimized-server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "health": "node -e \"require('http').get('http://localhost:5001/api/health', res => { let data = ''; res.on('data', chunk => data += chunk); res.on('end', () => console.log(JSON.parse(data))); })\"",
+    "test": "npm run health"
   },
   "keywords": [
     "nodejs",
