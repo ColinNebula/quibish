@@ -5,6 +5,7 @@ import { authService, checkApiConnection } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
 import TwoFactorVerify from './TwoFactorAuth/TwoFactorVerify';
 import userDataService from '../services/userDataService';
+import { initializeIPhoneProAuth, iPhoneProUtils } from '../utils/iPhoneProAuthUtils';
 
 const Login = ({ onLogin, switchToRegister }) => {
   const { login } = useAuth(); // Get login function from AuthContext
@@ -30,6 +31,10 @@ const Login = ({ onLogin, switchToRegister }) => {
     if (usernameRef.current) {
       usernameRef.current.focus();
     }
+    
+    // Initialize iPhone Pro enhancements
+    initializeIPhoneProAuth();
+    iPhoneProUtils.addIPhoneProClass();
     
     const autoLogin = async () => {
       // Check server connection on load

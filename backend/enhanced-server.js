@@ -177,7 +177,10 @@ app.use((req, res, next) => {
   // Monitor response time
   res.on('finish', () => {
     const responseTime = Date.now() - startTime;
-    res.setHeader('X-Response-Time', `${responseTime}ms`);
+    // Only set header if response hasn't been sent yet
+    if (!res.headersSent) {
+      res.setHeader('X-Response-Time', `${responseTime}ms`);
+    }
     console.log(`[${new Date().toISOString()}] ${requestId} - Response: ${res.statusCode} - Time: ${responseTime}ms`);
     
     // Log slow requests

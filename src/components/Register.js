@@ -4,6 +4,7 @@ import './AuthStyles.css';
 import { authService, checkApiConnection } from '../services/apiClient';
 import emailValidationService from '../services/emailValidationService';
 import EmailVerificationModal from './EmailVerification/EmailVerificationModal';
+import { initializeIPhoneProAuth, iPhoneProUtils } from '../utils/iPhoneProAuthUtils';
 
 const Register = ({ onRegisterSuccess, switchToLogin }) => {
   const [username, setUsername] = useState('');
@@ -31,6 +32,10 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
     if (usernameRef.current) {
       usernameRef.current.focus();
     }
+    
+    // Initialize iPhone Pro enhancements
+    initializeIPhoneProAuth();
+    iPhoneProUtils.addIPhoneProClass();
     
     // Check server connection on load
     checkApiConnection().then(isConnected => {
@@ -221,7 +226,7 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
 
   return (
     <div className="login-container">
-      <div className="auth-form">
+      <div className="auth-form tall-form">
         <div className="elegant-header">
           <div className="brand-section">
             <div className="brand-icon">

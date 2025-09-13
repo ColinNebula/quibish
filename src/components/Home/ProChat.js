@@ -6,8 +6,6 @@ import GifPicker from '../GifPicker/GifPicker';
 import NewChatModal from '../NewChat/NewChatModal';
 import FeedbackModal from './FeedbackModal';
 import HelpModal from './HelpModal';
-import SmartTextContent from './SmartTextContent';
-import MessageActions from './MessageActions';
 import NativeCamera from '../NativeFeatures/NativeCamera';
 import NativeContactPicker from '../NativeFeatures/NativeContactPicker';
 import ContactManager from '../Contacts/ContactManager';
@@ -2080,13 +2078,9 @@ const ProChat = ({
                   data-has-mentions={getAdvancedMessageCategory(message).hasMentions}
                   data-sentiment={getAdvancedMessageCategory(message).sentiment}
                 >
-                  <SmartTextContent 
-                    text={message.text}
-                    maxLength={300}
-                    showWordCount={message.text.length > 500}
-                    enableSmartBreaks={true}
-                    className="message-smart-text"
-                  />
+                  <span className="message-smart-text">
+                    {message.text}
+                  </span>
                 </div>
                 
                 {/* File/Image Display */}
@@ -2313,16 +2307,8 @@ const ProChat = ({
                 )}
               </div>
               
-              {/* Context-Aware Message Actions */}
-              <MessageActions
-                message={message}
-                currentUser={user}
-                onReply={(messageId) => console.log('Reply to:', messageId)}
-                onReact={handleReactionAdd}
-                onEdit={(messageId) => console.log('Edit message:', messageId)}
-                onDelete={(messageId) => console.log('Delete message:', messageId)}
-                onTranslate={(messageId) => console.log('Translate message:', messageId)}
-              />
+              {/* Context-Aware Message Actions - Placeholder for future implementation */}
+              {/* <MessageActions component will be implemented later /> */}
             </div>
           ))}
           {/* Auto-scroll anchor element */}

@@ -163,7 +163,6 @@ class LazyLoadingService {
     const componentMap = {
       // Chat components
       'VideoCall': () => import('../components/Home/VideoCall'),
-      'MessageActions': () => import('../components/Home/MessageActions'),
       'GifPicker': () => import('../components/GifPicker/GifPicker'),
       
       // Modals
