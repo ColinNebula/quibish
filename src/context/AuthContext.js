@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Check for stored user data on mount and fetch fresh profile data
+  // Check for stored user data on mount
   useEffect(() => {
     const initializeAuth = async () => {
       // Check both localStorage (remember me) and sessionStorage (current session)
@@ -36,6 +36,14 @@ export const AuthProvider = ({ children }) => {
         console.log('Found temporary session in sessionStorage');
       }
       
+      // Clear any corrupted or mismatched data
+      if (!storedToken || !storedUser) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('authToken');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('authToken');
+      }
+      
       if (storedToken && storedUser) {
         try {
           const userData = JSON.parse(storedUser);
@@ -44,12 +52,18 @@ export const AuthProvider = ({ children }) => {
           
           // Try to fetch fresh user profile data from backend to get latest settings
           try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+            
             const response = await fetch('http://localhost:5001/api/users/profile', {
               headers: {
                 'Authorization': `Bearer ${storedToken}`,
                 'Content-Type': 'application/json'
-              }
+              },
+              signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
             
             if (response.ok) {
               const profileData = await response.json();
@@ -78,10 +92,13 @@ export const AuthProvider = ({ children }) => {
               throw new Error('Invalid token');
             }
           } catch (fetchError) {
-            console.warn('Could not fetch fresh profile, using stored data:', fetchError.message);
+            // Only log specific errors that aren't connection-related
+            if (fetchError.name !== 'AbortError' && !fetchError.message.includes('Failed to fetch')) {
+              console.warn('Could not fetch fresh profile, using stored data:', fetchError.message);
+            }
             // Fallback to stored user data
             setCurrentUser(userData);
-            console.log('Used stored session data (offline/error):', { remembered: isRemembered, user: userData.username });
+            console.log('Used stored session data (offline mode):', { remembered: isRemembered, user: userData.username });
           }
         } catch (error) {
           console.error('Error parsing stored user data:', error);
@@ -145,52 +162,10 @@ export const AuthProvider = ({ children }) => {
     console.log('User session cleared from all storage');
   };
 
-  // Refresh user data from backend
-  const refreshUser = async () => {
-    if (!token) {
-      console.warn('No token available for user refresh');
-      return false;
-    }
-
-    try {
-      const response = await fetch('http://localhost:5001/api/users/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const profileData = await response.json();
-        if (profileData.success && profileData.user) {
-          const freshUserData = profileData.user;
-          setCurrentUser(freshUserData);
-          
-          // Update stored user data with fresh profile
-          const storage = rememberMe ? localStorage : sessionStorage;
-          storage.setItem('user', JSON.stringify(freshUserData));
-          
-          console.log('User data refreshed successfully');
-          return true;
-        }
-      }
-      return false;
-    } catch (error) {
-      console.error('Error refreshing user data:', error);
-      return false;
-    }
-  };
-
-  // Update user data in context and storage
-  const updateUser = (updatedUserData) => {
-    const mergedUser = { ...currentUser, ...updatedUserData };
-    setCurrentUser(mergedUser);
-    
-    // Update stored user data
-    const storage = rememberMe ? localStorage : sessionStorage;
-    storage.setItem('user', JSON.stringify(mergedUser));
-    
-    console.log('User data updated in context');
+  // Refresh user data
+  const refreshUser = () => {
+    // In a REST implementation, you could make an API call here to refresh user data
+    console.log('User refresh requested - implement if needed');
   };
 
   return (
@@ -203,8 +178,7 @@ export const AuthProvider = ({ children }) => {
         rememberMe,
         login,
         logout,
-        refreshUser,
-        updateUser
+        refreshUser
       }}
     >
       {children}

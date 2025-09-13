@@ -36,72 +36,66 @@ const connectToMySQL = async () => {
     console.log('📊 Database tables synchronized');
     
     // Seed initial data if needed
-    try {
-      const MySQLUser = require('../models/mysql/User');
-      
-      // First, ensure all models are synchronized
-      await sequelize.sync({ force: false });
-      console.log('📊 All models synchronized');
-      
-      const userCount = await MySQLUser.count();
-      
-      if (userCount === 0) {
-        console.log('🌱 Seeding initial user data for MySQL...');
-        const bcrypt = require('bcryptjs');
+    if (process.env.SEED_INITIAL_DATA === 'true') {
+      try {
+        const MySQLUser = require('../models/mysql/User');
         
-        const defaultUsers = [
-          {
-            username: 'demo',
-            email: 'demo@quibish.com',
-            password: await bcrypt.hash('demo', 10),
-            name: 'Demo User',
-            avatar: null,
-            status: 'online',
-            role: 'user',
-            theme: 'light',
-            language: 'en'
-          },
-          {
-            username: 'john',
-            email: 'john@example.com',
-            password: await bcrypt.hash('password', 10),
-            name: 'John Doe',
-            avatar: null,
-            status: 'online',
-            role: 'user',
-            theme: 'light',
-            language: 'en'
-          },
-          {
-            username: 'jane',
-            email: 'jane@example.com',
-            password: await bcrypt.hash('password', 10),
-            name: 'Jane Smith',
-            avatar: null,
-            status: 'online',
-            role: 'user',
-            theme: 'dark',
-            language: 'es'
-          },
-          {
-            username: 'admin',
-            email: 'admin@quibish.com',
-            password: await bcrypt.hash('admin', 10),
-            name: 'Admin User',
-            avatar: null,
-            status: 'online',
-            role: 'admin',
-            theme: 'dark',
-            language: 'en'
-          }
-        ];
+        // First, ensure all models are synchronized
+        await sequelize.sync({ force: false });
+        console.log('📊 All models synchronized');
         
-        await MySQLUser.bulkCreate(defaultUsers);
-        console.log('✅ Initial users seeded successfully in MySQL');
+        const userCount = await MySQLUser.count();
+        
+        if (userCount === 0) {
+          console.log('🌱 Seeding initial user data for MySQL...');
+          const bcrypt = require('bcryptjs');
+          
+          const defaultUsers = [
+            {
+              username: 'demo',
+              email: 'demo@quibish.com',
+              password: await bcrypt.hash('demo', 10),
+              name: 'Demo User',
+              avatar: null,
+              status: 'online',
+              role: 'user'
+            },
+            {
+              username: 'john',
+              email: 'john@example.com',
+              password: await bcrypt.hash('password', 10),
+              name: 'John Doe',
+              avatar: null,
+              status: 'online',
+              role: 'user'
+            },
+            {
+              username: 'jane',
+              email: 'jane@example.com',
+              password: await bcrypt.hash('password', 10),
+              name: 'Jane Smith',
+              avatar: null,
+              status: 'online',
+              role: 'user'
+            },
+            {
+              username: 'admin',
+              email: 'admin@quibish.com',
+              password: await bcrypt.hash('admin', 10),
+              name: 'Admin User',
+              avatar: null,
+              status: 'online',
+              role: 'admin'
+            }
+          ];
+          
+          await MySQLUser.bulkCreate(defaultUsers);
+          console.log('✅ Initial users seeded successfully in MySQL');
+        }
+      } catch (seedError) {
+        console.error('⚠️  Error seeding data:', seedError.message);
+        // Don't fail the connection, just log the error
       }
-    } catch (seedError) {
-      console.error('⚠️  Error seeding data:', seedError.message);
-      // Don't fail the connection, just log the error
     }
     
     return true;

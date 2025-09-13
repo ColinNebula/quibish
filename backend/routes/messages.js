@@ -1,8 +1,10 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const databaseService = require('../services/databaseService');
 const router = express.Router();
+
+// Import file storage if enabled
+const fileStorage = process.env.USE_FILE_STORAGE === 'true' ? require('../storage/fileStorage') : null;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 
@@ -29,42 +31,70 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-// Initialize default messages in database if empty
+// Storage abstraction functions
+const getMessages = async () => {
+  if (fileStorage) {
+    return await fileStorage.getMessages();
+  }
+  return global.inMemoryStorage.messages || [];
+};
+
+const saveMessage = async (message) => {
+  if (fileStorage) {
+    return await fileStorage.addMessage(message);
+  }
+  // Fallback to in-memory
+  if (!global.inMemoryStorage.messages) {
+    global.inMemoryStorage.messages = [];
+  }
+  message.id = Date.now().toString();
+  message.timestamp = new Date().toISOString();
+  global.inMemoryStorage.messages.push(message);
+  return message;
+};
+
+// In-memory message storage (fallback when file storage not available)
+const defaultMessages = [
+  {
+    id: '1',
+    text: 'Welcome to Quibish! 🎉',
+    senderId: '1',
+    senderName: 'Demo User',
+    timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    type: 'text',
+    reactions: {},
+    edited: false
+  },
+  {
+    id: '2',
+    text: 'This is a demo message from John. How are you doing today?',
+    senderId: '2',
+    senderName: 'John Doe',
+    timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
+    type: 'text',
+    reactions: {},
+    edited: false
+  },
+  {
+    id: '3',
+    text: 'Hello everyone! Great to be here! 👋',
+    senderId: '3',
+    senderName: 'Jane Smith',
+    timestamp: new Date(Date.now() - 900000).toISOString(), // 15 minutes ago
+    type: 'text',
+    reactions: { '👍': ['1', '2'], '❤️': ['1'] },
+    edited: false
+  }
+];
+
+// Initialize default messages in storage if empty
 const initializeMessages = async () => {
   try {
-    const existingMessages = await databaseService.getMessages({}, { limit: 1 });
+    const existingMessages = await getMessages();
     if (existingMessages.length === 0) {
       console.log('📝 Initializing default messages...');
-      
-      const defaultMessages = [
-        {
-          content: 'Welcome to Quibish! 🎉',
-          userId: 'demo-user-1',
-          username: 'Demo User',
-          messageType: 'text',
-          reactions: [],
-          edited: false
-        },
-        {
-          content: 'This is a demo message from John. How are you doing today?',
-          userId: 'demo-user-2', 
-          username: 'John Doe',
-          messageType: 'text',
-          reactions: [],
-          edited: false
-        },
-        {
-          content: 'Hello everyone! Great to be here! 👋',
-          userId: 'demo-user-3',
-          username: 'Jane Smith', 
-          messageType: 'text',
-          reactions: [{ type: '👍', userIds: ['demo-user-1', 'demo-user-2'] }, { type: '❤️', userIds: ['demo-user-1'] }],
-          edited: false
-        }
-      ];
-      
       for (const msg of defaultMessages) {
-        await databaseService.createMessage(msg);
+        await saveMessage(msg);
       }
     }
   } catch (error) {
@@ -73,60 +103,35 @@ const initializeMessages = async () => {
 };
 
 // Initialize messages when the module loads
-// Note: Moved to server initialization to ensure database is ready
-// initializeMessages();
+initializeMessages();
 
 // GET /api/messages - get all messages with pagination
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
-    const offset = (page - 1) * limit;
-    const conversationId = req.query.conversationId;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
 
-    // Build filter object
-    const filter = {};
-    if (conversationId) {
-      filter.conversationId = conversationId;
-    }
+    // Get messages from storage
+    const allMessages = await getMessages();
+    
+    // Sort messages by timestamp (newest first)
+    const sortedMessages = [...allMessages].sort((a, b) => 
+      new Date(b.timestamp) - new Date(a.timestamp)
+    );
 
-    // Get messages using database service with conversation filter
-    const messages = await databaseService.getMessages(filter, { limit, offset });
-    
-    // Transform messages to expected format
-    const transformedMessages = messages.map(msg => ({
-      id: msg.id,
-      text: msg.content,
-      senderId: msg.userId,
-      senderName: msg.username,
-      timestamp: msg.createdAt,
-      type: msg.messageType || 'text',
-      reactions: msg.reactions || [],
-      edited: msg.edited || false,
-      editedAt: msg.editedAt,
-      conversationId: msg.conversationId,
-      user: msg.user ? {
-        id: msg.user.id,
-        username: msg.user.username,
-        name: msg.user.name,
-        avatar: msg.user.uploadedMedia && msg.user.uploadedMedia.length > 0 ? 
-          msg.user.uploadedMedia[0].url : msg.user.avatar
-      } : null,
-      attachments: msg.attachments || []
-    }));
-    
-    // Get total count for pagination (simplified)
-    const totalMessages = Math.min(messages.length, 1000); // Estimate for performance
+    const paginatedMessages = sortedMessages.slice(startIndex, endIndex);
     
     res.json({
       success: true,
-      messages: transformedMessages,
+      messages: paginatedMessages,
       pagination: {
         currentPage: page,
-        totalPages: Math.ceil(totalMessages / limit),
-        totalMessages: totalMessages,
-        hasNext: messages.length === limit,
-        hasPrev: page > 1
+        totalPages: Math.ceil(allMessages.length / limit),
+        totalMessages: allMessages.length,
+        hasNext: endIndex < allMessages.length,
+        hasPrev: startIndex > 0
       }
     });
   } catch (error) {
@@ -141,61 +146,40 @@ router.get('/', authenticateToken, async (req, res) => {
 // POST /api/messages - send a new message
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { text, type = 'text', conversationId = null } = req.body;
+    const { text, type = 'text' } = req.body;
 
     if (!text || text.trim().length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Message text is required'
-      });
-    }
-
-    if (text.length > 1000) {
-      return res.status(400).json({
-        success: false,
-        error: 'Message text cannot exceed 1000 characters'
-      });
-    }
-
-    const messageData = {
-      content: text.trim(),
-      userId: req.user.id,
-      username: req.user.username,
-      conversationId: conversationId,
-      messageType: type,
-      reactions: [],
-      edited: false,
-      deleted: false
-    };
-
-    // Save message using database service
-    const savedMessage = await databaseService.createMessage(messageData);
-    
-    // Transform to expected format
-    const transformedMessage = {
-      id: savedMessage.id,
-      text: savedMessage.content,
-      senderId: savedMessage.userId,
-      senderName: savedMessage.username,
-      timestamp: savedMessage.createdAt,
-      type: savedMessage.messageType,
-      reactions: savedMessage.reactions || [],
-      edited: savedMessage.edited,
-      user: savedMessage.user ? {
-        id: savedMessage.user.id,
-        username: savedMessage.user.username,
-        name: savedMessage.user.name,
-        avatar: savedMessage.user.uploadedMedia && savedMessage.user.uploadedMedia.length > 0 ? 
-          savedMessage.user.uploadedMedia[0].url : savedMessage.user.avatar
-      } : null
-    };
-    
-    console.log(`New message from ${req.user.username}: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
-    
-    res.status(201).json({
-      success: true,
-      message: transformedMessage
+      error: 'Message text is required'
     });
+  }
+
+  if (text.length > 1000) {
+    return res.status(400).json({
+      success: false,
+      error: 'Message text cannot exceed 1000 characters'
+    });
+  }
+
+  const newMessage = {
+    text: text.trim(),
+    senderId: req.user.id,
+    senderName: req.user.username,
+    type: type,
+    reactions: {},
+    edited: false
+  };
+
+  // Save message using storage abstraction
+  const savedMessage = await saveMessage(newMessage);
+  
+  console.log(`New message from ${req.user.username}: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
+  
+  res.status(201).json({
+    success: true,
+    message: savedMessage
+  });
   } catch (error) {
     console.error('Error saving message:', error);
     res.status(500).json({
@@ -206,176 +190,139 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/messages/:id - edit a message
-router.put('/:id', authenticateToken, async (req, res) => {
-  try {
-    const { text } = req.body;
-    
-    if (!text || text.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Message text is required'
-      });
-    }
-
-    if (text.length > 1000) {
-      return res.status(400).json({
-        success: false,
-        error: 'Message text cannot exceed 1000 characters'
-      });
-    }
-
-    // Get message first to check ownership
-    const message = await databaseService.getMessageById(req.params.id);
-    
-    if (!message) {
-      return res.status(404).json({
-        success: false,
-        error: 'Message not found'
-      });
-    }
-
-    // Check if user owns the message
-    if (message.userId !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        error: 'You can only edit your own messages'
-      });
-    }
-
-    // Update message
-    const updatedMessage = await databaseService.updateMessage(req.params.id, {
-      content: text.trim(),
-      edited: true,
-      editedAt: new Date()
-    });
-    
-    // Transform to expected format
-    const transformedMessage = {
-      id: updatedMessage.id,
-      text: updatedMessage.content,
-      senderId: updatedMessage.userId,
-      senderName: updatedMessage.username,
-      timestamp: updatedMessage.createdAt,
-      type: updatedMessage.messageType,
-      reactions: updatedMessage.reactions || [],
-      edited: updatedMessage.edited,
-      editedAt: updatedMessage.editedAt,
-      user: updatedMessage.user ? {
-        id: updatedMessage.user.id,
-        username: updatedMessage.user.username,
-        name: updatedMessage.user.name,
-        avatar: updatedMessage.user.uploadedMedia && updatedMessage.user.uploadedMedia.length > 0 ? 
-          updatedMessage.user.uploadedMedia[0].url : updatedMessage.user.avatar
-      } : null
-    };
-    
-    res.json({
-      success: true,
-      message: transformedMessage
-    });
-  } catch (error) {
-    console.error('Error updating message:', error);
-    res.status(500).json({
+router.put('/:id', authenticateToken, (req, res) => {
+  const messageIndex = messages.findIndex(m => m.id === req.params.id);
+  
+  if (messageIndex === -1) {
+    return res.status(404).json({
       success: false,
-      error: 'Failed to update message'
+      error: 'Message not found'
     });
   }
+
+  const message = messages[messageIndex];
+  
+  // Check if user owns the message
+  if (message.senderId !== req.user.id) {
+    return res.status(403).json({
+      success: false,
+      error: 'You can only edit your own messages'
+    });
+  }
+
+  const { text } = req.body;
+  
+  if (!text || text.trim().length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Message text is required'
+    });
+  }
+
+  if (text.length > 1000) {
+    return res.status(400).json({
+      success: false,
+      error: 'Message text cannot exceed 1000 characters'
+    });
+  }
+
+  // Update message
+  messages[messageIndex] = {
+    ...message,
+    text: text.trim(),
+    edited: true,
+    editedAt: new Date().toISOString()
+  };
+  
+  res.json({
+    success: true,
+    message: messages[messageIndex]
+  });
 });
 
 // DELETE /api/messages/:id - delete a message
-router.delete('/:id', authenticateToken, async (req, res) => {
-  try {
-    // Get message first to check ownership
-    const message = await databaseService.getMessageById(req.params.id);
-    
-    if (!message) {
-      return res.status(404).json({
-        success: false,
-        error: 'Message not found'
-      });
-    }
-
-    // Check if user owns the message or is admin
-    if (message.userId !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'You can only delete your own messages'
-      });
-    }
-
-    // Soft delete message
-    await databaseService.updateMessage(req.params.id, {
-      deleted: true,
-      deletedAt: new Date()
-    });
-    
-    res.json({
-      success: true,
-      message: 'Message deleted successfully'
-    });
-  } catch (error) {
-    console.error('Error deleting message:', error);
-    res.status(500).json({
+router.delete('/:id', authenticateToken, (req, res) => {
+  const messageIndex = messages.findIndex(m => m.id === req.params.id);
+  
+  if (messageIndex === -1) {
+    return res.status(404).json({
       success: false,
-      error: 'Failed to delete message'
+      error: 'Message not found'
     });
   }
+
+  const message = messages[messageIndex];
+  
+  // Check if user owns the message or is admin
+  if (message.senderId !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      error: 'You can only delete your own messages'
+    });
+  }
+
+  // Remove message
+  messages.splice(messageIndex, 1);
+  
+  res.json({
+    success: true,
+    message: 'Message deleted successfully'
+  });
 });
 
 // POST /api/messages/:id/react - add/remove reaction to a message
-router.post('/:id/react', authenticateToken, async (req, res) => {
-  try {
-    const { reaction } = req.body;
-    
-    if (!reaction) {
-      return res.status(400).json({
-        success: false,
-        error: 'Reaction is required'
-      });
-    }
-
-    const userId = req.user.id;
-    
-    // Use database service to add reaction
-    const updatedMessage = await databaseService.addReaction(req.params.id, userId, reaction);
-    
-    if (!updatedMessage) {
-      return res.status(404).json({
-        success: false,
-        error: 'Message not found'
-      });
-    }
-    
-    // Transform to expected format
-    const transformedMessage = {
-      id: updatedMessage.id,
-      text: updatedMessage.content,
-      senderId: updatedMessage.userId,
-      senderName: updatedMessage.username,
-      timestamp: updatedMessage.createdAt,
-      type: updatedMessage.messageType,
-      reactions: updatedMessage.reactions || [],
-      edited: updatedMessage.edited,
-      user: updatedMessage.user ? {
-        id: updatedMessage.user.id,
-        username: updatedMessage.user.username,
-        name: updatedMessage.user.name,
-        avatar: updatedMessage.user.uploadedMedia && updatedMessage.user.uploadedMedia.length > 0 ? 
-          updatedMessage.user.uploadedMedia[0].url : updatedMessage.user.avatar
-      } : null
-    };
-    
-    res.json({
-      success: true,
-      message: transformedMessage
-    });
-  } catch (error) {
-    console.error('Error adding reaction:', error);
-    res.status(500).json({
+router.post('/:id/react', authenticateToken, (req, res) => {
+  const messageIndex = messages.findIndex(m => m.id === req.params.id);
+  
+  if (messageIndex === -1) {
+    return res.status(404).json({
       success: false,
-      error: 'Failed to add reaction'
+      error: 'Message not found'
     });
   }
+
+  const { reaction } = req.body;
+  
+  if (!reaction) {
+    return res.status(400).json({
+      success: false,
+      error: 'Reaction is required'
+    });
+  }
+
+  const message = messages[messageIndex];
+  const userId = req.user.id;
+  
+  // Initialize reactions object if it doesn't exist
+  if (!message.reactions) {
+    message.reactions = {};
+  }
+
+  // Initialize reaction array if it doesn't exist
+  if (!message.reactions[reaction]) {
+    message.reactions[reaction] = [];
+  }
+
+  // Toggle reaction
+  const userReactionIndex = message.reactions[reaction].indexOf(userId);
+  
+  if (userReactionIndex > -1) {
+    // Remove reaction
+    message.reactions[reaction].splice(userReactionIndex, 1);
+    
+    // Remove empty reaction arrays
+    if (message.reactions[reaction].length === 0) {
+      delete message.reactions[reaction];
+    }
+  } else {
+    // Add reaction
+    message.reactions[reaction].push(userId);
+  }
+  
+  res.json({
+    success: true,
+    message: message
+  });
 });
 
 module.exports = router;

@@ -138,6 +138,38 @@
   gap: 12px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
   position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+  margin: 0 8px;
+}
+
+/* Desktop hover effect */
+@media (min-width: 481px) {
+  .sidebar-user-profile:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+    transform: translateY(-1px);
+  }
+}
+
+/* Mobile-specific hover/tap effect for sidebar user profile */
+@media (max-width: 480px) {
+  .sidebar-user-profile {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .sidebar-user-profile:active {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+    box-shadow: 0 2px 12px rgba(102, 126, 234, 0.25);
+    transform: scale(0.98);
+  }
+  
+  .sidebar-user-profile:focus {
+    outline: 2px solid rgba(102, 126, 234, 0.5);
+    outline-offset: 2px;
+  }
 }
 
 .user-avatar {

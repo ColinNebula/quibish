@@ -579,11 +579,11 @@ const SettingsModal = ({
                     key={index}
                     className="quick-action-button"
                     onClick={action.action}
-                    title={action.description}
+                    title={action.title}
                     aria-label={action.description}
+                    data-tooltip={action.title}
                   >
                     <span className="action-icon" role="img">{action.icon}</span>
-                    <span className="action-text">{action.title}</span>
                   </button>
                 ))}
               </div>

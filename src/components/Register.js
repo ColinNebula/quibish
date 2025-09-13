@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import './Login.css';
 import './AuthStyles.css';
 import { authService, checkApiConnection } from '../services/apiClient';
+import emailValidationService from '../services/emailValidationService';
+import EmailVerificationModal from './EmailVerification/EmailVerificationModal';
+import { initializeIPhoneProAuth, iPhoneProUtils } from '../utils/iPhoneProAuthUtils';
 
 const Register = ({ onRegisterSuccess, switchToLogin }) => {
   const [username, setUsername] = useState('');
@@ -17,6 +20,11 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
   const [serverStatus, setServerStatus] = useState('checking');
   const [demoMode, setDemoMode] = useState(false);
   
+  // Email verification states
+  const [verificationData, setVerificationData] = useState(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [] });
+  
   const usernameRef = useRef(null);
   
   // Focus username field on component mount and check server connection
@@ -25,19 +33,70 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
       usernameRef.current.focus();
     }
     
+    // Initialize iPhone Pro enhancements
+    initializeIPhoneProAuth();
+    iPhoneProUtils.addIPhoneProClass();
+    
     // Check server connection on load
     checkApiConnection().then(isConnected => {
       if (!isConnected) {
         console.log('API server appears to be offline');
-        setError('Server connection failed. Registration may not work.');
+        setError('Server connection failed. Please try again later.');
         setServerStatus('offline');
-        setDemoMode(true);
       } else {
         console.log('API server is online');
         setServerStatus('online');
       }
     });
   }, []);
+
+  // Password strength checker
+  useEffect(() => {
+    if (password) {
+      const strength = calculatePasswordStrength(password);
+      setPasswordStrength(strength);
+    } else {
+      setPasswordStrength({ score: 0, feedback: [] });
+    }
+  }, [password]);
+
+  // Calculate password strength
+  const calculatePasswordStrength = (password) => {
+    let score = 0;
+    const feedback = [];
+    
+    if (password.length >= 8) {
+      score += 1;
+    } else {
+      feedback.push('Use at least 8 characters');
+    }
+    
+    if (/[a-z]/.test(password)) {
+      score += 1;
+    } else {
+      feedback.push('Include lowercase letters');
+    }
+    
+    if (/[A-Z]/.test(password)) {
+      score += 1;
+    } else {
+      feedback.push('Include uppercase letters');
+    }
+    
+    if (/\d/.test(password)) {
+      score += 1;
+    } else {
+      feedback.push('Include numbers');
+    }
+    
+    if (/[^\w\s]/.test(password)) {
+      score += 1;
+    } else {
+      feedback.push('Include special characters');
+    }
+    
+    return { score, feedback };
+  };
 
   // Enhanced validation with specific field errors
   const validateForm = () => {
@@ -49,22 +108,30 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
       errors.username = 'Username is required';
     } else if (username.length < 3) {
       errors.username = 'Username must be at least 3 characters';
+    } else if (username.length > 20) {
+      errors.username = 'Username must be less than 20 characters';
     } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       errors.username = 'Username can only contain letters, numbers and underscore';
+    } else if (/^\d/.test(username)) {
+      errors.username = 'Username cannot start with a number';
     }
     
     // Email validation
     if (!email.trim()) {
       errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       errors.email = 'Please enter a valid email address';
+    } else if (email.length > 254) {
+      errors.email = 'Email address is too long';
     }
     
     // Password validation
     if (!password) {
       errors.password = 'Password is required';
-    } else if (password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+    } else if (password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
+    } else if (passwordStrength.score < 3) {
+      errors.password = 'Password is too weak. Please strengthen it.';
     }
     
     // Confirm password validation
@@ -76,35 +143,6 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
     
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  };
-  
-  // Handle demo mode registration
-  const handleDemoRegistration = () => {
-    console.log('Using demo mode registration');
-    
-    // In demo mode, we'll simulate a successful registration
-    const userData = {
-      id: Date.now(),
-      username: username,
-      email: email
-    };
-    
-    // Store new user in local storage for demo mode
-    const demoUsers = JSON.parse(localStorage.getItem('demoUsers') || '[]');
-    demoUsers.push({
-      username: username,
-      email: email,
-      password: password,
-      id: userData.id
-    });
-    localStorage.setItem('demoUsers', JSON.stringify(demoUsers));
-    
-    // Create a simulated token
-    const token = 'demo-token-' + Date.now().toString().slice(-6);
-    
-    // Save session and notify parent
-    authService.saveUserSession(userData, token, true);
-    onRegisterSuccess(userData, token);
   };
 
   const handleSubmit = async (e) => {
@@ -118,74 +156,69 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
     setLoading(true);
     setError(null);
     
-    // If in demo mode, use local registration
+    // Handle demo mode
     if (demoMode) {
       setTimeout(() => {
+        console.log('Using demo mode registration');
+        
+        const userData = {
+          id: Date.now(),
+          username: username,
+          email: email
+        };
+        
+        const token = 'offline-token-' + Date.now().toString().slice(-6);
+        authService.saveUserSession(userData, token, true);
+        onRegisterSuccess(userData, token);
         setLoading(false);
-        handleDemoRegistration();
-      }, 1000); // Simulate network delay
+      }, 1000);
       return;
     }
     
     try {
-      console.log('Register Component - Attempting registration for:', { username, email });
+      console.log('Register Component - Starting email verification for:', { username, email });
       
-      // Call the auth service
-      const data = await authService.register(username, email, password);
-      console.log('Register Component - Registration response:', data);
+      // Send verification email
+      const verificationResult = await emailValidationService.sendVerificationEmail(
+        email,
+        username,
+        password // This will be encrypted in production
+      );
       
-      // Validation with detailed error messages
-      if (!data) {
-        console.error('Register Component - Empty response received');
-        throw new Error('No response from server');
-      }
-      
-      if (!data.user) {
-        console.error('Register Component - Missing user data in response');
-        throw new Error('User data missing from response');
-      }
-      
-      if (!data.token) {
-        console.error('Register Component - Missing token in response');
-        throw new Error('Authentication token missing from response');
-      }
-      
-      // Registration successful
-      console.log('Register Component - Registration successful');
-      onRegisterSuccess(data.user, data.token);
-    } catch (err) {
-      console.error('Register Component - Registration error:', err);
-      
-      // Handle different types of errors with specific messages
-      if (err.response) {
-        // Server responded with an error status
-        const responseData = err.response.data;
-        console.error('Register Component - Server error response:', responseData);
-        
-        if (responseData.error) {
-          setError(responseData.error);
-        } else if (responseData.message) {
-          setError(responseData.message);
-        } else {
-          setError(`Server error: ${err.response.status}`);
-        }
-      } else if (err.request) {
-        // Request made but no response received (network error)
-        console.error('Register Component - Network error, no response received');
-        setError('Unable to connect to server. Please check your internet connection and try again.');
-        
-        // Let's check API connection and provide more helpful message
-        checkApiConnection().then(isConnected => {
-          if (!isConnected) {
-            setError('Server appears to be offline. Please try again later or use demo mode.');
-            setDemoMode(true);
-          }
+      if (verificationResult.success) {
+        setVerificationData({
+          verificationId: verificationResult.verificationId,
+          email: email,
+          expiresAt: verificationResult.expiresAt
         });
-      } else {
-        // Something else went wrong (likely a client-side error)
-        console.error('Register Component - Other error:', err.message);
-        setError(err.message || 'Registration failed. Please try again.');
+        setShowVerificationModal(true);
       }
+    } catch (err) {
+      console.error('Register Component - Email verification error:', err);
+      setError(err.message || 'Failed to send verification email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle successful email verification
+  const handleVerificationSuccess = async (userData) => {
+    try {
+      setLoading(true);
+      
+      // Now complete the registration with the backend
+      const data = await authService.register(userData.username, userData.email, userData.password);
+      
+      if (data && data.user && data.token) {
+        setShowVerificationModal(false);
+        onRegisterSuccess(data.user, data.token);
+      } else {
+        throw new Error('Registration failed after email verification');
+      }
+    } catch (err) {
+      console.error('Register Component - Registration completion error:', err);
+      setError(err.message || 'Failed to complete registration. Please try again.');
+      setShowVerificationModal(false);
     } finally {
       setLoading(false);
     }
@@ -193,7 +226,7 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
 
   return (
     <div className="login-container">
-      <div className="auth-form">
+      <div className="auth-form tall-form">
         <div className="elegant-header">
           <div className="brand-section">
             <div className="brand-icon">
@@ -368,6 +401,20 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
           </label>
         </div>
       </div>
+      
+      {/* Email Verification Modal */}
+      {verificationData && (
+        <EmailVerificationModal
+          isOpen={showVerificationModal}
+          onClose={() => {
+            setShowVerificationModal(false);
+            setVerificationData(null);
+          }}
+          verificationId={verificationData.verificationId}
+          email={verificationData.email}
+          onVerificationSuccess={handleVerificationSuccess}
+        />
+      )}
     </div>
   );
 };

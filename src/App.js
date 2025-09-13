@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import './AppProfessional.css';
+import './styles/mobile-first-responsive.css';
+import './styles/input-container-responsive-fix.css';
+import './styles/mobile-content-fix.css';
+import './styles/mobile-animation-fix.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';
@@ -9,11 +13,18 @@ import LoadingSpinner from './components/UI/LoadingSpinner';
 import DynamicSplashScreen from './components/UI/DynamicSplashScreen';
 import ErrorBoundary from './components/ErrorHandling/ErrorBoundary';
 import PWAStatus from './components/ServiceWorker/PWAStatus';
+import InstallPrompt from './components/PWA/InstallPrompt';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
+import frontendHealthService from './services/frontendHealthService';
+import pwaShortcutService, { pwaUtils } from './services/pwaShortcutService';
+import mobileInteractionService, { mobileUtils } from './services/mobileInteractionService';
+import memoryManager from './services/memoryManagementService';
+import lazyLoadingService from './services/lazyLoadingService';
+// Note: imageOptimizationService is auto-initialized
 
 const App = () => {
-  const { isAuthenticated, user, loading: authLoading, logout, updateUser } = useAuth();
+  const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
   const [view, setView] = useState('login');
   const [showSplash, setShowSplash] = useState(() => {
     // Only show splash screen once per session
@@ -24,17 +35,10 @@ const App = () => {
     const savedMode = localStorage.getItem('quibish-dark-mode');
     return savedMode ? JSON.parse(savedMode) : false;
   });
+  const [appInitialized, setAppInitialized] = useState(false);
+  const [initializationError, setInitializationError] = useState(null);
 
-  // Sync dark mode with user's theme preference
-  useEffect(() => {
-    if (user && user.theme) {
-      const isDark = user.theme === 'dark';
-      setDarkMode(isDark);
-      localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
-    }
-  }, [user?.theme]);
-
-  // Mock conversations data
+  // Mock conversations data - moved up before useEffect that uses it
   const [conversations] = useState([
     {
       id: 1,
@@ -104,6 +108,163 @@ const App = () => {
   ]);
 
   const [currentConversation] = useState(conversations[0]);
+
+  // Handle view changes based on authentication state
+  useEffect(() => {
+    if (isAuthenticated && user && !authLoading) {
+      console.log('App - User authenticated, setting view to home');
+      setView('home');
+    } else if (!isAuthenticated && !authLoading) {
+      console.log('App - User not authenticated, ensuring login view');
+      if (view === 'home') {
+        setView('login');
+      }
+    }
+  }, [isAuthenticated, user, authLoading, view]);
+
+  // Sync dark mode with user's theme preference
+  useEffect(() => {
+    if (user && user.theme) {
+      const isDark = user.theme === 'dark';
+      setDarkMode(isDark);
+      localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
+    }
+  }, [user?.theme]);
+
+  // Initialize frontend health service
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        console.log('🚀 Initializing Quibish Frontend...');
+        
+        // Initialize core services
+        await frontendHealthService.initialize();
+        
+        // Initialize performance optimization services
+        console.log('⚡ Initializing performance services...');
+        
+        // Memory management setup
+        memoryManager.registerCacheManager('lazy-components', lazyLoadingService);
+        memoryManager.addMemoryPressureListener((event) => {
+          console.log('🧠 Memory pressure detected, optimizing performance');
+          // Trigger component cleanup
+          lazyLoadingService.cleanupUnusedComponents();
+        });
+        
+        // Set up service worker for advanced caching
+        if ('serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.register('/sw-advanced.js');
+            console.log('🔧 Advanced Service Worker registered:', registration);
+          } catch (error) {
+            console.warn('Failed to register advanced service worker, using basic SW:', error);
+          }
+        }
+        
+        // Preload critical resources
+        const criticalResources = [
+          '/static/css/main.css',
+          '/static/js/main.js',
+          '/manifest.json'
+        ];
+        
+        navigator.serviceWorker?.controller?.postMessage({
+          type: 'PREFETCH_RESOURCES',
+          payload: { urls: criticalResources }
+        });
+        
+        setAppInitialized(true);
+        console.log('✅ Frontend initialization completed successfully');
+        console.log('📊 Performance optimizations active');
+      } catch (error) {
+        console.error('❌ Frontend initialization failed:', error);
+        setInitializationError(error.message);
+        // Don't prevent app loading, just log the error
+        setAppInitialized(true);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  // Handle PWA shortcuts and deep links
+  useEffect(() => {
+    const handlePWAEvents = () => {
+      // Handle new chat shortcut
+      window.addEventListener('pwa-new-chat', (event) => {
+        console.log('📱 PWA: New chat shortcut triggered');
+        if (isAuthenticated) {
+          setView('home');
+          // You can add additional logic here to open a new chat
+        }
+      });
+
+      // Handle voice call shortcut
+      window.addEventListener('pwa-voice-call', (event) => {
+        console.log('📱 PWA: Voice call shortcut triggered', event.detail);
+        if (isAuthenticated) {
+          setView('home');
+          // Trigger voice call functionality
+          pwaUtils.triggerShortcut('voice-call', { initiated: 'shortcut' });
+        }
+      });
+
+      // Handle video call shortcut
+      window.addEventListener('pwa-video-call', (event) => {
+        console.log('📱 PWA: Video call shortcut triggered', event.detail);
+        if (isAuthenticated) {
+          setView('home');
+          // Trigger video call functionality
+          pwaUtils.triggerShortcut('video-call', { initiated: 'shortcut' });
+        }
+      });
+
+      // Handle file sharing
+      window.addEventListener('pwa-files-shared', (event) => {
+        console.log('📁 PWA: Files shared', event.detail);
+        if (isAuthenticated) {
+          setView('home');
+          // Handle shared files
+          const { files } = event.detail;
+          console.log('Processing shared files:', files);
+        }
+      });
+
+      // Handle share target
+      window.addEventListener('pwa-share-received', (event) => {
+        console.log('📤 PWA: Content shared', event.detail);
+        if (isAuthenticated) {
+          setView('home');
+          // Handle shared content
+          const { title, text, url } = event.detail;
+          console.log('Processing shared content:', { title, text, url });
+        }
+      });
+
+      // Handle app installation
+      window.addEventListener('pwa-installed', (event) => {
+        console.log('📱 PWA: App installed', event.detail);
+        // Show welcome message or setup flow
+      });
+    };
+
+    handlePWAEvents();
+
+    // Update app shortcuts based on frequent contacts
+    if (isAuthenticated && conversations.length > 0) {
+      const frequentContacts = conversations
+        .filter(conv => conv.lastMessageTime)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 4)
+        .map(conv => ({
+          id: conv.id,
+          name: conv.name,
+          avatar: conv.avatar
+        }));
+      
+      pwaShortcutService.updateShortcuts(frequentContacts);
+    }
+  }, [isAuthenticated, conversations]);
   
   // Dark mode persistence and CSS class management
   useEffect(() => {
@@ -116,46 +277,40 @@ const App = () => {
     }
   }, [darkMode]);
   
-  const handleLogin = () => setView('home');
-  const handleLogout = () => { logout(); setView('login'); };
-  const handleRegister = () => setView('register');
-  const handleBackToLogin = () => setView('login');
-  
-  const toggleDarkMode = async () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    
-    // If user is authenticated, save theme preference to backend
-    if (isAuthenticated && user) {
-      try {
-        const newTheme = newDarkMode ? 'dark' : 'light';
-        const response = await fetch('http://localhost:5001/api/users/preferences', {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ theme: newTheme })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.user) {
-            updateUser({ theme: newTheme });
-          }
-        }
-      } catch (error) {
-        console.error('Failed to save theme preference:', error);
-      }
-    }
+  const handleLogin = () => {
+    console.log('App - handleLogin called, waiting for auth state update');
+    // Don't immediately set view to 'home', let the auth state update handle it
   };
-  
+  const handleLogout = () => { logout(); setView('login'); };
+  const handleRegister = () => {
+    console.log('App - handleRegister called, redirecting to login');
+    setView('login'); // After successful registration, go to login
+  };
+  const switchToRegister = () => {
+    console.log('App - switchToRegister called');
+    setView('register');
+  };
+  const handleBackToLogin = () => setView('login');
+  const toggleDarkMode = () => setDarkMode(prev => !prev);
   const handleSplashComplete = () => {
     setShowSplash(false);
     sessionStorage.setItem('quibish-splash-seen', 'true');
   };
   
   if (authLoading) return <LoadingSpinner size="large" message="Loading..." />;
+  
+  // Show initialization status
+  if (!appInitialized) {
+    return (
+      <LoadingSpinner 
+        size="large" 
+        message={initializationError ? 
+          `Initialization failed: ${initializationError}` : 
+          "Initializing application..."
+        } 
+      />
+    );
+  }
   
   // Show splash screen on first load
   if (showSplash) {
@@ -170,7 +325,7 @@ const App = () => {
   
   return (
     <ErrorBoundary>
-      <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
+      <div className={`app smartphone-optimized ${darkMode ? 'dark-mode' : ''}`}>
         <div className="app-content">
           {isAuthenticated && user && !authLoading ? (
             <>
@@ -184,17 +339,19 @@ const App = () => {
                 onToggleDarkMode={toggleDarkMode}
               />
             </>
+          ) : authLoading ? (
+            <LoadingSpinner size="large" message="Signing you in..." />
           ) : (
             <div className="auth-container">
               {view === 'login' && (
                 <Login 
                   onLogin={handleLogin} 
-                  switchToRegister={handleRegister}
+                  switchToRegister={switchToRegister}
                 />
               )}
               {view === 'register' && (
                 <Register 
-                  onRegister={handleLogin} 
+                  onRegisterSuccess={handleRegister} 
                   switchToLogin={handleBackToLogin}
                 />
               )}
@@ -205,6 +362,9 @@ const App = () => {
       
       {/* PWA Status (development only) */}
       <PWAStatus />
+      
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </ErrorBoundary>
   );
 };

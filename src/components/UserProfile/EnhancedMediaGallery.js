@@ -14,6 +14,14 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
   const [loading, setLoading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null); // For video/image viewer modal
 
+  // Debug logging
+  console.log('🎨 EnhancedMediaGallery props:', {
+    userUploadsLength: userUploads?.length || 0,
+    userId,
+    isOwnProfile,
+    userUploads: userUploads
+  });
+
   // Filter and sort uploads
   useEffect(() => {
     let filtered = [...(userUploads || [])];
@@ -153,7 +161,10 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
   const stats = calculateStats();
 
   const MediaItem = ({ item, isSelected, onSelect, onView }) => (
-    <div className={`media-item ${isSelected ? 'selected' : ''} ${viewMode}`}>
+    <div 
+      className={`media-item ${isSelected ? 'selected' : ''} ${viewMode}`}
+      data-item-id={item.id}
+    >
       {isOwnProfile && (
         <div className="item-checkbox">
           <input
@@ -164,7 +175,16 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
         </div>
       )}
 
-      <div className="item-preview" onClick={() => onView(item)}>
+      <div 
+        className="item-preview" 
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🖱️ Click detected on item:', item.name, item.type);
+          onView(item);
+        }}
+        style={{ cursor: 'pointer' }}
+      >
         {item.type === 'image' && (
           <img src={item.url} alt={item.name} loading="lazy" />
         )}
@@ -372,14 +392,35 @@ const EnhancedMediaGallery = ({ userUploads, userId, isOwnProfile, onRefresh }) 
                     urlType: typeof item.url
                   });
                   
-                  if (!item.url) {
-                    console.error('❌ No URL found for media item:', item);
+                  // Show immediate visual feedback
+                  const clickedElement = document.querySelector(`[data-item-id="${item.id}"]`);
+                  if (clickedElement) {
+                    clickedElement.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                      clickedElement.style.transform = '';
+                    }, 150);
                   }
                   
-                  // Open media viewer modal for images and videos
+                  if (!item.url) {
+                    console.error('❌ No URL found for media item:', item);
+                    alert(`❌ Cannot open ${item.name} - No URL available`);
+                    return;
+                  }
+                  
+                  // For documents and PDFs, open in new tab if URL available
+                  if (item.type === 'document' || item.type === 'pdf') {
+                    const fullUrl = item.url.startsWith('http') ? item.url : `http://localhost:5001${item.url}`;
+                    console.log('📄 Opening document in new tab:', fullUrl);
+                    window.open(fullUrl, '_blank');
+                    return;
+                  }
+                  
+                  // Open media viewer modal for images, videos, and GIFs
+                  console.log('🖼️ Opening in modal viewer');
                   setSelectedMedia(item);
                 } catch (error) {
                   console.error('💥 Error opening media viewer:', error);
+                  alert(`💥 Error opening ${item.name}: ${error.message}`);
                 }
               }}
             />

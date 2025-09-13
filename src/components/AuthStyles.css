@@ -35,37 +35,3 @@
 .text-button:hover::after {
   width: 100%;
 }
-
-.demo-accounts {
-  margin-top: 24px;
-  border-top: 1px solid #e2e8f0;
-  padding-top: 16px;
-  text-align: center;
-}
-
-.demo-accounts p {
-  color: #64748b;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-}
-
-.demo-account {
-  display: block;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 6px 10px;
-  margin: 6px auto;
-  max-width: 300px;
-  font-size: 0.85rem;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: left;
-}
-
-.demo-account:hover {
-  background: #e0f2fe;
-  border-color: #bae6fd;
-  color: #0369a1;
-}

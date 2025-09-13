@@ -75,9 +75,9 @@ const MySQLConversation = sequelize.define('Conversation', {
   tableName: 'conversations',
   indexes: [
     { fields: ['type'] },
-    { fields: ['created_by'] },
-    { fields: ['last_message_at'] },
-    { fields: ['is_active'] }
+    { fields: ['createdBy'] },
+    { fields: ['lastMessageAt'] },
+    { fields: ['isActive'] }
   ]
 });
 

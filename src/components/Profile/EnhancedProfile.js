@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './EnhancedProfile.css';
 import { authService } from '../../services/apiClient';
-import { useAuth } from '../../context/AuthContext';
 
 const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
-  const { updateUser } = useAuth(); // Get updateUser function from AuthContext
   // Enhanced form state with more fields
   const [formData, setFormData] = useState({
     // Basic Information
@@ -256,9 +254,6 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
         setSuccess('Profile updated successfully!');
         setUnsavedChanges(false);
         
-        // Update AuthContext with new user data
-        updateUser(response.user);
-        
         // Notify parent component
         if (onUpdate) {
           onUpdate(response.user);
@@ -308,9 +303,6 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
       if (response.success) {
         setSuccess('Preferences updated successfully!');
         setUnsavedChanges(false);
-        
-        // Update AuthContext with new user data
-        updateUser(response.user);
         
         if (onUpdate) {
           onUpdate(response.user);
