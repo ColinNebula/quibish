@@ -2,6 +2,7 @@
 
 /* Import responsive styles */
 @import './responsive.css';
+<<<<<<< HEAD
 @import './mobile-responsive.css';
 @import './adaptive-message-scaling.css';
 @import './mobile-sidebar-tooltips.css';
@@ -11,6 +12,12 @@
 @import './mobile-emoji-picker-fix.css';
 @import './mobile-input-center-fix.css';
 @import './styles/iphone-pro-max-responsive.css';
+=======
+@import './styles/mobile-first-responsive.css';
+@import './styles/input-container-responsive-fix.css';
+@import './styles/mobile-content-fix.css';
+@import './styles/mobile-animation-fix.css';
+>>>>>>> develop
 @import './styles/iphone-pro-responsive.css';
 
 /* Import enhanced glassmorphism system */
