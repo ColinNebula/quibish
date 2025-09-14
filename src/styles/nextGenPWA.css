@@ -1,0 +1,587 @@
+/**
+ * Next-Gen PWA CSS
+ * Styles for advanced PWA features and install prompts
+ */
+
+/* PWA Install Banner */
+.pwa-install-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  transform: translateY(100%);
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+  to {
+    transform: translateY(0);
+  }
+}
+
+.install-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.install-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.install-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.install-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.install-subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.install-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.install-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+}
+
+.install-btn.primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.install-btn.primary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.install-btn.secondary {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.install-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Mobile optimizations for install banner */
+@media (max-width: 480px) {
+  .pwa-install-banner {
+    padding: 12px 16px;
+  }
+  
+  .install-content {
+    gap: 8px;
+  }
+  
+  .install-text {
+    font-size: 14px;
+  }
+  
+  .install-title {
+    font-size: 15px;
+  }
+  
+  .install-subtitle {
+    font-size: 13px;
+  }
+  
+  .install-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+/* PWA Widget Styles */
+.pwa-widget {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.widget-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+}
+
+.widget-icon {
+  font-size: 20px;
+}
+
+.widget-content {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.widget-unread-count {
+  background: #ff4757;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* Share Target Overlay */
+.share-target-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+.share-target-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  margin: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  transform: translateY(20px);
+  animation: slideUpFade 0.3s ease-out forwards;
+}
+
+@keyframes slideUpFade {
+  to {
+    transform: translateY(0);
+  }
+}
+
+.share-target-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.share-target-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.share-target-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.share-target-subtitle {
+  font-size: 14px;
+  color: #666;
+}
+
+.share-target-preview {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.share-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.share-preview-item:last-child {
+  margin-bottom: 0;
+}
+
+.share-preview-icon {
+  font-size: 16px;
+  color: #666;
+  width: 20px;
+  text-align: center;
+}
+
+.share-preview-text {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  word-break: break-word;
+}
+
+.share-target-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.share-action-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-action-btn.primary {
+  background: #667eea;
+  color: white;
+}
+
+.share-action-btn.primary:hover {
+  background: #5a6fd8;
+  transform: translateY(-1px);
+}
+
+.share-action-btn.secondary {
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #e9ecef;
+}
+
+.share-action-btn.secondary:hover {
+  background: #e9ecef;
+}
+
+/* Background Sync Indicator */
+.background-sync-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 9999;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.background-sync-indicator.visible {
+  transform: translateX(0);
+}
+
+.sync-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Push Notification Permission Prompt */
+.push-permission-prompt {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid #e9ecef;
+  z-index: 10000;
+  max-width: 320px;
+  width: 90%;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.push-prompt-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.push-prompt-icon {
+  font-size: 20px;
+}
+
+.push-prompt-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.push-prompt-message {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.push-prompt-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.push-prompt-btn {
+  flex: 1;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.push-prompt-btn.primary {
+  background: #667eea;
+  color: white;
+}
+
+.push-prompt-btn.primary:hover {
+  background: #5a6fd8;
+}
+
+.push-prompt-btn.secondary {
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #e9ecef;
+}
+
+.push-prompt-btn.secondary:hover {
+  background: #e9ecef;
+}
+
+/* File System Access Dialog */
+.file-system-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.file-system-content {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 360px;
+  width: 90%;
+  margin: 20px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+}
+
+.file-system-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.file-system-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.file-system-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.file-system-description {
+  font-size: 14px;
+  color: #666;
+}
+
+.file-system-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.file-system-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-system-btn.primary {
+  background: #667eea;
+  color: white;
+}
+
+.file-system-btn.primary:hover {
+  background: #5a6fd8;
+}
+
+.file-system-btn.secondary {
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #e9ecef;
+}
+
+.file-system-btn.secondary:hover {
+  background: #e9ecef;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .pwa-widget {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .widget-title {
+    color: #e2e8f0;
+  }
+  
+  .widget-content {
+    color: #a0aec0;
+  }
+  
+  .share-target-content,
+  .push-permission-prompt,
+  .file-system-content {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .share-target-title,
+  .push-prompt-title,
+  .file-system-title {
+    color: #e2e8f0;
+  }
+  
+  .share-target-subtitle,
+  .push-prompt-message,
+  .file-system-description {
+    color: #a0aec0;
+  }
+  
+  .share-target-preview {
+    background: #4a5568;
+    border-color: #718096;
+  }
+  
+  .share-preview-text {
+    color: #e2e8f0;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .pwa-install-banner {
+    background: #000;
+    border-top: 2px solid #fff;
+  }
+  
+  .install-btn.primary {
+    background: #fff;
+    color: #000;
+    border: 2px solid #fff;
+  }
+  
+  .install-btn.secondary {
+    border-color: #fff;
+  }
+  
+  .share-target-content,
+  .push-permission-prompt,
+  .file-system-content {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .pwa-install-banner,
+  .share-target-overlay,
+  .share-target-content,
+  .push-permission-prompt,
+  .background-sync-indicator {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .sync-spinner {
+    animation: none !important;
+  }
+  
+  .install-btn:hover,
+  .share-action-btn:hover,
+  .push-prompt-btn:hover,
+  .file-system-btn:hover {
+    transform: none !important;
+  }
+}

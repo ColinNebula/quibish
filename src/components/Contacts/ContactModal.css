@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: max(20px, env(safe-area-inset-top, 20px)) max(20px, env(safe-area-inset-right, 20px)) max(20px, env(safe-area-inset-bottom, 20px)) max(20px, env(safe-area-inset-left, 20px));
   animation: fadeIn 0.3s ease;
 }
 
@@ -24,10 +24,12 @@
   border-radius: 16px;
   width: 100%;
   max-width: 600px;
-  max-height: 90vh;
+  max-height: min(85vh, 800px);
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .contact-modal.dark {
@@ -607,6 +609,9 @@
   gap: 12px;
   justify-content: flex-end;
   background: var(--pro-hover-bg, #f8fafc);
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
 }
 
 .contact-modal.dark .modal-footer {
@@ -779,7 +784,8 @@
 .modal-body {
   padding: 24px;
   overflow-y: auto;
-  max-height: calc(90vh - 140px);
+  flex: 1;
+  min-height: 0;
 }
 
 /* Avatar Section */
@@ -1470,6 +1476,83 @@
   .cancel-btn,
   .save-btn {
     padding: 12px 20px;
+    font-size: 13px;
+  }
+}
+
+/* iPhone Pro specific styles - Fix save button cutoff */
+@media screen and (max-width: 430px) and (max-height: 932px) and (-webkit-device-pixel-ratio: 3) {
+  .contact-modal-overlay {
+    padding: max(10px, env(safe-area-inset-top, 47px)) max(10px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 34px)) max(10px, env(safe-area-inset-left, 0px));
+  }
+  
+  .contact-modal {
+    max-height: min(80vh, calc(100vh - env(safe-area-inset-top, 47px) - env(safe-area-inset-bottom, 34px) - 40px));
+    margin: 0;
+  }
+  
+  .modal-header {
+    padding: 16px 20px;
+  }
+  
+  .modal-body {
+    padding: 16px 20px;
+  }
+  
+  .modal-footer {
+    padding: 16px 20px;
+    gap: 10px;
+  }
+  
+  .cancel-btn,
+  .save-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+}
+
+/* iPhone 12/13/14 Pro - 390×844px */
+@media screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) {
+  .contact-modal {
+    max-height: calc(100vh - 120px);
+  }
+  
+  .modal-footer {
+    padding: 14px 18px;
+  }
+}
+
+/* iPhone 15 Pro - 393×852px */
+@media screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) {
+  .contact-modal {
+    max-height: calc(100vh - 120px);
+  }
+  
+  .modal-footer {
+    padding: 14px 18px;
+  }
+}
+
+/* Landscape orientation for iPhone Pro */
+@media screen and (max-width: 932px) and (max-height: 430px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape) {
+  .contact-modal-overlay {
+    padding: max(10px, env(safe-area-inset-top, 20px)) max(10px, env(safe-area-inset-right, 44px)) max(10px, env(safe-area-inset-bottom, 20px)) max(10px, env(safe-area-inset-left, 44px));
+  }
+  
+  .contact-modal {
+    max-height: calc(100vh - 60px);
+    max-width: min(600px, calc(100vw - 120px));
+  }
+  
+  .modal-footer {
+    padding: 12px 16px;
+    flex-direction: row;
+  }
+  
+  .cancel-btn,
+  .save-btn {
+    padding: 10px 16px;
     font-size: 13px;
   }
 }

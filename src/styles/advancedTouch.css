@@ -1,0 +1,403 @@
+/**
+ * Advanced Touch and Haptic CSS
+ * Styles for modern touch interactions and feedback
+ */
+
+/* Pull-to-refresh indicator */
+.pull-refresh-indicator {
+  position: absolute;
+  top: -50px;
+  left: 0;
+  right: 0;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.pull-refresh-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pull-refresh-icon {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+  color: #666;
+}
+
+.pull-refresh-text {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+.pull-refresh-indicator.refreshing .pull-refresh-icon {
+  color: #4a90e2;
+}
+
+.pull-refresh-indicator.refreshing .pull-refresh-text {
+  color: #4a90e2;
+}
+
+/* Spin animation for refresh icon */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Touch feedback enhancements */
+.touch-feedback {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.touch-feedback::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(74, 144, 226, 0.3);
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.touch-feedback.active::before {
+  width: 120%;
+  height: 120%;
+}
+
+/* Enhanced button press feedback */
+.haptic-button {
+  transition: all 0.1s ease;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.haptic-button:active {
+  transform: scale(0.96) translateZ(0);
+  filter: brightness(0.9);
+}
+
+/* Smooth momentum scrolling */
+.momentum-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-snap-type: y proximity;
+}
+
+/* High refresh rate optimizations */
+.high-refresh-touch {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.high-refresh-touch:active {
+  transition-duration: calc(0.05s * var(--animation-duration-multiplier, 1));
+}
+
+/* Precision touchpad scroll indicators */
+.precision-scroll-indicator {
+  position: fixed;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 100px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.precision-scroll-indicator.visible {
+  opacity: 1;
+}
+
+.precision-scroll-thumb {
+  width: 100%;
+  background: rgba(74, 144, 226, 0.8);
+  border-radius: 2px;
+  transition: height 0.1s ease;
+}
+
+/* Long press target styling */
+.long-press-target {
+  position: relative;
+  touch-action: manipulation;
+}
+
+.long-press-target::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid transparent;
+  border-radius: inherit;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.long-press-target.long-pressing::after {
+  border-color: rgba(74, 144, 226, 0.5);
+  box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.2);
+}
+
+/* Advanced swipe gestures */
+.swipe-container {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.swipe-item {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  touch-action: manipulation;
+}
+
+.swipe-item.swiping {
+  transition: none;
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(90deg, transparent 0%, #ff4757 100%);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.swipe-item.reveal-actions .swipe-actions {
+  transform: translateX(0);
+}
+
+/* Touch ripple effect */
+.touch-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.touch-ripple .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  transform: scale(0);
+  animation: ripple-effect 0.6s ease-out;
+  pointer-events: none;
+}
+
+@keyframes ripple-effect {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Gesture preview indicators */
+.gesture-preview {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.gesture-preview.visible {
+  opacity: 1;
+}
+
+/* Enhanced form input touch feedback */
+.touch-input {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.touch-input:focus {
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 20px rgba(74, 144, 226, 0.15),
+    0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.touch-input::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, transparent, rgba(74, 144, 226, 0.1), transparent);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.touch-input:focus::before {
+  opacity: 1;
+}
+
+/* Accessibility: Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .touch-feedback::before,
+  .haptic-button,
+  .touch-ripple .ripple,
+  .pull-refresh-indicator,
+  .swipe-item {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .touch-feedback.active::before {
+    background: rgba(74, 144, 226, 0.1);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .pull-refresh-indicator {
+    background: rgba(30, 30, 30, 0.95);
+  }
+  
+  .pull-refresh-icon {
+    color: #ccc;
+  }
+  
+  .pull-refresh-text {
+    color: #aaa;
+  }
+  
+  .precision-scroll-indicator {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .gesture-preview {
+    background: rgba(255, 255, 255, 0.9);
+    color: black;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .touch-feedback::before {
+    background: rgba(0, 0, 255, 0.5);
+  }
+  
+  .pull-refresh-indicator {
+    border: 2px solid currentColor;
+  }
+  
+  .precision-scroll-thumb {
+    background: currentColor;
+  }
+}
+
+/* Touch target size optimization for different pointer types */
+@media (pointer: coarse) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px;
+  }
+}
+
+@media (pointer: fine) {
+  .touch-target {
+    min-height: 32px;
+    min-width: 32px;
+    padding: 8px;
+  }
+}
+
+/* Foldable device support */
+@media (spanning: single-fold-vertical) {
+  .pull-refresh-indicator {
+    left: env(fold-left);
+    right: env(fold-right);
+  }
+}
+
+/* Ultra-wide display optimizations */
+@media (min-aspect-ratio: 21/9) {
+  .gesture-preview {
+    left: 25%;
+  }
+}
+
+/* Performance optimization for touch interactions */
+.touch-optimized {
+  contain: layout style paint;
+  will-change: transform;
+}
+
+.touch-optimized:active {
+  contain: layout style paint size;
+}
+
+/* Advanced selection feedback */
+.selection-feedback {
+  background: linear-gradient(135deg, 
+    rgba(74, 144, 226, 0.1) 0%, 
+    rgba(74, 144, 226, 0.05) 50%, 
+    transparent 100%);
+  transition: background 0.2s ease;
+}
+
+.selection-feedback.selected {
+  background: linear-gradient(135deg, 
+    rgba(74, 144, 226, 0.2) 0%, 
+    rgba(74, 144, 226, 0.1) 50%, 
+    rgba(74, 144, 226, 0.05) 100%);
+}
+
+/* Multi-touch gesture indicators */
+.multi-touch-area {
+  position: relative;
+}
+
+.touch-point {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(74, 144, 226, 0.8);
+  border-radius: 50%;
+  background: rgba(74, 144, 226, 0.2);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.touch-point.pinch {
+  border-color: rgba(255, 71, 87, 0.8);
+  background: rgba(255, 71, 87, 0.2);
+}
+
+.touch-point.rotate {
+  border-color: rgba(45, 206, 137, 0.8);
+  background: rgba(45, 206, 137, 0.2);
+}

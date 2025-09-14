@@ -2394,7 +2394,7 @@ const ProChat = ({
                 <div className="input-actions-row">
                   {/* File Attachment Button */}
                   <button 
-                    className="input-btn attachment-btn mobile-action-button touch-target touch-ripple haptic-light"
+                    className="input-btn attachment-btn mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button"
                     onClick={isMobileDevice() ? handleMobileUploadMenu : () => fileInputRef.current?.click()}
                     type="button"
                     title={isMobileDevice() ? "Upload menu" : "Attach files"}
@@ -2404,7 +2404,7 @@ const ProChat = ({
 
                   {/* GIF Picker Button */}
                   <button 
-                    className="input-btn gif-btn mobile-action-button touch-target touch-ripple haptic-light"
+                    className="input-btn gif-btn mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button"
                     onClick={handleShowGifPicker}
                     type="button"
                     title="Choose GIF"
@@ -2424,7 +2424,7 @@ const ProChat = ({
 
                   {/* Voice Input Button */}
                   <button 
-                    className="input-btn voice-btn mobile-action-button touch-target touch-ripple haptic-light"
+                    className="input-btn voice-btn mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button long-press-target"
                     onClick={startRecording}
                     type="button"
                     title="Voice message"
@@ -2470,7 +2470,7 @@ const ProChat = ({
 
                   {/* Emoji Button */}
                   <button 
-                    className="input-btn emoji-btn mobile-action-button touch-target touch-ripple haptic-light"
+                    className="input-btn emoji-btn mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     type="button"
                     title="Add emoji"
@@ -2514,7 +2514,7 @@ const ProChat = ({
                   <button 
                     onClick={handleSendMessage}
                     disabled={!inputText.trim()}
-                    className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light"
+                    className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button high-refresh-touch"
                     type="button"
                     aria-label="Send message"
                     title="Send message"

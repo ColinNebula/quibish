@@ -5,6 +5,10 @@ import './styles/mobile-first-responsive.css';
 import './styles/input-container-responsive-fix.css';
 import './styles/mobile-content-fix.css';
 import './styles/mobile-animation-fix.css';
+import './styles/modernSmartphone.css';
+import './styles/advancedTouch.css';
+import './styles/nextGenPWA.css';
+import './styles/adaptiveUI.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';
@@ -14,6 +18,7 @@ import DynamicSplashScreen from './components/UI/DynamicSplashScreen';
 import ErrorBoundary from './components/ErrorHandling/ErrorBoundary';
 import PWAStatus from './components/ServiceWorker/PWAStatus';
 import InstallPrompt from './components/PWA/InstallPrompt';
+import TestingDashboard from './components/TestingDashboard/TestingDashboard';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 import frontendHealthService from './services/frontendHealthService';
@@ -21,6 +26,13 @@ import pwaShortcutService, { pwaUtils } from './services/pwaShortcutService';
 import mobileInteractionService, { mobileUtils } from './services/mobileInteractionService';
 import memoryManager from './services/memoryManagementService';
 import lazyLoadingService from './services/lazyLoadingService';
+import { initModernViewport } from './utils/modernViewportUtils';
+import { initAdvancedTouch } from './utils/advancedTouchSystem';
+import { initNextGenPWA } from './services/nextGenPWAService';
+import { initSmartphonePerformance } from './utils/smartphonePerformanceOptimizer';
+import { initAdaptiveUI } from './utils/adaptiveUIManager';
+import { initTestingSuite } from './utils/testingSuite';
+import { initValidationSuite } from './utils/compatibilityValidator';
 // Note: imageOptimizationService is auto-initialized
 
 const App = () => {
@@ -140,8 +152,39 @@ const App = () => {
         // Initialize core services
         await frontendHealthService.initialize();
         
-        // Initialize performance optimization services
-        console.log('⚡ Initializing performance services...');
+        // Initialize modern viewport and display support
+        console.log('📱 Initializing modern smartphone features...');
+        const modernFeatures = await initModernViewport();
+        console.log('✨ Modern features initialized:', modernFeatures);
+        
+        // Initialize advanced touch and haptic feedback
+        console.log('🎯 Initializing touch and haptic systems...');
+        const touchSystems = initAdvancedTouch();
+        console.log('👆 Touch systems initialized:', touchSystems);
+        
+        // Initialize next-generation PWA features
+        console.log('📱 Initializing next-gen PWA features...');
+        const pwaFeatures = await initNextGenPWA();
+        console.log('🚀 PWA features initialized:', pwaFeatures);
+        
+        // Initialize smartphone-specific performance optimizations
+        console.log('⚡ Initializing smartphone performance optimizations...');
+        const performanceFeatures = initSmartphonePerformance();
+        console.log('🏎️ Performance optimizations initialized:', performanceFeatures);
+        
+        // Initialize adaptive UI features for modern displays
+        console.log('🎨 Initializing adaptive UI features...');
+        const adaptiveFeatures = initAdaptiveUI();
+        console.log('📱 Adaptive UI features initialized:', adaptiveFeatures);
+        
+        // Initialize comprehensive testing suite
+        console.log('🧪 Initializing testing and validation tools...');
+        const testingTools = initTestingSuite();
+        const validationTools = initValidationSuite();
+        console.log('✅ Testing suite initialized:', { testingTools, validationTools });
+        
+        // Initialize existing performance optimization services
+        console.log('⚡ Initializing additional performance services...');
         
         // Memory management setup
         memoryManager.registerCacheManager('lazy-components', lazyLoadingService);
@@ -365,6 +408,9 @@ const App = () => {
       
       {/* PWA Install Prompt */}
       <InstallPrompt />
+      
+      {/* Testing Dashboard (development only) */}
+      <TestingDashboard />
     </ErrorBoundary>
   );
 };
