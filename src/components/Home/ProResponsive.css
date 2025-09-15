@@ -31,7 +31,7 @@
     top: 0;
     left: 0;
     height: 100vh;
-    width: 60px !important; /* Icon-only width */
+    width: 48px !important; /* Reduced from 60px for better space usage */
     z-index: 1000;
     transform: translateX(0) !important; /* Always visible */
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -49,8 +49,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    margin-left: 60px !important; /* Account for icon-only sidebar */
-    width: calc(100% - 60px) !important;
+    margin-left: 48px !important; /* Account for narrower sidebar */
+    width: calc(100% - 48px) !important;
     height: 100vh;
     overflow: hidden;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -181,7 +181,7 @@
 
   /* Icon-only sidebar header */
   .pro-sidebar:not(.expanded-mobile) .pro-sidebar-header {
-    padding: 10px 8px;
+    padding: 8px 4px;
     justify-content: center;
     border-bottom: 1px solid var(--pro-border);
   }
@@ -193,13 +193,13 @@
 
   .pro-sidebar:not(.expanded-mobile) .logo-icon {
     margin: 0;
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
-    border-radius: 12px;
+    font-size: 18px;
+    border-radius: 10px;
     background: rgba(var(--pro-accent-rgb), 0.1);
     position: relative;
   }
@@ -226,42 +226,42 @@
 
   /* Icon-only user profile */
   .pro-sidebar:not(.expanded-mobile) .sidebar-user-profile {
-    padding: 10px 8px;
+    padding: 8px 4px;
     align-items: center;
     justify-content: center;
     border-bottom: 1px solid var(--pro-border);
   }
 
   .pro-sidebar:not(.expanded-mobile) .user-avatar {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     margin: 0;
   }
 
   .pro-sidebar:not(.expanded-mobile) .user-avatar img {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
   }
 
   /* Icon-only conversations */
   .pro-sidebar:not(.expanded-mobile) .conversation-item {
-    padding: 8px;
-    margin: 4px 8px;
-    border-radius: 12px;
+    padding: 6px 4px;
+    margin: 2px 4px;
+    border-radius: 10px;
     justify-content: center;
     align-items: center;
     position: relative;
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-avatar {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     margin: 0;
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-avatar img {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
   }
 
   .pro-sidebar:not(.expanded-mobile) .unread-badge {
@@ -291,7 +291,7 @@
 
   /* Conversations list mobile */
   .pro-sidebar:not(.expanded-mobile) .conversations-list {
-    padding: 8px 0;
+    padding: 4px 0;
   }
 
   /* Mobile overlay for expanded sidebar */
@@ -904,6 +904,55 @@
 
 /* Additional small device specific centering */
 @media (max-width: 400px) {
+  /* Ultra-compact sidebar for very small devices */
+  .pro-sidebar:not(.expanded-mobile) {
+    width: 42px !important;
+  }
+
+  .pro-main {
+    margin-left: 42px !important;
+    width: calc(100% - 42px) !important;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) .logo-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) .user-avatar img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) .conversation-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) .conversation-avatar img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) .conversation-item {
+    padding: 4px 2px;
+    margin: 2px;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) .pro-sidebar-header {
+    padding: 6px 2px;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) .sidebar-user-profile {
+    padding: 6px 2px;
+  }
+
   .pro-main {
     padding: 0 8px;
     display: flex;
