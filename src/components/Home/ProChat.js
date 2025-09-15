@@ -1593,6 +1593,19 @@ const ProChat = ({
 
   return (
     <div className="pro-layout mobile-optimized smartphone-optimized">
+      {/* Mobile Hamburger Menu Button */}
+      <button 
+        className={`mobile-hamburger-btn ${mobileExpandedSidebar ? 'active' : ''}`}
+        onClick={handleMobileSidebarToggle}
+        aria-label="Toggle sidebar"
+      >
+        <div className="hamburger-icon">
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+        </div>
+      </button>
+
       {/* Dynamic Animated Background */}
       <div className="dynamic-background">
         <div className="gradient-orb orb-1"></div>
