@@ -1,0 +1,62 @@
+/**
+ * ScrollOptimizations.css
+ * Prevents conflicts between JS scrolling and CSS scrolling behavior
+ * Fixes flickering caused by simultaneous smooth scrolling and animations
+ */
+
+/* Override global smooth scrolling that can cause conflicts */
+.pro-message-list {
+  /* Let JavaScript handle scrolling behavior */
+  scroll-behavior: auto !important;
+  /* Optimize rendering for smooth scrolling */
+  overflow-anchor: auto;
+  /* Add momentum-based scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Contain the scroll area to prevent layout issues */
+  contain: strict;
+}
+
+/* Prevent scroll interference during animations */
+.pro-message-list.scrolling-active {
+  /* Temporary disable transitions during active scrolling */
+  transition-duration: 0ms !important;
+}
+
+/* Optimize message appearance during scrolling */
+.pro-message-blurb {
+  /* Prevent repaints during scrolling */
+  will-change: transform;
+  /* Use transform for position adjustments */
+  transform: translateZ(0);
+}
+
+/* Disable animations during scrolling to prevent flickering */
+.pro-message-list.scrolling-active .pro-message-blurb {
+  transition-duration: 0ms !important;
+}
+
+/* Reduce impact of preview cards on scrolling */
+.pro-message-blurb.dynamic-preview {
+  /* Position preview cards in a way that minimizes scroll impact */
+  position: relative;
+  /* Prevent flicker during card creation */
+  opacity: 0; /* Initial state - controlled via JS */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pro-message-list {
+    /* Mobile devices may need different scroll characteristics */
+    scroll-padding: 16px;
+  }
+}
+
+/* Honor user preferences for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pro-message-list,
+  .pro-message-blurb {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}

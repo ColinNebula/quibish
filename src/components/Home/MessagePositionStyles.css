@@ -1,0 +1,333 @@
+/**
+ * MessagePositionStyles.css
+ * Styles for positioning message cards in the chat interface
+ * Updated with elegant color palette and modern design
+ */
+
+/* Elegant Color Variables - Enhanced Visibility */
+:root {
+  /* Message Card Colors - Improved Contrast and Visibility */
+  --msg-incoming-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --msg-incoming-hover: linear-gradient(135deg, #4f6ae6 0%, #5d3785 100%);
+  --msg-outgoing-bg: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  --msg-outgoing-hover: linear-gradient(135deg, #0d7377 0%, #2dd965 100%);
+  --msg-special-bg: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
+  --msg-special-hover: linear-gradient(135deg, #e73c56 0%, #2a44df 100%);
+  
+  /* Dark Theme Variants */
+  --msg-incoming-bg-dark: linear-gradient(135deg, #4c63d2 0%, #5a3a82 100%);
+  --msg-incoming-hover-dark: linear-gradient(135deg, #3a4fb8 0%, #4a2d6b 100%);
+  --msg-outgoing-bg-dark: linear-gradient(135deg, #0d7377 0%, #2dd965 100%);
+  --msg-outgoing-hover-dark: linear-gradient(135deg, #0a5b5e 0%, #21a84f 100%);
+  
+  /* Shadow and Border Effects - Enhanced */
+  --msg-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  --msg-shadow-hover: 0 8px 28px rgba(102, 126, 234, 0.35);
+  --msg-border: rgba(255, 255, 255, 0.25);
+  --msg-border-hover: rgba(255, 255, 255, 0.4);
+  --msg-border-radius: 18px;
+  
+  /* Dark Mode Colors */
+  --msg-incoming-bg-dark: linear-gradient(135deg, #4c63d2 0%, #5a4fcf 100%);
+  --msg-outgoing-bg-dark: linear-gradient(135deg, #4c63d2 0%, #4c63d2 100%);
+  --msg-special-bg-dark: linear-gradient(135deg, #4c63d2 0%, #4c63d2 100%);
+}
+
+/* Style for messages from other users - position on the RIGHT */
+.pro-message-blurb.pro-blurb-incoming,
+.pro-messages-container .pro-message-blurb.pro-blurb-incoming {
+  align-self: flex-end !important;
+  margin-left: auto !important;
+  margin-right: 16px !important;
+  background: var(--msg-incoming-bg) !important;
+  color: #fff !important;
+  border-radius: var(--msg-border-radius) 4px var(--msg-border-radius) var(--msg-border-radius) !important;
+  border: 1px solid var(--msg-border) !important;
+  max-width: 70% !important;
+  box-shadow: var(--msg-shadow) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: 
+    transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    box-shadow 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    background 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  will-change: transform, box-shadow;
+  transform: translateZ(0) translateY(0) scale(1);
+}
+
+/* Style for current user's messages - position on the LEFT side */
+.pro-message-blurb.pro-blurb-outgoing,
+.pro-messages-container .pro-message-blurb.pro-blurb-outgoing {
+  align-self: flex-start !important;
+  margin-right: auto !important;
+  margin-left: 16px !important;
+  background: var(--msg-outgoing-bg) !important;
+  color: #fff !important;
+  border-radius: 4px var(--msg-border-radius) var(--msg-border-radius) var(--msg-border-radius) !important;
+  border: 1px solid var(--msg-border) !important;
+  max-width: 70% !important;
+  box-shadow: var(--msg-shadow) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: 
+    transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    box-shadow 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    background 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  will-change: transform, box-shadow;
+  transform: translateZ(0) translateY(0) scale(1);
+}
+
+/* Ultra-smooth hover states for messages - ENHANCED VISIBILITY */
+.pro-message-blurb.pro-blurb-incoming:hover,
+.pro-messages-container .pro-message-blurb.pro-blurb-incoming:hover {
+  background: var(--msg-incoming-hover) !important;
+  box-shadow: var(--msg-shadow-hover) !important;
+  transform: translateZ(0) translateY(-3px) scale(1.02) !important;
+  border-color: var(--msg-border-hover) !important;
+}
+
+.pro-message-blurb.pro-blurb-outgoing:hover,
+.pro-messages-container .pro-message-blurb.pro-blurb-outgoing:hover {
+  background: var(--msg-outgoing-hover) !important;
+  box-shadow: var(--msg-shadow-hover) !important;
+  transform: translateZ(0) translateY(-3px) scale(1.02) !important;
+  border-color: var(--msg-border-hover) !important;
+}
+
+.pro-message-blurb.pro-blurb-special-user:hover {
+  background: var(--msg-special-hover) !important;
+  box-shadow: var(--msg-shadow-hover) !important;
+  transform: translateZ(0) translateY(-3px) scale(1.02) !important;
+  border-color: var(--msg-border-hover) !important;
+}
+
+/* Fallback hover for general message blurbs - GENTLE SMOOTH */
+.pro-message-blurb:hover:not(.pro-blurb-incoming):not(.pro-blurb-outgoing):not(.pro-blurb-special-user) {
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 
+    0 8px 32px rgba(102, 126, 234, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  transform: translateZ(0) translateY(-2px) scale(1.015) !important;
+  border-color: rgba(102, 126, 234, 0.3) !important;
+  backdrop-filter: blur(30px) !important;
+}
+
+/* Gentle active/click states for all message types */
+.pro-message-blurb:active {
+  transform: translateZ(0) translateY(-0.5px) scale(1.005) !important;
+  transition: 
+    transform 0.15s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.15s ease-out !important;
+}
+
+/* Focus states for accessibility */
+.pro-message-blurb:focus {
+  outline: 3px solid rgba(102, 126, 234, 0.3) !important;
+  outline-offset: 2px !important;
+}
+
+/* Performance optimization for ultra-smooth hover effects */
+.pro-message-blurb {
+  will-change: transform, box-shadow;
+  transform: translateZ(0); /* Force GPU acceleration */
+  backface-visibility: hidden; /* Reduce flickering */
+  perspective: 1000px; /* Enable 3D rendering context */
+  contain: layout style; /* Limit browser recalculations */
+}
+
+/* Enhanced focus states for smooth accessibility */
+.pro-message-blurb:focus {
+  will-change: transform, box-shadow, outline;
+}
+
+/* Disable will-change after animations to improve performance */
+.pro-message-blurb:not(:hover):not(:focus):not(:active) {
+  will-change: auto;
+}
+
+/* Elegant dark mode */
+.dark-theme .pro-message-blurb.pro-blurb-incoming {
+  background: var(--msg-incoming-bg-dark) !important;
+  color: #f8f9ff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(76, 99, 210, 0.2) !important;
+}
+
+.dark-theme .pro-message-blurb.pro-blurb-incoming:hover {
+  background: var(--msg-incoming-hover-dark) !important;
+  box-shadow: 0 8px 28px rgba(76, 99, 210, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.dark-theme .pro-message-blurb.pro-blurb-outgoing {
+  background: var(--msg-outgoing-bg-dark) !important;
+  color: #f8f9ff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(76, 99, 210, 0.2) !important;
+}
+
+.dark-theme .pro-message-blurb.pro-blurb-outgoing:hover {
+  background: var(--msg-outgoing-hover-dark) !important;
+  box-shadow: 0 8px 28px rgba(76, 99, 210, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Adjust meta information display for incoming and outgoing messages */
+.pro-message-blurb.pro-blurb-incoming .pro-blurb-meta {
+  text-align: left;
+}
+
+.pro-message-blurb.pro-blurb-outgoing .pro-blurb-meta {
+  text-align: right;
+}
+
+/* Fix text colors for better readability */
+.pro-message-blurb.pro-blurb-incoming .pro-blurb-sender,
+.pro-message-blurb.pro-blurb-incoming .pro-blurb-time,
+.pro-message-blurb.pro-blurb-incoming .pro-blurb-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pro-message-blurb.pro-blurb-outgoing .pro-blurb-sender,
+.pro-message-blurb.pro-blurb-outgoing .pro-blurb-time,
+.pro-message-blurb.pro-blurb-outgoing .pro-blurb-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Adjust avatar positioning for outgoing messages (now on LEFT) */
+.pro-message-blurb.pro-blurb-outgoing .pro-blurb-left {
+  order: 1; /* Keep avatar on the left side */
+}
+
+.pro-message-blurb.pro-blurb-outgoing .pro-blurb-right {
+  order: 3; /* Keep actions on the right side */
+}
+
+.pro-message-blurb.pro-blurb-outgoing .pro-blurb-body {
+  order: 2; /* Keep body in the middle */
+  text-align: left; /* Left-align text for outgoing messages */
+}
+
+/* Reset avatar positioning for incoming messages (now on RIGHT) */
+.pro-message-blurb.pro-blurb-incoming .pro-blurb-left {
+  order: 3; /* Move avatar to the right side */
+}
+
+.pro-message-blurb.pro-blurb-incoming .pro-blurb-right {
+  order: 1; /* Move actions to the left side */
+}
+
+.pro-message-blurb.pro-blurb-incoming .pro-blurb-body {
+  order: 2; /* Keep body in the middle */
+  text-align: right; /* Right-align text for incoming messages (now on right) */
+}
+
+/* Fix flex layout for better positioning */
+.pro-message-blurb {
+  display: flex;
+  width: fit-content;
+}
+
+/* Make sure the message list has the right flex container properties */
+.pro-message-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+
+/* Properly style the dynamic preview card for outgoing messages */
+.pro-message-blurb.pro-blurb-outgoing.dynamic-preview {
+  align-self: flex-start !important;
+  margin-right: auto !important;
+  margin-left: 16px !important;
+  background-color: #00796b; /* Match the teal color for current user */
+  position: relative;
+  left: 0 !important;
+  right: auto !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Match the shadow */
+}
+
+/* Ensure consistent message width when they contain attachments */
+.pro-message-blurb.pro-blurb-incoming .pro-attachments,
+.pro-message-blurb.pro-blurb-outgoing .pro-attachments {
+  max-width: 100%;
+}
+
+/* Fix for grouped messages to maintain proper alignment */
+.pro-message-blurb.pro-blurb-incoming.pro-blurb-grouped {
+  margin-left: 50px; /* Give space for avatar even when grouped */
+}
+
+.pro-message-blurb.pro-blurb-outgoing.pro-blurb-grouped {
+  margin-right: 50px; /* Give space for avatar even when grouped */
+}
+
+/* Special styling for marketing team and specific users - elegant design */
+.pro-message-blurb.pro-blurb-special-user {
+  align-self: flex-end !important;
+  margin-left: auto !important;
+  margin-right: 16px !important;
+  background: var(--msg-special-bg) !important;
+  color: #fff !important;
+  border-radius: var(--msg-border-radius) 4px var(--msg-border-radius) var(--msg-border-radius) !important;
+  border: 1px solid var(--msg-border) !important;
+  max-width: 70% !important;
+  box-shadow: var(--msg-shadow) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Elegant hover state for special users */
+.pro-message-blurb.pro-blurb-special-user:hover {
+  background: var(--msg-special-hover) !important;
+  box-shadow: var(--msg-shadow-hover) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Dark mode for special users */
+.dark-theme .pro-message-blurb.pro-blurb-special-user {
+  background: var(--msg-special-bg-dark) !important;
+  color: #f8f9ff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(76, 99, 210, 0.2) !important;
+}
+
+/* Text styling for special users */
+.pro-message-blurb.pro-blurb-special-user .pro-blurb-sender,
+.pro-message-blurb.pro-blurb-special-user .pro-blurb-time,
+.pro-message-blurb.pro-blurb-special-user .pro-blurb-text {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Avatar and content positioning for special users - same as outgoing messages */
+.pro-message-blurb.pro-blurb-special-user .pro-blurb-left {
+  order: 3 !important; /* Move avatar to the right side */
+}
+
+.pro-message-blurb.pro-blurb-special-user .pro-blurb-right {
+  order: 1 !important; /* Move actions to the left side */
+}
+
+.pro-message-blurb.pro-blurb-special-user .pro-blurb-body {
+  order: 2 !important; /* Keep body in the middle */
+  text-align: right !important; /* Right-align text */
+}
+
+/* Fix for grouped messages with special users */
+.pro-message-blurb.pro-blurb-special-user.pro-blurb-grouped {
+  margin-right: 50px !important; /* Give space for avatar even when grouped */
+}
+
+/* Dynamic message typing preview - force right alignment with stronger specificity */
+.pro-message-blurb.dynamic-preview.pro-blurb-outgoing,
+.dynamic-preview.pro-message-blurb.pro-blurb-outgoing {
+  align-self: flex-end !important;
+  float: right !important;
+  left: auto !important;
+  right: 0 !important;
+  margin-left: auto !important;
+  margin-right: 16px !important;
+  background-color: #00796b !important; /* Match the teal color */
+}

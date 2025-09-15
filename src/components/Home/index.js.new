@@ -1,0 +1,451 @@
+import React, { useState, useEffect, useRef } from 'react';
+import './Home.css';
+import './animations.css';
+import './EnhancedInput.css';
+import './ConnectionStatus.css';
+import './TypingIndicator.css';
+import './EnhancedLayout.css';
+import './HeaderActions.css';
+import './FloatingActions.css';
+import './MessageAnimations.css';
+import './ProLayout.css';
+import './ProMessages.css';
+import './MessageInteractions.css';
+import './LoadingAnimations.css';
+import './MessageSuggestions.css';
+import './MessageSearch.css';
+import './PinnedMessages.css';
+import './JumpToLatest.css';
+import './NotificationBadges.css';
+import './EditableMessage.css';
+import './AccessibilityFeatures.css';
+import './ProApp.css';
+// Import components
+import ProHeader from './ProHeader';
+import ProSidebar from './ProSidebar';
+import ProMessageList from './ProMessageList';
+import ProInputArea from './ProInputArea';
+import EmptyState from './EmptyState';
+import EnhancedFeatures from './EnhancedFeatures';
+import MessageStatus from './MessageStatus';
+
+// Mock data for conversations
+const mockConversations = [
+  {
+    id: 1,
+    name: "Marketing Team",
+    avatar: "https://via.placeholder.com/40",
+    unread: 3,
+    isGroup: true,
+    lastMessage: {
+      text: "Let's discuss the new campaign strategy",
+      time: "09:45 AM",
+      sender: "Alex"
+    }
+  },
+  {
+    id: 2,
+    name: "Jane Smith",
+    avatar: "https://via.placeholder.com/40",
+    unread: 0,
+    isGroup: false,
+    lastMessage: {
+      text: "The reports are ready for review",
+      time: "Yesterday",
+      sender: "Jane"
+    }
+  },
+  {
+    id: 3,
+    name: "Project Alpha",
+    avatar: "https://via.placeholder.com/40",
+    unread: 5,
+    isGroup: true,
+    lastMessage: {
+      text: "Timeline updated for milestone 3",
+      time: "Yesterday",
+      sender: "Michael"
+    }
+  },
+  {
+    id: 4,
+    name: "Robert Johnson",
+    avatar: "https://via.placeholder.com/40",
+    unread: 1,
+    isGroup: false,
+    lastMessage: {
+      text: "Can we schedule a call tomorrow?",
+      time: "Monday",
+      sender: "Robert"
+    }
+  }
+];
+
+// Mock messages for a conversation
+const mockMessages = [
+  {
+    id: 1,
+    sender: {
+      id: "other-user-1",
+      name: "Jane Smith",
+      avatar: "https://via.placeholder.com/40"
+    },
+    content: "Hi there! I just reviewed the quarterly report.",
+    timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    status: "read"
+  },
+  {
+    id: 2,
+    sender: {
+      id: "current-user",
+      name: "You",
+      avatar: "https://via.placeholder.com/40"
+    },
+    content: "Great! Did you have any concerns about the numbers?",
+    timestamp: new Date(Date.now() - 55 * 60 * 1000).toISOString(),
+    status: "read"
+  },
+  {
+    id: 3,
+    sender: {
+      id: "other-user-1",
+      name: "Jane Smith",
+      avatar: "https://via.placeholder.com/40"
+    },
+    content: "Everything looks good on my end, but I noticed the marketing expenses were higher than projected.",
+    timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+    status: "read"
+  },
+  {
+    id: 4,
+    sender: {
+      id: "current-user",
+      name: "You",
+      avatar: "https://via.placeholder.com/40"
+    },
+    content: "That's right. We had to increase our ad spend due to the new product launch. Here's the breakdown.",
+    timestamp: new Date(Date.now() - 44 * 60 * 1000).toISOString(),
+    status: "read",
+    attachments: [
+      {
+        id: "file-1",
+        name: "Q3_Marketing_Breakdown.xlsx",
+        size: "2.4 MB",
+        type: "spreadsheet"
+      }
+    ]
+  },
+  {
+    id: 5,
+    sender: {
+      id: "other-user-1",
+      name: "Jane Smith",
+      avatar: "https://via.placeholder.com/40"
+    },
+    content: "I see, that makes sense. I'll review this file and get back to you.",
+    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    status: "read"
+  },
+  {
+    id: 6,
+    sender: {
+      id: "current-user",
+      name: "You",
+      avatar: "https://via.placeholder.com/40"
+    },
+    content: "Perfect! Let me know if you have any questions. Also, I created a mockup for the new dashboard design:",
+    timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+    status: "read",
+    attachments: [
+      {
+        id: "image-1",
+        name: "Dashboard_Mockup.png",
+        size: "1.7 MB",
+        type: "image",
+        url: "https://via.placeholder.com/600x400"
+      }
+    ]
+  },
+  {
+    id: 7,
+    sender: {
+      id: "other-user-1",
+      name: "Jane Smith",
+      avatar: "https://via.placeholder.com/40"
+    },
+    content: "This looks great! The new layout is much cleaner.",
+    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    status: "read"
+  },
+  {
+    id: 8,
+    sender: {
+      id: "current-user",
+      name: "You",
+      avatar: "https://via.placeholder.com/40"
+    },
+    content: "Glad you like it! Let's discuss implementation next week.",
+    timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    status: "delivered"
+  }
+];
+
+const Home = ({ user, onLogout }) => {
+  // Theme state
+  const [darkMode, setDarkMode] = useState(() => {
+    // Check if the user has a saved preference
+    const savedPreference = localStorage.getItem('darkMode');
+    if (savedPreference !== null) {
+      return JSON.parse(savedPreference);
+    }
+    // Otherwise, use system preference
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  
+  // Accessibility state
+  const [fontSizeScale, setFontSizeScale] = useState(() => {
+    const savedSize = localStorage.getItem('appFontSize');
+    return savedSize ? parseInt(savedSize) : 100;
+  });
+  
+  const [highContrast, setHighContrast] = useState(() => {
+    const savedContrast = localStorage.getItem('highContrastMode');
+    return savedContrast ? JSON.parse(savedContrast) : false;
+  });
+  
+  // Professional layout state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [currentConversation, setCurrentConversation] = useState(null);
+  const [conversations, setConversations] = useState(mockConversations);
+  const [showEmptyState, setShowEmptyState] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // State variables
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState(mockMessages);
+  const [isConnected, setIsConnected] = useState(true);
+  const [connectionQuality, setConnectionQuality] = useState('excellent');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [userPresence, setUserPresence] = useState({});
+  
+  // Refs
+  const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', JSON.stringify(newDarkMode));
+  };
+  
+  // Toggle high contrast mode
+  const toggleHighContrast = () => {
+    const newHighContrast = !highContrast;
+    setHighContrast(newHighContrast);
+    localStorage.setItem('highContrastMode', JSON.stringify(newHighContrast));
+  };
+  
+  // Update font size
+  const updateFontSize = (newSize) => {
+    setFontSizeScale(newSize);
+    localStorage.setItem('appFontSize', newSize.toString());
+  };
+  
+  // Toggle sidebar collapse
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+  
+  // Handle conversation selection
+  const handleSelectConversation = (conversation) => {
+    setCurrentConversation(conversation);
+    setShowEmptyState(false);
+  };
+  
+  // Handle send message
+  const handleSendMessage = (text, attachments = []) => {
+    if (!text.trim() && attachments.length === 0) return;
+    
+    const newMessage = {
+      id: messages.length + 1,
+      sender: {
+        id: "current-user",
+        name: "You",
+        avatar: "https://via.placeholder.com/40"
+      },
+      content: text,
+      timestamp: new Date().toISOString(),
+      status: "sending",
+      attachments: attachments.length > 0 ? attachments : undefined
+    };
+    
+    setMessages([...messages, newMessage]);
+    setInput('');
+    
+    // Simulate message status update
+    setTimeout(() => {
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === newMessage.id ? { ...msg, status: "sent" } : msg
+        )
+      );
+    }, 500);
+    
+    setTimeout(() => {
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === newMessage.id ? { ...msg, status: "delivered" } : msg
+        )
+      );
+    }, 1500);
+  };
+  
+  // Handle file upload
+  const handleFileUpload = (files) => {
+    if (files.length === 0) return;
+    
+    setUploading(true);
+    
+    const attachments = Array.from(files).map((file, index) => {
+      const isImage = file.type.startsWith('image/');
+      return {
+        id: `upload-${Date.now()}-${index}`,
+        name: file.name,
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        type: isImage ? 'image' : 'file',
+        url: isImage ? URL.createObjectURL(file) : undefined
+      };
+    });
+    
+    handleSendMessage(input, attachments);
+    
+    // Clear reply state after sending
+    if (replyingTo) {
+      setReplyingTo(null);
+    }
+    
+    setUploading(false);
+  };
+  
+  // Handle attachment button click
+  const handleAttachmentClick = () => {
+    fileInputRef.current?.click();
+  };
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+  
+  // Apply dark theme to document body
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  }, [darkMode]);
+  
+  // Apply high contrast mode
+  useEffect(() => {
+    if (highContrast) {
+      document.body.classList.add('high-contrast-mode');
+    } else {
+      document.body.classList.remove('high-contrast-mode');
+    }
+  }, [highContrast]);
+  
+  // Apply font size scaling
+  useEffect(() => {
+    document.documentElement.style.setProperty('--font-size-scale', `${fontSizeScale}%`);
+  }, [fontSizeScale]);
+  
+  // Simulate user presence updates
+  useEffect(() => {
+    const presenceInterval = setInterval(() => {
+      const updatedPresence = {
+        "other-user-1": {
+          status: Math.random() > 0.3 ? "online" : "away",
+          lastActive: new Date()
+        }
+      };
+      setUserPresence(updatedPresence);
+    }, 30000);
+    
+    return () => clearInterval(presenceInterval);
+  }, []);
+
+  // Main render
+  return (
+    <div className={`pro-layout ${darkMode ? 'dark-theme' : ''} ${highContrast ? 'high-contrast-mode' : ''}`} 
+         style={{ fontSize: `${fontSizeScale}%` }}>
+      <ProSidebar 
+        conversations={conversations}
+        onSelectConversation={handleSelectConversation}
+        currentConversation={currentConversation}
+        onToggleCollapse={toggleSidebar}
+        collapsed={sidebarCollapsed}
+        darkMode={darkMode}
+        onToggleDarkMode={toggleDarkMode}
+        userPresence={userPresence}
+      />
+      
+      <div className={`pro-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        {showEmptyState ? (
+          <EmptyState />
+        ) : (
+          <>
+            <ProHeader 
+              conversation={currentConversation}
+              isConnected={isConnected}
+              connectionQuality={connectionQuality}
+              onBackClick={() => setShowEmptyState(true)}
+              user={user}
+              onLogout={onLogout}
+              onSearchMessages={setSearchQuery}
+              darkMode={darkMode}
+              highContrast={highContrast}
+              fontSizeScale={fontSizeScale}
+              onToggleHighContrast={toggleHighContrast}
+              onUpdateFontSize={updateFontSize}
+              userPresence={userPresence}
+            />
+            
+            <ProMessageList 
+              messages={messages}
+              currentUser="current-user"
+              messagesEndRef={messagesEndRef}
+              searchQuery={searchQuery}
+              userPresence={userPresence}
+            />
+            
+            <EnhancedFeatures
+              setMessages={setMessages}
+              messages={messages}
+              currentUser="current-user"
+              fileInputRef={fileInputRef}
+              onSendMessage={handleSendMessage}
+            />
+            
+            <ProInputArea 
+              value={input}
+              onChange={setInput}
+              onSend={handleSendMessage}
+              fileInputRef={fileInputRef}
+              onFileUpload={handleFileUpload}
+              onAttachmentClick={handleAttachmentClick}
+              placeholder="Type a message..."
+              isConnected={isConnected}
+            />
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Home;

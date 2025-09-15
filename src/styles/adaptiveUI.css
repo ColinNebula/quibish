@@ -1,0 +1,481 @@
+/**
+ * Adaptive UI CSS
+ * Styles for modern display technologies and adaptive interfaces
+ * Supports: Foldable screens, Dynamic Island, ultra-wide displays, adaptive brightness
+ */
+
+/* ===== FOLDABLE SCREEN SUPPORT ===== */
+
+/* Base foldable device styles */
+.fold-state-folded {
+  --fold-padding: 8px;
+  --fold-gap: 12px;
+  --fold-font-size: 14px;
+}
+
+.fold-state-unfolded {
+  --fold-padding: 16px;
+  --fold-gap: 20px;
+  --fold-font-size: 16px;
+}
+
+.fold-state-spanning {
+  --fold-padding: 24px;
+  --fold-gap: 32px;
+  --fold-font-size: 16px;
+}
+
+/* Folded state optimizations */
+.fold-state-folded .main-container {
+  padding: var(--fold-padding);
+  gap: var(--fold-gap);
+  font-size: var(--fold-font-size);
+}
+
+.fold-state-folded .sidebar {
+  width: 100%;
+  position: relative;
+  transform: none;
+  margin-bottom: 12px;
+}
+
+.fold-state-folded .chat-container {
+  height: calc(100vh - 200px);
+  min-height: 400px;
+}
+
+.fold-state-folded .message-input {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+/* Spanning state (dual screen) layout */
+.fold-state-spanning .main-container {
+  display: grid;
+  grid-template-columns: 
+    env(viewport-segment-width, 1fr) 
+    env(viewport-segment-width, 1fr);
+  gap: env(viewport-segment-left, 20px);
+  width: 100%;
+  max-width: none;
+}
+
+.fold-state-spanning .sidebar {
+  grid-column: 1;
+  position: relative;
+  transform: none;
+  width: 100%;
+  height: 100vh;
+}
+
+.fold-state-spanning .chat-container {
+  grid-column: 2;
+  width: 100%;
+}
+
+/* Unfolded state (large screen) optimizations */
+.fold-state-unfolded .main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--fold-padding);
+}
+
+.fold-state-unfolded .sidebar {
+  width: 320px;
+}
+
+.fold-state-unfolded .chat-container {
+  margin-left: 340px;
+}
+
+/* Viewport segmentation support */
+@supports (padding: env(viewport-segment-width)) {
+  .screen-spanning .main-container {
+    display: grid;
+    grid-template-areas: 
+      "sidebar main";
+    grid-template-columns: 
+      env(viewport-segment-width 0 0) 
+      env(viewport-segment-width 1 0);
+    column-gap: env(viewport-segment-left 1 0);
+  }
+  
+  .screen-spanning .sidebar {
+    grid-area: sidebar;
+    border-right: env(viewport-segment-left 1 0) solid transparent;
+  }
+  
+  .screen-spanning .chat-container {
+    grid-area: main;
+  }
+}
+
+/* Hinge positioning */
+.has-hinge {
+  --hinge-width: env(viewport-segment-left, 20px);
+  --hinge-height: env(viewport-segment-top, 0px);
+}
+
+.has-hinge .hinge-avoidance {
+  margin-left: var(--hinge-width);
+  margin-top: var(--hinge-height);
+}
+
+/* ===== DYNAMIC ISLAND SUPPORT ===== */
+
+/* Dynamic Island container */
+.dynamic-island {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  
+  /* Island shape */
+  width: 120px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  
+  /* Smooth transitions */
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  
+  /* Content layout */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  
+  /* Typography */
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Expanded state */
+.dynamic-island.expanded {
+  width: 280px;
+  height: 64px;
+  border-radius: 32px;
+  padding: 0 24px;
+}
+
+.dynamic-island.expanded .island-content {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Island content areas */
+.island-leading {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+}
+
+.island-center {
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.island-trailing {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+/* Island animations */
+@keyframes island-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+
+.dynamic-island.active {
+  animation: island-pulse 2s infinite;
+}
+
+/* Island interaction states */
+.dynamic-island:hover {
+  transform: translateX(-50%) scale(1.05);
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.dynamic-island:active {
+  transform: translateX(-50%) scale(0.95);
+}
+
+/* Content adjustments for Dynamic Island */
+.has-dynamic-island {
+  --safe-area-inset-top: max(env(safe-area-inset-top), 44px);
+}
+
+.has-dynamic-island .main-header {
+  padding-top: calc(var(--safe-area-inset-top) + 20px);
+}
+
+.has-dynamic-island .mobile-header {
+  margin-top: 44px;
+}
+
+/* ===== ADAPTIVE BRIGHTNESS SUPPORT ===== */
+
+/* Dark mode adaptive styles */
+.dark-mode {
+  --bg-primary: #000000;
+  --bg-secondary: #1c1c1e;
+  --bg-tertiary: #2c2c2e;
+  --text-primary: #ffffff;
+  --text-secondary: #ebebf5;
+  --border-color: #38383a;
+}
+
+.light-mode {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f2f2f7;
+  --bg-tertiary: #ffffff;
+  --text-primary: #000000;
+  --text-secondary: #3c3c43;
+  --border-color: #c6c6c8;
+}
+
+/* Night mode (ultra-low light) */
+.night-mode {
+  filter: contrast(0.9) brightness(0.8);
+}
+
+.night-mode * {
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+.night-mode .dynamic-island {
+  background: rgba(20, 20, 20, 0.95);
+}
+
+/* Brightness-aware content */
+.brightness-adaptive {
+  opacity: calc(var(--adaptive-brightness, 1) * 0.8 + 0.2);
+}
+
+.brightness-adaptive.high-contrast {
+  filter: contrast(calc(2 - var(--adaptive-brightness, 1)));
+}
+
+/* Auto-dimming for OLED displays */
+@media (color-gamut: p3) and (dynamic-range: high) {
+  .dark-mode .pure-black {
+    background: #0a0a0a; /* Slightly off-black for OLED efficiency */
+  }
+}
+
+/* ===== ULTRA-WIDE DISPLAY SUPPORT ===== */
+
+/* Ultra-wide layout (aspect ratio > 21:9) */
+@media (min-aspect-ratio: 21/9) {
+  .ultra-wide-display .main-container {
+    display: grid;
+    grid-template-areas: 
+      "sidebar-left main sidebar-right";
+    grid-template-columns: 
+      minmax(280px, 1fr) 
+      minmax(600px, 2fr) 
+      minmax(280px, 1fr);
+    gap: 32px;
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+  
+  .ultra-wide-display .sidebar {
+    grid-area: sidebar-left;
+    position: relative;
+    transform: none;
+  }
+  
+  .ultra-wide-display .chat-container {
+    grid-area: main;
+    margin-left: 0;
+  }
+  
+  .ultra-wide-display .contacts-panel {
+    grid-area: sidebar-right;
+    width: 100%;
+  }
+  
+  /* Multi-column content for wide screens */
+  .ultra-wide-display .message-list {
+    column-count: 2;
+    column-gap: 24px;
+    column-rule: 1px solid var(--border-color);
+  }
+  
+  .ultra-wide-display .message {
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+}
+
+/* Super ultra-wide (32:9 and beyond) */
+@media (min-aspect-ratio: 32/9) {
+  .ultra-wide-display .main-container {
+    grid-template-columns: 
+      minmax(320px, 1fr) 
+      minmax(800px, 3fr) 
+      minmax(320px, 1fr);
+    gap: 48px;
+  }
+  
+  .ultra-wide-display .message-list {
+    column-count: 3;
+  }
+}
+
+/* ===== RESPONSIVE BREAKPOINTS FOR MODERN DEVICES ===== */
+
+/* iPhone 15 Pro Max */
+@media only screen 
+  and (device-width: 430px) 
+  and (device-height: 932px) 
+  and (-webkit-device-pixel-ratio: 3) {
+  
+  .mobile-optimized {
+    padding: env(safe-area-inset-top, 47px) 
+             env(safe-area-inset-right, 0px) 
+             env(safe-area-inset-bottom, 34px) 
+             env(safe-area-inset-left, 0px);
+  }
+}
+
+/* Samsung Galaxy S24 Ultra */
+@media only screen 
+  and (device-width: 412px) 
+  and (device-height: 915px) 
+  and (-webkit-device-pixel-ratio: 3.5) {
+  
+  .android-optimized {
+    padding-top: 24px; /* Status bar */
+    padding-bottom: 24px; /* Navigation gestures */
+  }
+}
+
+/* iPad Pro 12.9" */
+@media only screen 
+  and (device-width: 1024px) 
+  and (device-height: 1366px) 
+  and (-webkit-device-pixel-ratio: 2) {
+  
+  .tablet-optimized {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 24px;
+  }
+}
+
+/* ===== ACCESSIBILITY AND MOTION PREFERENCES ===== */
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .dynamic-island,
+  .fold-transition,
+  .brightness-transition {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+  .dynamic-island {
+    background: #000000;
+    border: 2px solid #ffffff;
+  }
+  
+  .brightness-adaptive {
+    filter: contrast(1.5);
+  }
+}
+
+/* Forced colors mode (Windows High Contrast) */
+@media (forced-colors: active) {
+  .dynamic-island {
+    background: ButtonFace;
+    color: ButtonText;
+    border: 1px solid ButtonBorder;
+  }
+  
+  .fold-state-spanning .main-container {
+    border: 1px solid ButtonBorder;
+  }
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+
+/* GPU acceleration for smooth animations */
+.dynamic-island,
+.fold-transition,
+.brightness-adaptive {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Efficient repaints for adaptive content */
+.adaptive-content {
+  contain: layout style paint;
+}
+
+/* Memory optimization for large displays */
+@media (min-width: 2560px) {
+  .memory-optimized {
+    contain: strict;
+    content-visibility: auto;
+  }
+}
+
+/* ===== CSS LOGICAL PROPERTIES FOR RTL SUPPORT ===== */
+
+.adaptive-layout {
+  padding-inline-start: var(--fold-padding);
+  padding-inline-end: var(--fold-padding);
+  margin-inline-start: auto;
+  margin-inline-end: auto;
+  border-inline-start: 1px solid var(--border-color);
+}
+
+/* ===== MODERN CSS FEATURES ===== */
+
+/* Container queries for adaptive components */
+@container (min-width: 400px) {
+  .adaptive-card {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 16px;
+  }
+}
+
+/* CSS Nesting for organization */
+.adaptive-ui-root {
+  & .fold-aware {
+    container-type: inline-size;
+    
+    & .content {
+      padding: var(--fold-padding);
+      gap: var(--fold-gap);
+    }
+  }
+  
+  & .brightness-aware {
+    color-scheme: light dark;
+    
+    & .auto-theme {
+      background: light-dark(#ffffff, #000000);
+      color: light-dark(#000000, #ffffff);
+    }
+  }
+}

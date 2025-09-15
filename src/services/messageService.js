@@ -1,0 +1,571 @@
+/**
+ * Message Service for Quibish
+ * Handles messages and real-time updates
+ */
+
+import axios from 'axios';
+import websocketService from './websocketService';
+import localStorageService from './localStorageService';
+import authHelper from '../utils/authHelper';
+
+// Create an axios instance for messages API
+const API = axios.create({
+  baseURL: 'http://localhost:5001/api',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+
+// Add request interceptor to include auth token
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    console.log('🔑 API request with auth:', config.url, token ? 'Token present' : 'No token');
+    return config;
+  },
+  (error) => {
+    console.error('❌ Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for better error handling
+API.interceptors.response.use(
+  (response) => {
+    console.log('✅ API response success:', response.config.url, response.status);
+    return response;
+  },
+  (error) => {
+    console.error('❌ API response error:', error.config?.url, error.response?.status, error.message);
+    return Promise.reject(error);
+  }
+);
+
+class MessageService {
+  constructor() {
+    this.messageListeners = [];
+    this.typingListeners = [];
+    this.connectionStateListeners = [];
+    this._typingCallbacks = []; // Legacy support
+    
+    // Initialize connection state from websocket service
+    this._isConnected = websocketService.isConnected;
+    
+    // Set up WebSocket event listeners
+    this.setupWebSocketHandlers();
+  }
+  
+  /**
+   * Set up WebSocket event handlers
+   */
+  setupWebSocketHandlers() {
+    // Listen for new messages
+    websocketService.addEventListener('message', this.handleIncomingMessage.bind(this));
+    
+    // Listen for typing updates
+    websocketService.addEventListener('typing', this.handleTypingUpdate.bind(this));
+    
+    // Listen for status updates
+    websocketService.addEventListener('status', this.handleStatusUpdate.bind(this));
+    
+    // Listen for connection state changes
+    websocketService.addConnectionListener(this.handleConnectionStateChange.bind(this));
+  }
+  
+  /**
+   * Handle incoming message from WebSocket
+   * @param {Object} message - Incoming message
+   */
+  handleIncomingMessage(message) {
+    // Save to localStorage for persistence
+    localStorageService.addMessage(message);
+    
+    // Notify all message listeners
+    this.messageListeners.forEach(listener => {
+      try {
+        listener(message);
+      } catch (error) {
+        console.error('Error in message listener:', error);
+      }
+    });
+  }
+  
+  /**
+   * Handle typing status update from WebSocket
+   * @param {Object} update - Typing update
+   */
+  handleTypingUpdate(update) {
+    // Support for legacy typing callbacks
+    this._typingCallbacks.forEach(callback => {
+      try {
+        callback(update.username, update.isTyping);
+      } catch (error) {
+        console.error('Error in typing callback:', error);
+      }
+    });
+    
+    // Notify all typing listeners
+    this.typingListeners.forEach(listener => {
+      try {
+        listener(update);
+      } catch (error) {
+        console.error('Error in typing listener:', error);
+      }
+    });
+  }
+  
+  /**
+   * Handle status update from WebSocket
+   * @param {Object} update - Status update
+   */
+  handleStatusUpdate(update) {
+    // TODO: Implement status update handling
+  }
+  
+  /**
+   * Handle connection state change from WebSocket
+   * @param {boolean} connected - Whether connected
+   * @param {Object} details - Connection details
+   */
+  handleConnectionStateChange(connected, details) {
+    this._isConnected = connected;
+    
+    // Notify all connection state listeners
+    this.connectionStateListeners.forEach(listener => {
+      try {
+        listener(connected, details);
+      } catch (error) {
+        console.error('Error in connection state listener:', error);
+      }
+    });
+  }
+  
+  /**
+   * Get messages from server
+   * @param {Object} options - Options for fetching messages
+   * @param {string} options.conversationId - Filter messages by conversation ID
+   * @param {number} options.limit - Maximum number of messages to fetch
+   * @param {number} options.page - Page number for pagination
+   * @returns {Promise<Array>} - Array of messages
+   */
+  async getMessages(options = {}) {
+    try {
+      // Ensure user is authenticated before making API calls
+      const isAuth = await authHelper.ensureAuthenticated();
+      if (!isAuth) {
+        console.warn('⚠️ Authentication failed, using cached messages only');
+        return this.loadMessagesFromStorage(options.conversationId) || [];
+      }
+
+      // Build query params
+      const params = {};
+      
+      // Add since parameter if provided
+      if (options.since) {
+        params.since = options.since;
+      }
+      
+      // Add limit parameter if provided
+      if (options.limit) {
+        params.limit = options.limit;
+      }
+      
+      // Add conversation ID filter if provided
+      if (options.conversationId) {
+        params.conversationId = options.conversationId;
+      }
+      
+      const response = await API.get('/messages', { params });
+      const messages = response.data.messages || response.data || [];
+      
+      // Cache messages for offline access
+      this.cacheMessages(messages, options.conversationId);
+      
+      return messages;
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      
+      // Try to load from cache as fallback
+      try {
+        const cachedMessages = this.loadMessagesFromStorage(options.conversationId);
+        if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+          console.log('Loaded messages from cache');
+          return cachedMessages;
+        }
+      } catch (storageError) {
+        console.error('Error loading messages from storage:', storageError);
+      }
+      
+      // Return cached messages if available
+      const cachedMessages = localStorage.getItem('cachedMessages');
+      if (cachedMessages) {
+        return JSON.parse(cachedMessages);
+      }
+      
+      // Return empty array if no cached messages
+      return [];
+    }
+  }
+
+  /**
+   * Cache messages in localStorage
+   * @param {Array} messages - Messages to cache
+   * @param {string} conversationId - Conversation ID for scoped caching
+   */
+  cacheMessages(messages, conversationId = null) {
+    try {
+      const cacheKey = conversationId ? `messages_${conversationId}` : 'cachedMessages';
+      localStorage.setItem(cacheKey, JSON.stringify(messages));
+    } catch (error) {
+      console.error('Error caching messages:', error);
+    }
+  }
+
+  /**
+   * Load messages from localStorage
+   * @param {string} conversationId - Conversation ID for scoped loading
+   * @returns {Array} - Cached messages
+   */
+  loadMessagesFromStorage(conversationId = null) {
+    try {
+      const cacheKey = conversationId ? `messages_${conversationId}` : 'cachedMessages';
+      const cachedMessages = localStorage.getItem(cacheKey);
+      
+      if (cachedMessages) {
+        return JSON.parse(cachedMessages);
+      }
+      
+      // Fallback to general messages cache if conversation-specific cache is empty
+      if (conversationId) {
+        const generalCache = localStorage.getItem('cachedMessages');
+        if (generalCache) {
+          const allMessages = JSON.parse(generalCache);
+          return allMessages.filter(msg => msg.conversationId === conversationId);
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error loading messages from storage:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Send a message
+   * @param {string} text - Message text
+   * @param {string} sender - Message sender
+   * @param {string|null} conversationId - Conversation ID for the message
+   * @param {Object} replyTo - Message being replied to (optional)
+   * @returns {Promise<Object>} - Sent message
+   */
+  async sendMessage(text, sender, conversationId = null, replyTo = null) {
+    const messageData = {
+      text,
+      sender,
+      conversationId,
+      type: 'text',
+      timestamp: new Date().toISOString(),
+      replyTo
+    };
+    
+    try {
+      // Save to localStorage immediately for offline persistence
+      localStorageService.addMessage({
+        ...messageData,
+        senderId: sender,
+        senderName: sender,
+        id: Date.now().toString(),
+        local: true // Mark as locally stored
+      });
+      
+      // Try to send via WebSocket first for better real-time experience
+      const wsSuccess = websocketService.send('newMessage', messageData);
+      
+      // If WebSocket send failed or we're not connected, fall back to HTTP
+      if (!wsSuccess) {
+        const response = await API.post('/messages', messageData);
+        // Update localStorage with server response
+        if (response.data.message) {
+          localStorageService.addMessage({...response.data.message, local: false});
+        }
+        return response.data;
+      }
+      
+      return {
+        ...messageData,
+        id: Date.now(), // Temporary ID until server confirms
+        status: 'sent'
+      };
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      // Create pending message for offline handling
+      const pendingMessage = {
+        ...messageData,
+        id: Date.now(),
+        status: 'pending'
+      };
+      
+      // Store in pending messages
+      this.storePendingMessage(pendingMessage);
+      
+      return pendingMessage;
+    }
+  }
+  
+  /**
+   * Store a pending message in localStorage
+   * @param {Object} message - Message to store
+   */
+  storePendingMessage(message) {
+    try {
+      // Get existing pending messages
+      const pendingMessagesJson = localStorage.getItem('pendingMessages');
+      const pendingMessages = pendingMessagesJson ? JSON.parse(pendingMessagesJson) : [];
+      
+      // Add new pending message
+      pendingMessages.push(message);
+      
+      // Store updated pending messages
+      localStorage.setItem('pendingMessages', JSON.stringify(pendingMessages));
+      
+      console.log('Stored pending message:', message.id);
+    } catch (error) {
+      console.error('Error storing pending message:', error);
+    }
+  }
+  
+  /**
+   * Get status updates
+   * @param {Object} options - Options for fetching status updates
+   * @returns {Promise<Array>} - Array of status updates
+   */
+  async getStatusUpdates(options = {}) {
+    try {
+      // Build query params
+      const params = {};
+      
+      // Add since parameter if provided
+      if (options.since) {
+        params.since = options.since;
+      }
+      
+      const response = await API.get('/status-updates', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching status updates:', error);
+      
+      // Return cached updates if available
+      const cachedUpdates = localStorage.getItem('statusUpdates');
+      if (cachedUpdates) {
+        return JSON.parse(cachedUpdates);
+      }
+      
+      return [];
+    }
+  }
+  
+  /**
+   * Mark a message as read
+   * @param {string|number} messageId - Message ID
+   * @param {string} username - Username of reader
+   * @returns {Promise<Object>} - Updated message
+   */
+  async markAsRead(messageId, username) {
+    try {
+      const response = await API.post(`/messages/${messageId}/read`, { username });
+      return response.data;
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Send a voice message
+   * @param {File} audioFile - Audio file
+   * @param {string} sender - Message sender
+   * @returns {Promise<Object>} - Sent message
+   */
+  async sendVoiceMessage(audioFile, sender) {
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioFile);
+      formData.append('sender', sender);
+      
+      const response = await API.post('/messages/voice', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error sending voice message:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Upload a file
+   * @param {File} file - File to upload
+   * @param {string} sender - Message sender
+   * @returns {Promise<Object>} - Uploaded file message
+   */
+  async uploadFile(file, sender) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('sender', sender);
+      
+      const response = await API.post('/messages/file', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Send typing status
+   * @param {string} username - Username of typer
+   * @param {boolean} isTyping - Whether user is typing
+   */
+  sendTypingStatus(username, isTyping) {
+    websocketService.send('typing', { username, isTyping });
+  }
+  
+  /**
+   * Subscribe to typing updates
+   * @param {Function} callback - Callback function
+   */
+  subscribeToTyping(callback) {
+    // Support for legacy typing callbacks
+    if (!this._typingCallbacks.includes(callback)) {
+      this._typingCallbacks.push(callback);
+    }
+  }
+  
+  /**
+   * Unsubscribe from typing updates
+   * @param {Function} callback - Callback function to remove (optional)
+   */
+  unsubscribeFromTyping(callback = null) {
+    if (callback) {
+      // Remove specific callback
+      this._typingCallbacks = this._typingCallbacks.filter(cb => cb !== callback);
+    } else {
+      // Clear all callbacks
+      this._typingCallbacks = [];
+    }
+  }
+  
+  /**
+   * Add message listener
+   * @param {Function} listener - Listener function
+   * @returns {Function} - Function to remove listener
+   */
+  addMessageListener(listener) {
+    this.messageListeners.push(listener);
+    return () => this.removeMessageListener(listener);
+  }
+  
+  /**
+   * Remove message listener
+   * @param {Function} listener - Listener function
+   */
+  removeMessageListener(listener) {
+    this.messageListeners = this.messageListeners.filter(l => l !== listener);
+  }
+  
+  /**
+   * Add connection state listener
+   * @param {Function} listener - Listener function
+   * @returns {Function} - Function to remove listener
+   */
+  addConnectionStateListener(listener) {
+    this.connectionStateListeners.push(listener);
+    return () => this.removeConnectionStateListener(listener);
+  }
+  
+  /**
+   * Remove connection state listener
+   * @param {Function} listener - Listener function
+   */
+  removeConnectionStateListener(listener) {
+    this.connectionStateListeners = this.connectionStateListeners.filter(l => l !== listener);
+  }
+  
+  /**
+   * Check if connected to server
+   * @returns {boolean} - Whether connected
+   */
+  isConnected() {
+    return this._isConnected;
+  }
+  
+  /**
+   * Get connection quality
+   * @returns {string} - Connection quality
+   */
+  getConnectionQuality() {
+    return websocketService.getConnectionQuality();
+  }
+  
+  /**
+   * Get connection metrics
+   * @returns {Object} - Connection metrics
+   */
+  getConnectionMetrics() {
+    return websocketService.getConnectionMetrics();
+  }
+  
+  /**
+   * Reconnect to server
+   * @returns {Promise<boolean>} - Whether reconnection was successful
+   */
+  async reconnect() {
+    try {
+      return await websocketService.reconnect();
+    } catch (error) {
+      console.error('Reconnection failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get storage info for debugging
+   * @returns {Object} - Storage information
+   */
+  getStorageInfo() {
+    return localStorageService.getStorageInfo();
+  }
+
+  /**
+   * Clear all stored messages
+   * @returns {boolean} - Whether clear was successful
+   */
+  clearStoredMessages() {
+    return localStorageService.clearAllData();
+  }
+}
+
+// Create singleton instance
+const messageService = new MessageService();
+
+// Initialize WebSocket connection (TEMPORARILY DISABLED)
+// TODO: Add WebSocket support to backend or configure proper URL
+console.log('⚠️ WebSocket connection temporarily disabled - using REST API only');
+// websocketService.connect();
+
+export default messageService;

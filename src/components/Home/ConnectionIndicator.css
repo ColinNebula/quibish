@@ -1,0 +1,214 @@
+/* Real-time connection indicator styles */
+.connection-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  background-color: var(--pro-surface-light);
+}
+
+.connection-indicator:hover {
+  background-color: var(--pro-hover);
+}
+
+.connection-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.connection-excellent .connection-status {
+  background-color: var(--pro-success);
+  box-shadow: 0 0 0 2px rgba(var(--pro-success), 0.2);
+  animation: pulse-green 2s infinite;
+}
+
+.connection-good .connection-status {
+  background-color: var(--pro-accent);
+  box-shadow: 0 0 0 2px rgba(var(--pro-accent-rgb), 0.2);
+  animation: pulse-blue 2s infinite;
+}
+
+.connection-fair .connection-status {
+  background-color: var(--pro-warning);
+  box-shadow: 0 0 0 2px rgba(var(--pro-warning), 0.2);
+  animation: pulse-yellow 2s infinite;
+}
+
+.connection-poor .connection-status {
+  background-color: var(--pro-error);
+  box-shadow: 0 0 0 2px rgba(var(--pro-error), 0.2);
+  animation: pulse-red 2s infinite;
+}
+
+.connection-offline .connection-status {
+  background-color: var(--pro-gray-500);
+  animation: none;
+}
+
+.connection-label {
+  color: var(--pro-text-secondary);
+}
+
+/* Enhanced status indicator tooltip */
+.connection-tooltip {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 280px;
+  background-color: var(--pro-surface);
+  border-radius: 8px;
+  box-shadow: var(--pro-shadow-lg);
+  padding: 16px;
+  z-index: 1000;
+  border: 1px solid var(--pro-border);
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.connection-indicator:hover .connection-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.connection-stats {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.connection-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--pro-text-tertiary);
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--pro-text);
+}
+
+.reconnect-button {
+  margin-top: 16px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  border: none;
+  background-color: var(--pro-primary);
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.reconnect-button:hover {
+  background-color: var(--pro-primary-dark);
+}
+
+/* Animation keyframes */
+@keyframes pulse-green {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes pulse-blue {
+  0% {
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(14, 165, 233, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+  }
+}
+
+@keyframes pulse-yellow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* High contrast mode */
+.high-contrast-mode .connection-indicator {
+  background-color: black;
+  border: 1px solid white;
+}
+
+.high-contrast-mode .connection-excellent .connection-status {
+  background-color: #00ff00;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.high-contrast-mode .connection-good .connection-status {
+  background-color: #80d8ff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.high-contrast-mode .connection-fair .connection-status {
+  background-color: #ffdd55;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.high-contrast-mode .connection-poor .connection-status {
+  background-color: #ff6b6b;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.high-contrast-mode .connection-label {
+  color: white;
+}
+
+/* Font size scaling */
+.connection-indicator {
+  font-size: calc(12px * var(--font-size-scale) / 100);
+}
+
+.stat-label {
+  font-size: calc(11px * var(--font-size-scale) / 100);
+}
+
+.stat-value {
+  font-size: calc(14px * var(--font-size-scale) / 100);
+}

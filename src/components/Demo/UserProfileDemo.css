@@ -1,0 +1,363 @@
+/* User Profile Demo Styles */
+.user-profile-demo {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+.demo-header {
+  text-align: center;
+  margin-bottom: 40px;
+  color: white;
+}
+
+.demo-header h1 {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.demo-header p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.demo-content {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+/* Current User Card */
+.current-user-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 30px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 15px;
+  margin-bottom: 30px;
+  border: 1px solid #e1e5e9;
+}
+
+.user-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #007bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #007bff;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.user-info h2 {
+  margin: 0 0 5px 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.user-email {
+  color: #666;
+  margin: 5px 0;
+  font-size: 1rem;
+}
+
+.user-title {
+  color: #007bff;
+  margin: 5px 0;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.user-bio {
+  color: #555;
+  margin: 10px 0;
+  line-height: 1.4;
+  font-size: 0.9rem;
+}
+
+.user-status {
+  color: #28a745;
+  font-style: italic;
+  margin: 10px 0 0 0;
+  font-size: 0.9rem;
+}
+
+/* Demo Actions */
+.demo-actions {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.open-profile-btn {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+}
+
+.open-profile-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(0, 123, 255, 0.4);
+}
+
+/* Feature List */
+.feature-list {
+  margin-bottom: 40px;
+}
+
+.feature-list h3 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.feature-list ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+}
+
+.feature-list li {
+  padding: 10px 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+/* Technical Info */
+.technical-info {
+  margin-bottom: 40px;
+}
+
+.technical-info h3 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.tech-item {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+}
+
+.tech-item h4 {
+  color: #007bff;
+  margin: 0 0 15px 0;
+  font-size: 1.2rem;
+}
+
+.tech-item ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tech-item li {
+  padding: 5px 0;
+  color: #555;
+  font-size: 0.9rem;
+  position: relative;
+  padding-left: 15px;
+}
+
+.tech-item li:before {
+  content: '•';
+  color: #007bff;
+  position: absolute;
+  left: 0;
+}
+
+/* API Endpoints */
+.api-endpoints h3 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.endpoint-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.endpoint {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  font-family: 'Courier New', monospace;
+}
+
+.method {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+  color: white;
+}
+
+.method.get {
+  background: #28a745;
+}
+
+.method.post {
+  background: #007bff;
+}
+
+.method.put {
+  background: #ffc107;
+  color: #333;
+}
+
+.method.delete {
+  background: #dc3545;
+}
+
+.path {
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.desc {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .user-profile-demo {
+    padding: 10px;
+  }
+
+  .demo-header h1 {
+    font-size: 2rem;
+  }
+
+  .demo-content {
+    padding: 20px;
+  }
+
+  .current-user-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .tech-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .endpoint {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .endpoint .method {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .demo-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .demo-header p {
+    font-size: 1rem;
+  }
+
+  .demo-content {
+    padding: 15px;
+  }
+
+  .feature-list ul {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .user-profile-demo {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  }
+
+  .demo-content {
+    background: #1a1a1a;
+    color: #ffffff;
+  }
+
+  .current-user-card {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+  }
+
+  .user-info h2,
+  .feature-list h3,
+  .technical-info h3,
+  .api-endpoints h3 {
+    color: #ffffff;
+  }
+
+  .user-email,
+  .user-bio,
+  .feature-list li,
+  .tech-item li,
+  .desc {
+    color: #b3b3b3;
+  }
+
+  .tech-item {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+
+  .endpoint {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+
+  .path {
+    color: #ffffff;
+  }
+}

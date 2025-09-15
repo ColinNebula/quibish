@@ -1,0 +1,138 @@
+/* HeaderActionsMenu.css */
+
+.pro-header-actions-menu {
+  position: absolute;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+  width: 240px;
+  z-index: 1000;
+  overflow: hidden;
+  padding: 8px 0;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* Dark theme support */
+[data-theme="dark"] .pro-header-actions-menu {
+  background-color: #2d3748;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.pro-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: #333333;
+  text-align: left;
+  transition: all 0.15s ease;
+  gap: 12px;
+  font-weight: 400;
+}
+
+[data-theme="dark"] .pro-menu-item {
+  color: #e2e8f0;
+}
+
+.pro-menu-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .pro-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pro-menu-item:active {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .pro-menu-item:active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.pro-menu-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #666;
+}
+
+[data-theme="dark"] .pro-menu-item svg {
+  color: #a0aec0;
+}
+
+/* Divider */
+.pro-menu-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+  margin: 6px 0;
+}
+
+[data-theme="dark"] .pro-menu-divider {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Danger item */
+.pro-danger-item {
+  color: #e53e3e;
+}
+
+[data-theme="dark"] .pro-danger-item {
+  color: #fc8181;
+}
+
+.pro-danger-item svg {
+  color: #e53e3e;
+}
+
+[data-theme="dark"] .pro-danger-item svg {
+  color: #fc8181;
+}
+
+.pro-danger-item:hover {
+  background-color: rgba(229, 62, 62, 0.1);
+}
+
+[data-theme="dark"] .pro-danger-item:hover {
+  background-color: rgba(252, 129, 129, 0.1);
+}
+
+/* Animation */
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pro-header-actions-menu {
+  animation: menuSlideIn 0.2s forwards;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .pro-header-actions-menu {
+    width: calc(100% - 32px);
+    max-width: 300px;
+    position: fixed;
+    top: auto !important;
+    bottom: 16px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    max-height: 60vh;
+  }
+}

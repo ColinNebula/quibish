@@ -1,0 +1,405 @@
+/**
+ * iPhone Pro Responsive Styles
+ * Fixes login/register form responsiveness for iPhone 12/13/14/15 Pro
+ * Addresses cut-off issues at top and bottom of the screen
+ */
+
+/* CSS Custom Properties for iPhone Pro */
+:root {
+  --vh: 1vh; /* Will be set by JavaScript */
+  --iphone-pro-safe-top: env(safe-area-inset-top, 47px);
+  --iphone-pro-safe-bottom: env(safe-area-inset-bottom, 34px);
+  --iphone-pro-form-padding: 16px;
+}
+
+/* iPhone Pro detection and base styles */
+.iphone-pro {
+  --iphone-pro-active: true;
+}
+
+.iphone-pro-optimized {
+  /* Enhanced touch scrolling for iPhone Pro */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Virtual keyboard handling */
+body.keyboard-open .login-container {
+  padding-bottom: 0;
+}
+
+body.keyboard-open .auth-form {
+  transform: translateY(-20px);
+  transition: transform 0.3s ease;
+}
+
+/* Touch feedback for iPhone Pro */
+.touch-active {
+  transform: scale(0.98);
+  opacity: 0.8;
+  transition: all 0.1s ease;
+}
+
+/* Enhanced viewport height using JavaScript-set custom property */
+.login-container {
+  min-height: calc(var(--vh, 1vh) * 100);
+}
+
+/* iPhone 12/13/14 Pro (390x844px) */
+@media only screen 
+  and (device-width: 390px) 
+  and (device-height: 844px) 
+  and (-webkit-device-pixel-ratio: 3) {
+  
+  /* Fix login container for iPhone Pro */
+  .login-container {
+    min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding: max(env(safe-area-inset-top), 16px) 16px max(env(safe-area-inset-bottom), 16px);
+    box-sizing: border-box;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Adjust auth form for iPhone Pro */
+  .auth-form {
+    width: min(340px, calc(100vw - 32px));
+    max-width: 340px;
+    padding: 28px 32px 24px;
+    margin: 0 auto;
+    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Compact header for iPhone Pro */
+  .elegant-header {
+    margin-bottom: 20px;
+  }
+
+  .brand-section {
+    margin-bottom: 16px;
+  }
+
+  .brand-title {
+    font-size: 1.5rem;
+    margin-bottom: 2px;
+  }
+
+  .brand-subtitle {
+    font-size: 0.85rem;
+  }
+
+  /* Optimize form spacing */
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+
+  .auth-form input {
+    padding: 12px 16px;
+    font-size: 16px; /* Prevent zoom on iOS */
+    border-radius: 10px;
+  }
+
+  /* Compact form options */
+  .form-options {
+    margin: 12px 0;
+    gap: 8px;
+  }
+
+  /* Optimize button spacing */
+  .auth-button {
+    padding: 12px 24px;
+    font-size: 16px;
+    margin: 16px 0 12px;
+  }
+
+  /* Compact auth switch */
+  .auth-switch {
+    margin-top: 12px;
+    font-size: 0.9rem;
+  }
+
+  /* Server status adjustments */
+  .server-status {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+  }
+
+  /* Error message adjustments */
+  .auth-error {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    margin: 12px 0;
+  }
+}
+
+/* iPhone 15 Pro (393x852px) */
+@media only screen 
+  and (device-width: 393px) 
+  and (device-height: 852px) 
+  and (-webkit-device-pixel-ratio: 3) {
+  
+  /* Apply same fixes as iPhone 12/13/14 Pro */
+  .login-container {
+    min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding: max(env(safe-area-inset-top), 16px) 16px max(env(safe-area-inset-bottom), 16px);
+    box-sizing: border-box;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .auth-form {
+    width: min(345px, calc(100vw - 32px));
+    max-width: 345px;
+    padding: 30px 34px 26px;
+    margin: 0 auto;
+    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .elegant-header {
+    margin-bottom: 22px;
+  }
+
+  .brand-section {
+    margin-bottom: 18px;
+  }
+
+  .brand-title {
+    font-size: 1.6rem;
+    margin-bottom: 3px;
+  }
+
+  .brand-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+  }
+
+  .auth-form input {
+    padding: 13px 17px;
+    font-size: 16px;
+    border-radius: 11px;
+  }
+
+  .form-options {
+    margin: 14px 0;
+  }
+
+  .auth-button {
+    padding: 13px 26px;
+    font-size: 16px;
+    margin: 18px 0 14px;
+  }
+
+  .auth-switch {
+    margin-top: 14px;
+    font-size: 0.95rem;
+  }
+}
+
+/* General iPhone Pro landscape mode */
+@media only screen 
+  and (max-device-width: 926px) 
+  and (orientation: landscape) 
+  and (-webkit-device-pixel-ratio: 3) {
+  
+  .login-container {
+    min-height: 100vh;
+    padding: 12px 20px;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: max(env(safe-area-inset-top), 12px);
+    padding-bottom: max(env(safe-area-inset-bottom), 12px);
+  }
+
+  .auth-form {
+    width: min(400px, calc(100vw - 40px));
+    max-width: 400px;
+    padding: 20px 28px 18px;
+    margin: 8px auto;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+
+  .elegant-header {
+    margin-bottom: 16px;
+  }
+
+  .brand-section {
+    margin-bottom: 12px;
+    flex-direction: row;
+    gap: 12px;
+    text-align: left;
+  }
+
+  .brand-content {
+    text-align: left;
+  }
+
+  .brand-title {
+    font-size: 1.4rem;
+    margin-bottom: 2px;
+  }
+
+  .brand-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-group label {
+    font-size: 0.8rem;
+    margin-bottom: 3px;
+  }
+
+  .auth-form input {
+    padding: 10px 14px;
+    font-size: 16px;
+  }
+
+  .form-options {
+    margin: 10px 0;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .auth-button {
+    padding: 10px 20px;
+    font-size: 15px;
+    margin: 12px 0 8px;
+  }
+
+  .auth-switch {
+    margin-top: 8px;
+    font-size: 0.85rem;
+  }
+
+  .server-status {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    margin-bottom: 12px;
+  }
+
+  .auth-error {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    margin: 8px 0;
+  }
+}
+
+/* Dynamic viewport height support for newer browsers */
+@supports (height: 100dvh) {
+  @media only screen 
+    and (max-device-width: 430px) 
+    and (-webkit-device-pixel-ratio: 3) {
+    
+    .login-container {
+      min-height: 100dvh;
+    }
+
+    .auth-form {
+      max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px);
+    }
+  }
+}
+
+/* Fallback for older iOS versions without env() support */
+@media only screen 
+  and (max-device-width: 430px) 
+  and (-webkit-device-pixel-ratio: 3) {
+  
+  /* Fallback safe area values for iPhone Pro models */
+  .login-container {
+    padding-top: 47px; /* Typical notch height */
+    padding-bottom: 34px; /* Typical home indicator area */
+  }
+  
+  /* Override if env() is supported */
+  @supports (padding: env(safe-area-inset-top)) {
+    .login-container {
+      padding-top: max(env(safe-area-inset-top), 16px);
+      padding-bottom: max(env(safe-area-inset-bottom), 16px);
+    }
+  }
+}
+
+/* Additional fix for very tall forms (like registration) */
+.auth-form.tall-form {
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media only screen 
+  and (max-device-width: 430px) 
+  and (-webkit-device-pixel-ratio: 3) {
+  
+  .auth-form.tall-form {
+    max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 60px);
+    padding: 24px 28px 20px;
+  }
+
+  /* Compact spacing for tall forms */
+  .auth-form.tall-form .form-group {
+    margin-bottom: 12px;
+  }
+
+  .auth-form.tall-form .elegant-header {
+    margin-bottom: 16px;
+  }
+
+  .auth-form.tall-form .brand-section {
+    margin-bottom: 12px;
+  }
+
+  .auth-form.tall-form .auth-button {
+    margin: 14px 0 10px;
+    padding: 11px 22px;
+  }
+}
+
+/* Accessibility improvements for iPhone Pro */
+@media only screen 
+  and (max-device-width: 430px) 
+  and (-webkit-device-pixel-ratio: 3) {
+  
+  /* Ensure touch targets are accessible */
+  .auth-form input,
+  .auth-button,
+  .text-button,
+  .clear-input,
+  .toggle-password {
+    min-height: 44px; /* Apple's minimum touch target */
+  }
+
+  /* Improve focus indicators */
+  .auth-form input:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+  }
+
+  /* Enhanced error visibility */
+  .field-error,
+  .auth-error {
+    font-weight: 500;
+    line-height: 1.4;
+  }
+}

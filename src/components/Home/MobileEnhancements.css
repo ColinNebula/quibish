@@ -1,0 +1,124 @@
+/* MobileEnhancements.css - Optimizations for touch interfaces */
+
+/* Larger tap targets for mobile */
+.mobile-view .action-button,
+.mobile-view .message-actions button,
+.mobile-view .thread-close-btn,
+.mobile-view .send-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Remove hover states on mobile (they cause sticky hover issues) */
+.mobile-view .message-bubble:hover {
+  background-color: var(--pro-message-bg);
+}
+
+.mobile-view.dark-theme .message-bubble:hover {
+  background-color: var(--pro-message-bg-dark);
+}
+
+.mobile-view .message-actions {
+  /* Make message actions always visible on mobile since there's no hover */
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+/* Better scrolling on iOS */
+.mobile-view .messages-list,
+.mobile-view .thread-content {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Fix input zoom issues on mobile */
+.mobile-view input,
+.mobile-view textarea {
+  font-size: 16px;  /* Prevents iOS zoom on input focus */
+}
+
+/* Improved tap feedback */
+.mobile-view button:active {
+  opacity: 0.7;
+}
+
+/* Disable text selection on buttons */
+.mobile-view button {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Safe area insets for notched phones */
+.mobile-view .pro-content {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.mobile-view .mobile-header {
+  padding-top: env(safe-area-inset-top, 0);
+  height: calc(56px + env(safe-area-inset-top, 0));
+}
+
+/* Pull-to-refresh animation area */
+.mobile-view .pull-indicator {
+  height: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: height 0.3s ease;
+}
+
+.mobile-view .pull-indicator.active {
+  height: 60px;
+}
+
+.mobile-view .pull-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--pro-gray-300);
+  border-top-color: var(--pro-accent);
+  border-radius: 50%;
+  animation: spin 1s infinite linear;
+  margin-right: 8px;
+}
+
+.mobile-view .refresh-text {
+  font-size: 14px;
+  color: var(--pro-text-secondary);
+  font-weight: 500;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Media query for iOS devices with notches */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-view .message-input-container {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
+  }
+  
+  .mobile-view .thread-reply {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
+  }
+}
+
+/* Mobile keyboard adjustments */
+@media screen and (max-height: 450px) and (max-width: 767px) {
+  /* When virtual keyboard is likely open */
+  .mobile-view .messages-list {
+    height: calc(100vh - 120px);
+  }
+  
+  .mobile-view .mobile-header,
+  .mobile-view .thread-header {
+    height: 40px;
+  }
+}

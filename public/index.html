@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    
+    <!-- Enhanced mobile viewport configuration -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- Theme and visual configuration -->
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="msapplication-TileColor" content="#6366f1" />
+    
+    <!-- PWA configuration -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Quibish" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Quibish" />
+    
+    <!-- Enhanced description -->
+    <meta name="description" content="Quibish - A modern chat application with video calls, file sharing, GIF support, and mobile optimization" />
+    <meta name="keywords" content="chat, messaging, video calls, file sharing, mobile, progressive web app" />
+    
+    <!-- Touch icons for various devices -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="%PUBLIC_URL%/logo192.png" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/static/css/main.css" as="style" />
+    
+    <!-- File handling capabilities -->
+    <meta name="file_handlers" content="image/*, video/*" />
+    
+    <!-- Mobile Safari specific -->
+    <meta name="apple-touch-fullscreen" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- Prevent tap highlight on iOS -->
+    <style>
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      input, textarea, [contenteditable] {
+        -webkit-user-select: auto;
+        user-select: auto;
+      }
+    </style>
+    
+    <!-- Manifest link -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <title>Quibish - Enhanced Chat</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

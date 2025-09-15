@@ -1,0 +1,337 @@
+.notification-settings {
+  width: 100%;
+}
+
+.settings-group {
+  margin-bottom: 32px;
+  padding: 24px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.notification-settings.dark .settings-group {
+  background: #2a2a2a;
+  border-color: #404040;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.notification-settings.dark .group-title {
+  color: #f0f0f0;
+}
+
+.group-icon {
+  font-size: 20px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid #e9ecef;
+  gap: 16px;
+}
+
+.notification-settings.dark .setting-item {
+  border-bottom-color: #404040;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-label {
+  display: block;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.notification-settings.dark .setting-label {
+  color: #f0f0f0;
+}
+
+.setting-description {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.notification-settings.dark .setting-description {
+  color: #999;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.toggle-switch.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #007bff;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-switch.disabled .toggle-slider {
+  background-color: #e9ecef;
+}
+
+.toggle-switch.disabled input:checked + .toggle-slider {
+  background-color: #adb5bd;
+}
+
+/* Time Range */
+.time-range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.time-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  color: #333;
+}
+
+.notification-settings.dark .time-input {
+  background: #3a3a3a;
+  border-color: #555;
+  color: #f0f0f0;
+}
+
+.time-separator {
+  color: #666;
+  font-weight: 500;
+}
+
+.notification-settings.dark .time-separator {
+  color: #999;
+}
+
+/* Days Selector */
+.days-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.day-btn {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.day-btn:hover {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.day-btn.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.notification-settings.dark .day-btn {
+  background: #3a3a3a;
+  border-color: #555;
+  color: #ccc;
+}
+
+.notification-settings.dark .day-btn:hover {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.notification-settings.dark .day-btn.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+/* Action Buttons */
+.settings-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 24px;
+  border-top: 1px solid #e9ecef;
+  margin-top: 32px;
+}
+
+.notification-settings.dark .settings-actions {
+  border-top-color: #404040;
+}
+
+.settings-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 120px;
+}
+
+.settings-btn.secondary {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.settings-btn.secondary:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+}
+
+.settings-btn.primary {
+  background: #6c757d;
+  color: white;
+}
+
+.settings-btn.primary:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.settings-btn.primary.has-changes {
+  background: #007bff;
+  animation: pulse 2s infinite;
+}
+
+.settings-btn.primary.has-changes:hover {
+  background: #0056b3;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.settings-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.notification-settings.dark .settings-btn.secondary {
+  background: #495057;
+  color: #f8f9fa;
+  border-color: #6c757d;
+}
+
+.notification-settings.dark .settings-btn.secondary:hover {
+  background: #5a6268;
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(0, 123, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings-group {
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .settings-actions {
+    flex-direction: column;
+  }
+  
+  .settings-btn {
+    width: 100%;
+  }
+  
+  .days-selector {
+    gap: 6px;
+  }
+  
+  .day-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+  }
+}

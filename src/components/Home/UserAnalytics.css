@@ -1,0 +1,204 @@
+/* User Analytics Styles */
+.user-analytics {
+  padding: 20px 0;
+}
+
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.analytics-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--heading-color, #111);
+}
+
+.user-analytics.dark .analytics-header h2 {
+  color: var(--heading-color-dark, #f0f0f0);
+}
+
+.refresh-button {
+  background: transparent;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #666);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  background-color: var(--hover-bg, rgba(0, 0, 0, 0.05));
+  color: var(--primary-color, #6366f1);
+}
+
+.user-analytics.dark .refresh-button {
+  color: var(--text-muted-dark, #999);
+}
+
+.user-analytics.dark .refresh-button:hover {
+  background-color: var(--hover-bg-dark, rgba(255, 255, 255, 0.1));
+}
+
+.analytics-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.analytics-card {
+  background-color: var(--card-bg, white);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.user-analytics.dark .analytics-card {
+  background-color: var(--card-bg-dark, #222);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.analytics-card h3 {
+  font-size: 16px;
+  margin: 0 0 12px 0;
+  color: var(--heading-color, #333);
+}
+
+.user-analytics.dark .analytics-card h3 {
+  color: var(--heading-color-dark, #e0e0e0);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color, #eaeaea);
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.user-analytics.dark .stat-item {
+  border-bottom-color: var(--border-color-dark, #333);
+}
+
+.stat-label {
+  color: var(--text-muted, #666);
+  font-size: 14px;
+}
+
+.user-analytics.dark .stat-label {
+  color: var(--text-muted-dark, #999);
+}
+
+.stat-value {
+  font-weight: 600;
+  color: var(--text-color, #333);
+  font-size: 14px;
+}
+
+.user-analytics.dark .stat-value {
+  color: var(--text-color-dark, #e0e0e0);
+}
+
+.last-activity {
+  background-color: var(--card-bg, white);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.user-analytics.dark .last-activity {
+  background-color: var(--card-bg-dark, #222);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.last-activity h3 {
+  font-size: 16px;
+  margin: 0 0 12px 0;
+  color: var(--heading-color, #333);
+}
+
+.user-analytics.dark .last-activity h3 {
+  color: var(--heading-color-dark, #e0e0e0);
+}
+
+.last-activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.activity-type {
+  font-weight: 500;
+  color: var(--primary-color, #6366f1);
+}
+
+.activity-time {
+  font-size: 14px;
+  color: var(--text-muted, #666);
+}
+
+.user-analytics.dark .activity-time {
+  color: var(--text-muted-dark, #999);
+}
+
+.no-activity {
+  color: var(--text-muted, #666);
+  font-style: italic;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.user-analytics.dark .no-activity {
+  color: var(--text-muted-dark, #999);
+}
+
+.analytics-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.clear-log-button {
+  background-color: transparent;
+  border: 1px solid var(--danger-color, #ef4444);
+  color: var(--danger-color, #ef4444);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-log-button:hover {
+  background-color: var(--danger-color, #ef4444);
+  color: white;
+}
+
+.user-analytics-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: var(--text-muted, #666);
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .analytics-summary {
+    grid-template-columns: 1fr;
+  }
+}

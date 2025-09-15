@@ -1,0 +1,363 @@
+.color-preferences {
+  padding: 0;
+  max-width: 100%;
+  margin: 0;
+  width: 100%;
+}
+
+.preferences-header {
+  margin-bottom: 24px;
+}
+
+.preferences-header h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.preferences-header p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.current-preview {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.current-preview h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.color-preview-card {
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  max-width: 400px;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.preview-username {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.preview-time {
+  font-size: 12px;
+  color: #666;
+  opacity: 0.8;
+}
+
+.preview-message {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.color-options {
+  margin-bottom: 32px;
+}
+
+.color-options h4 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.color-option {
+  cursor: pointer;
+  padding: 16px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.color-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.color-option.selected {
+  border-color: #007bff;
+  background: #f8f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,123,255,0.2);
+}
+
+.color-swatch {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin: 0 auto 12px auto;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.auto-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.auto-label {
+  background: rgba(0,0,0,0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.swatch-accent {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.color-name {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.color-description {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+.preferences-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-bottom: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e9ecef;
+}
+
+.reset-button, .save-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.reset-button {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.reset-button:hover:not(:disabled) {
+  background: #e9ecef;
+  transform: translateY(-1px);
+}
+
+.save-button {
+  background: #007bff;
+  color: white;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+}
+
+.save-button:disabled, .reset-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.preferences-info {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #007bff;
+}
+
+.preferences-info h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.preferences-info ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.preferences-info li {
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #495057;
+}
+
+.preferences-info li:last-child {
+  margin-bottom: 0;
+}
+
+/* Dark mode styles */
+.color-preferences.dark {
+  color: #e9ecef;
+}
+
+.color-preferences.dark .preferences-header h3 {
+  color: #f8f9fa;
+}
+
+.color-preferences.dark .preferences-header p {
+  color: #adb5bd;
+}
+
+.color-preferences.dark .current-preview {
+  background: #343a40;
+  border-color: #495057;
+}
+
+.color-preferences.dark .current-preview h4 {
+  color: #f8f9fa;
+}
+
+.color-preferences.dark .color-options h4 {
+  color: #f8f9fa;
+}
+
+.color-preferences.dark .color-option {
+  background: #495057;
+  border-color: #6c757d;
+}
+
+.color-preferences.dark .color-option.selected {
+  background: #1a1d29;
+  border-color: #0d6efd;
+}
+
+.color-preferences.dark .color-name {
+  color: #f8f9fa;
+}
+
+.color-preferences.dark .color-description {
+  color: #adb5bd;
+}
+
+.color-preferences.dark .preview-message {
+  color: #212529;
+}
+
+.color-preferences.dark .preview-time {
+  color: #495057;
+}
+
+.color-preferences.dark .reset-button {
+  background: #6c757d;
+  color: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.color-preferences.dark .reset-button:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.color-preferences.dark .preferences-info {
+  background: #343a40;
+  border-left-color: #0d6efd;
+}
+
+.color-preferences.dark .preferences-info h4 {
+  color: #f8f9fa;
+}
+
+.color-preferences.dark .preferences-info li {
+  color: #adb5bd;
+}
+
+.color-preferences.dark .preferences-actions {
+  border-top-color: #495057;
+}
+
+/* Animation for selection changes */
+@keyframes colorChange {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.color-option.selected .color-swatch {
+  animation: colorChange 0.3s ease;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .color-preferences {
+    padding: 0;
+  }
+  
+  .color-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  
+  .preferences-actions {
+    flex-direction: column;
+  }
+  
+  .reset-button, .save-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .color-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .color-preview-card {
+    max-width: 100%;
+  }
+}
