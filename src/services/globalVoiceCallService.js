@@ -45,7 +45,13 @@ class GlobalVoiceCallService {
   initializeSignaling() {
     try {
       // Skip WebSocket connection in development for now
-      if (process.env.NODE_ENV !== 'production') {
+      // Check multiple ways to detect development environment
+      const isDevelopment = process.env.NODE_ENV !== 'production' || 
+                           process.env.NODE_ENV === 'development' ||
+                           window.location.hostname === 'localhost' ||
+                           window.location.hostname === '127.0.0.1';
+      
+      if (isDevelopment) {
         console.log('Skipping WebSocket signaling in development, using local fallback');
         this.setupLocalFallback();
         return;
@@ -71,7 +77,19 @@ class GlobalVoiceCallService {
       this.socket.onclose = () => {
         console.log('Signaling connection closed, attempting reconnect...');
         this.isConnected = false;
-        setTimeout(() => this.initializeSignaling(), 3000);
+        
+        // Only reconnect if not in development
+        const isDevelopment = process.env.NODE_ENV !== 'production' || 
+                             process.env.NODE_ENV === 'development' ||
+                             window.location.hostname === 'localhost' ||
+                             window.location.hostname === '127.0.0.1';
+        
+        if (!isDevelopment) {
+          setTimeout(() => this.initializeSignaling(), 3000);
+        } else {
+          console.log('Skipping reconnection in development mode');
+          this.setupLocalFallback();
+        }
       };
 
       this.socket.onerror = (error) => {
