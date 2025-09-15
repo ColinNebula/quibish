@@ -359,5 +359,5 @@ class MemoryManager {
 const performanceOptimizer = new PerformanceOptimizer();
 const memoryManager = new MemoryManager();
 
-export { performanceOptimizer, memoryManager };
+export { PerformanceOptimizer, performanceOptimizer, memoryManager };
 export default performanceOptimizer;

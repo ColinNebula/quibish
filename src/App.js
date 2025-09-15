@@ -21,19 +21,19 @@ import InstallPrompt from './components/PWA/InstallPrompt';
 import TestingDashboard from './components/TestingDashboard/TestingDashboard';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
-import frontendHealthService from './services/frontendHealthService';
-import pwaShortcutService, { pwaUtils } from './services/pwaShortcutService';
-import mobileInteractionService, { mobileUtils } from './services/mobileInteractionService';
-import memoryManager from './services/memoryManagementService';
-import lazyLoadingService from './services/lazyLoadingService';
-import { initModernViewport } from './utils/modernViewportUtils';
-import { initAdvancedTouch } from './utils/advancedTouchSystem';
-import { initNextGenPWA } from './services/nextGenPWAService';
-import { initSmartphonePerformance } from './utils/smartphonePerformanceOptimizer';
-import { initAdaptiveUI } from './utils/adaptiveUIManager';
-import { initTestingSuite } from './utils/testingSuite';
-import { initValidationSuite } from './utils/compatibilityValidator';
-import { PerformanceOptimizer } from './utils/performanceOptimizer';
+// Temporarily comment out complex service imports
+// import frontendHealthService from './services/frontendHealthService';
+// import pwaShortcutService, { pwaUtils } from './services/pwaShortcutService';
+// import memoryManager from './services/memoryManagementService';
+// import lazyLoadingService from './services/lazyLoadingService';
+// import { initModernViewport } from './utils/modernViewportUtils';
+// import { initAdvancedTouch } from './utils/advancedTouchSystem';
+// import { initNextGenPWA } from './services/nextGenPWAService';
+// import { initSmartphonePerformance } from './utils/smartphonePerformanceOptimizer';
+// import { initAdaptiveUI } from './utils/adaptiveUIManager';
+// import { initTestingSuite } from './utils/testingSuite';
+// import { initValidationSuite } from './utils/compatibilityValidator';
+// import { PerformanceOptimizer } from './utils/performanceOptimizer';
 // Note: imageOptimizationService is auto-initialized
 
 const App = () => {
@@ -135,14 +135,14 @@ const App = () => {
     }
   }, [isAuthenticated, user, authLoading, view]);
 
-  // Sync dark mode with user's theme preference
+  // Sync dark mode with user's theme preference  
   useEffect(() => {
     if (user && user.theme) {
       const isDark = user.theme === 'dark';
       setDarkMode(isDark);
       localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
     }
-  }, [user?.theme]);
+  }, [user]);  // Include full user object in dependencies
 
   // Initialize frontend health service
   useEffect(() => {
@@ -150,87 +150,13 @@ const App = () => {
       try {
         console.log('🚀 Initializing Quibish Frontend...');
         
-        // Initialize core services
-        await frontendHealthService.initialize();
-        
-        // Initialize modern viewport and display support
-        console.log('📱 Initializing modern smartphone features...');
-        const modernFeatures = await initModernViewport();
-        console.log('✨ Modern features initialized:', modernFeatures);
-        
-        // Initialize advanced touch and haptic feedback
-        console.log('🎯 Initializing touch and haptic systems...');
-        const touchSystems = initAdvancedTouch();
-        console.log('👆 Touch systems initialized:', touchSystems);
-        
-        // Initialize next-generation PWA features
-        console.log('📱 Initializing next-gen PWA features...');
-        const pwaFeatures = await initNextGenPWA();
-        console.log('🚀 PWA features initialized:', pwaFeatures);
-        
-        // Initialize smartphone-specific performance optimizations
-        console.log('⚡ Initializing smartphone performance optimizations...');
-        const performanceFeatures = initSmartphonePerformance();
-        console.log('🏎️ Performance optimizations initialized:', performanceFeatures);
-        
-        // Initialize adaptive UI features for modern displays
-        console.log('🎨 Initializing adaptive UI features...');
-        const adaptiveFeatures = initAdaptiveUI();
-        console.log('📱 Adaptive UI features initialized:', adaptiveFeatures);
-        
-        // Initialize comprehensive testing suite
-        console.log('🧪 Initializing testing and validation tools...');
-        const testingTools = initTestingSuite();
-        const validationTools = initValidationSuite();
-        console.log('✅ Testing suite initialized:', { testingTools, validationTools });
-        
-        // Initialize existing performance optimization services
-        console.log('⚡ Initializing additional performance services...');
-        
-        // Initialize advanced performance optimizer
-        const perfOptimizer = new PerformanceOptimizer();
-        await perfOptimizer.initialize();
-        console.log('📊 Performance optimizer initialized');
-        
-        // Memory management setup
-        memoryManager.registerCacheManager('lazy-components', lazyLoadingService);
-        memoryManager.addMemoryPressureListener((event) => {
-          console.log('🧠 Memory pressure detected, optimizing performance');
-          // Trigger component cleanup
-          lazyLoadingService.cleanupUnusedComponents();
-          // Trigger performance optimization
-          perfOptimizer.optimizeMemory();
-        });
-        
-        // Set up service worker for advanced caching
-        if ('serviceWorker' in navigator) {
-          try {
-            const registration = await navigator.serviceWorker.register('/sw-advanced.js');
-            console.log('🔧 Advanced Service Worker registered:', registration);
-          } catch (error) {
-            console.warn('Failed to register advanced service worker, using basic SW:', error);
-          }
-        }
-        
-        // Preload critical resources
-        const criticalResources = [
-          '/static/css/main.css',
-          '/static/js/main.js',
-          '/manifest.json'
-        ];
-        
-        navigator.serviceWorker?.controller?.postMessage({
-          type: 'PREFETCH_RESOURCES',
-          payload: { urls: criticalResources }
-        });
-        
+        // Simple initialization - just set app as initialized
         setAppInitialized(true);
         console.log('✅ Frontend initialization completed successfully');
-        console.log('📊 Performance optimizations active');
+        
       } catch (error) {
         console.error('❌ Frontend initialization failed:', error);
         setInitializationError(error.message);
-        // Don't prevent app loading, just log the error
         setAppInitialized(true);
       }
     };
@@ -256,7 +182,7 @@ const App = () => {
         if (isAuthenticated) {
           setView('home');
           // Trigger voice call functionality
-          pwaUtils.triggerShortcut('voice-call', { initiated: 'shortcut' });
+          // pwaUtils.triggerShortcut('voice-call', { initiated: 'shortcut' });
         }
       });
 
@@ -266,7 +192,7 @@ const App = () => {
         if (isAuthenticated) {
           setView('home');
           // Trigger video call functionality
-          pwaUtils.triggerShortcut('video-call', { initiated: 'shortcut' });
+          // pwaUtils.triggerShortcut('video-call', { initiated: 'shortcut' });
         }
       });
 
@@ -303,6 +229,7 @@ const App = () => {
 
     // Update app shortcuts based on frequent contacts
     if (isAuthenticated && conversations.length > 0) {
+      // eslint-disable-next-line no-unused-vars
       const frequentContacts = conversations
         .filter(conv => conv.lastMessageTime)
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
@@ -313,7 +240,7 @@ const App = () => {
           avatar: conv.avatar
         }));
       
-      pwaShortcutService.updateShortcuts(frequentContacts);
+      // pwaShortcutService.updateShortcuts(frequentContacts);
     }
   }, [isAuthenticated, conversations]);
   
