@@ -44,6 +44,13 @@ class GlobalVoiceCallService {
    */
   initializeSignaling() {
     try {
+      // Skip WebSocket connection in development for now
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Skipping WebSocket signaling in development, using local fallback');
+        this.setupLocalFallback();
+        return;
+      }
+
       // Connect to signaling server (will fallback if backend not available)
       const wsUrl = process.env.NODE_ENV === 'production' 
         ? 'wss://your-domain.com/signaling'
