@@ -8,7 +8,6 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
-  }
 
   .chat-container {
     width: 100%;
@@ -167,7 +166,7 @@
     overflow-y: auto;
   }
 
-  /* Hide text elements in icon-only mode */
+  /* Hide text elements and non-essential items in icon-only mode */
   .pro-sidebar:not(.expanded-mobile) .logo-text,
   .pro-sidebar:not(.expanded-mobile) .user-info,
   .pro-sidebar:not(.expanded-mobile) .user-actions,
@@ -175,8 +174,21 @@
   .pro-sidebar:not(.expanded-mobile) .sidebar-search,
   .pro-sidebar:not(.expanded-mobile) .sidebar-filters,
   .pro-sidebar:not(.expanded-mobile) .conversations-header h4,
-  .pro-sidebar:not(.expanded-mobile) .conversation-details {
+  .pro-sidebar:not(.expanded-mobile) .conversation-details,
+  .pro-sidebar:not(.expanded-mobile) .sidebar-user-profile,
+  .pro-sidebar:not(.expanded-mobile) .pro-sidebar-header {
     display: none !important;
+  }
+
+  /* Show only the conversation list for recent chats */
+  .pro-sidebar:not(.expanded-mobile) .pro-sidebar-content {
+    padding: 4px 0;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) .conversations-header {
+    display: none;
   }
 
   /* Icon-only sidebar header */
@@ -243,25 +255,33 @@
     height: 28px;
   }
 
-  /* Icon-only conversations */
+  /* Pure conversation icons only */
   .pro-sidebar:not(.expanded-mobile) .conversation-item {
-    padding: 3px 2px;
-    margin: 1px 2px;
+    padding: 2px;
+    margin: 2px 1px;
     border-radius: 8px;
     justify-content: center;
     align-items: center;
     position: relative;
+    background: transparent;
+    border: none;
+    display: flex;
+    width: calc(100% - 4px);
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-avatar {
     width: 28px;
     height: 28px;
     margin: 0;
+    border-radius: 50%;
+    overflow: hidden;
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-avatar img {
     width: 28px;
     height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
   }
 
   .pro-sidebar:not(.expanded-mobile) .unread-badge {
@@ -289,9 +309,24 @@
     border: 1px solid var(--pro-surface);
   }
 
-  /* Conversations list mobile */
+  /* Conversations list mobile - pure icon mode */
   .pro-sidebar:not(.expanded-mobile) .conversations-list {
-    padding: 2px 0;
+    padding: 4px 0;
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Hide scrollbar for cleaner look */
+  .pro-sidebar:not(.expanded-mobile)::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pro-sidebar:not(.expanded-mobile) {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   /* Mobile overlay for expanded sidebar */
@@ -408,47 +443,62 @@
     font-size: 16px; /* Prevents zoom on iOS */
   }
 
-  /* Mobile Message Centering - Enhanced for all mobile devices */
+  /* Enhanced Message Centering - Perfect center alignment */
   .pro-message-list-container {
     padding: 0 !important;
     display: flex;
     justify-content: center;
     width: 100%;
+    align-items: center;
   }
 
   .pro-message-list {
-    padding: 12px 16px !important;
+    padding: 16px !important;
     width: 100%;
-    max-width: 600px;
+    max-width: 500px; /* Optimal reading width */
     margin: 0 auto;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
+    text-align: center;
   }
 
-  /* Center the main content area */
+  /* Perfect message bubble centering */
+  .pro-message-blurb {
+    max-width: 90% !important;
+    margin: 8px auto !important;
+    text-align: left; /* Content left-aligned within centered bubble */
+  }
+
+  /* Center the main content perfectly */
   .pro-main {
     display: flex !important;
     flex-direction: column !important;
     align-items: center;
+    justify-content: flex-start;
     width: 100%;
+    padding: 0;
   }
 
-  /* Center header content */
-  .pro-header {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: center;
-  }
-
-  /* Center input area */
+  /* Center all main content elements */
+  .pro-header,
   .pro-chat-input-container {
     width: 100%;
-    max-width: 600px;
+    max-width: 500px;
     margin: 0 auto;
+  }
+
+  /* Perfect centering for empty state */
+  .no-messages-indicator {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin: 40px auto !important;
+    padding: 20px !important;
   }
 
   /* Center all message bubbles with optimal mobile width */
@@ -904,32 +954,22 @@
 
 /* Additional small device specific centering */
 @media (max-width: 400px) {
-  /* Ultra-compact sidebar for very small devices */
+  /* Ultra-compact sidebar for very small devices - conversations only */
   .pro-sidebar:not(.expanded-mobile) {
     width: 32px !important;
+    padding: 0;
   }
 
   .pro-main {
     margin-left: 32px !important;
     width: calc(100% - 32px) !important;
+    padding: 0 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
-  .pro-sidebar:not(.expanded-mobile) .logo-icon {
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-  }
-
-  .pro-sidebar:not(.expanded-mobile) .user-avatar {
-    width: 24px;
-    height: 24px;
-  }
-
-  .pro-sidebar:not(.expanded-mobile) .user-avatar img {
-    width: 24px;
-    height: 24px;
-  }
-
+  /* Tiny conversation avatars for maximum space */
   .pro-sidebar:not(.expanded-mobile) .conversation-avatar {
     width: 24px;
     height: 24px;
@@ -941,16 +981,26 @@
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-item {
-    padding: 2px 1px;
-    margin: 1px;
+    padding: 1px;
+    margin: 1px 0;
+    width: 30px;
+    height: 26px;
   }
 
-  .pro-sidebar:not(.expanded-mobile) .pro-sidebar-header {
-    padding: 3px 1px;
+  /* Enhanced message centering for tiny screens */
+  .pro-message-list {
+    max-width: 90% !important;
+    padding: 12px 8px !important;
   }
 
-  .pro-sidebar:not(.expanded-mobile) .sidebar-user-profile {
-    padding: 3px 1px;
+  .pro-message-blurb {
+    max-width: 95% !important;
+    margin: 6px auto !important;
+  }
+
+  .pro-header,
+  .pro-chat-input-container {
+    max-width: 95%;
   }
 
   .pro-main {
@@ -1008,24 +1058,30 @@
 @media (max-width: 480px) {
   /* Enhanced message centering for very small screens */
   .pro-message-list {
-    padding: 8px 12px !important;
+    padding: 12px 8px !important;
     max-width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    text-align: center;
   }
 
   .pro-message-list .no-messages-indicator {
     text-align: center;
     width: 100%;
-    max-width: 300px;
-    margin: 0 auto;
-    padding: 20px;
+    max-width: 280px;
+    margin: 30px auto;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
   .pro-message-blurb {
-    max-width: 92% !important;
-    margin: 6px auto !important;
+    max-width: 94% !important;
+    margin: 8px auto !important;
     font-size: 14px;
   }
 
