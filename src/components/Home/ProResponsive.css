@@ -422,6 +422,33 @@
     max-width: 600px;
     margin: 0 auto;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Center the main content area */
+  .pro-main {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center;
+    width: 100%;
+  }
+
+  /* Center header content */
+  .pro-header {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Center input area */
+  .pro-chat-input-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
   }
 
   /* Center all message bubbles with optimal mobile width */
@@ -875,12 +902,76 @@
   margin-bottom: 20px;
 }
 
-/* Additional responsive breakpoints for quick reactions */
+/* Additional small device specific centering */
+@media (max-width: 400px) {
+  .pro-main {
+    padding: 0 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pro-header {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .pro-message-list {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .no-messages-indicator {
+    margin: 20px auto !important;
+    text-align: center !important;
+    width: 100% !important;
+    max-width: 300px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .no-messages-indicator span {
+    display: block;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .no-messages-indicator p {
+    text-align: center;
+    margin: 0;
+  }
+
+  .pro-chat-input-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
 @media (max-width: 480px) {
   /* Enhanced message centering for very small screens */
   .pro-message-list {
     padding: 8px 12px !important;
     max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pro-message-list .no-messages-indicator {
+    text-align: center;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+    padding: 20px;
   }
 
   .pro-message-blurb {
@@ -956,6 +1047,17 @@
   /* Ultra-small device message centering (iPhone SE, etc.) */
   .pro-message-list {
     padding: 6px 8px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pro-message-list .no-messages-indicator {
+    text-align: center;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+    padding: 16px 8px;
   }
 
   .pro-message-blurb {
@@ -1049,6 +1151,15 @@
 @media (max-height: 500px) and (orientation: landscape) {
   .pro-message-list {
     padding: 8px 16px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pro-message-list .no-messages-indicator {
+    text-align: center;
+    margin: 0 auto;
+    padding: 12px;
   }
 
   .pro-message-blurb {
@@ -1066,5 +1177,14 @@
 
   .enhanced-input-bar {
     padding: 6px 12px !important;
+  }
+
+  .pro-main {
+    align-items: center;
+  }
+
+  .pro-header, .pro-chat-input-container {
+    max-width: 800px;
+    margin: 0 auto;
   }
 }
