@@ -275,6 +275,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Simple ping endpoint for connection testing
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    message: 'Server is reachable'
+  });
+});
+
 // Enhanced health check with network diagnostics
 app.get('/api/health', (req, res) => {
   const healthData = {

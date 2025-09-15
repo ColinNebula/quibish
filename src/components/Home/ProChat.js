@@ -44,6 +44,7 @@ const ProChat = ({
   // Basic state
   const [isConnected] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileExpandedSidebar, setMobileExpandedSidebar] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -223,10 +224,14 @@ const ProChat = ({
         setSidebarCollapsed(true);
         // Close mobile global voice modal if screen gets smaller
         setMobileGlobalVoiceModal(false);
+        // Close mobile expanded sidebar when resizing to mobile
+        setMobileExpandedSidebar(false);
       } else if (window.innerWidth > 768) {
         // Auto-expand on larger screens and close mobile modal
         setSidebarCollapsed(false);
         setMobileGlobalVoiceModal(false);
+        // Close mobile expanded sidebar when resizing to desktop
+        setMobileExpandedSidebar(false);
       }
       // For tablets (481-768px), maintain current state but close mobile modal
       if (window.innerWidth > 480) {
@@ -262,18 +267,35 @@ const ProChat = ({
   }, [showEmojiPicker, showReactionPicker]);
 
   const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed(prev => !prev);
+    if (window.innerWidth <= 768) {
+      // Mobile behavior: toggle expanded state
+      setMobileExpandedSidebar(prev => !prev);
+    } else {
+      // Desktop behavior: toggle collapsed state
+      setSidebarCollapsed(prev => !prev);
+    }
+  }, []);
+
+  // Handle mobile sidebar expansion on logo click
+  const handleMobileSidebarToggle = useCallback(() => {
+    if (window.innerWidth <= 768) {
+      setMobileExpandedSidebar(prev => !prev);
+    }
   }, []);
 
   const handleMobileGlobalVoice = useCallback(() => {
     setMobileGlobalVoiceModal(!mobileGlobalVoiceModal);
     if (window.innerWidth <= 480) {
       setSidebarCollapsed(true);
+      setMobileExpandedSidebar(false);
     }
   }, [mobileGlobalVoiceModal]);
 
   // Close sidebar when clicking outside on mobile
   const handleOverlayClick = useCallback(() => {
+    if (window.innerWidth <= 768) {
+      setMobileExpandedSidebar(false);
+    }
     if (window.innerWidth <= 480) {
       setSidebarCollapsed(true);
     }
@@ -1595,17 +1617,22 @@ const ProChat = ({
       {MemoizedVoiceCall}
       
       {/* Enhanced Sidebar */}
-      <div className={`pro-sidebar enhanced-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+      <div className={`pro-sidebar enhanced-sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileExpandedSidebar ? 'expanded-mobile' : ''}`}>
         {/* Sidebar Header */}
         <div className="pro-sidebar-header">
           <div className="sidebar-logo">
-            <div className="logo-icon" data-tooltip="Quibish Chat">
+            <div 
+              className="logo-icon" 
+              data-tooltip="Quibish Chat"
+              onClick={handleMobileSidebarToggle}
+              style={{ cursor: 'pointer' }}
+            >
               💬
               {totalUnreadCount > 0 && (
                 <div className="logo-unread-badge">{totalUnreadCount > 99 ? '99+' : totalUnreadCount}</div>
               )},
             </div>
-            {!sidebarCollapsed && (
+            {(!sidebarCollapsed || mobileExpandedSidebar) && (
               <div className="logo-text">
                 <h2>Quibish</h2>
                 <span className="version">v2.0</span>
@@ -1670,13 +1697,13 @@ const ProChat = ({
               </div>
             )}
           </div>
-          {!sidebarCollapsed && (
+          {(!sidebarCollapsed || mobileExpandedSidebar) && (
             <div className="user-info">
               <h3 className="user-name">{user?.name || 'User'}</h3>
               <p className="user-status">Online</p>
             </div>
           )}
-          {!sidebarCollapsed && (
+          {(!sidebarCollapsed || mobileExpandedSidebar) && (
             <div className="user-actions">
               <button className="action-btn" title="Settings" onClick={handleQuickSettings}>⚙️</button>
               <button className="action-btn" title="Profile" onClick={() => handleViewUserProfile(user?.id, user?.name)}>👤</button>
@@ -1686,7 +1713,7 @@ const ProChat = ({
         </div>
 
         {/* Quick Actions */}
-        {!sidebarCollapsed && (
+        {(!sidebarCollapsed || mobileExpandedSidebar) && (
           <div className="sidebar-quick-actions">
             <button className="quick-action-btn primary" onClick={handleNewChat}>
               <span className="icon">➕</span>
@@ -1700,7 +1727,7 @@ const ProChat = ({
         )}
 
         {/* Search Bar */}
-        {!sidebarCollapsed && (
+        {(!sidebarCollapsed || mobileExpandedSidebar) && (
           <div className="sidebar-search">
             <div className="search-container">
               <span className="search-icon">🔍</span>
@@ -1716,7 +1743,7 @@ const ProChat = ({
         )}
 
         {/* Filter Tabs */}
-        {!sidebarCollapsed && (
+        {(!sidebarCollapsed || mobileExpandedSidebar) && (
           <div className="sidebar-filters">
             <button 
               className={`filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
@@ -1745,7 +1772,7 @@ const ProChat = ({
         {/* Conversations List */}
         <div className="pro-sidebar-content">
           <div className="conversations-header">
-            {!sidebarCollapsed && <h4>Recent Conversations</h4>}
+            {(!sidebarCollapsed || mobileExpandedSidebar) && <h4>Recent Conversations</h4>}
           </div>
           <div className="conversations-list">
             {filteredConversations.map(conv => (
@@ -1762,7 +1789,7 @@ const ProChat = ({
                   {conv.isOnline && <div className="online-dot"></div>}
                   {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
                 </div>
-                {!sidebarCollapsed && (
+                {(!sidebarCollapsed || mobileExpandedSidebar) && (
                   <div className="conversation-details">
                     <div className="conversation-header">
                       <h5 className="conversation-name">{conv.name}</h5>
@@ -1786,7 +1813,7 @@ const ProChat = ({
           </div>
 
           {/* Global Voice Calls */}
-          {!sidebarCollapsed && (
+          {(!sidebarCollapsed || mobileExpandedSidebar) && (
             <GlobalUsers 
               onStartCall={handleStartGlobalCall}
               currentCall={globalCall}
@@ -1844,9 +1871,9 @@ const ProChat = ({
       </div>
 
       {/* Sidebar Backdrop Overlay for Mobile */}
-      {!sidebarCollapsed && (
+      {((typeof window !== 'undefined' && !sidebarCollapsed && window.innerWidth <= 480) || mobileExpandedSidebar) && (
         <div 
-          className="pro-sidebar-overlay" 
+          className="pro-sidebar-overlay sidebar-mobile-overlay" 
           onClick={handleOverlayClick}
           aria-hidden="true"
         />
