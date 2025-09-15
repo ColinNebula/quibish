@@ -31,7 +31,7 @@
     top: 0;
     left: 0;
     height: 100vh;
-    width: 48px !important; /* Reduced from 60px for better space usage */
+    width: 36px !important; /* Ultra-minimal width for maximum content space */
     z-index: 1000;
     transform: translateX(0) !important; /* Always visible */
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -49,8 +49,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    margin-left: 48px !important; /* Account for narrower sidebar */
-    width: calc(100% - 48px) !important;
+    margin-left: 36px !important; /* Account for ultra-minimal sidebar */
+    width: calc(100% - 36px) !important;
     height: 100vh;
     overflow: hidden;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -181,7 +181,7 @@
 
   /* Icon-only sidebar header */
   .pro-sidebar:not(.expanded-mobile) .pro-sidebar-header {
-    padding: 8px 4px;
+    padding: 4px 2px;
     justify-content: center;
     border-bottom: 1px solid var(--pro-border);
   }
@@ -193,27 +193,27 @@
 
   .pro-sidebar:not(.expanded-mobile) .logo-icon {
     margin: 0;
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    border-radius: 10px;
+    font-size: 14px;
+    border-radius: 8px;
     background: rgba(var(--pro-accent-rgb), 0.1);
     position: relative;
   }
 
   .pro-sidebar:not(.expanded-mobile) .logo-unread-badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: -2px;
+    right: -2px;
     background: var(--pro-error);
     color: white;
-    border-radius: 10px;
-    font-size: 10px;
-    min-width: 16px;
-    height: 16px;
+    border-radius: 8px;
+    font-size: 8px;
+    min-width: 12px;
+    height: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -226,54 +226,54 @@
 
   /* Icon-only user profile */
   .pro-sidebar:not(.expanded-mobile) .sidebar-user-profile {
-    padding: 8px 4px;
+    padding: 4px 2px;
     align-items: center;
     justify-content: center;
     border-bottom: 1px solid var(--pro-border);
   }
 
   .pro-sidebar:not(.expanded-mobile) .user-avatar {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     margin: 0;
   }
 
   .pro-sidebar:not(.expanded-mobile) .user-avatar img {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
   }
 
   /* Icon-only conversations */
   .pro-sidebar:not(.expanded-mobile) .conversation-item {
-    padding: 6px 4px;
-    margin: 2px 4px;
-    border-radius: 10px;
+    padding: 3px 2px;
+    margin: 1px 2px;
+    border-radius: 8px;
     justify-content: center;
     align-items: center;
     position: relative;
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-avatar {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     margin: 0;
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-avatar img {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
   }
 
   .pro-sidebar:not(.expanded-mobile) .unread-badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: -2px;
+    right: -2px;
     background: var(--pro-error);
     color: white;
-    border-radius: 10px;
-    font-size: 10px;
-    min-width: 16px;
-    height: 16px;
+    border-radius: 8px;
+    font-size: 8px;
+    min-width: 12px;
+    height: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -282,16 +282,16 @@
 
   .pro-sidebar:not(.expanded-mobile) .online-dot {
     position: absolute;
-    bottom: 2px;
-    right: 2px;
-    width: 12px;
-    height: 12px;
-    border: 2px solid var(--pro-surface);
+    bottom: 1px;
+    right: 1px;
+    width: 8px;
+    height: 8px;
+    border: 1px solid var(--pro-surface);
   }
 
   /* Conversations list mobile */
   .pro-sidebar:not(.expanded-mobile) .conversations-list {
-    padding: 4px 0;
+    padding: 2px 0;
   }
 
   /* Mobile overlay for expanded sidebar */
@@ -906,51 +906,51 @@
 @media (max-width: 400px) {
   /* Ultra-compact sidebar for very small devices */
   .pro-sidebar:not(.expanded-mobile) {
-    width: 42px !important;
+    width: 32px !important;
   }
 
   .pro-main {
-    margin-left: 42px !important;
-    width: calc(100% - 42px) !important;
+    margin-left: 32px !important;
+    width: calc(100% - 32px) !important;
   }
 
   .pro-sidebar:not(.expanded-mobile) .logo-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
   }
 
   .pro-sidebar:not(.expanded-mobile) .user-avatar {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
   }
 
   .pro-sidebar:not(.expanded-mobile) .user-avatar img {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-avatar {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-avatar img {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
   }
 
   .pro-sidebar:not(.expanded-mobile) .conversation-item {
-    padding: 4px 2px;
-    margin: 2px;
+    padding: 2px 1px;
+    margin: 1px;
   }
 
   .pro-sidebar:not(.expanded-mobile) .pro-sidebar-header {
-    padding: 6px 2px;
+    padding: 3px 1px;
   }
 
   .pro-sidebar:not(.expanded-mobile) .sidebar-user-profile {
-    padding: 6px 2px;
+    padding: 3px 1px;
   }
 
   .pro-main {
