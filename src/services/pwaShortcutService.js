@@ -44,6 +44,28 @@ class PWAShortcutService {
   getShortcuts() {
     return this.shortcuts;
   }
+
+  updateShortcuts(frequentContacts = []) {
+    try {
+      // Update shortcuts with frequent contacts
+      const dynamicShortcuts = frequentContacts.slice(0, 3).map((contact, index) => ({
+        name: `Chat with ${contact.name}`,
+        short_name: contact.name,
+        description: `Start conversation with ${contact.name}`,
+        url: `/?action=chat&contact=${contact.id}`,
+        icons: [{ src: contact.avatar || '/logo192.png', sizes: '192x192' }]
+      }));
+
+      this.shortcuts = [
+        ...this.shortcuts.slice(0, 2), // Keep first 2 default shortcuts
+        ...dynamicShortcuts
+      ];
+
+      console.log('🔗 PWA shortcuts updated with frequent contacts');
+    } catch (error) {
+      console.warn('Failed to update PWA shortcuts:', error);
+    }
+  }
 }
 
 // PWA Utils

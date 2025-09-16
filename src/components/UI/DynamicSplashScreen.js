@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './DynamicSplashScreen.css';
 
-const DynamicSplashScreen = ({ isVisible, onComplete }) => {
+const DynamicSplashScreen = ({ isVisible = true, darkMode = false, appVersion = "1.0.0", onComplete }) => {
   const [progress, setProgress] = useState(0);
   const [loadingText, setLoadingText] = useState('Initializing...');
 
@@ -36,10 +36,11 @@ const DynamicSplashScreen = ({ isVisible, onComplete }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="dynamic-splash-screen">
+    <div className={`dynamic-splash-screen ${darkMode ? 'dark-mode' : ''}`}>
       <div className="splash-content">
         <div className="splash-logo">
           <h1>Quibish</h1>
+          <p className="version">v{appVersion}</p>
         </div>
         <div className="splash-progress">
           <div className="progress-bar">

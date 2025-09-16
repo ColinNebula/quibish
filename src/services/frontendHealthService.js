@@ -58,6 +58,37 @@ class FrontendHealthService {
   clearErrors() {
     this.errors = [];
   }
+
+  async initialize() {
+    try {
+      console.log('🏥 Initializing Frontend Health Service...');
+      
+      // Run initial health check
+      const healthStatus = this.checkHealth();
+      console.log('📊 Initial health status:', healthStatus);
+      
+      // Set up periodic health monitoring
+      this.healthInterval = setInterval(() => {
+        const status = this.checkHealth();
+        if (!status.healthy) {
+          console.warn('⚠️ Health check failed:', status);
+        }
+      }, 30000); // Check every 30 seconds
+      
+      console.log('✅ Frontend Health Service initialized successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to initialize Frontend Health Service:', error);
+      throw error;
+    }
+  }
+
+  cleanup() {
+    if (this.healthInterval) {
+      clearInterval(this.healthInterval);
+      this.healthInterval = null;
+    }
+  }
 }
 
 export default new FrontendHealthService();

@@ -162,26 +162,26 @@ class LazyLoadingService {
   getComponentImportFunction(componentName) {
     const componentMap = {
       // Chat components
-      'VideoCall': () => import('../components/Home/VideoCall'),
+      // 'VideoCall': () => import('../components/Home/VideoCall'), // Not implemented yet
       'GifPicker': () => import('../components/GifPicker/GifPicker'),
       
       // Modals
       'UserProfileModal': () => import('../components/UserProfile/UserProfileModal'),
       'EditProfileModal': () => import('../components/UserProfile/EditProfileModal'),
-      'SettingsModal': () => import('../components/Home/SettingsModal'),
+      // 'SettingsModal': () => import('../components/Home/SettingsModal'), // Not implemented yet
       'FeedbackModal': () => import('../components/Home/FeedbackModal'),
       'HelpModal': () => import('../components/Home/HelpModal'),
       'NewChatModal': () => import('../components/NewChat/NewChatModal'),
       
       // Native features
-      'NativeCamera': () => import('../components/NativeFeatures/NativeCamera'),
-      'NativeContactPicker': () => import('../components/NativeFeatures/NativeContactPicker'),
+      'NativeCamera': () => import('../components/Camera/NativeCamera'),
+      'NativeContactPicker': () => import('../components/Contacts/NativeContactPicker'),
       
       // PWA components
-      'InstallPrompt': () => import('../components/PWA/InstallPrompt'),
+      // 'InstallPrompt': () => import('../components/PWA/InstallPrompt'), // Not implemented yet
       
       // Enhanced media features
-      'EnhancedMediaViewer': () => import('../components/Media/EnhancedMediaViewer')
+      // 'EnhancedMediaViewer': () => import('../components/Media/EnhancedMediaViewer') // Not implemented yet
     };
 
     return componentMap[componentName];

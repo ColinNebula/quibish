@@ -226,7 +226,7 @@ class ConnectionService {
   off(event, callback) {
     if (this.eventListeners.has(event)) {
       const listeners = this.eventListeners.get(event);
-      const index = listeners.indexOf(callback);
+      const index = listeners?.indexOf?.(callback) ?? -1;
       if (index > -1) {
         listeners.splice(index, 1);
       }

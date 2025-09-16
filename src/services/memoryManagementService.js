@@ -3,6 +3,8 @@ class MemoryManagementService {
   constructor() {
     this.memoryThreshold = 0.8; // 80% of available memory
     this.cleanupCallbacks = [];
+    this.memoryPressureListeners = [];
+    this.cacheManagers = new Map();
     this.isMonitoring = false;
   }
 
@@ -55,7 +57,7 @@ class MemoryManagementService {
   }
 
   removeCleanupCallback(callback) {
-    const index = this.cleanupCallbacks.indexOf(callback);
+    const index = this.cleanupCallbacks?.indexOf?.(callback) ?? -1;
     if (index > -1) {
       this.cleanupCallbacks.splice(index, 1);
     }
@@ -90,6 +92,24 @@ class MemoryManagementService {
     
     // Clear large objects from memory
     this.triggerCleanup();
+  }
+
+  registerCacheManager(name, manager) {
+    this.cacheManagers.set(name, manager);
+  }
+
+  addMemoryPressureListener(listener) {
+    this.memoryPressureListeners.push(listener);
+  }
+
+  triggerMemoryPressure() {
+    this.memoryPressureListeners.forEach(listener => {
+      try {
+        listener({ type: 'memory-pressure', timestamp: Date.now() });
+      } catch (error) {
+        console.warn('Memory pressure listener failed:', error);
+      }
+    });
   }
 }
 

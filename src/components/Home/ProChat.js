@@ -357,7 +357,7 @@ const ProChat = ({
       // Format it for the UI
       const newConversation = {
         id: conversation.id || `conv_${Date.now()}`,
-        name: conversation.name || conversation.participants?.find(p => p.id !== user.id)?.name || 'New Chat',
+        name: conversation?.name || conversation?.participants?.find(p => p?.id !== user?.id)?.name || 'New Chat',
         type: conversation.type,
         participants: conversation.participants,
         lastMessage: {
@@ -369,7 +369,7 @@ const ProChat = ({
         isOnline: true,
         avatar: conversation.type === 'group' 
           ? null 
-          : conversation.participants?.find(p => p.id !== user.id)?.avatar
+          : conversation?.participants?.find(p => p?.id !== user?.id)?.avatar
       };
 
       console.log('Formatted conversation:', newConversation);
@@ -895,7 +895,7 @@ const ProChat = ({
     // Update local state immediately for responsive UI
     setChatMessages(prev => prev.map(message => {
       if (message.id === messageId) {
-        const existingReaction = message.reactions.find(r => r.emoji === emoji);
+        const existingReaction = message?.reactions?.find(r => r?.emoji === emoji);
         if (existingReaction) {
           // Toggle existing reaction
           return {

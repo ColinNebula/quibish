@@ -102,9 +102,19 @@ class PWAUtils {
         }
       });
 
-      // Add to header or appropriate location
-      const header = document.querySelector('header') || document.body;
-      header.appendChild(installButton);
+      // Add to header or appropriate location (with DOM ready check)
+      const addToDOM = () => {
+        const header = document.querySelector('header') || document.body;
+        if (header) {
+          header.appendChild(installButton);
+        }
+      };
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', addToDOM);
+      } else {
+        addToDOM();
+      }
     }
   }
 

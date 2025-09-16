@@ -17,13 +17,7 @@ import InstallPrompt from './components/PWA/InstallPrompt';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 import pwaUtils from './utils/pwaUtils';
-
-// Simplified service imports - only include core services
-const frontendHealthService = { checkHealth: () => ({ healthy: true }) };
-const pwaShortcutService = { init: () => {} };
-const mobileInteractionService = { init: () => {}, optimizeForMobile: () => {} };
-const memoryManager = { init: () => {} };
-const lazyLoadingService = { init: () => {} };
+import pwaShortcutService from './services/pwaShortcutService';
 
 const App = () => {
   const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
@@ -131,57 +125,22 @@ const App = () => {
       setDarkMode(isDark);
       localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
     }
-  }, [user?.theme]);
+  }, [user]);
 
   // Initialize frontend health service
   useEffect(() => {
+    // Simplified initialization - skip complex services for now
     const initializeApp = async () => {
       try {
-        console.log('🚀 Initializing Quibish Frontend...');
+        console.log('🚀 Starting Quibish App...');
         
-        // Initialize core services
-        await frontendHealthService.initialize();
-        
-        // Initialize performance optimization services
-        console.log('⚡ Initializing performance services...');
-        
-        // Memory management setup
-        memoryManager.registerCacheManager('lazy-components', lazyLoadingService);
-        memoryManager.addMemoryPressureListener((event) => {
-          console.log('🧠 Memory pressure detected, optimizing performance');
-          // Trigger component cleanup
-          lazyLoadingService.cleanupUnusedComponents();
-        });
-        
-        // Set up service worker for advanced caching
-        if ('serviceWorker' in navigator) {
-          try {
-            const registration = await navigator.serviceWorker.register('/sw-advanced.js');
-            console.log('🔧 Advanced Service Worker registered:', registration);
-          } catch (error) {
-            console.warn('Failed to register advanced service worker, using basic SW:', error);
-          }
-        }
-        
-        // Preload critical resources
-        const criticalResources = [
-          '/static/css/main.css',
-          '/static/js/main.js',
-          '/manifest.json'
-        ];
-        
-        navigator.serviceWorker?.controller?.postMessage({
-          type: 'PREFETCH_RESOURCES',
-          payload: { urls: criticalResources }
-        });
-        
+        // Set initialization complete immediately to skip complex setup
         setAppInitialized(true);
-        console.log('✅ Frontend initialization completed successfully');
-        console.log('📊 Performance optimizations active');
+        console.log('✅ App initialized successfully');
       } catch (error) {
-        console.error('❌ Frontend initialization failed:', error);
+        console.error('❌ App initialization failed:', error);
         setInitializationError(error.message);
-        // Don't prevent app loading, just log the error
+        // Still allow app to load
         setAppInitialized(true);
       }
     };
@@ -299,7 +258,9 @@ const App = () => {
     sessionStorage.setItem('quibish-splash-seen', 'true');
   };
   
-  if (authLoading) return <LoadingSpinner size="large" message="Loading..." />;
+  if (authLoading) {
+    return <LoadingSpinner size="large" message="Loading..." />;
+  }
   
   // Show initialization status
   if (!appInitialized) {
@@ -318,6 +279,7 @@ const App = () => {
   if (showSplash) {
     return (
       <DynamicSplashScreen 
+        isVisible={true}
         darkMode={darkMode}
         appVersion="1.0.0"
         onComplete={handleSplashComplete}

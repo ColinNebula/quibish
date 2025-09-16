@@ -138,9 +138,23 @@ class PerformanceOptimizer {
         });
       });
 
-      document.querySelectorAll('img[data-src]').forEach(img => {
-        imageObserver.observe(img);
-      });
+      // Wait for DOM to be ready and validate elements exist
+      const initializeLazyLoading = () => {
+        const lazyImages = document.querySelectorAll('img[data-src]');
+        if (lazyImages.length > 0) {
+          lazyImages.forEach(img => {
+            if (img && typeof img.getAttribute === 'function') {
+              imageObserver.observe(img);
+            }
+          });
+        }
+      };
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeLazyLoading);
+      } else {
+        initializeLazyLoading();
+      }
     }
   }
 
@@ -150,7 +164,10 @@ class PerformanceOptimizer {
     const canvas = document.createElement('canvas');
     canvas.width = 1;
     canvas.height = 1;
-    this.webpSupport = canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+    const dataUrl = canvas.toDataURL('image/webp');
+    this.webpSupport = dataUrl && typeof dataUrl.indexOf === 'function' 
+      ? dataUrl.indexOf('data:image/webp') === 0 
+      : false;
     return this.webpSupport;
   }
 

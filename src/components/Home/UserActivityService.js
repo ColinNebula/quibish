@@ -197,8 +197,9 @@ class UserActivityService {
         stats.byDay[day] = (stats.byDay[day] || 0) + 1;
       });
 
-      // Find most active hour
-      stats.mostActiveHour = stats.byHour.indexOf(Math.max(...stats.byHour));
+      // Find most active hour (with null safety)
+      const maxHourValue = Math.max(...(stats.byHour || []));
+      stats.mostActiveHour = stats.byHour?.indexOf?.(maxHourValue) ?? -1;
 
       // Find most active day
       const maxDay = Object.keys(stats.byDay).reduce((a, b) => 

@@ -51,54 +51,91 @@ export const AuthProvider = ({ children }) => {
           setRememberMe(isRemembered);
           
           // Try to fetch fresh user profile data from backend to get latest settings
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-            
-            const response = await fetch('http://localhost:5001/api/users/profile', {
-              headers: {
-                'Authorization': `Bearer ${storedToken}`,
-                'Content-Type': 'application/json'
-              },
-              signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
-            
-            if (response.ok) {
-              const profileData = await response.json();
-              if (profileData.success && profileData.user) {
-                // Use fresh profile data from backend
-                const freshUserData = profileData.user;
-                setCurrentUser(freshUserData);
-                
-                // Update stored user data with fresh profile
-                const storage = isRemembered ? localStorage : sessionStorage;
-                storage.setItem('user', JSON.stringify(freshUserData));
-                
-                console.log('Restored session with fresh profile data:', { 
-                  remembered: isRemembered, 
-                  user: freshUserData.username,
-                  theme: freshUserData.theme,
-                  language: freshUserData.language
-                });
+          // But first check if backend is available to avoid console errors
+          const isDevelopmentMode = process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost';
+          const offlineMode = process.env.REACT_APP_OFFLINE_MODE === 'true';
+          let shouldTryBackend = !offlineMode;
+          
+          // Quick backend availability check in development
+          if (isDevelopmentMode && !offlineMode) {
+            try {
+              const quickController = new AbortController();
+              const quickTimeout = setTimeout(() => quickController.abort(), 500);
+              
+              const quickCheck = await fetch('http://localhost:5001/api/health', {
+                method: 'HEAD',
+                signal: quickController.signal
+              });
+              
+              clearTimeout(quickTimeout);
+              shouldTryBackend = quickCheck.ok;
+            } catch {
+              shouldTryBackend = false;
+              console.log('📡 Backend server not available - using offline mode');
+            }
+          }
+          
+          if (shouldTryBackend) {
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout for actual requests
+              
+              const response = await fetch('http://localhost:5001/api/users/profile', {
+                headers: {
+                  'Authorization': `Bearer ${storedToken}`,
+                  'Content-Type': 'application/json'
+                },
+                signal: controller.signal
+              });
+              
+              clearTimeout(timeoutId);
+              
+              if (response.ok) {
+                const profileData = await response.json();
+                if (profileData.success && profileData.user) {
+                  // Use fresh profile data from backend
+                  const freshUserData = profileData.user;
+                  setCurrentUser(freshUserData);
+                  
+                  // Update stored user data with fresh profile
+                  const storage = isRemembered ? localStorage : sessionStorage;
+                  storage.setItem('user', JSON.stringify(freshUserData));
+                  
+                  console.log('✅ Restored session with fresh profile data:', { 
+                    remembered: isRemembered, 
+                    user: freshUserData.username,
+                    theme: freshUserData.theme,
+                    language: freshUserData.language
+                  });
+                } else {
+                  // Fallback to stored data if profile fetch fails
+                  setCurrentUser(userData);
+                  console.log('📱 Used stored session data (profile fetch failed):', { remembered: isRemembered, user: userData.username });
+                }
               } else {
-                // Fallback to stored data if profile fetch fails
-                setCurrentUser(userData);
-                console.log('Used stored session data (profile fetch failed):', { remembered: isRemembered, user: userData.username });
+                // If token is invalid, clear session
+                throw new Error('Invalid token');
               }
-            } else {
-              // If token is invalid, clear session
-              throw new Error('Invalid token');
+            } catch (fetchError) {
+              // Suppress connection errors and work in offline mode
+              if (fetchError.name === 'AbortError') {
+                console.log('🔄 Backend connection timeout - working in offline mode');
+              } else if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('ERR_CONNECTION_REFUSED')) {
+                console.log('📡 Backend server not available - working in offline mode');
+              } else {
+                console.warn('⚠️ Could not fetch fresh profile, using stored data:', fetchError.message);
+              }
+              // Fallback to stored user data (offline mode)
+              setCurrentUser(userData);
+              console.log('💾 Using stored session data (offline mode):', { remembered: isRemembered, user: userData.username });
             }
-          } catch (fetchError) {
-            // Only log specific errors that aren't connection-related
-            if (fetchError.name !== 'AbortError' && !fetchError.message.includes('Failed to fetch')) {
-              console.warn('Could not fetch fresh profile, using stored data:', fetchError.message);
-            }
-            // Fallback to stored user data
+          } else {
+            // Skip backend call entirely and use stored data
             setCurrentUser(userData);
-            console.log('Used stored session data (offline mode):', { remembered: isRemembered, user: userData.username });
+            console.log('💾 Using stored session data (offline mode - backend unavailable):', { 
+              remembered: isRemembered, 
+              user: userData.username 
+            });
           }
         } catch (error) {
           console.error('Error parsing stored user data:', error);
@@ -162,61 +199,10 @@ export const AuthProvider = ({ children }) => {
     console.log('User session cleared from all storage');
   };
 
-  // Refresh user data from storage and optionally from server
-  const refreshUser = async (forceServerRefresh = false) => {
-    try {
-      if (forceServerRefresh && token) {
-        // Try to fetch fresh user data from server
-        const response = await fetch('http://localhost:5001/api/users/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const profileData = await response.json();
-          if (profileData.success && profileData.user) {
-            const freshUserData = profileData.user;
-            setCurrentUser(freshUserData);
-            
-            // Update stored user data with fresh profile
-            const storage = rememberMe ? localStorage : sessionStorage;
-            storage.setItem('user', JSON.stringify(freshUserData));
-            
-            console.log('✅ User refreshed from server:', freshUserData.username);
-            return freshUserData;
-          }
-        }
-      }
-      
-      // Fallback: refresh from storage
-      const localUser = localStorage.getItem('user');
-      const sessionUser = sessionStorage.getItem('user');
-      const storedUser = localUser || sessionUser;
-      
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setCurrentUser(userData);
-        console.log('✅ User refreshed from storage:', userData.username);
-        return userData;
-      }
-    } catch (error) {
-      console.error('❌ Error refreshing user data:', error);
-    }
-    return currentUser;
-  };
-
-  // Update user data in context and storage
-  const updateUser = (updatedUserData) => {
-    setCurrentUser(updatedUserData);
-    
-    // Update storage
-    const storage = rememberMe ? localStorage : sessionStorage;
-    storage.setItem('user', JSON.stringify(updatedUserData));
-    
-    console.log('✅ User data updated in context and storage');
-    return updatedUserData;
+  // Refresh user data
+  const refreshUser = () => {
+    // In a REST implementation, you could make an API call here to refresh user data
+    console.log('User refresh requested - implement if needed');
   };
 
   return (
@@ -229,8 +215,7 @@ export const AuthProvider = ({ children }) => {
         rememberMe,
         login,
         logout,
-        refreshUser,
-        updateUser
+        refreshUser
       }}
     >
       {children}
