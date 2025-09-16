@@ -311,6 +311,57 @@ class NativeDeviceFeaturesService {
       stop: () => window.removeEventListener('devicemotion', handleMotion)
     };
   }
+
+  // Check if a specific feature is supported
+  isSupported(featureName) {
+    // Handle different feature name mappings
+    const featureMap = {
+      'camera': 'camera',
+      'microphone': 'microphone',
+      'geolocation': 'geolocation',
+      'notifications': 'notifications',
+      'vibration': 'vibration',
+      'deviceMotion': 'deviceMotion',
+      'motion': 'deviceMotion',
+      'touch': 'touchSupport',
+      'touchSupport': 'touchSupport',
+      'fullscreen': 'fullscreen',
+      'contacts': false // Contacts API is not widely supported yet
+    };
+
+    // Map the feature name
+    const mappedFeature = featureMap[featureName];
+    
+    // Return false for unsupported features like contacts
+    if (mappedFeature === false) {
+      return false;
+    }
+    
+    // Return the feature availability if mapped
+    if (mappedFeature && this.features.hasOwnProperty(mappedFeature)) {
+      return this.features[mappedFeature];
+    }
+    
+    // Fallback: return false for unknown features
+    return false;
+  }
+
+  // Get all supported features
+  getSupportedFeatures() {
+    return Object.keys(this.features).filter(feature => this.features[feature]);
+  }
+
+  // Get feature availability status
+  getFeatureStatus(featureName) {
+    const isSupported = this.isSupported(featureName);
+    const permission = this.permissions[featureName] || 'unknown';
+    
+    return {
+      supported: isSupported,
+      permission: permission,
+      available: isSupported && permission !== 'denied'
+    };
+  }
 }
 
 export default new NativeDeviceFeaturesService();

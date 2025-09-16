@@ -249,6 +249,60 @@ class ConnectionService {
   getConnectionHistory() {
     return this.connectionHistory;
   }
+
+  // Get current connection status (required by ProChat component)
+  getConnectionStatus() {
+    const isOnline = navigator.onLine && this.isConnected;
+    const quality = this.getConnectionQuality();
+    const type = this.connectionType || 'unknown';
+    
+    // Determine color based on connection quality
+    let color = '#10b981'; // green for good
+    if (!isOnline) {
+      color = '#ef4444'; // red for offline
+    } else if (quality === 'poor') {
+      color = '#f59e0b'; // yellow for poor
+    } else if (quality === 'fair') {
+      color = '#f59e0b'; // yellow for fair
+    }
+    
+    return {
+      quality: isOnline ? quality : 'offline',
+      type: isOnline ? type : 'offline',
+      color: color,
+      connected: isOnline,
+      websocketConnected: !!this.websocket
+    };
+  }
+
+  // Get connection quality based on current conditions
+  getConnectionQuality() {
+    if (!navigator.onLine) {
+      return 'offline';
+    }
+    
+    // Check if we have connection data from recent quality check
+    const recentHistory = this.connectionHistory
+      .filter(h => Date.now() - h.timestamp.getTime() < 30000) // last 30 seconds
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    
+    if (recentHistory.length > 0 && recentHistory[0].quality) {
+      return recentHistory[0].quality;
+    }
+    
+    // Fallback: estimate based on connection type
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection) {
+      const effectiveType = connection.effectiveType;
+      if (effectiveType === '4g') return 'excellent';
+      if (effectiveType === '3g') return 'good';
+      if (effectiveType === '2g') return 'fair';
+      if (effectiveType === 'slow-2g') return 'poor';
+    }
+    
+    // Default to good if we can't determine
+    return 'good';
+  }
 }
 
 export default new ConnectionService();
