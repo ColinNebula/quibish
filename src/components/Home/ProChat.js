@@ -3,24 +3,27 @@ import UserProfileModal from '../UserProfile/UserProfileModal';
 // import SettingsModal from './SettingsModal'; // Temporarily disabled
 // import VideoCall from './VideoCall'; // Temporarily disabled
 import GifPicker from '../GifPicker/GifPicker';
-import NewChatModal from '../NewChat/NewChatModal';
+import NewChatModal from '../NewChat/NewChatModal';  
 import FeedbackModal from './FeedbackModal';
 import HelpModal from './HelpModal';
-import NativeCamera from '../NativeFeatures/NativeCamera';
-import NativeContactPicker from '../NativeFeatures/NativeContactPicker';
+import NativeCamera from '../Camera/NativeCamera';
+import NativeContactPicker from '../Contacts/NativeContactPicker';
 import ContactManager from '../Contacts/ContactManager';
-import InternationalDialer from '../Voice/InternationalDialer';
+import InternationalDialer from '../Dialer/InternationalDialer';
 import DonationModal from '../Donation/DonationModal';
 import DonationPrompt from '../Donation/DonationPrompt';
 import messageService from '../../services/messageService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import globalVoiceCallService from '../../services/globalVoiceCallService';
-import GlobalUsers from '../Voice/GlobalUsers';
+import GlobalUsers from './GlobalUsers';
 import connectionService from '../../services/connectionService';
 import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
 import { feedbackService } from '../../services/feedbackService';
 import { contactService } from '../../services/contactService';
+
+// All service implementations are now properly imported above
+
 import PropTypes from 'prop-types';
 
 // CSS imports

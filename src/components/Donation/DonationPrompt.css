@@ -1,0 +1,277 @@
+.donation-prompt-overlay {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999;
+  pointer-events: none;
+}
+
+.donation-prompt {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  width: 300px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border: 2px solid var(--prompt-color, #667eea);
+  position: relative;
+  pointer-events: all;
+  animation: slideIn 0.5s ease-out;
+  overflow: hidden;
+}
+
+.donation-prompt::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, 
+    var(--prompt-color, #667eea) 0%, 
+    color-mix(in srgb, var(--prompt-color, #667eea) 80%, white) 100%
+  );
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.prompt-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.prompt-close:hover {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.prompt-content {
+  text-align: center;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.prompt-content.animating {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.prompt-emoji {
+  font-size: 32px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.prompt-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.prompt-message {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.prompt-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prompt-btn.primary {
+  background: var(--prompt-color, #667eea);
+  color: white;
+}
+
+.prompt-btn.primary:hover {
+  background: color-mix(in srgb, var(--prompt-color, #667eea) 85%, black);
+  transform: translateY(-1px);
+}
+
+.prompt-btn.secondary {
+  background: #f1f3f4;
+  color: #666;
+  border: 1px solid #e1e5e9;
+}
+
+.prompt-btn.secondary:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+.prompt-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ddd;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.indicator:hover {
+  background: #bbb;
+}
+
+.indicator.active {
+  background: var(--prompt-color, #667eea);
+  transform: scale(1.2);
+}
+
+.prompt-footer {
+  text-align: center;
+}
+
+.prompt-note {
+  font-size: 11px;
+  color: #999;
+  font-weight: 500;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .donation-prompt-overlay {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+  
+  .donation-prompt {
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .donation-prompt {
+    padding: 16px;
+  }
+  
+  .prompt-title {
+    font-size: 16px;
+  }
+  
+  .prompt-message {
+    font-size: 13px;
+  }
+  
+  .prompt-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .donation-prompt {
+    background: #2d3748;
+    border-color: var(--prompt-color, #667eea);
+  }
+  
+  .prompt-title {
+    color: #f7fafc;
+  }
+  
+  .prompt-message {
+    color: #a0aec0;
+  }
+  
+  .prompt-close {
+    color: #a0aec0;
+  }
+  
+  .prompt-close:hover {
+    background: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .prompt-btn.secondary {
+    background: #4a5568;
+    color: #e2e8f0;
+    border-color: #2d3748;
+  }
+  
+  .prompt-btn.secondary:hover {
+    background: #2d3748;
+  }
+  
+  .prompt-note {
+    color: #718096;
+  }
+  
+  .indicator {
+    background: #4a5568;
+  }
+  
+  .indicator:hover {
+    background: #2d3748;
+  }
+}
+
+/* Animation variations for different prompts */
+.donation-prompt[style*="#ff6b6b"] {
+  animation: slideIn 0.5s ease-out, pulse 2s infinite 1s;
+}
+
+.donation-prompt[style*="#8b4513"] {
+  animation: slideIn 0.5s ease-out, bounce 1s ease-out 1s;
+}
+
+.donation-prompt[style*="#667eea"] {
+  animation: slideIn 0.5s ease-out, glow 3s ease-in-out infinite 1s;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-2px); }
+  50% { transform: translateY(0); }
+  75% { transform: translateY(-1px); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); }
+  50% { box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3); }
+}

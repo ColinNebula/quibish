@@ -1,0 +1,25 @@
+/* mobile-responsive.css - Mobile responsive styles */
+
+@media (max-width: 768px) {
+  .app {
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .mobile-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-optimized {
+    padding: 8px;
+  }
+  
+  .touch-friendly {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

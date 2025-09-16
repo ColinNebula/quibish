@@ -16,6 +16,7 @@ import PWAStatus from './components/ServiceWorker/PWAStatus';
 import InstallPrompt from './components/PWA/InstallPrompt';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
+import pwaUtils from './utils/pwaUtils';
 
 // Simplified service imports - only include core services
 const frontendHealthService = { checkHealth: () => ({ healthy: true }) };
