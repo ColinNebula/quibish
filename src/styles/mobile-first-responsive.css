@@ -1,0 +1,44 @@
+/* Mobile First Responsive Design */
+@media screen and (max-width: 480px) {
+  .mobile-first {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  .container {
+    padding: 8px;
+    margin: 0;
+  }
+  
+  .button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  
+  .input-field {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px;
+  }
+}
+
+@media screen and (min-width: 481px) and (max-width: 768px) {
+  .tablet-responsive {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  
+  .container {
+    padding: 12px;
+  }
+}
+
+@media screen and (min-width: 769px) {
+  .desktop-responsive {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  
+  .container {
+    padding: 20px;
+  }
+}

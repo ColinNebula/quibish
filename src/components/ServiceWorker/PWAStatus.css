@@ -1,0 +1,55 @@
+.pwa-status {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.pwa-status.offline {
+  background: rgba(255, 152, 0, 0.9);
+}
+
+.pwa-status.update-available {
+  background: rgba(76, 175, 80, 0.9);
+}
+
+.status-icon {
+  font-size: 14px;
+}
+
+.status-text {
+  font-weight: 500;
+}
+
+.refresh-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+.refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 480px) {
+  .pwa-status {
+    top: 5px;
+    right: 5px;
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}

@@ -1,0 +1,133 @@
+.error-boundary {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.error-content {
+  text-align: center;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.error-content h2 {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.error-content p {
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  opacity: 0.9;
+}
+
+.error-details {
+  margin: 20px 0;
+  text-align: left;
+}
+
+.error-details summary {
+  cursor: pointer;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.error-stack {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.retry-btn,
+.reload-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.retry-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+}
+
+.retry-btn:hover {
+  background: white;
+  transform: translateY(-2px);
+}
+
+.reload-btn {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.reload-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: white;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 480px) {
+  .error-content {
+    padding: 24px;
+    margin: 10px;
+  }
+  
+  .error-icon {
+    font-size: 3rem;
+  }
+  
+  .error-content h2 {
+    font-size: 1.5rem;
+  }
+  
+  .error-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .retry-btn,
+  .reload-btn {
+    width: 100%;
+    max-width: 200px;
+  }
+}

@@ -1,0 +1,41 @@
+/* Professional App Styles */
+.app-professional {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+}
+
+.professional-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.professional-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.professional-content {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(20px);
+}
+
+@media (max-width: 768px) {
+  .professional-container {
+    padding: 10px;
+  }
+  
+  .professional-header,
+  .professional-content {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+}

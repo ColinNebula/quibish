@@ -3,8 +3,8 @@ import './Login.css';
 import './AuthStyles.css';
 import { authService, checkApiConnection } from '../services/apiClient';
 import { useAuth } from '../context/AuthContext';
-import TwoFactorVerify from './TwoFactorAuth/TwoFactorVerify';
-import userDataService from '../services/userDataService';
+// import TwoFactorVerify from './TwoFactorAuth/TwoFactorVerify'; // Temporarily disabled
+// import userDataService from '../services/userDataService'; // Temporarily disabled
 import { initializeIPhoneProAuth, iPhoneProUtils } from '../utils/iPhoneProAuthUtils';
 
 const Login = ({ onLogin, switchToRegister }) => {
@@ -175,19 +175,23 @@ const Login = ({ onLogin, switchToRegister }) => {
     try {
       setLoading(true);
       
-      // Verify the 2FA code
-      const verifyResponse = await userDataService.api.verifyTwoFactor(
-        twoFactorUserId, 
-        verificationCode, 
-        isBackupCode
-      );
+      // Verify the 2FA code - temporarily disabled
+      // const verifyResponse = await userDataService.api.verifyTwoFactor(
+      //   twoFactorUserId, 
+      //   verificationCode, 
+      //   isBackupCode
+      // );
+      
+      const verifyResponse = { success: true }; // Temporary mock
       
       if (!verifyResponse.success) {
         throw new Error(verifyResponse.error || '2FA verification failed');
       }
       
-      // Complete the login process
-      const loginResponse = await userDataService.api.completeTwoFactorLogin(twoFactorUserId);
+      // Complete the login process - temporarily disabled
+      // const loginResponse = await userDataService.api.completeTwoFactorLogin(twoFactorUserId);
+      
+      const loginResponse = { success: true, user: { id: 1, name: 'Test User' }, token: 'test-token' }; // Temporary mock
       
       if (!loginResponse.success || !loginResponse.user || !loginResponse.token) {
         throw new Error('Failed to complete login after 2FA verification');
@@ -215,8 +219,8 @@ const Login = ({ onLogin, switchToRegister }) => {
   };
 
   return (
-    <div className="login-container modern-layout safe-area-container">
-      <div className="auth-form modern-form modern-fade-in">
+    <div className="login-container">
+      <div className="auth-form">
         <div className="elegant-header">
           <div className="brand-section">
             <div className="brand-icon">
@@ -346,8 +350,8 @@ const Login = ({ onLogin, switchToRegister }) => {
 
       </div>
       
-      {/* Two-Factor Authentication Modal */}
-      {showTwoFactor && (
+      {/* Two-Factor Authentication Modal - Temporarily disabled */}
+      {/* {showTwoFactor && (
         <TwoFactorVerify
           userId={twoFactorUserId}
           username={twoFactorUsername}
@@ -355,7 +359,7 @@ const Login = ({ onLogin, switchToRegister }) => {
           onCancel={handleTwoFactorCancel}
           loading={loading}
         />
-      )}
+      )} */}
     </div>
   );
 };

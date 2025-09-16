@@ -1,0 +1,36 @@
+/* Input Container Responsive Fixes */
+.input-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+@media screen and (max-width: 480px) {
+  .input-container {
+    margin-bottom: 12px;
+  }
+  
+  .input-container input,
+  .input-container textarea {
+    width: 100%;
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
+  }
+  
+  .input-container label {
+    font-size: 14px;
+    margin-bottom: 4px;
+    display: block;
+  }
+}
+
+@media screen and (min-width: 481px) {
+  .input-container input,
+  .input-container textarea {
+    padding: 14px 18px;
+    font-size: 15px;
+  }
+}

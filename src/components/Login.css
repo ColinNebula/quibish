@@ -1,0 +1,137 @@
+/* Login Component Specific Styles */
+.login-container {
+  position: relative;
+}
+
+.login-form {
+  animation: slideInFromLeft 0.6s ease-out;
+}
+
+.login-header {
+  margin-bottom: 24px;
+}
+
+.login-header .welcome-text {
+  font-size: 1.1rem;
+  color: #667eea;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.remember-me input[type="checkbox"] {
+  margin-right: 8px;
+  width: auto;
+}
+
+.remember-me label {
+  margin-bottom: 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 24px;
+}
+
+.forgot-password a {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.forgot-password a:hover {
+  color: #5a6fd8;
+  text-decoration: underline;
+}
+
+.login-footer {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #e1e5e9;
+  margin-top: 20px;
+}
+
+.social-login {
+  margin-bottom: 20px;
+}
+
+.social-button {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e1e5e9;
+  border-radius: 12px;
+  background: white;
+  color: #333;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.social-button:hover {
+  border-color: #667eea;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.divider {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e1e5e9;
+  z-index: 1;
+}
+
+.divider span {
+  background: white;
+  padding: 0 15px;
+  position: relative;
+  z-index: 2;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .login-header .welcome-text {
+    font-size: 1rem;
+  }
+  
+  .social-button {
+    font-size: 15px;
+    padding: 14px 12px;
+  }
+}
