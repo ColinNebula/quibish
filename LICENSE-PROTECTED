@@ -1,0 +1,42 @@
+MIT License with Additional Protection Terms
+
+Copyright (c) 2025 ColinNebula
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+PROTECTION TERMS:
+1. ATTRIBUTION REQUIRED: The above copyright notice and this permission notice 
+   shall be included in all copies or substantial portions of the Software.
+
+2. NO MALICIOUS USE: The Software may not be used for malicious purposes, 
+   including but not limited to unauthorized access, data theft, or harm to others.
+
+3. INTEGRITY PRESERVATION: Redistributors must maintain the integrity checking 
+   mechanisms and not circumvent security measures.
+
+4. COMMERCIAL USE NOTIFICATION: Commercial use of this software requires 
+   notification to the original author at [your-email@domain.com].
+
+5. SOURCE ATTRIBUTION: Any derivative works must clearly attribute the original 
+   source code and maintain links to the original repository.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+DMCA PROTECTION:
+This code is protected under the Digital Millennium Copyright Act (DMCA).
+Unauthorized copying, distribution, or modification may result in legal action.
+
+For licensing inquiries, contact: ColinNebula
+Repository: https://github.com/ColinNebula/quibish
+Protected: Yes - Integrity monitoring enabled
