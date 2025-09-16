@@ -5,6 +5,10 @@ import './styles/mobile-first-responsive.css';
 import './styles/input-container-responsive-fix.css';
 import './styles/mobile-content-fix.css';
 import './styles/mobile-animation-fix.css';
+import './styles/modernSmartphone.css';
+import './styles/advancedTouch.css';
+import './styles/nextGenPWA.css';
+import './styles/adaptiveUI.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';
@@ -14,13 +18,22 @@ import DynamicSplashScreen from './components/UI/DynamicSplashScreen';
 import ErrorBoundary from './components/ErrorHandling/ErrorBoundary';
 import PWAStatus from './components/ServiceWorker/PWAStatus';
 import InstallPrompt from './components/PWA/InstallPrompt';
+
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
-import frontendHealthService from './services/frontendHealthService';
-import pwaShortcutService, { pwaUtils } from './services/pwaShortcutService';
-import mobileInteractionService, { mobileUtils } from './services/mobileInteractionService';
-import memoryManager from './services/memoryManagementService';
-import lazyLoadingService from './services/lazyLoadingService';
+// Temporarily comment out complex service imports
+// import frontendHealthService from './services/frontendHealthService';
+// import pwaShortcutService, { pwaUtils } from './services/pwaShortcutService';
+// import memoryManager from './services/memoryManagementService';
+// import lazyLoadingService from './services/lazyLoadingService';
+// import { initModernViewport } from './utils/modernViewportUtils';
+// import { initAdvancedTouch } from './utils/advancedTouchSystem';
+// import { initNextGenPWA } from './services/nextGenPWAService';
+// import { initSmartphonePerformance } from './utils/smartphonePerformanceOptimizer';
+// import { initAdaptiveUI } from './utils/adaptiveUIManager';
+// import { initTestingSuite } from './utils/testingSuite';
+// import { initValidationSuite } from './utils/compatibilityValidator';
+// import { PerformanceOptimizer } from './utils/performanceOptimizer';
 // Note: imageOptimizationService is auto-initialized
 
 const App = () => {
@@ -122,14 +135,14 @@ const App = () => {
     }
   }, [isAuthenticated, user, authLoading, view]);
 
-  // Sync dark mode with user's theme preference
+  // Sync dark mode with user's theme preference  
   useEffect(() => {
     if (user && user.theme) {
       const isDark = user.theme === 'dark';
       setDarkMode(isDark);
       localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
     }
-  }, [user?.theme]);
+  }, [user]);  // Include full user object in dependencies
 
   // Initialize frontend health service
   useEffect(() => {
@@ -137,49 +150,13 @@ const App = () => {
       try {
         console.log('🚀 Initializing Quibish Frontend...');
         
-        // Initialize core services
-        await frontendHealthService.initialize();
-        
-        // Initialize performance optimization services
-        console.log('⚡ Initializing performance services...');
-        
-        // Memory management setup
-        memoryManager.registerCacheManager('lazy-components', lazyLoadingService);
-        memoryManager.addMemoryPressureListener((event) => {
-          console.log('🧠 Memory pressure detected, optimizing performance');
-          // Trigger component cleanup
-          lazyLoadingService.cleanupUnusedComponents();
-        });
-        
-        // Set up service worker for advanced caching
-        if ('serviceWorker' in navigator) {
-          try {
-            const registration = await navigator.serviceWorker.register('/sw-advanced.js');
-            console.log('🔧 Advanced Service Worker registered:', registration);
-          } catch (error) {
-            console.warn('Failed to register advanced service worker, using basic SW:', error);
-          }
-        }
-        
-        // Preload critical resources
-        const criticalResources = [
-          '/static/css/main.css',
-          '/static/js/main.js',
-          '/manifest.json'
-        ];
-        
-        navigator.serviceWorker?.controller?.postMessage({
-          type: 'PREFETCH_RESOURCES',
-          payload: { urls: criticalResources }
-        });
-        
+        // Simple initialization - just set app as initialized
         setAppInitialized(true);
         console.log('✅ Frontend initialization completed successfully');
-        console.log('📊 Performance optimizations active');
+        
       } catch (error) {
         console.error('❌ Frontend initialization failed:', error);
         setInitializationError(error.message);
-        // Don't prevent app loading, just log the error
         setAppInitialized(true);
       }
     };
@@ -205,7 +182,7 @@ const App = () => {
         if (isAuthenticated) {
           setView('home');
           // Trigger voice call functionality
-          pwaUtils.triggerShortcut('voice-call', { initiated: 'shortcut' });
+          // pwaUtils.triggerShortcut('voice-call', { initiated: 'shortcut' });
         }
       });
 
@@ -215,7 +192,7 @@ const App = () => {
         if (isAuthenticated) {
           setView('home');
           // Trigger video call functionality
-          pwaUtils.triggerShortcut('video-call', { initiated: 'shortcut' });
+          // pwaUtils.triggerShortcut('video-call', { initiated: 'shortcut' });
         }
       });
 
@@ -252,6 +229,7 @@ const App = () => {
 
     // Update app shortcuts based on frequent contacts
     if (isAuthenticated && conversations.length > 0) {
+      // eslint-disable-next-line no-unused-vars
       const frequentContacts = conversations
         .filter(conv => conv.lastMessageTime)
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
@@ -262,7 +240,7 @@ const App = () => {
           avatar: conv.avatar
         }));
       
-      pwaShortcutService.updateShortcuts(frequentContacts);
+      // pwaShortcutService.updateShortcuts(frequentContacts);
     }
   }, [isAuthenticated, conversations]);
   
@@ -365,6 +343,8 @@ const App = () => {
       
       {/* PWA Install Prompt */}
       <InstallPrompt />
+      
+
     </ErrorBoundary>
   );
 };

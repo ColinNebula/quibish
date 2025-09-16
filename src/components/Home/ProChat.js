@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { getMessageSender, getMessageAvatar, getMessageSenderName, isValidMessage, updateMessageAvatar } from '../../utils/messageUtils';
 import UserProfileModal from '../UserProfile/UserProfileModal';
 import SettingsModal from './SettingsModal';
 import VideoCall from './VideoCall';
@@ -44,6 +45,7 @@ const ProChat = ({
   // Basic state
   const [isConnected] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileExpandedSidebar, setMobileExpandedSidebar] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -223,10 +225,14 @@ const ProChat = ({
         setSidebarCollapsed(true);
         // Close mobile global voice modal if screen gets smaller
         setMobileGlobalVoiceModal(false);
+        // Close mobile expanded sidebar when resizing to mobile
+        setMobileExpandedSidebar(false);
       } else if (window.innerWidth > 768) {
         // Auto-expand on larger screens and close mobile modal
         setSidebarCollapsed(false);
         setMobileGlobalVoiceModal(false);
+        // Close mobile expanded sidebar when resizing to desktop
+        setMobileExpandedSidebar(false);
       }
       // For tablets (481-768px), maintain current state but close mobile modal
       if (window.innerWidth > 480) {
@@ -262,18 +268,35 @@ const ProChat = ({
   }, [showEmojiPicker, showReactionPicker]);
 
   const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed(prev => !prev);
+    if (window.innerWidth <= 768) {
+      // Mobile behavior: toggle expanded state
+      setMobileExpandedSidebar(prev => !prev);
+    } else {
+      // Desktop behavior: toggle collapsed state
+      setSidebarCollapsed(prev => !prev);
+    }
+  }, []);
+
+  // Handle mobile sidebar expansion on logo click
+  const handleMobileSidebarToggle = useCallback(() => {
+    if (window.innerWidth <= 768) {
+      setMobileExpandedSidebar(prev => !prev);
+    }
   }, []);
 
   const handleMobileGlobalVoice = useCallback(() => {
     setMobileGlobalVoiceModal(!mobileGlobalVoiceModal);
     if (window.innerWidth <= 480) {
       setSidebarCollapsed(true);
+      setMobileExpandedSidebar(false);
     }
   }, [mobileGlobalVoiceModal]);
 
   // Close sidebar when clicking outside on mobile
   const handleOverlayClick = useCallback(() => {
+    if (window.innerWidth <= 768) {
+      setMobileExpandedSidebar(false);
+    }
     if (window.innerWidth <= 480) {
       setSidebarCollapsed(true);
     }
@@ -393,6 +416,18 @@ const ProChat = ({
   const handleQuickSettings = useCallback(() => {
     setSettingsModal({ open: true, section: 'profile' });
   }, []);
+
+  // Update existing messages when user avatar changes
+  useEffect(() => {
+    if (user?.avatar && user?.id) {
+      setChatMessages(prevMessages => 
+        prevMessages
+          .filter(isValidMessage) // Only process valid messages
+          .map(message => updateMessageAvatar(message, user))
+      );
+      console.log('✅ Updated existing message avatars with new user avatar');
+    }
+  }, [user?.avatar, user?.id, user?.name]);
 
   // Enhanced input functions
   const handleFileChange = useCallback((e) => {
@@ -800,8 +835,8 @@ const ProChat = ({
     const searchTerm = prompt('Search in chat:');
     if (searchTerm && searchTerm.trim()) {
       const matchingMessages = chatMessages.filter(msg => 
-        msg.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        msg.user.toLowerCase().includes(searchTerm.toLowerCase())
+        msg.text?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        msg.user?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       
       setShowMoreMenu(false);
@@ -1089,7 +1124,11 @@ const ProChat = ({
       const newMessage = {
         id: sentMessage.id || Date.now(),
         text: inputText.trim(),
-        user: user,
+        sender: {
+          id: user?.id,
+          name: user?.name || 'User',
+          avatar: user?.avatar
+        },
         timestamp: sentMessage.timestamp || new Date().toISOString(),
         reactions: sentMessage.reactions || [],
         conversationId: selectedConversation,
@@ -1538,7 +1577,7 @@ const ProChat = ({
 
   // Advanced message categorization with multiple factors
   const getAdvancedMessageCategory = useCallback((message) => {
-    const { text, file, user, reactions = [] } = message;
+    const { text = '', file, user, reactions = [] } = message;
     const length = text.length;
     
     const categories = {
@@ -1546,7 +1585,7 @@ const ProChat = ({
       type: file ? (file.type.startsWith('image/') ? 'image' : 
                    file.type.startsWith('video/') ? 'video' : 
                    file.type.startsWith('audio/') ? 'audio' : 'file') : 'text',
-      priority: user.role === 'admin' ? 'high' : user.role === 'moderator' ? 'medium' : 'normal',
+      priority: user?.role === 'admin' ? 'high' : user?.role === 'moderator' ? 'medium' : 'normal',
       hasMedia: !!file,
       hasReactions: reactions.length > 0,
       hasCode: text.includes('```') || text.includes('`'),
@@ -1571,6 +1610,19 @@ const ProChat = ({
 
   return (
     <div className="pro-layout mobile-optimized smartphone-optimized">
+      {/* Mobile Hamburger Menu Button */}
+      <button 
+        className={`mobile-hamburger-btn ${mobileExpandedSidebar ? 'active' : ''}`}
+        onClick={handleMobileSidebarToggle}
+        aria-label="Toggle sidebar"
+      >
+        <div className="hamburger-icon">
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+        </div>
+      </button>
+
       {/* Dynamic Animated Background */}
       <div className="dynamic-background">
         <div className="gradient-orb orb-1"></div>
@@ -1595,17 +1647,22 @@ const ProChat = ({
       {MemoizedVoiceCall}
       
       {/* Enhanced Sidebar */}
-      <div className={`pro-sidebar enhanced-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+      <div className={`pro-sidebar enhanced-sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileExpandedSidebar ? 'expanded-mobile' : ''}`}>
         {/* Sidebar Header */}
         <div className="pro-sidebar-header">
           <div className="sidebar-logo">
-            <div className="logo-icon" data-tooltip="Quibish Chat">
+            <div 
+              className="logo-icon" 
+              data-tooltip="Quibish Chat"
+              onClick={handleMobileSidebarToggle}
+              style={{ cursor: 'pointer' }}
+            >
               💬
               {totalUnreadCount > 0 && (
                 <div className="logo-unread-badge">{totalUnreadCount > 99 ? '99+' : totalUnreadCount}</div>
               )},
             </div>
-            {!sidebarCollapsed && (
+            {(!sidebarCollapsed || mobileExpandedSidebar) && (
               <div className="logo-text">
                 <h2>Quibish</h2>
                 <span className="version">v2.0</span>
@@ -1670,13 +1727,13 @@ const ProChat = ({
               </div>
             )}
           </div>
-          {!sidebarCollapsed && (
+          {(!sidebarCollapsed || mobileExpandedSidebar) && (
             <div className="user-info">
               <h3 className="user-name">{user?.name || 'User'}</h3>
               <p className="user-status">Online</p>
             </div>
           )}
-          {!sidebarCollapsed && (
+          {(!sidebarCollapsed || mobileExpandedSidebar) && (
             <div className="user-actions">
               <button className="action-btn" title="Settings" onClick={handleQuickSettings}>⚙️</button>
               <button className="action-btn" title="Profile" onClick={() => handleViewUserProfile(user?.id, user?.name)}>👤</button>
@@ -1686,7 +1743,7 @@ const ProChat = ({
         </div>
 
         {/* Quick Actions */}
-        {!sidebarCollapsed && (
+        {(!sidebarCollapsed || mobileExpandedSidebar) && (
           <div className="sidebar-quick-actions">
             <button className="quick-action-btn primary" onClick={handleNewChat}>
               <span className="icon">➕</span>
@@ -1700,7 +1757,7 @@ const ProChat = ({
         )}
 
         {/* Search Bar */}
-        {!sidebarCollapsed && (
+        {(!sidebarCollapsed || mobileExpandedSidebar) && (
           <div className="sidebar-search">
             <div className="search-container">
               <span className="search-icon">🔍</span>
@@ -1716,7 +1773,7 @@ const ProChat = ({
         )}
 
         {/* Filter Tabs */}
-        {!sidebarCollapsed && (
+        {(!sidebarCollapsed || mobileExpandedSidebar) && (
           <div className="sidebar-filters">
             <button 
               className={`filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
@@ -1745,7 +1802,7 @@ const ProChat = ({
         {/* Conversations List */}
         <div className="pro-sidebar-content">
           <div className="conversations-header">
-            {!sidebarCollapsed && <h4>Recent Conversations</h4>}
+            {(!sidebarCollapsed || mobileExpandedSidebar) && <h4>Recent Conversations</h4>}
           </div>
           <div className="conversations-list">
             {filteredConversations.map(conv => (
@@ -1762,7 +1819,7 @@ const ProChat = ({
                   {conv.isOnline && <div className="online-dot"></div>}
                   {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
                 </div>
-                {!sidebarCollapsed && (
+                {(!sidebarCollapsed || mobileExpandedSidebar) && (
                   <div className="conversation-details">
                     <div className="conversation-header">
                       <h5 className="conversation-name">{conv.name}</h5>
@@ -1786,7 +1843,7 @@ const ProChat = ({
           </div>
 
           {/* Global Voice Calls */}
-          {!sidebarCollapsed && (
+          {(!sidebarCollapsed || mobileExpandedSidebar) && (
             <GlobalUsers 
               onStartCall={handleStartGlobalCall}
               currentCall={globalCall}
@@ -1844,9 +1901,9 @@ const ProChat = ({
       </div>
 
       {/* Sidebar Backdrop Overlay for Mobile */}
-      {!sidebarCollapsed && (
+      {((typeof window !== 'undefined' && !sidebarCollapsed && window.innerWidth <= 480) || mobileExpandedSidebar) && (
         <div 
-          className="pro-sidebar-overlay" 
+          className="pro-sidebar-overlay sidebar-mobile-overlay" 
           onClick={handleOverlayClick}
           aria-hidden="true"
         />
@@ -1945,9 +2002,8 @@ const ProChat = ({
                     </button>
                   </div>
                   
-                  <button className="dropdown-item" onClick={handleSearchInChat}>
+                  <button className="dropdown-item" onClick={handleSearchInChat} title="Search in Chat">
                     <span className="dropdown-icon">🔍</span>
-                    Search in Chat
                   </button>
                   
                   <button className="dropdown-item" onClick={handleOpenContactManager}>
@@ -2043,20 +2099,29 @@ const ProChat = ({
             </div>
           )}
           
-          {chatMessages.map(message => (
-            <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
-              <div className="message-avatar">
-                <img 
-                  src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
-                  alt={message.user.name}
-                  onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
-                />
-              </div>
-              <div className="message-content" onClick={() => handleMessageClick(message.id)}>
-                <div className="message-header">
-                  <span className="user-name">{message.user.name}</span>
-                  {/* Encryption Status Indicator */}
-                  {message.isEncrypted && (
+          {chatMessages
+            .filter(isValidMessage) // Only render valid messages
+            .map(message => {
+              const sender = getMessageSender(message);
+              
+              return (
+                <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
+                  <div className="message-avatar">
+                    <img 
+                      src={getMessageAvatar(message)}
+                      alt={getMessageSenderName(message)}
+                      onClick={() => handleViewUserProfile(sender?.id, sender?.name)}
+                      onError={(e) => {
+                        // Fallback to default avatar on error
+                        e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face';
+                      }}
+                    />
+                  </div>
+                  <div className="message-content" onClick={() => handleMessageClick(message.id)}>
+                    <div className="message-header">
+                      <span className="user-name">{getMessageSenderName(message)}</span>
+                      {/* Encryption Status Indicator */}
+                      {message.isEncrypted && (
                     <span 
                       className={`encryption-indicator ${message.encryptionStatus}`} 
                       title={`Message is encrypted (${message.encryptionStatus})`}
@@ -2310,7 +2375,8 @@ const ProChat = ({
               {/* Context-Aware Message Actions - Placeholder for future implementation */}
               {/* <MessageActions component will be implemented later /> */}
             </div>
-          ))}
+            );
+          })}
           {/* Auto-scroll anchor element */}
           <div ref={messagesEndRef} />
         </div>
@@ -2394,7 +2460,7 @@ const ProChat = ({
                 <div className="input-actions-row">
                   {/* File Attachment Button */}
                   <button 
-                    className="input-btn attachment-btn mobile-action-button touch-target touch-ripple haptic-light"
+                    className="input-btn attachment-btn mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button"
                     onClick={isMobileDevice() ? handleMobileUploadMenu : () => fileInputRef.current?.click()}
                     type="button"
                     title={isMobileDevice() ? "Upload menu" : "Attach files"}
@@ -2404,7 +2470,7 @@ const ProChat = ({
 
                   {/* GIF Picker Button */}
                   <button 
-                    className="input-btn gif-btn mobile-action-button touch-target touch-ripple haptic-light"
+                    className="input-btn gif-btn mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button"
                     onClick={handleShowGifPicker}
                     type="button"
                     title="Choose GIF"
@@ -2424,7 +2490,7 @@ const ProChat = ({
 
                   {/* Voice Input Button */}
                   <button 
-                    className="input-btn voice-btn mobile-action-button touch-target touch-ripple haptic-light"
+                    className="input-btn voice-btn mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button long-press-target"
                     onClick={startRecording}
                     type="button"
                     title="Voice message"
@@ -2470,7 +2536,7 @@ const ProChat = ({
 
                   {/* Emoji Button */}
                   <button 
-                    className="input-btn emoji-btn mobile-action-button touch-target touch-ripple haptic-light"
+                    className="input-btn emoji-btn mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     type="button"
                     title="Add emoji"
@@ -2514,7 +2580,7 @@ const ProChat = ({
                   <button 
                     onClick={handleSendMessage}
                     disabled={!inputText.trim()}
-                    className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light"
+                    className="send-button enhanced mobile-action-button touch-target touch-ripple haptic-light touch-feedback haptic-button high-refresh-touch"
                     type="button"
                     aria-label="Send message"
                     title="Send message"

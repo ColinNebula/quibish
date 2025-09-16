@@ -6,9 +6,23 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const https = require('https');
+const ResourceMonitor = require('./services/resourceMonitor');
+const { DatabasePool } = require('./services/databasePool');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+
+// Initialize performance monitoring and database pooling
+const resourceMonitor = new ResourceMonitor({
+  interval: 30000,
+  memoryThreshold: 0.8,
+  cpuThreshold: 0.8
+});
+const dbPool = new DatabasePool();
+
+// Start resource monitoring
+resourceMonitor.start();
+console.log('📊 Resource monitoring initialized');
 
 // Enhanced HTTP server configuration
 const serverOptions = {
@@ -46,6 +60,49 @@ app.use(compression({
   chunkSize: 16 * 1024, // 16KB chunks
   windowBits: 15
 }));
+
+// Response caching middleware
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+app.use('/api', (req, res, next) => {
+  // Only cache GET requests
+  if (req.method !== 'GET') return next();
+  
+  const cacheKey = req.originalUrl;
+  const cached = cache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    res.set('X-Cache', 'HIT');
+    res.set('X-Cache-Age', Math.floor((Date.now() - cached.timestamp) / 1000));
+    return res.json(cached.data);
+  }
+  
+  // Store original json method
+  const originalJson = res.json;
+  
+  // Override json method to cache response
+  res.json = function(data) {
+    // Cache successful responses
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      cache.set(cacheKey, {
+        data,
+        timestamp: Date.now()
+      });
+      
+      // Cleanup old cache entries
+      if (cache.size > 100) {
+        const oldestKey = cache.keys().next().value;
+        cache.delete(oldestKey);
+      }
+    }
+    
+    res.set('X-Cache', 'MISS');
+    return originalJson.call(this, data);
+  };
+  
+  next();
+});
 
 // Enhanced CORS with detailed configuration
 app.use(cors({
@@ -141,6 +198,9 @@ const authLimiter = rateLimit({
 app.use('/api/', generalLimiter);
 app.use('/api/auth/', authLimiter);
 
+// Add resource monitoring middleware
+app.use(resourceMonitor.middleware());
+
 // Enhanced body parsing with larger limits
 app.use(express.json({ 
   limit: '50mb',
@@ -174,13 +234,18 @@ app.use((req, res, next) => {
   // Enhanced logging
   console.log(`[${new Date().toISOString()}] ${requestId} - ${req.method} ${req.path} - IP: ${req.ip || req.connection.remoteAddress} - User-Agent: ${req.get('User-Agent') || 'Unknown'}`);
   
-  // Monitor response time
-  res.on('finish', () => {
+  // Monitor response time (set header before response is sent)
+  const originalSend = res.send;
+  res.send = function(data) {
     const responseTime = Date.now() - startTime;
-    // Only set header if response hasn't been sent yet
     if (!res.headersSent) {
       res.setHeader('X-Response-Time', `${responseTime}ms`);
     }
+    return originalSend.call(this, data);
+  };
+  
+  res.on('finish', () => {
+    const responseTime = Date.now() - startTime;
     console.log(`[${new Date().toISOString()}] ${requestId} - Response: ${res.statusCode} - Time: ${responseTime}ms`);
     
     // Log slow requests
@@ -208,6 +273,15 @@ app.use((req, res, next) => {
   });
   
   next();
+});
+
+// Simple ping endpoint for connection testing
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    message: 'Server is reachable'
+  });
 });
 
 // Enhanced health check with network diagnostics
@@ -486,6 +560,147 @@ app.get('/api/user/profile', async (req, res) => {
   }
 });
 
+// User profile endpoint (plural alias for frontend compatibility)
+app.get('/api/users/profile', async (req, res) => {
+  try {
+    // Demo user data for frontend
+    const user = {
+      id: 1,
+      username: 'demo_user',
+      email: 'demo@quibish.com',
+      role: 'user',
+      avatar: '/default-avatar.png',
+      isVerified: true,
+      preferences: {
+        theme: 'light',
+        notifications: true,
+        privacy: 'public'
+      },
+      createdAt: new Date().toISOString()
+    };
+    
+    res.json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    console.error('Profile fetch error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user profile',
+      code: 'PROFILE_FETCH_FAILED'
+    });
+  }
+});
+
+// Startup configuration endpoint
+app.get('/api/startup', (req, res) => {
+  try {
+    const startupConfig = {
+      success: true,
+      config: {
+        appName: 'QuiBish',
+        version: '2.0.0',
+        environment: 'development',
+        features: {
+          modernUI: true,
+          iPhoneProSupport: true,
+          advancedTouch: true,
+          pwaFeatures: true,
+          adaptiveUI: true,
+          performanceOptimization: true,
+          resourceMonitoring: true
+        },
+        endpoints: {
+          health: '/api/health',
+          metrics: '/api/system/metrics',
+          diagnostics: '/api/network/diagnostics',
+          auth: '/api/auth/',
+          users: '/api/users/',
+          signaling: '/signaling'
+        },
+        theme: {
+          primary: '#007bff',
+          secondary: '#6c757d',
+          success: '#28a745',
+          warning: '#ffc107',
+          danger: '#dc3545'
+        },
+        network: {
+          timeout: 30000,
+          retries: 3,
+          backoff: 'exponential'
+        }
+      },
+      timestamp: new Date().toISOString(),
+      server: {
+        status: 'online',
+        version: '2.0',
+        mode: 'enhanced'
+      }
+    };
+    
+    res.json(startupConfig);
+  } catch (error) {
+    console.error('Startup config error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load startup configuration',
+      code: 'STARTUP_CONFIG_FAILED'
+    });
+  }
+});
+
+// System metrics endpoint for performance monitoring
+app.get('/api/system/metrics', (req, res) => {
+  try {
+    const metrics = resourceMonitor.getMetrics();
+    const dbMetrics = dbPool.getMetrics();
+    
+    res.json({
+      success: true,
+      metrics: {
+        ...metrics,
+        database: dbMetrics,
+        recommendations: resourceMonitor.getOptimizationRecommendations()
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error getting system metrics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve system metrics'
+    });
+  }
+});
+
+// Health check with performance data
+app.get('/api/health/detailed', (req, res) => {
+  try {
+    const health = resourceMonitor.getHealthStatus();
+    const memoryPressure = resourceMonitor.getMemoryPressure();
+    
+    res.json({
+      status: health,
+      memoryPressure,
+      uptime: process.uptime(),
+      version: process.version,
+      performance: {
+        memory: process.memoryUsage(),
+        cpu: process.cpuUsage(),
+        eventLoopUtilization: process.eventLoopUtilization ? process.eventLoopUtilization() : null
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
 // Enhanced signaling endpoint for WebRTC connections
 app.get('/signaling', (req, res) => {
   res.json({
@@ -598,12 +813,14 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Enhanced Network Server v2.0`);
   console.log(`🌐 Running on port ${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`📊 System metrics: http://localhost:${PORT}/api/system/metrics`);
   console.log(`📊 Diagnostics: http://localhost:${PORT}/api/network/diagnostics`);
   console.log(`🧪 Connection test: http://localhost:${PORT}/api/network/test`);
   console.log(`🔐 Authentication endpoints ready`);
   console.log(`📧 Email verification enabled`);
   console.log(`🛡️ Enhanced security features active`);
   console.log(`⚡ Performance optimizations enabled`);
+  console.log(`📈 Resource monitoring active`);
   console.log(`🔄 Connection pooling and keep-alive active`);
   console.log(`📈 Network monitoring enabled`);
   console.log('🚀 ====================================');
@@ -625,6 +842,10 @@ process.on('unhandledRejection', (reason, promise) => {
 // Graceful shutdown with connection draining
 process.on('SIGTERM', () => {
   console.log('🛑 SIGTERM received - starting graceful shutdown');
+  
+  // Stop monitoring services
+  resourceMonitor.stop();
+  dbPool.close();
   
   server.close((err) => {
     if (err) {

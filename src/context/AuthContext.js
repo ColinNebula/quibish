@@ -162,10 +162,61 @@ export const AuthProvider = ({ children }) => {
     console.log('User session cleared from all storage');
   };
 
-  // Refresh user data
-  const refreshUser = () => {
-    // In a REST implementation, you could make an API call here to refresh user data
-    console.log('User refresh requested - implement if needed');
+  // Refresh user data from storage and optionally from server
+  const refreshUser = async (forceServerRefresh = false) => {
+    try {
+      if (forceServerRefresh && token) {
+        // Try to fetch fresh user data from server
+        const response = await fetch('http://localhost:5001/api/users/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const profileData = await response.json();
+          if (profileData.success && profileData.user) {
+            const freshUserData = profileData.user;
+            setCurrentUser(freshUserData);
+            
+            // Update stored user data with fresh profile
+            const storage = rememberMe ? localStorage : sessionStorage;
+            storage.setItem('user', JSON.stringify(freshUserData));
+            
+            console.log('✅ User refreshed from server:', freshUserData.username);
+            return freshUserData;
+          }
+        }
+      }
+      
+      // Fallback: refresh from storage
+      const localUser = localStorage.getItem('user');
+      const sessionUser = sessionStorage.getItem('user');
+      const storedUser = localUser || sessionUser;
+      
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        setCurrentUser(userData);
+        console.log('✅ User refreshed from storage:', userData.username);
+        return userData;
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing user data:', error);
+    }
+    return currentUser;
+  };
+
+  // Update user data in context and storage
+  const updateUser = (updatedUserData) => {
+    setCurrentUser(updatedUserData);
+    
+    // Update storage
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('user', JSON.stringify(updatedUserData));
+    
+    console.log('✅ User data updated in context and storage');
+    return updatedUserData;
   };
 
   return (
@@ -178,7 +229,8 @@ export const AuthProvider = ({ children }) => {
         rememberMe,
         login,
         logout,
-        refreshUser
+        refreshUser,
+        updateUser
       }}
     >
       {children}

@@ -215,8 +215,8 @@ const Login = ({ onLogin, switchToRegister }) => {
   };
 
   return (
-    <div className="login-container">
-      <div className="auth-form">
+    <div className="login-container modern-layout safe-area-container">
+      <div className="auth-form modern-form modern-fade-in">
         <div className="elegant-header">
           <div className="brand-section">
             <div className="brand-icon">
