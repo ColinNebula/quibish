@@ -2104,13 +2104,6 @@ const ProChat = ({
                             // Open image in lightbox/modal
                             handleOpenLightbox(message.file.url, message.file.name);
                           }}
-                          style={{
-                            maxWidth: message.file.isGif ? '350px' : '300px',
-                            maxHeight: message.file.isGif ? '250px' : '200px',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            objectFit: 'cover'
-                          }}
                         />
                         <div className={`image-caption ${message.file.isGif ? 'gif-caption' : ''}`}>
                           {message.file.isGif && '🎭 '}
