@@ -1,30 +1,30 @@
-/* Image Display Fixes - Comprehensive solution for cut-off images */
+/* Image Display Fixes - SCOPED TO MESSAGES AREA ONLY */
 
-/* Global image fixes */
+/* Global image fixes - general fallback */
 img {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-/* Message container image fixes */
+/* MESSAGE AREA SPECIFIC: Only apply to images within message containers */
+.pro-message-list img,
 .pro-message-container img,
 .message-bubble img,
-.attachment-image,
-.attached-image,
-.photo-message-container img {
+.pro-message-blurb img:not(.message-avatar img) {
   max-width: 100% !important;
   height: auto !important;
   width: auto !important;
   object-fit: contain !important;
   border-radius: 8px;
   display: block;
-  cursor: pointer;
 }
 
-/* Specific attached image styles */
-.attached-image,
-.attachment-image {
+/* Specific attached image styles - ONLY in messages area */
+.pro-message-list .attached-image,
+.pro-message-list .attachment-image,
+.pro-message-blurb .attached-image,
+.pro-message-blurb .attachment-image {
   max-width: 300px !important;
   max-height: 200px !important;
   border-radius: 8px;
@@ -33,19 +33,21 @@ img {
   object-fit: contain;
 }
 
-.attached-image:hover,
-.attachment-image:hover {
+.pro-message-list .attached-image:hover,
+.pro-message-list .attachment-image:hover {
   transform: scale(1.02);
 }
 
-/* GIF specific styles */
-.gif-image {
+/* GIF specific styles - ONLY in messages area */
+.pro-message-list .gif-image,
+.pro-message-blurb .gif-image {
   max-width: 350px !important;
   max-height: 250px !important;
 }
 
-/* Image attachment container */
-.image-attachment {
+/* Image attachment container - ONLY in messages area */
+.pro-message-list .image-attachment,
+.pro-message-blurb .image-attachment {
   position: relative;
   display: inline-block;
   max-width: 100%;
@@ -55,23 +57,26 @@ img {
   backdrop-filter: blur(10px);
 }
 
-.gif-attachment {
+.pro-message-list .gif-attachment,
+.pro-message-blurb .gif-attachment {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Avatar image fixes */
+/* Avatar image fixes - SEPARATE from message attachments */
 .user-avatar img,
 .contact-avatar img,
 .conversation-avatar img,
-.profile-avatar img {
+.profile-avatar img,
+.message-avatar img {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
   border-radius: 50%;
 }
 
-/* Message attachment fixes */
-.message-attachment img {
+/* Message attachment fixes - ONLY in messages area */
+.pro-message-list .message-attachment img,
+.pro-message-blurb .message-attachment img {
   max-width: 280px;
   max-height: 240px;
   width: auto;
@@ -82,33 +87,38 @@ img {
   transition: transform 0.2s ease;
 }
 
-/* Media preview fixes */
-.media-preview img {
+/* Media preview fixes - ONLY in messages area */
+.pro-message-list .media-preview img,
+.pro-message-blurb .media-preview img {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
   border-radius: 8px;
 }
 
-/* Prevent image overflow */
-.message-content,
-.message-bubble,
-.pro-message-container {
+/* Prevent image overflow - ONLY in messages area */
+.pro-message-list .message-content,
+.pro-message-list .message-bubble,
+.pro-message-list .pro-message-container,
+.pro-message-blurb .message-content {
   overflow: hidden;
   word-wrap: break-word;
 }
 
-/* Mobile responsive image fixes */
+/* Mobile responsive image fixes - ONLY in messages area */
 @media screen and (max-width: 768px) {
-  .attachment-image,
-  .attached-image,
-  .photo-message-container img,
-  .message-attachment img {
+  .pro-message-list .attachment-image,
+  .pro-message-list .attached-image,
+  .pro-message-list .photo-message-container img,
+  .pro-message-list .message-attachment img,
+  .pro-message-blurb .attachment-image,
+  .pro-message-blurb .attached-image {
     max-width: calc(100vw - 120px) !important;
     max-height: 200px !important;
   }
   
-  .gif-image {
+  .pro-message-list .gif-image,
+  .pro-message-blurb .gif-image {
     max-width: calc(100vw - 100px) !important;
     max-height: 180px !important;
   }
@@ -118,23 +128,27 @@ img {
     height: 48px !important;
   }
   
-  /* Ensure containers don't constrain images */
-  .pro-message-content,
-  .message-bubble {
+  /* Ensure containers don't constrain images - ONLY in messages area */
+  .pro-message-list .pro-message-content,
+  .pro-message-list .message-bubble,
+  .pro-message-blurb .message-bubble {
     max-width: none !important;
   }
 }
 
 @media screen and (max-width: 480px) {
-  .attachment-image,
-  .attached-image,
-  .photo-message-container img,
-  .message-attachment img {
+  .pro-message-list .attachment-image,
+  .pro-message-list .attached-image,
+  .pro-message-list .photo-message-container img,
+  .pro-message-list .message-attachment img,
+  .pro-message-blurb .attachment-image,
+  .pro-message-blurb .attached-image {
     max-width: calc(100vw - 100px) !important;
     max-height: 180px !important;
   }
   
-  .gif-image {
+  .pro-message-list .gif-image,
+  .pro-message-blurb .gif-image {
     max-width: calc(100vw - 80px) !important;
     max-height: 160px !important;
   }
@@ -144,29 +158,41 @@ img {
     height: 44px !important;
   }
   
-  /* Ensure containers don't constrain images */
-  .pro-message-content,
-  .message-bubble {
+  /* Ensure containers don't constrain images - ONLY in messages area */
+  .pro-message-list .pro-message-content,
+  .pro-message-list .message-bubble,
+  .pro-message-blurb .message-bubble {
     max-width: none !important;
   }
 }
 
-/* Ensure proper container sizing */
-.message-media-container,
-.message-attachment {
+/* Ensure proper container sizing - ONLY in messages area */
+.pro-message-list .message-media-container,
+.pro-message-list .message-attachment,
+.pro-message-blurb .message-attachment {
   max-width: 100%;
   overflow: visible;
   border-radius: 12px;
 }
 
-/* Message bubble adjustments for images */
-.message-bubble:has(.attached-image),
-.pro-message-content:has(.attached-image) {
+/* Message bubble adjustments for images - ONLY in messages area */
+.pro-message-list .message-bubble:has(.attached-image),
+.pro-message-list .pro-message-content:has(.attached-image),
+.pro-message-blurb .message-bubble:has(.attached-image) {
   max-width: none !important;
   width: auto;
 }
 
-/* Fix for lightbox/modal images */
+/* Ensure proper container sizing - ONLY in messages area */
+.pro-message-list .message-media-container,
+.pro-message-list .message-attachment,
+.pro-message-blurb .message-attachment {
+  max-width: 100%;
+  overflow: visible;
+  border-radius: 12px;
+}
+
+/* Fix for lightbox/modal images - NOT scoped to messages area */
 .image-lightbox img,
 .modal-image img {
   max-width: 90vw !important;
@@ -174,6 +200,30 @@ img {
   width: auto !important;
   height: auto !important;
   object-fit: contain !important;
+}
+
+/* PREVENT attached images from appearing in non-message areas */
+.sidebar .attached-image,
+.sidebar .attachment-image,
+.header .attached-image,
+.header .attachment-image,
+.input-bar .attached-image,
+.input-bar .attachment-image,
+.pro-header .attached-image,
+.pro-header .attachment-image,
+.conversation-item .attached-image,
+.conversation-item .attachment-image {
+  display: none !important;
+}
+
+/* Ensure sidebar and header images are only avatars */
+.sidebar img:not(.user-avatar img):not(.conversation-avatar img),
+.pro-header img:not(.user-avatar img),
+.input-bar img:not(.emoji-picker img) {
+  max-width: 40px;
+  max-height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 /* Profile/settings image fixes */
@@ -201,9 +251,11 @@ img {
   vertical-align: top;
 }
 
-/* Fix for GIF images */
-.gif-image,
-.emoji-gif img {
+/* Fix for GIF images - ONLY in messages area */
+.pro-message-list .gif-image,
+.pro-message-list .emoji-gif img,
+.pro-message-blurb .gif-image,
+.pro-message-blurb .emoji-gif img {
   max-width: 200px !important;
   max-height: 200px !important;
   width: auto;
@@ -213,8 +265,10 @@ img {
 }
 
 @media screen and (max-width: 480px) {
-  .gif-image,
-  .emoji-gif img {
+  .pro-message-list .gif-image,
+  .pro-message-list .emoji-gif img,
+  .pro-message-blurb .gif-image,
+  .pro-message-blurb .emoji-gif img {
     max-width: 150px !important;
     max-height: 150px !important;
   }
