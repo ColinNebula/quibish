@@ -609,7 +609,6 @@ app.get('/api/startup', (req, res) => {
           pwaFeatures: true,
           adaptiveUI: true,
           performanceOptimization: true,
-          testingDashboard: true,
           resourceMonitoring: true
         },
         endpoints: {

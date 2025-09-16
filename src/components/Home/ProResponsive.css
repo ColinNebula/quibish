@@ -114,6 +114,59 @@
     margin-right: auto !important;
   }
 
+  /* Mobile Message Attachments - Unified Fix for Image Cutoffs */
+  .message-attachment {
+    max-width: 100% !important;
+    margin: 8px 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    border-radius: 12px !important;
+  }
+
+  .image-attachment {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    position: relative !important;
+  }
+
+  .attached-image {
+    max-width: 100% !important;
+    max-height: 250px !important;
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    border-radius: 12px !important;
+  }
+
+  .gif-attachment .attached-image,
+  .gif-image {
+    max-width: 100% !important;
+    max-height: 220px !important;
+    object-fit: contain !important;
+    width: 100% !important;
+  }
+
+  .video-attachment {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+  }
+
+  .video-attachment video {
+    max-width: 100% !important;
+    max-height: 250px !important;
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+    border-radius: 12px !important;
+  }
+
   /* Mobile responsive enhancements */
   .enhanced-input-bar {
     border-radius: 0 !important;
@@ -576,6 +629,10 @@
   gap: 4px;
 }
 
+.pro-more-reactions {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .pro-quick-reaction:hover,
 .pro-more-reactions:hover {
   background: rgba(255, 255, 255, 0.15);
@@ -958,6 +1015,18 @@
     box-sizing: border-box;
   }
 
+  /* Attachment sizing for 480px breakpoint */
+  .pro-message-blurb .message-attachment {
+    max-width: 100% !important;
+    margin: 6px 0 !important;
+  }
+
+  .pro-message-blurb .attached-image {
+    max-width: 100% !important;
+    max-height: 200px !important;
+    object-fit: contain !important;
+  }
+
   /* Better spacing for small screens */
   .pro-message-blurb.sent {
     margin-left: auto !important;
@@ -1049,6 +1118,29 @@
     margin: 4px 6px !important;
     font-size: 13px;
     box-sizing: border-box;
+  }
+
+  /* Attachment sizing for 360px breakpoint */
+  .pro-message-blurb .message-attachment {
+    max-width: 100% !important;
+    margin: 4px 0 !important;
+  }
+
+  .pro-message-blurb .attached-image {
+    max-width: 100% !important;
+    max-height: 180px !important;
+    object-fit: contain !important;
+    border-radius: 8px !important;
+  }
+
+  .pro-message-blurb .gif-attachment .attached-image {
+    max-height: 160px !important;
+  }
+
+  .pro-message-blurb .video-attachment video {
+    max-width: 100% !important;
+    max-height: 180px !important;
+    object-fit: contain !important;
   }
 
   .pro-message-blurb.sent {

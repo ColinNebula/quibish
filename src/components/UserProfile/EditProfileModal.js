@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import './EditProfileModal.css';
 
 const EditProfileModal = ({ userProfile, onClose, onSave }) => {
+  const { updateUser, refreshUser } = useAuth();
   const [formData, setFormData] = useState({
     name: userProfile?.name || '',
     displayName: userProfile?.displayName || '',
@@ -292,7 +294,15 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
         sessionStorage.setItem('user', JSON.stringify(updatedUser));
       }
       
-      console.log('✅ Profile update completed successfully');
+      // 🔑 KEY FIX: Update the user context immediately for avatar sync in messages
+      updateUser(updatedUser);
+      
+      // Also refresh from server to ensure we have the latest data
+      setTimeout(() => {
+        refreshUser(true);
+      }, 500);
+      
+      console.log('✅ Profile update completed successfully - user context updated for message avatar sync');
       onSave(updatedProfile);
       onClose();
     } catch (error) {

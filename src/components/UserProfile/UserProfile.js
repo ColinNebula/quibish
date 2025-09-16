@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import './UserProfile.css';
 import userDataService from '../../services/userDataService';
 import EditProfileModal from './EditProfileModal';
@@ -10,6 +11,7 @@ import ContactModal from '../Contacts/ContactModal';
 import EncryptionSettings from '../Encryption/EncryptionSettings';
 
 const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
+  const { updateUser, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [userProfile, setUserProfile] = useState(null);
   const [userUploads, setUserUploads] = useState([]);
@@ -169,6 +171,14 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
       const updatedProfile = { ...userProfile, avatar: newAvatarUrl };
       await userDataService.updateUserProfile(userId, { avatar: newAvatarUrl });
       setUserProfile(updatedProfile);
+      
+      // 🔑 KEY FIX: If this is own profile, update user context for message avatar sync
+      if (isOwnProfile) {
+        const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+        const updatedUser = { ...currentUser, avatar: newAvatarUrl };
+        updateUser(updatedUser);
+        console.log('✅ User context updated with new avatar for message sync');
+      }
     } catch (error) {
       console.error('Failed to update avatar:', error);
     }

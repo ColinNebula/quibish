@@ -18,7 +18,7 @@ import DynamicSplashScreen from './components/UI/DynamicSplashScreen';
 import ErrorBoundary from './components/ErrorHandling/ErrorBoundary';
 import PWAStatus from './components/ServiceWorker/PWAStatus';
 import InstallPrompt from './components/PWA/InstallPrompt';
-import TestingDashboard from './components/TestingDashboard/TestingDashboard';
+
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 // Temporarily comment out complex service imports
@@ -344,8 +344,7 @@ const App = () => {
       {/* PWA Install Prompt */}
       <InstallPrompt />
       
-      {/* Testing Dashboard (development only) */}
-      <TestingDashboard />
+
     </ErrorBoundary>
   );
 };

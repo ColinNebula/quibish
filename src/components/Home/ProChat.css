@@ -2430,6 +2430,27 @@
     overflow: hidden;
   }
   
+  /* Unified attachment styles for mobile */
+  .message-attachment {
+    max-width: 100% !important;
+    margin: 8px 0 !important;
+    box-sizing: border-box !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+  }
+  
+  .attached-image {
+    max-width: 100% !important;
+    max-height: 250px !important;
+    object-fit: contain !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+  
+  .gif-attachment .attached-image {
+    max-height: 220px !important;
+  }
+  
   /* Two-row layout styles for mobile */
   .input-actions-row {
     gap: 6px;
@@ -2564,11 +2585,12 @@
   display: block;
   width: 100%;
   height: auto;
-  max-width: 300px;
-  max-height: 200px;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
   border-radius: 12px 12px 0 0;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 .attached-image:hover {
   filter: brightness(1.05);

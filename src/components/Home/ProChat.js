@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { getMessageSender, getMessageAvatar, getMessageSenderName, isValidMessage, updateMessageAvatar } from '../../utils/messageUtils';
 import UserProfileModal from '../UserProfile/UserProfileModal';
 import SettingsModal from './SettingsModal';
 import VideoCall from './VideoCall';
@@ -416,6 +417,18 @@ const ProChat = ({
     setSettingsModal({ open: true, section: 'profile' });
   }, []);
 
+  // Update existing messages when user avatar changes
+  useEffect(() => {
+    if (user?.avatar && user?.id) {
+      setChatMessages(prevMessages => 
+        prevMessages
+          .filter(isValidMessage) // Only process valid messages
+          .map(message => updateMessageAvatar(message, user))
+      );
+      console.log('✅ Updated existing message avatars with new user avatar');
+    }
+  }, [user?.avatar, user?.id, user?.name]);
+
   // Enhanced input functions
   const handleFileChange = useCallback((e) => {
     const files = e.target.files;
@@ -822,8 +835,8 @@ const ProChat = ({
     const searchTerm = prompt('Search in chat:');
     if (searchTerm && searchTerm.trim()) {
       const matchingMessages = chatMessages.filter(msg => 
-        msg.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        msg.user.toLowerCase().includes(searchTerm.toLowerCase())
+        msg.text?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        msg.user?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       
       setShowMoreMenu(false);
@@ -1111,7 +1124,11 @@ const ProChat = ({
       const newMessage = {
         id: sentMessage.id || Date.now(),
         text: inputText.trim(),
-        user: user,
+        sender: {
+          id: user?.id,
+          name: user?.name || 'User',
+          avatar: user?.avatar
+        },
         timestamp: sentMessage.timestamp || new Date().toISOString(),
         reactions: sentMessage.reactions || [],
         conversationId: selectedConversation,
@@ -1560,7 +1577,7 @@ const ProChat = ({
 
   // Advanced message categorization with multiple factors
   const getAdvancedMessageCategory = useCallback((message) => {
-    const { text, file, user, reactions = [] } = message;
+    const { text = '', file, user, reactions = [] } = message;
     const length = text.length;
     
     const categories = {
@@ -1568,7 +1585,7 @@ const ProChat = ({
       type: file ? (file.type.startsWith('image/') ? 'image' : 
                    file.type.startsWith('video/') ? 'video' : 
                    file.type.startsWith('audio/') ? 'audio' : 'file') : 'text',
-      priority: user.role === 'admin' ? 'high' : user.role === 'moderator' ? 'medium' : 'normal',
+      priority: user?.role === 'admin' ? 'high' : user?.role === 'moderator' ? 'medium' : 'normal',
       hasMedia: !!file,
       hasReactions: reactions.length > 0,
       hasCode: text.includes('```') || text.includes('`'),
@@ -1985,9 +2002,8 @@ const ProChat = ({
                     </button>
                   </div>
                   
-                  <button className="dropdown-item" onClick={handleSearchInChat}>
+                  <button className="dropdown-item" onClick={handleSearchInChat} title="Search in Chat">
                     <span className="dropdown-icon">🔍</span>
-                    Search in Chat
                   </button>
                   
                   <button className="dropdown-item" onClick={handleOpenContactManager}>
@@ -2083,20 +2099,29 @@ const ProChat = ({
             </div>
           )}
           
-          {chatMessages.map(message => (
-            <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
-              <div className="message-avatar">
-                <img 
-                  src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
-                  alt={message.user.name}
-                  onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
-                />
-              </div>
-              <div className="message-content" onClick={() => handleMessageClick(message.id)}>
-                <div className="message-header">
-                  <span className="user-name">{message.user.name}</span>
-                  {/* Encryption Status Indicator */}
-                  {message.isEncrypted && (
+          {chatMessages
+            .filter(isValidMessage) // Only render valid messages
+            .map(message => {
+              const sender = getMessageSender(message);
+              
+              return (
+                <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
+                  <div className="message-avatar">
+                    <img 
+                      src={getMessageAvatar(message)}
+                      alt={getMessageSenderName(message)}
+                      onClick={() => handleViewUserProfile(sender?.id, sender?.name)}
+                      onError={(e) => {
+                        // Fallback to default avatar on error
+                        e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face';
+                      }}
+                    />
+                  </div>
+                  <div className="message-content" onClick={() => handleMessageClick(message.id)}>
+                    <div className="message-header">
+                      <span className="user-name">{getMessageSenderName(message)}</span>
+                      {/* Encryption Status Indicator */}
+                      {message.isEncrypted && (
                     <span 
                       className={`encryption-indicator ${message.encryptionStatus}`} 
                       title={`Message is encrypted (${message.encryptionStatus})`}
@@ -2350,7 +2375,8 @@ const ProChat = ({
               {/* Context-Aware Message Actions - Placeholder for future implementation */}
               {/* <MessageActions component will be implemented later /> */}
             </div>
-          ))}
+            );
+          })}
           {/* Auto-scroll anchor element */}
           <div ref={messagesEndRef} />
         </div>

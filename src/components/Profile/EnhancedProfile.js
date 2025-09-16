@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import './EnhancedProfile.css';
 import { authService } from '../../services/apiClient';
 
 const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
+  const { updateUser, refreshUser } = useAuth();
   // Enhanced form state with more fields
   const [formData, setFormData] = useState({
     // Basic Information
@@ -138,6 +140,10 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
           const updatedUser = { ...currentUser, avatar: result.avatarUrl };
           const token = authService.getToken();
           authService.saveUserSession(updatedUser, token, true);
+          
+          // 🔑 KEY FIX: Update user context for message avatar sync
+          updateUser(updatedUser);
+          console.log('✅ User context updated with new avatar for message sync');
         }
       } else {
         throw new Error(result.error || 'Upload failed');
@@ -176,6 +182,10 @@ const EnhancedProfile = ({ user, onClose, onUpdate, darkMode = false }) => {
         const updatedUser = { ...currentUser, avatar: null };
         const token = authService.getToken();
         authService.saveUserSession(updatedUser, token, true);
+        
+        // 🔑 KEY FIX: Update user context for message avatar sync
+        updateUser(updatedUser);
+        console.log('✅ User context updated after avatar removal for message sync');
       }
 
       setSuccess('Avatar removed successfully!');

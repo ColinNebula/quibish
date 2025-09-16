@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import userDataService from '../../services/userDataService';
 import './AvatarUpload.css';
 
 const AvatarUpload = ({ currentAvatar, onAvatarChange, isOwnProfile }) => {
+  const { updateUser, refreshUser, user: currentUser } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState(currentAvatar);
@@ -77,6 +79,13 @@ const AvatarUpload = ({ currentAvatar, onAvatarChange, isOwnProfile }) => {
         if (result && result.avatarUrl) {
           console.log('🖼️ Setting new avatar URL:', result.avatarUrl);
           onAvatarChange(result.avatarUrl);
+          
+          // 🔑 KEY FIX: Update user context immediately for message avatar sync
+          if (currentUser) {
+            const updatedUser = { ...currentUser, avatar: result.avatarUrl };
+            updateUser(updatedUser);
+            console.log('✅ User context updated with new avatar for message sync');
+          }
         } else {
           console.error('❌ No avatar URL in response:', result);
           throw new Error('Invalid response: no avatar URL returned');
