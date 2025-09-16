@@ -82,6 +82,16 @@
   max-width: 100%;
   height: auto;
   border-radius: var(--border-radius);
+  object-fit: contain;
+  display: block;
+}
+
+/* Ensure message containers don't overflow */
+.photo-message-container,
+.video-message-container,
+.message-attachment {
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* Audio controls responsiveness */

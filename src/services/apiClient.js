@@ -87,25 +87,188 @@ const apiClient = new ApiClient();
 export const authService = {
   async login(email, password) {
     try {
-      const response = await apiClient.post('/auth/login', { email, password });
-      if (response.token) {
-        apiClient.setToken(response.token);
+      // Check if backend is available
+      const isBackendAvailable = await checkApiConnection();
+      
+      if (isBackendAvailable) {
+        // Try backend login if available
+        const response = await apiClient.post('/auth/login', { email, password });
+        if (response.token) {
+          apiClient.setToken(response.token);
+        }
+        return response;
+      } else {
+        // Offline mode: Create a demo user for testing
+        console.log('🔄 Backend unavailable - using offline mode login');
+        
+        // Simple validation for demo purposes
+        if (!email || !password) {
+          throw new Error('Please enter both username and password');
+        }
+        
+        if (password.length < 3) {
+          throw new Error('Password too short for demo');
+        }
+        
+        // Create a demo user object
+        const demoUser = {
+          id: Date.now().toString(),
+          username: email,
+          email: email,
+          name: email.charAt(0).toUpperCase() + email.slice(1),
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=6366f1&color=fff&size=40`,
+          theme: 'light',
+          language: 'en',
+          isDemo: true,
+          joinedAt: new Date().toISOString()
+        };
+        
+        // Generate a demo token
+        const demoToken = btoa(JSON.stringify({ userId: demoUser.id, username: email, timestamp: Date.now() }));
+        
+        console.log('✅ Offline login successful for demo user:', email);
+        
+        return {
+          success: true,
+          user: demoUser,
+          token: demoToken,
+          message: 'Logged in successfully (offline mode)'
+        };
       }
-      return response;
     } catch (error) {
-      throw new Error('Login failed. Please check your credentials.');
+      // If it's a network error and we haven't tried offline mode, try it
+      if (error.message.includes('fetch') || error.message.includes('network') || error.message.includes('Failed to fetch')) {
+        console.log('🔄 Network error detected - falling back to offline mode');
+        
+        // Simple validation for demo purposes
+        if (!email || !password) {
+          throw new Error('Please enter both username and password');
+        }
+        
+        // Create a demo user object
+        const demoUser = {
+          id: Date.now().toString(),
+          username: email,
+          email: email,
+          name: email.charAt(0).toUpperCase() + email.slice(1),
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=6366f1&color=fff&size=40`,
+          theme: 'light',
+          language: 'en',
+          isDemo: true,
+          joinedAt: new Date().toISOString()
+        };
+        
+        // Generate a demo token
+        const demoToken = btoa(JSON.stringify({ userId: demoUser.id, username: email, timestamp: Date.now() }));
+        
+        return {
+          success: true,
+          user: demoUser,
+          token: demoToken,
+          message: 'Logged in successfully (offline mode)'
+        };
+      }
+      
+      throw new Error(error.message || 'Login failed. Please check your credentials.');
     }
   },
 
   async register(userData) {
     try {
-      const response = await apiClient.post('/auth/register', userData);
-      if (response.token) {
-        apiClient.setToken(response.token);
+      // Check if backend is available
+      const isBackendAvailable = await checkApiConnection();
+      
+      if (isBackendAvailable) {
+        // Try backend registration if available
+        const response = await apiClient.post('/auth/register', userData);
+        if (response.token) {
+          apiClient.setToken(response.token);
+        }
+        return response;
+      } else {
+        // Offline mode: Create a demo user
+        console.log('🔄 Backend unavailable - using offline mode registration');
+        
+        const { username, email, password, confirmPassword } = userData;
+        
+        // Simple validation for demo purposes
+        if (!username || !email || !password) {
+          throw new Error('Please fill in all required fields');
+        }
+        
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+        
+        if (password.length < 3) {
+          throw new Error('Password too short for demo');
+        }
+        
+        // Create a demo user object
+        const demoUser = {
+          id: Date.now().toString(),
+          username: username,
+          email: email,
+          name: username.charAt(0).toUpperCase() + username.slice(1),
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6366f1&color=fff&size=40`,
+          theme: 'light',
+          language: 'en',
+          isDemo: true,
+          joinedAt: new Date().toISOString()
+        };
+        
+        // Generate a demo token
+        const demoToken = btoa(JSON.stringify({ userId: demoUser.id, username: username, timestamp: Date.now() }));
+        
+        console.log('✅ Offline registration successful for demo user:', username);
+        
+        return {
+          success: true,
+          user: demoUser,
+          token: demoToken,
+          message: 'Registered successfully (offline mode)'
+        };
       }
-      return response;
     } catch (error) {
-      throw new Error('Registration failed. Please try again.');
+      // If it's a network error, try offline mode
+      if (error.message.includes('fetch') || error.message.includes('network') || error.message.includes('Failed to fetch')) {
+        console.log('🔄 Network error detected - falling back to offline mode registration');
+        
+        const { username, email, password, confirmPassword } = userData;
+        
+        // Simple validation
+        if (!username || !email || !password) {
+          throw new Error('Please fill in all required fields');
+        }
+        
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
+        }
+        
+        // Create demo user
+        const demoUser = {
+          id: Date.now().toString(),
+          username: username,
+          email: email,
+          name: username.charAt(0).toUpperCase() + username.slice(1),
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6366f1&color=fff&size=40`,
+          theme: 'light',
+          language: 'en',
+          isDemo: true,
+          joinedAt: new Date().toISOString()
+        };
+        
+        const demoToken = btoa(JSON.stringify({ userId: demoUser.id, username: username, timestamp: Date.now() }));
+        
+        return {
+          success: true,
+          user: demoUser,
+          token: demoToken,
+          message: 'Registered successfully (offline mode)'
+        };
+      }
+      
+      throw new Error(error.message || 'Registration failed. Please try again.');
     }
   },
 

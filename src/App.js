@@ -5,6 +5,7 @@ import './styles/mobile-first-responsive.css';
 import './styles/input-container-responsive-fix.css';
 import './styles/mobile-content-fix.css';
 import './styles/mobile-animation-fix.css';
+import './styles/image-display-fix.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';
