@@ -454,3 +454,89 @@
     color: #d1d5db;
   }
 }
+
+/* Enhanced Profile Styles */
+
+/* Loading States */
+.profile-avatar.loading {
+  border-color: #94a3b8;
+  opacity: 0.7;
+}
+
+.avatar-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 4px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Enhanced Upload Button */
+.upload-btn {
+  transition: all 0.2s ease;
+  border: none;
+  text-decoration: none;
+}
+
+.upload-btn:hover:not(.disabled) {
+  transform: translateY(-1px);
+}
+
+.upload-btn.disabled {
+  background: #94a3b8 !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Form Validation Styles */
+.form-error {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.form-group.error input,
+.form-group.error textarea,
+.form-group.error select {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+/* Enhanced Status Indicator */
+.status-indicator {
+  transition: all 0.3s ease;
+}
+
+.status-indicator:hover {
+  transform: scale(1.1);
+}
+
+/* Profile Avatar Enhancements */
+.profile-avatar {
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.profile-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}

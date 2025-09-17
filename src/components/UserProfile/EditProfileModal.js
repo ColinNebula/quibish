@@ -81,29 +81,64 @@ const EditProfileModal = ({ userProfile, onClose, onSave }) => {
   };
 
   const handleAvatarChange = useCallback((file) => {
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
+    if (!file) return;
+    
+    // Enhanced file validation
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const maxSize = 10 * 1024 * 1024; // 10MB limit
+    
+    if (!validTypes.includes(file.type)) {
+      setErrors(prev => ({ ...prev, avatar: 'Please select a valid image file (JPEG, PNG, GIF, or WebP)' }));
+      return;
+    }
+    
+    if (file.size > maxSize) {
+      setErrors(prev => ({ ...prev, avatar: 'File size must be less than 10MB' }));
+      return;
+    }
+    
+    // Clear any previous avatar errors
+    setErrors(prev => ({ ...prev, avatar: null }));
+    
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
         setAvatarPreview(e.target.result);
         setAvatarFile(file);
-      };
-      reader.readAsDataURL(file);
-    }
+      } catch (error) {
+        console.error('Error processing image:', error);
+        setErrors(prev => ({ ...prev, avatar: 'Error processing image file' }));
+      }
+    };
+    
+    reader.onerror = () => {
+      setErrors(prev => ({ ...prev, avatar: 'Error reading image file' }));
+    };
+    
+    reader.readAsDataURL(file);
   }, []);
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
   }, []);
 
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
-    setIsDragging(false);
+    e.stopPropagation();
+    // Only set dragging to false if we're leaving the drag area completely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false);
+    }
   }, []);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
+    
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleAvatarChange(files[0]);

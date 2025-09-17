@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import UserProfileModal from '../UserProfile/UserProfileModal';
-// import SettingsModal from './SettingsModal'; // Temporarily disabled
+import SettingsModal from './SettingsModal';
 // import VideoCall from './VideoCall'; // Temporarily disabled
 import GifPicker from '../GifPicker/GifPicker';
 import NewChatModal from '../NewChat/NewChatModal';  
@@ -111,6 +111,10 @@ const ProChat = ({
     fileSize: 0,
     uploadedSize: 0
   });
+
+  // Touch gesture state for mobile sidebar
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
   
   // Refs
   const fileInputRef = useRef(null);
@@ -119,6 +123,7 @@ const ProChat = ({
   const mobileGalleryRef = useRef(null);
   const recordingTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const sidebarRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
   // Chat messages state - loaded from database
@@ -268,6 +273,41 @@ const ProChat = ({
     setSidebarCollapsed(prev => !prev);
   }, []);
 
+  // Touch gesture handlers for mobile sidebar
+  const handleTouchStart = useCallback((e) => {
+    if (window.innerWidth <= 768) {
+      setTouchEnd(null);
+      setTouchStart(e.targetTouches[0].clientX);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (window.innerWidth <= 768) {
+      setTouchEnd(e.targetTouches[0].clientX);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    // On mobile, swipe left to close sidebar, swipe right to open
+    if (window.innerWidth <= 768) {
+      if (isLeftSwipe && !sidebarCollapsed) {
+        setSidebarCollapsed(true);
+      } else if (isRightSwipe && sidebarCollapsed) {
+        setSidebarCollapsed(false);
+      }
+    }
+    
+    // Reset touch state
+    setTouchStart(null);
+    setTouchEnd(null);
+  }, [touchStart, touchEnd, sidebarCollapsed]);
+
   const handleMobileGlobalVoice = useCallback(() => {
     setMobileGlobalVoiceModal(!mobileGlobalVoiceModal);
     if (window.innerWidth <= 480) {
@@ -283,6 +323,19 @@ const ProChat = ({
   }, []);
 
   const handleConversationSelect = useCallback(async (conversationId) => {
+    if (!conversationId) {
+      console.warn('Invalid conversation ID provided');
+      return;
+    }
+
+    // Check if the conversation exists
+    const conversation = conversations.find(conv => conv.id === conversationId);
+    if (!conversation) {
+      console.warn('Conversation not found:', conversationId);
+      setMessagesError('Conversation not found');
+      return;
+    }
+
     setSelectedConversation(conversationId);
     
     // Load messages for the selected conversation
@@ -290,7 +343,7 @@ const ProChat = ({
       setMessagesLoading(true);
       setMessagesError(null);
       
-      console.log('Loading messages for conversation:', conversationId);
+      console.log('Loading messages for conversation:', conversation.name, conversationId);
       
       // Load messages from the message service for this conversation
       const conversationMessages = await messageService.getMessages({ 
@@ -301,6 +354,11 @@ const ProChat = ({
       if (Array.isArray(conversationMessages)) {
         setChatMessages(conversationMessages);
         console.log('Loaded conversation messages:', conversationMessages.length);
+        
+        // Mark conversation as read if it had unread messages
+        if (conversation.unreadCount > 0) {
+          console.log('Marked conversation as read:', conversation.name);
+        }
         
         // Scroll to bottom after loading messages
         setTimeout(() => {
@@ -329,11 +387,22 @@ const ProChat = ({
       }
     } finally {
       setMessagesLoading(false);
+      
+      // Auto-collapse sidebar on mobile after selection
+      if (window.innerWidth <= 768) {
+        setSidebarCollapsed(true);
+      }
     }
-  }, []);
+  }, [conversations, messageService, scrollToBottom]);
 
   const handleSearchChange = useCallback((e) => {
-    setSearchQuery(e.target.value);
+    try {
+      const value = e?.target?.value || '';
+      setSearchQuery(value);
+    } catch (error) {
+      console.error('Error handling search change:', error);
+      setSearchQuery('');
+    }
   }, []);
 
   const handleFilterChange = useCallback((filter) => {
@@ -394,7 +463,9 @@ const ProChat = ({
   }, [user]);
 
   const handleQuickSettings = useCallback(() => {
-    setSettingsModal({ open: true, section: 'profile' });
+    console.log('⚙️ Settings button clicked!');
+    setSettingsModal({ open: true, section: 'general' });
+    console.log('✅ Settings modal state set to open');
   }, []);
 
   // Enhanced input functions
@@ -1001,37 +1072,70 @@ const ProChat = ({
 
   // Filter conversations based on search and active filter
   const filteredConversations = useMemo(() => {
-    let filtered = conversations;
+    // Ensure conversations is an array and has valid data
+    if (!Array.isArray(conversations)) {
+      console.warn('Conversations is not an array:', conversations);
+      return [];
+    }
+
+    let filtered = conversations.filter(conv => {
+      // Ensure conversation has required fields
+      return conv && typeof conv === 'object' && conv.id && conv.name;
+    });
     
-    // Apply text search
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(conv => 
-        conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.lastMessage?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    // Apply text search with null safety
+    if (searchQuery?.trim()) {
+      const searchTerm = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(conv => {
+        const name = conv.name?.toLowerCase() || '';
+        const lastMessage = conv.lastMessage?.toLowerCase() || '';
+        return name.includes(searchTerm) || lastMessage.includes(searchTerm);
+      });
     }
     
-    // Apply filter
-    switch (activeFilter) {
-      case 'unread':
-        filtered = filtered.filter(conv => conv.unreadCount > 0);
-        break;
-      case 'groups':
-        filtered = filtered.filter(conv => conv.name.includes('Team') || conv.name.includes('Group'));
-        break;
-      default:
-        // 'all' - no additional filtering
-        break;
+    // Apply filter with error handling
+    try {
+      switch (activeFilter) {
+        case 'unread':
+          filtered = filtered.filter(conv => (conv.unreadCount || 0) > 0);
+          break;
+        case 'groups':
+          filtered = filtered.filter(conv => {
+            const name = conv.name || '';
+            return name.includes('Team') || name.includes('Group');
+          });
+          break;
+        default:
+          // 'all' - no additional filtering
+          break;
+      }
+    } catch (error) {
+      console.error('Error applying conversation filter:', error);
+      // Return unfiltered results if filter fails
     }
     
     return filtered;
   }, [conversations, searchQuery, activeFilter]);
 
-  const getFilterCounts = useMemo(() => ({
-    all: conversations.length,
-    unread: conversations.filter(conv => conv.unreadCount > 0).length,
-    groups: conversations.filter(conv => conv.name.includes('Team') || conv.name.includes('Group')).length
-  }), [conversations]);
+  const getFilterCounts = useMemo(() => {
+    if (!Array.isArray(conversations)) {
+      return { all: 0, unread: 0, groups: 0 };
+    }
+
+    try {
+      return {
+        all: conversations.length,
+        unread: conversations.filter(conv => conv && (conv.unreadCount || 0) > 0).length,
+        groups: conversations.filter(conv => {
+          const name = conv?.name || '';
+          return name.includes('Team') || name.includes('Group');
+        }).length
+      };
+    } catch (error) {
+      console.error('Error calculating filter counts:', error);
+      return { all: conversations.length, unread: 0, groups: 0 };
+    }
+  }, [conversations]);
 
   const totalUnreadCount = useMemo(() => {
     return conversations.reduce((total, conv) => total + conv.unreadCount, 0);
@@ -1144,8 +1248,11 @@ const ProChat = ({
 
   // Modal handlers
   const handleViewUserProfile = useCallback((userId, username) => {
+    console.log('🎯 Profile button clicked!', { userId, username, user });
+    console.log('📱 Current user data:', user);
     setProfileModal({ open: true, userId, username });
-  }, []);
+    console.log('✅ Profile modal state set to open');
+  }, [user]);
 
   const handleCloseProfileModal = useCallback(() => {
     setProfileModal({ open: false, userId: null, username: null });
@@ -1598,7 +1705,13 @@ const ProChat = ({
       {MemoizedVoiceCall}
       
       {/* Enhanced Sidebar */}
-      <div className={`pro-sidebar enhanced-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+      <div 
+        ref={sidebarRef}
+        className={`pro-sidebar enhanced-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Sidebar Header */}
         <div className="pro-sidebar-header">
           <div className="sidebar-logo">
@@ -1606,7 +1719,7 @@ const ProChat = ({
               💬
               {totalUnreadCount > 0 && (
                 <div className="logo-unread-badge">{totalUnreadCount > 99 ? '99+' : totalUnreadCount}</div>
-              )},
+              )}
             </div>
             {!sidebarCollapsed && (
               <div className="logo-text">
@@ -1635,33 +1748,16 @@ const ProChat = ({
               }
               alt={user?.name || 'User'}
               onError={(e) => {
-                // Multiple fallback handling
                 if (!avatarError) {
                   console.log('Avatar load failed, trying fallback:', e.target.src);
                   handleAvatarError();
-                  // If it's already trying ui-avatars, fallback to default
-                  if (e.target.src.includes('ui-avatars.com')) {
+                  // Fallback to ui-avatars service
+                  if (!e.target.src.includes('ui-avatars.com')) {
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&size=80&bold=true&format=png`;
+                  } else {
+                    // Final fallback to default avatar
                     e.target.src = '/default-avatar.png';
                   }
-                } else {
-                  // Last resort - if even default fails, show a colored div
-                  e.target.style.display = 'none';
-                  const fallbackDiv = document.createElement('div');
-                  fallbackDiv.className = 'avatar-fallback';
-                  fallbackDiv.style.cssText = `
-                    width: 40px; 
-                    height: 40px; 
-                    border-radius: 50%; 
-                    background: linear-gradient(135deg, #4f46e5, #7c3aed); 
-                    display: flex; 
-                    align-items: center; 
-                    justify-content: center; 
-                    color: white; 
-                    font-weight: bold;
-                    font-size: 16px;
-                  `;
-                  fallbackDiv.textContent = (user?.name || 'U').charAt(0).toUpperCase();
-                  e.target.parentNode.insertBefore(fallbackDiv, e.target);
                 }
               }}
               onLoad={() => setAvatarError(false)}
@@ -1681,9 +1777,18 @@ const ProChat = ({
           )}
           {!sidebarCollapsed && (
             <div className="user-actions">
-              <button className="action-btn" title="Settings" onClick={handleQuickSettings}>⚙️</button>
-              <button className="action-btn" title="Profile" onClick={() => handleViewUserProfile(user?.id, user?.name)}>👤</button>
-              <button className="action-btn logout-btn" title="Logout / Disconnect" onClick={onLogout}>🚪</button>
+              <button className="action-btn settings-btn" title="Settings" onClick={handleQuickSettings}>
+                <span className="action-icon">⚙️</span>
+                <span className="action-label">Settings</span>
+              </button>
+              <button className="action-btn profile-btn" title="Profile" onClick={() => handleViewUserProfile(user?.id, user?.name)}>
+                <span className="action-icon">👤</span>
+                <span className="action-label">Profile</span>
+              </button>
+              <button className="action-btn logout-btn" title="Logout" onClick={onLogout}>
+                <span className="action-icon">🚪</span>
+                <span className="action-label">Logout</span>
+              </button>
             </div>
           )}
         </div>
@@ -2589,27 +2694,31 @@ const ProChat = ({
 
       {/* Profile Modal */}
       {profileModal.open && (
-        <UserProfileModal 
-          userId={profileModal.userId}
-          username={profileModal.username}
-          onClose={handleCloseProfileModal}
-        />
+        <>
+          {console.log('🔍 Rendering UserProfileModal:', { profileModal, user })}
+          <UserProfileModal 
+            isOpen={profileModal.open}
+            user={user}
+            onClose={handleCloseProfileModal}
+            onUpdateProfile={(updatedProfile) => {
+              console.log('Profile updated:', updatedProfile);
+              // You can add additional update logic here if needed
+            }}
+          />
+        </>
       )}
 
-      {/* Settings Modal - Temporarily disabled */}
-      {/* {settingsModal.open && (
-        <SettingsModal 
-          isOpen={settingsModal.open}
-          onClose={handleCloseSettingsModal}
-          initialSection={settingsModal.section}
-          user={user}
-          onSaveProfile={(updatedUser) => {
-            // Handle profile updates if needed
-            console.log('Profile updated:', updatedUser);
-          }}
-          darkMode={darkMode}
-        />
-      )} */}
+      {/* Settings Modal */}
+      {settingsModal.open && (
+        <>
+          {console.log('🔧 Rendering SettingsModal:', { settingsModal })}
+          <SettingsModal 
+            isOpen={settingsModal.open}
+            onClose={handleCloseSettingsModal}
+            initialSection={settingsModal.section}
+          />
+        </>
+      )}
 
       {/* Lightbox Modal */}
       {lightboxModal.open && (

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './UserProfileModal.css';
 
 const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
+  console.log('🚀 UserProfileModal rendered with props:', { isOpen, user, hasOnClose: !!onClose, hasOnUpdateProfile: !!onUpdateProfile });
+  
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -45,45 +47,114 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
   // Handle avatar upload
   const handleAvatarChange = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('File size must be less than 5MB');
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
+    if (!file) return;
+
+    // Enhanced file validation
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      alert('File size must be less than 5MB');
+      return;
+    }
+    
+    setLoading(true);
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      try {
         const result = e.target.result;
         setAvatarPreview(result);
         setProfile(prev => ({ ...prev, avatar: result }));
-      };
-      reader.readAsDataURL(file);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error reading file:', error);
+        alert('Error processing image file');
+        setLoading(false);
+      }
+    };
+    
+    reader.onerror = () => {
+      alert('Error reading file');
+      setLoading(false);
+    };
+    
+    reader.readAsDataURL(file);
+  };
+
+  // Enhanced form validation
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!profile.name?.trim()) {
+      errors.name = 'Name is required';
+    } else if (profile.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters';
     }
+    
+    if (profile.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (profile.phone && !/^[\+]?[0-9\s\-\(\)]{10,}$/.test(profile.phone)) {
+      errors.phone = 'Please enter a valid phone number';
+    }
+    
+    if (profile.bio && profile.bio.length > 500) {
+      errors.bio = 'Bio must be less than 500 characters';
+    }
+    
+    return errors;
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!profile.name.trim()) {
-      alert('Name is required');
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      const errorMessage = Object.values(validationErrors).join('\n');
+      alert(errorMessage);
       return;
     }
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call with better error handling
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulate random API failures for testing
+          if (Math.random() < 0.1) {
+            reject(new Error('Network error'));
+          } else {
+            resolve();
+          }
+        }, 1000);
+      });
       
       if (onUpdateProfile) {
         onUpdateProfile(profile);
+      }
+      
+      // Update local storage for persistence
+      const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+      const updatedUser = { ...currentUser, ...profile };
+      
+      if (localStorage.getItem('user')) {
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      if (sessionStorage.getItem('user')) {
+        sessionStorage.setItem('user', JSON.stringify(updatedUser));
       }
       
       setIsEditing(false);
       alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      alert(`Failed to update profile: ${error.message}. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -153,9 +224,17 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
             <div className="profile-tab">
               <div className="avatar-section">
                 <div className="avatar-container">
-                  <div className="profile-avatar">
-                    {avatarPreview ? (
-                      <img src={avatarPreview} alt="Profile" />
+                  <div className={`profile-avatar ${loading ? 'loading' : ''}`}>
+                    {loading ? (
+                      <div className="avatar-loading">
+                        <div className="loading-spinner"></div>
+                        <span>Processing...</span>
+                      </div>
+                    ) : avatarPreview ? (
+                      <img src={avatarPreview} alt="Profile" onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }} />
                     ) : (
                       <div className="avatar-placeholder">
                         {profile.name.charAt(0).toUpperCase() || 'U'}
@@ -171,9 +250,10 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
                         accept="image/*"
                         onChange={handleAvatarChange}
                         style={{ display: 'none' }}
+                        disabled={loading}
                       />
-                      <label htmlFor="avatar-upload" className="upload-btn">
-                        Change Photo
+                      <label htmlFor="avatar-upload" className={`upload-btn ${loading ? 'disabled' : ''}`}>
+                        {loading ? 'Processing...' : 'Change Photo'}
                       </label>
                     </div>
                   )}

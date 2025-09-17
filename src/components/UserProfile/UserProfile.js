@@ -6,7 +6,6 @@ import EditProfileModal from './EditProfileModal';
 import PrivacySettings from './PrivacySettings';
 import ProfileAnalytics from './ProfileAnalytics';
 import EnhancedMediaGallery from './EnhancedMediaGallery';
-import AvatarUpload from './AvatarUpload';
 import ContactModal from '../Contacts/ContactModal';
 import EncryptionSettings from '../Encryption/EncryptionSettings';
 
@@ -283,11 +282,13 @@ const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
     return (
       <div className="profile-info">
         <div className="profile-header">
-          <AvatarUpload 
-            currentAvatar={userProfile.avatar}
-            onAvatarChange={handleAvatarChange}
-            isOwnProfile={isOwnProfile}
-          />
+          <div className="profile-avatar-container">
+            <img 
+              src={userProfile.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userProfile.name || 'User') + '&background=667eea&color=fff&size=200'}
+              alt="Profile Avatar"
+              className="profile-avatar"
+            />
+          </div>
           <div className="profile-details">
             <h2>{userProfile.displayName || userProfile.name}</h2>
             <p className="username">@{userProfile.username}</p>
