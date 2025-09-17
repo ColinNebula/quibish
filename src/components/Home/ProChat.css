@@ -1,9 +1,6 @@
 /* Import enhanced sidebar styles */
 @import './EnhancedSidebar.css';
 
-/* iPhone Pro Max Responsive Imports */
-@import '../../styles/iphone-pro-max-responsive.css';
-
 /* ProChat.css */
 :root {
   --pro-bg: #ffffff;
