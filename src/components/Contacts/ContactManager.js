@@ -65,7 +65,7 @@ const ContactManager = ({ isOpen, onClose }) => {
   const loadContacts = async () => {
     setIsLoading(true);
     try {
-      const loadedContacts = await contactService.getAllContacts();
+      const loadedContacts = await contactService.getContacts();
       setContacts(loadedContacts);
     } catch (error) {
       console.error('Error loading contacts:', error);
@@ -82,10 +82,14 @@ const ContactManager = ({ isOpen, onClose }) => {
     }
 
     try {
-      const addedContact = await contactService.addContact(newContact);
-      setContacts(prev => [...prev, addedContact]);
-      setNewContact({ name: '', email: '', phone: '', company: '', notes: '' });
-      setShowAddForm(false);
+      const result = await contactService.addContact(newContact);
+      if (result.success) {
+        setContacts(prev => [...prev, result.contact]);
+        setNewContact({ name: '', email: '', phone: '', company: '', notes: '' });
+        setShowAddForm(false);
+      } else {
+        alert(`Failed to add contact: ${result.errors ? result.errors.join(', ') : result.error}`);
+      }
     } catch (error) {
       console.error('Error adding contact:', error);
       alert('Failed to add contact');
@@ -100,9 +104,13 @@ const ContactManager = ({ isOpen, onClose }) => {
     }
 
     try {
-      const updatedContact = await contactService.updateContact(editingContact.id, editingContact);
-      setContacts(prev => prev.map(c => c.id === updatedContact.id ? updatedContact : c));
-      setEditingContact(null);
+      const result = await contactService.updateContact(editingContact.id, editingContact);
+      if (result.success) {
+        setContacts(prev => prev.map(c => c.id === result.contact.id ? result.contact : c));
+        setEditingContact(null);
+      } else {
+        alert(`Failed to update contact: ${result.errors ? result.errors.join(', ') : result.error}`);
+      }
     } catch (error) {
       console.error('Error updating contact:', error);
       alert('Failed to update contact');
@@ -116,9 +124,13 @@ const ContactManager = ({ isOpen, onClose }) => {
     }
 
     try {
-      await contactService.deleteContact(contactId);
-      setContacts(prev => prev.filter(c => c.id !== contactId));
-      setSelectedContacts(prev => prev.filter(id => id !== contactId));
+      const result = await contactService.deleteContact(contactId);
+      if (result.success) {
+        setContacts(prev => prev.filter(c => c.id !== contactId));
+        setSelectedContacts(prev => prev.filter(id => id !== contactId));
+      } else {
+        alert(`Failed to delete contact: ${result.error}`);
+      }
     } catch (error) {
       console.error('Error deleting contact:', error);
       alert('Failed to delete contact');
@@ -154,9 +166,17 @@ const ContactManager = ({ isOpen, onClose }) => {
     }
 
     try {
-      await Promise.all(selectedContacts.map(id => contactService.deleteContact(id)));
-      setContacts(prev => prev.filter(c => !selectedContacts.includes(c.id)));
-      setSelectedContacts([]);
+      const results = await Promise.all(selectedContacts.map(id => contactService.deleteContact(id)));
+      const successfulDeletes = results.filter(r => r.success);
+      
+      if (successfulDeletes.length > 0) {
+        setContacts(prev => prev.filter(c => !selectedContacts.includes(c.id)));
+        setSelectedContacts([]);
+      }
+      
+      if (successfulDeletes.length < selectedContacts.length) {
+        alert('Some contacts could not be deleted');
+      }
     } catch (error) {
       console.error('Error deleting contacts:', error);
       alert('Failed to delete some contacts');
@@ -166,7 +186,10 @@ const ContactManager = ({ isOpen, onClose }) => {
   // Export contacts
   const handleExportContacts = async () => {
     try {
-      await contactService.exportContacts(contacts);
+      const result = contactService.exportContacts('json');
+      if (!result.success) {
+        alert(`Failed to export contacts: ${result.error}`);
+      }
     } catch (error) {
       console.error('Error exporting contacts:', error);
       alert('Failed to export contacts');
@@ -179,9 +202,39 @@ const ContactManager = ({ isOpen, onClose }) => {
     if (!file) return;
 
     try {
-      const importedContacts = await contactService.importContacts(file);
-      setContacts(prev => [...prev, ...importedContacts]);
-      alert(`Successfully imported ${importedContacts.length} contacts`);
+      const text = await file.text();
+      let importData;
+      
+      if (file.name.endsWith('.json')) {
+        importData = JSON.parse(text);
+      } else if (file.name.endsWith('.csv')) {
+        // Simple CSV parsing - you might want to use a proper CSV parser
+        const lines = text.split('\n');
+        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        importData = lines.slice(1).map(line => {
+          const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+          return {
+            name: values[0] || 'Unknown',
+            email: values[1] || '',
+            phone: values[2] || '',
+            company: values[3] || ''
+          };
+        }).filter(contact => contact.name && contact.name !== 'Unknown');
+      }
+
+      if (Array.isArray(importData)) {
+        const results = await Promise.all(importData.map(contact => contactService.addContact(contact)));
+        const successful = results.filter(r => r.success);
+        
+        if (successful.length > 0) {
+          setContacts(prev => [...prev, ...successful.map(r => r.contact)]);
+          alert(`Successfully imported ${successful.length} contacts`);
+        } else {
+          alert('No contacts were imported');
+        }
+      } else {
+        alert('Invalid file format');
+      }
     } catch (error) {
       console.error('Error importing contacts:', error);
       alert('Failed to import contacts');

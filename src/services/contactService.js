@@ -25,13 +25,19 @@ class ContactService {
     
     try {
       // Try to fetch from API first
-      const response = await fetch(`/api/contacts?limit=${limit}&offset=${offset}`);
+      const response = await fetch(`/api/contacts?limit=${limit}&offset=${offset}${search ? `&search=${encodeURIComponent(search)}` : ''}${group ? `&group=${encodeURIComponent(group)}` : ''}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
       if (response.ok) {
-        const apiContacts = await response.json();
-        this.contacts = apiContacts;
-        this.saveContactsToStorage();
-        return this.filterContacts(apiContacts, { search, group });
+        const apiData = await response.json();
+        if (apiData.success) {
+          this.contacts = apiData.contacts;
+          this.saveContactsToStorage();
+          return this.contacts;
+        }
       }
     } catch (error) {
       console.warn('API unavailable, using local contacts:', error);
@@ -87,19 +93,28 @@ class ContactService {
         const response = await fetch('/api/contacts', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           body: JSON.stringify(contact)
         });
 
         if (response.ok) {
-          const savedContact = await response.json();
-          this.contacts.push(savedContact);
-          this.saveContactsToStorage();
-          
+          const apiData = await response.json();
+          if (apiData.success) {
+            this.contacts.push(apiData.contact);
+            this.saveContactsToStorage();
+            
+            return {
+              success: true,
+              contact: apiData.contact
+            };
+          }
+        } else {
+          const errorData = await response.json();
           return {
-            success: true,
-            contact: savedContact
+            success: false,
+            errors: errorData.errors || [errorData.error || 'Unknown error']
           };
         }
       } catch (apiError) {
@@ -153,19 +168,28 @@ class ContactService {
         const response = await fetch(`/api/contacts/${contactId}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           body: JSON.stringify(updatedContact)
         });
 
         if (response.ok) {
-          const savedContact = await response.json();
-          this.contacts[contactIndex] = savedContact;
-          this.saveContactsToStorage();
-          
+          const apiData = await response.json();
+          if (apiData.success) {
+            this.contacts[contactIndex] = apiData.contact;
+            this.saveContactsToStorage();
+            
+            return {
+              success: true,
+              contact: apiData.contact
+            };
+          }
+        } else {
+          const errorData = await response.json();
           return {
-            success: true,
-            contact: savedContact
+            success: false,
+            errors: errorData.errors || [errorData.error || 'Unknown error']
           };
         }
       } catch (apiError) {
@@ -202,14 +226,26 @@ class ContactService {
       // Try to delete via API
       try {
         const response = await fetch(`/api/contacts/${contactId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
         });
 
         if (response.ok) {
-          this.contacts.splice(contactIndex, 1);
-          this.saveContactsToStorage();
-          
-          return { success: true };
+          const apiData = await response.json();
+          if (apiData.success) {
+            this.contacts.splice(contactIndex, 1);
+            this.saveContactsToStorage();
+            
+            return { success: true };
+          }
+        } else {
+          const errorData = await response.json();
+          return {
+            success: false,
+            error: errorData.error || 'Unknown error'
+          };
         }
       } catch (apiError) {
         console.warn('API unavailable, deleting locally:', apiError);
@@ -266,8 +302,8 @@ class ContactService {
 
   // Validate phone format
   isValidPhone(phone) {
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+    const phoneRegex = /^[+]?[1-9][\d]{0,15}$/;
+    return phoneRegex.test(phone.replace(/[\s\-()]/g, ''));
   }
 
   // Create contact group
