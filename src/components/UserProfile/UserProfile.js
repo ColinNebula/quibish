@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import './UserProfile.css';
-import userDataService from '../../services/userDataService';
 import EditProfileModal from './EditProfileModal';
-import PrivacySettings from './PrivacySettings';
-import ProfileAnalytics from './ProfileAnalytics';
-import EnhancedMediaGallery from './EnhancedMediaGallery';
 import ContactModal from '../Contacts/ContactModal';
-import EncryptionSettings from '../Encryption/EncryptionSettings';
 
 const UserProfile = ({ userId, username, onClose, isVisible, isClosing }) => {
   const { updateUser, refreshUser } = useAuth();

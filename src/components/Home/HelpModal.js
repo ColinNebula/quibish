@@ -63,8 +63,8 @@ const HelpModal = ({ isOpen, onClose }) => {
           answer: 'Yes, use the mute button during any call to toggle your microphone on/off. Other participants will see a mute indicator.'
         },
         {
-          question: 'What are global voice calls?',
-          answer: 'Global voice calls allow you to connect with users worldwide. This feature requires special permissions and may have usage limits.'
+          question: 'How do voice calls work?',
+          answer: 'All voice and video calls use secure internet-based connections through WebRTC technology for the best quality and privacy.'
         }
       ]
     },

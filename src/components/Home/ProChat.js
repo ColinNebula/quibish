@@ -15,8 +15,6 @@ import DonationPrompt from '../Donation/DonationPrompt';
 import messageService from '../../services/messageService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
-import globalVoiceCallService from '../../services/globalVoiceCallService';
-import GlobalUsers from './GlobalUsers';
 import connectionService from '../../services/connectionService';
 import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
 import { feedbackService } from '../../services/feedbackService';
@@ -56,7 +54,7 @@ const ProChat = ({
   const [avatarError, setAvatarError] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [mobileGlobalVoiceModal, setMobileGlobalVoiceModal] = useState(false);
+  // Mobile global voice modal removed - using internet-based calling only
   const [lightboxModal, setLightboxModal] = useState({ 
     open: false, 
     imageUrl: null, 
@@ -229,17 +227,13 @@ const ProChat = ({
       // Only auto-collapse on very small screens (like phone portrait)
       if (window.innerWidth <= 480) {
         setSidebarCollapsed(true);
-        // Close mobile global voice modal if screen gets smaller
-        setMobileGlobalVoiceModal(false);
+        // Mobile global voice modal removed
       } else if (window.innerWidth > 768) {
-        // Auto-expand on larger screens and close mobile modal
+        // Auto-expand on larger screens
         setSidebarCollapsed(false);
-        setMobileGlobalVoiceModal(false);
       }
-      // For tablets (481-768px), maintain current state but close mobile modal
-      if (window.innerWidth > 480) {
-        setMobileGlobalVoiceModal(false);
-      }
+      // For tablets (481-768px), maintain current state
+      // Mobile global voice modal removed
     };
 
     // Set initial state
@@ -308,12 +302,11 @@ const ProChat = ({
     setTouchEnd(null);
   }, [touchStart, touchEnd, sidebarCollapsed]);
 
+  // Mobile global voice removed - using internet-based calling only
   const handleMobileGlobalVoice = useCallback(() => {
-    setMobileGlobalVoiceModal(!mobileGlobalVoiceModal);
-    if (window.innerWidth <= 480) {
-      setSidebarCollapsed(true);
-    }
-  }, [mobileGlobalVoiceModal]);
+    // Global voice functionality removed
+    console.log('Global voice calls have been removed - use internet-based calling');
+  }, []);
 
   // Close sidebar when clicking outside on mobile
   const handleOverlayClick = useCallback(() => {
@@ -670,58 +663,7 @@ const ProChat = ({
     setAvatarError(true);
   }, []);
 
-  // Global call state - must be declared before callbacks that use it
-  const [globalCall, setGlobalCall] = useState(null);
-
-  // Handle global voice call start
-  const handleStartGlobalCall = useCallback((call) => {
-    setGlobalCall(call);
-    setVoiceCallState({
-      active: true,
-      withUser: {
-        name: call.targetUser.name,
-        avatar: call.targetUser.avatar,
-        id: call.targetUser.id
-      },
-      minimized: false,
-      audioOnly: true,
-      callInstance: call
-    });
-
-    // Add global call message to chat
-    const callMessage = {
-      id: call.id,
-      text: `🌍 Global voice call ${call.type === 'outgoing' ? 'to' : 'from'} ${call.targetUser.name}`,
-      user: 'System',
-      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-      type: 'global_voice_call',
-      callStatus: call.status,
-      isSystemMessage: true
-    };
-
-    setChatMessages(prev => [...prev, callMessage]);
-  }, []);
-
-  // Handle ending global voice call
-  const handleEndGlobalCall = useCallback(() => {
-    if (globalCall) {
-      globalVoiceCallService.endCall();
-      setGlobalCall(null);
-      setVoiceCallState(prev => ({ ...prev, active: false }));
-
-      // Add call ended message
-      const endMessage = {
-        id: `end_${Date.now()}`,
-        text: `📞 Global call ended`,
-        user: 'System',
-        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-        type: 'system',
-        isSystemMessage: true
-      };
-
-      setChatMessages(prev => [...prev, endMessage]);
-    }
-  }, [globalCall]);
+  // Global call functionality removed - using internet-based calling only
 
   // Handle more menu toggle
   const handleMoreMenuToggle = useCallback(() => {
@@ -1895,10 +1837,9 @@ const ProChat = ({
 
           {/* Global Voice Calls */}
           {!sidebarCollapsed && (
-            <GlobalUsers 
-              onStartCall={handleStartGlobalCall}
-              currentCall={globalCall}
-            />
+            <div className="placeholder-content">
+              {/* Global users removed - all calls now use internet-based connections */}
+            </div>
           )}
         </div>
 
@@ -3010,32 +2951,7 @@ const ProChat = ({
         />
       )}
 
-      {/* Mobile Global Voice Calls Modal */}
-      {mobileGlobalVoiceModal && (
-        <div className="mobile-global-voice-modal-overlay" onClick={() => setMobileGlobalVoiceModal(false)}>
-          <div className="mobile-global-voice-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="mobile-modal-header">
-              <h3>🌍 Global Voice Calls</h3>
-              <button 
-                className="mobile-modal-close" 
-                onClick={() => setMobileGlobalVoiceModal(false)}
-                title="Close"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="mobile-modal-content">
-              <GlobalUsers 
-                onStartCall={(call) => {
-                  handleStartGlobalCall(call);
-                  setMobileGlobalVoiceModal(false);
-                }}
-                currentCall={globalCall}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mobile Global Voice Calls Modal - Removed - Using internet-based calling only */}
 
       {/* Call Options Modal */}
       {showCallOptions && (
@@ -3087,7 +3003,7 @@ const ProChat = ({
           onClose={() => setShowDonationModal(false)}
           darkMode={darkMode}
           userStats={{
-            callsMade: globalCall ? 1 : 0,
+            callsMade: 0, // Internet-based calls only
             messagesSent: currentConversation?.messages?.length || 0,
             daysUsed: 1
           }}
@@ -3097,7 +3013,7 @@ const ProChat = ({
       {/* Donation Prompt - Non-intrusive encouragement */}
       <DonationPrompt
         userStats={{
-          callsMade: globalCall ? 1 : 0,
+          callsMade: 0, // Internet-based calls only
           messagesSent: currentConversation?.messages?.length || 0,
           daysUsed: 1
         }}
