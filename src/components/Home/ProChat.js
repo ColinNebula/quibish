@@ -514,8 +514,9 @@ const ProChat = ({
   }, []);
 
   const handleCreateGroup = useCallback(() => {
-    // TODO: Implement create group functionality
-    console.log('Create group clicked');
+    // Open new chat modal in group mode
+    setNewChatModal(true);
+    console.log('Create group clicked - opening new chat modal');
   }, []);
 
   const handleCreateChat = useCallback(async (conversation) => {
@@ -1560,36 +1561,71 @@ const ProChat = ({
 
   // Enhanced voice call handlers
   const handleStartVoiceCall = useCallback(async () => {
-    const currentUser = currentSelectedConversation || currentConversation;
-    if (!currentUser) return;
-
+    let currentUser = currentSelectedConversation || currentConversation;
+    
+    // If no current user, create a demo user for testing
+    if (!currentUser && conversations.length > 0) {
+      currentUser = conversations[0];
+      console.log('� Using first conversation as fallback:', currentUser);
+    }
+    
+    // Last resort: create a demo user
+    if (!currentUser) {
+      currentUser = {
+        id: 'demo-user',
+        name: 'Demo User',
+        username: 'demo',
+        avatar: null,
+        phone: '+1-555-0123'
+      };
+      console.log('📞 Using demo user for voice call test');
+    }
+    
+    console.log('�🔍 Voice call debug - currentUser:', currentUser);
+    console.log('🔍 Voice call debug - currentSelectedConversation:', currentSelectedConversation);
+    console.log('🔍 Voice call debug - currentConversation:', currentConversation);
+    console.log('🔍 Voice call debug - conversations:', conversations);
+    
     try {
+      console.log('📞 Starting voice call with user:', currentUser.name || currentUser.username);
+      
       // Get available call methods
       const methods = await enhancedVoiceCallService.getAvailableCallMethods(currentUser);
+      console.log('📞 Available call methods:', methods);
       setAvailableCallMethods(methods);
       
       // If multiple methods available, show selector
       if (methods.length > 1) {
+        console.log('📞 Multiple methods available, showing selector');
         setShowCallMethodSelector(true);
         return;
       }
       
       // Start call with best method
+      console.log('📞 Starting enhanced voice call with auto method');
       await startEnhancedVoiceCall(currentUser, 'auto');
     } catch (error) {
-      console.error('Failed to start voice call:', error);
+      console.error('❌ Failed to start voice call:', error);
+      alert(`Failed to start voice call: ${error.message}`);
     }
-  }, [currentSelectedConversation, currentConversation]);
+  }, [currentSelectedConversation, currentConversation, conversations]);
 
   const startEnhancedVoiceCall = useCallback(async (targetUser, method = 'auto') => {
     try {
+      console.log('🚀 Starting enhanced voice call - targetUser:', targetUser, 'method:', method);
+      
       const callInstance = await enhancedVoiceCallService.initiateEnhancedCall(targetUser, method);
+      console.log('📞 Call instance result:', callInstance);
+      
+      if (!callInstance.success) {
+        throw new Error(callInstance.error || 'Failed to initiate call');
+      }
       
       // Update voice call state
       setVoiceCallState({
         active: true,
         withUser: {
-          name: targetUser.name,
+          name: targetUser.name || targetUser.username,
           avatar: targetUser.avatar,
           phone: targetUser.phone
         },
@@ -1601,7 +1637,7 @@ const ProChat = ({
       // Add enhanced voice call message to chat
       const voiceCallMessage = {
         id: callInstance.callId,
-        text: `📞 ${callInstance.method.description} with ${targetUser.name}`,
+        text: `📞 ${callInstance.method.description} with ${targetUser.name || targetUser.username}`,
         user: 'You',
         timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         type: 'voice_call_enhanced',
@@ -1611,10 +1647,14 @@ const ProChat = ({
         isSystemMessage: true
       };
 
+      console.log('📞 Adding voice call message to chat:', voiceCallMessage);
       setChatMessages(prev => [...prev, voiceCallMessage]);
       setShowCallMethodSelector(false);
+      
+      alert('📞 Voice call initiated successfully!\n\nNote: This is a demo implementation. In a real app, you would hear audio and see call controls.');
     } catch (error) {
-      console.error('Failed to start enhanced voice call:', error);
+      console.error('❌ Failed to start enhanced voice call:', error);
+      alert(`Failed to start voice call: ${error.message}`);
     }
   }, []);
 
@@ -1632,7 +1672,34 @@ const ProChat = ({
     setShowInternationalDialer(true);
   }, []);
 
+  // Handle international call initiation
+  const handleInternationalCallInitiated = useCallback((callData) => {
+    console.log('📞 International call initiated:', callData);
+    
+    // Add call message to chat
+    const callMessage = {
+      id: `call_${Date.now()}`,
+      text: `📞 Calling ${callData.number} (${callData.country.name})`,
+      user: 'You',
+      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      type: 'international_call',
+      callData: callData,
+      isSystemMessage: true
+    };
+
+    setChatMessages(prev => [...prev, callMessage]);
+
+    // Show success notification
+    alert(`📞 Calling ${callData.number}\n\nNote: This is a demo implementation. In a real app, this would connect to a VoIP service provider like Twilio, WebRTC, or similar service to handle the actual phone call.`);
+    
+    // Close the dialer
+    setShowInternationalDialer(false);
+  }, []);
+
   const handleAppCall = useCallback(async () => {
+    console.log('🎯 handleAppCall called');
+    alert('App call clicked! Check console for debug info.');
+    
     setShowCallOptions(false);
     await handleStartVoiceCall();
   }, [handleStartVoiceCall]);
@@ -1640,6 +1707,55 @@ const ProChat = ({
   const handleToggleVoiceMinimize = useCallback(() => {
     setVoiceCallState(prev => ({ ...prev, minimized: !prev.minimized }));
   }, []);
+
+  // Handle video call
+  const handleVideoCall = useCallback(async () => {
+    const currentUser = currentSelectedConversation || currentConversation;
+    if (!currentUser) {
+      alert('Please select a conversation to start a video call');
+      return;
+    }
+
+    try {
+      // Start video call using enhanced voice call service
+      const callInstance = await enhancedVoiceCallService.initiateEnhancedCall(currentUser, 'video');
+      
+      if (callInstance.success) {
+        // Update video call state
+        setVideoCallState({
+          active: true,
+          withUser: {
+            name: currentUser.name,
+            avatar: currentUser.avatar,
+            phone: currentUser.phone
+          },
+          minimized: false,
+          audioOnly: false,
+          callInstance
+        });
+
+        // Add video call message to chat
+        const videoCallMessage = {
+          id: callInstance.callId,
+          text: `📹 Video call with ${currentUser.name}`,
+          user: 'You',
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          type: 'video_call',
+          callStatus: 'connecting',
+          isSystemMessage: true
+        };
+
+        setChatMessages(prev => [...prev, videoCallMessage]);
+        
+        alert('📹 Video call initiated!\n\nNote: This is a demo implementation. In a real app, you would see the video call interface.');
+      } else {
+        throw new Error(callInstance.error);
+      }
+    } catch (error) {
+      console.error('Failed to start video call:', error);
+      alert('Failed to start video call. Please check your camera and microphone permissions.');
+    }
+  }, [currentSelectedConversation, currentConversation]);
 
   // Video call component - Temporarily disabled
   const MemoizedVideoCall = useMemo(() => (
@@ -2066,6 +2182,20 @@ const ProChat = ({
           
           <div className="header-actions">
             <button 
+              className="action-btn invite-user-btn" 
+              title="👥 Invite Users - Search and invite people to chat"
+              onClick={handleUserSearchClick}
+            >
+              👥
+            </button>
+            <button 
+              className="action-btn new-chat-btn" 
+              title="➕ New Chat - Start a new conversation"
+              onClick={handleNewChat}
+            >
+              ➕
+            </button>
+            <button 
               className="action-btn unified-call-btn" 
               title="📞 Make Calls - International phone calls & app-to-app voice calls"
               onClick={handleUnifiedCall}
@@ -2087,7 +2217,11 @@ const ProChat = ({
             >
               💝
             </button>
-            <button className="action-btn video-call-btn" title="Start video call">
+            <button 
+              className="action-btn video-call-btn" 
+              title="Start video call"
+              onClick={handleVideoCall}
+            >
               📹
             </button>
             <button className="action-btn info-btn" title="Chat info">
@@ -3117,6 +3251,7 @@ const ProChat = ({
         <InternationalDialer
           isOpen={showInternationalDialer}
           onClose={() => setShowInternationalDialer(false)}
+          onCall={handleInternationalCallInitiated}
           darkMode={darkMode}
         />
       )}
