@@ -2509,9 +2509,9 @@
   }
   
   .input-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
     flex-shrink: 0;
   }
   .send-button.enhanced {
@@ -2574,12 +2574,12 @@
   }
   
   .input-btn {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 12px !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
     flex-shrink: 0 !important;
-    border-radius: 8px !important;
-    min-width: 28px !important;
+    border-radius: 12px !important;
+    min-width: 44px !important;
     padding: 0 !important;
     margin: 0 !important;
   }
@@ -2601,6 +2601,18 @@
     width: auto !important;
     margin: 0 !important;
     border-radius: 12px !important;
+  }
+
+  /* Enhanced mobile action button styling */
+  .mobile-action-button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .input-actions-row {
+    gap: 12px !important;
   }
 }
 /* Message Attachments Styling */
