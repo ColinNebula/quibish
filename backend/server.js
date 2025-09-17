@@ -12,6 +12,7 @@ const { MemoryMonitor, memoryMonitor } = require('./config/memory');
 const startupService = require('./services/startupService');
 const healthCheck = require('./middleware/healthCheck');
 const securityMiddleware = require('./middleware/security');
+const { httpsEnforcementMiddleware, securityHeadersMiddleware } = require('./middleware/httpsEnforcement');
 const { router: signalingRouter, signalingServer } = require('./routes/signaling');
 require('dotenv').config();
 
@@ -298,6 +299,10 @@ const connectToDatabase = async () => {
       return mongoSuccess;
   }
 };
+
+// HTTPS Enforcement and Security Headers (should be first)
+app.use(httpsEnforcementMiddleware);
+app.use(securityHeadersMiddleware);
 
 // Enhanced security middleware
 securityMiddleware(app);

@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { authenticateToken } = require('../middleware/auth');
+const { sanitizeInput, validateFileUpload } = require('../middleware/validation');
 const router = express.Router();
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
@@ -41,7 +42,7 @@ const avatarUpload = multer({
 });
 
 // POST /api/users/avatar - upload user avatar
-router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), async (req, res) => {
+router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), validateFileUpload, async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -583,12 +584,49 @@ router.get('/search', authenticateToken, async (req, res) => {
     const searchQuery = query.toLowerCase().trim();
     const limitNum = parseInt(limit);
     
+    // Handle in-memory storage
+    if (global.inMemoryStorage && global.inMemoryStorage.usingInMemory) {
+      const filteredUsers = global.inMemoryStorage.users
+        .filter(user => 
+          user.id !== req.user.id && // Exclude current user
+          (
+            user.name?.toLowerCase().includes(searchQuery) ||
+            user.username?.toLowerCase().includes(searchQuery) ||
+            user.email?.toLowerCase().includes(searchQuery)
+          )
+        )
+        .slice(0, limitNum)
+        .map(user => ({
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          displayName: user.displayName,
+          avatar: user.avatar,
+          status: user.status,
+          bio: user.bio,
+          location: user.location,
+          company: user.company
+        }));
+
+      return res.json({
+        success: true,
+        users: filteredUsers,
+        query: query,
+        count: filteredUsers.length
+      });
+    }
+    
     // Search by name, username, or email using MongoDB query
     const filteredUsers = await User.find({
-      $or: [
-        { name: { $regex: searchQuery, $options: 'i' } },
-        { username: { $regex: searchQuery, $options: 'i' } },
-        { email: { $regex: searchQuery, $options: 'i' } }
+      $and: [
+        { id: { $ne: req.user.id } }, // Exclude current user
+        {
+          $or: [
+            { name: { $regex: searchQuery, $options: 'i' } },
+            { username: { $regex: searchQuery, $options: 'i' } },
+            { email: { $regex: searchQuery, $options: 'i' } }
+          ]
+        }
       ]
     }).limit(limitNum);
     

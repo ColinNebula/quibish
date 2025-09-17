@@ -1,5 +1,6 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
+const { sanitizeInput, validateContactInput } = require('../middleware/validation');
 const router = express.Router();
 
 // In-memory storage for contacts (since we're using fallback mode)
@@ -92,7 +93,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // POST /api/contacts - create new contact
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, sanitizeInput, validateContactInput, async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -181,7 +182,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/contacts/:id - update contact
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, sanitizeInput, validateContactInput, async (req, res) => {
   try {
     const userId = req.user.id;
     const contactId = req.params.id;

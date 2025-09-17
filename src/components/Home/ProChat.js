@@ -9,6 +9,7 @@ import HelpModal from './HelpModal';
 import NativeCamera from '../Camera/NativeCamera';
 import NativeContactPicker from '../Contacts/NativeContactPicker';
 import ContactManager from '../Contacts/ContactManager';
+import UserSearchModal from '../Search/UserSearchModal';
 import InternationalDialer from '../Dialer/InternationalDialer';
 import DonationModal from '../Donation/DonationModal';
 import DonationPrompt from '../Donation/DonationPrompt';
@@ -19,6 +20,7 @@ import connectionService from '../../services/connectionService';
 import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
 import { feedbackService } from '../../services/feedbackService';
 import { contactService } from '../../services/contactService';
+import { conversationService } from '../../services/conversationService';
 
 // All service implementations are now properly imported above
 
@@ -36,7 +38,7 @@ import './EncryptionStyles.css';
 
 const ProChat = ({ 
   user = { id: 'user1', name: 'Current User', avatar: null },
-  conversations = [],
+  conversations: initialConversations = [],
   currentConversation = null,
   onLogout = () => {},
   darkMode = false,
@@ -45,8 +47,26 @@ const ProChat = ({
   // Basic state
   const [isConnected] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // Conversation management
+  const [conversations, setConversations] = useState(() => {
+    // Initialize conversations from service or use provided ones
+    const serviceConversations = conversationService.getAllConversations();
+    if (serviceConversations.length > 0) {
+      return serviceConversations;
+    } else if (initialConversations.length > 0) {
+      return initialConversations;
+    } else {
+      // Initialize with default conversations for new users
+      conversationService.initializeDefaultConversations();
+      return conversationService.getAllConversations();
+    }
+  });
+  
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchMode, setSearchMode] = useState('conversations'); // 'conversations' or 'users'
+  const [showUserSearch, setShowUserSearch] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   
   // Enhanced input state
@@ -397,6 +417,93 @@ const ProChat = ({
       setSearchQuery('');
     }
   }, []);
+
+  // Handle search mode toggle
+  const handleToggleSearchMode = useCallback(() => {
+    const newMode = searchMode === 'conversations' ? 'users' : 'conversations';
+    setSearchMode(newMode);
+    setSearchQuery(''); // Clear search when switching modes
+    
+    if (newMode === 'users') {
+      setShowUserSearch(true);
+    }
+  }, [searchMode]);
+
+  // Handle user search
+  const handleUserSearchClick = useCallback(() => {
+    setSearchMode('users');
+    setShowUserSearch(true);
+  }, []);
+
+  // Handle user selection from search
+  const handleUserSelect = useCallback(async (selectedUser) => {
+    console.log('User selected for chat:', selectedUser);
+    
+    try {
+      // Create or find existing conversation with the selected user
+      const result = conversationService.createConversationWithUser(selectedUser, user.id);
+      
+      if (result.success) {
+        // Update conversations state
+        const updatedConversations = conversationService.getAllConversations();
+        setConversations(updatedConversations);
+        
+        // Select the conversation (new or existing)
+        setSelectedConversation(result.conversation.id);
+        
+        // Close the user search modal
+        setShowUserSearch(false);
+        
+        // Show feedback to user
+        if (result.isNew) {
+          console.log(`✅ Started new chat with ${selectedUser.name || selectedUser.username}`);
+          // You could show a toast notification here
+        } else {
+          console.log(`✅ Opened existing chat with ${selectedUser.name || selectedUser.username}`);
+        }
+        
+        // Scroll to top of conversation
+        setTimeout(() => {
+          const conversationContainer = document.querySelector('.pro-chat-container');
+          if (conversationContainer) {
+            conversationContainer.scrollTop = 0;
+          }
+        }, 100);
+        
+        return Promise.resolve(result);
+        
+      } else {
+        console.error('Failed to create conversation:', result.error);
+        return Promise.reject(new Error('Failed to start chat. Please try again.'));
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      return Promise.reject(error);
+    }
+  }, [user.id]);
+
+  // Sync with conversation service updates
+  useEffect(() => {
+    const handleConversationUpdate = (updatedConversations) => {
+      setConversations(updatedConversations);
+    };
+
+    // Subscribe to conversation service updates
+    conversationService.subscribe(handleConversationUpdate);
+
+    return () => {
+      // Cleanup subscription on unmount
+      conversationService.subscribe(null);
+    };
+  }, []);
+
+  // Update conversation service when conversations change
+  useEffect(() => {
+    if (conversations.length > 0) {
+      conversationService.conversations = conversations;
+      conversationService.saveConversationsToStorage();
+    }
+  }, [conversations]);
 
   const handleFilterChange = useCallback((filter) => {
     setActiveFilter(filter);
@@ -1756,11 +1863,29 @@ const ProChat = ({
               <span className="search-icon">🔍</span>
               <input 
                 type="text" 
-                placeholder="Search conversations..."
+                placeholder={searchMode === 'conversations' ? "Search conversations..." : "Click to search users..."}
                 className="search-input"
-                value={searchQuery}
-                onChange={handleSearchChange}
+                value={searchMode === 'conversations' ? searchQuery : ''}
+                onChange={searchMode === 'conversations' ? handleSearchChange : undefined}
+                onClick={searchMode === 'users' ? handleUserSearchClick : undefined}
+                readOnly={searchMode === 'users'}
               />
+              <div className="search-mode-toggle">
+                <button
+                  className={`search-mode-btn ${searchMode === 'conversations' ? 'active' : ''}`}
+                  onClick={() => setSearchMode('conversations')}
+                  title="Search conversations"
+                >
+                  💬
+                </button>
+                <button
+                  className={`search-mode-btn ${searchMode === 'users' ? 'active' : ''}`}
+                  onClick={handleUserSearchClick}
+                  title="Search users"
+                >
+                  👥
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -3022,6 +3147,17 @@ const ProChat = ({
         position="bottom-right"
         autoShow={true}
       />
+
+      {/* User Search Modal */}
+      {showUserSearch && (
+        <UserSearchModal
+          isOpen={showUserSearch}
+          onClose={() => setShowUserSearch(false)}
+          onUserSelect={handleUserSelect}
+          searchQuery={searchMode === 'users' ? searchQuery : ''}
+          onSearchQueryChange={setSearchQuery}
+        />
+      )}
     </div>
   );
 };

@@ -192,7 +192,7 @@
 
 .search-input {
   width: 100%;
-  padding: 12px 16px 12px 40px;
+  padding: 12px 50px 12px 40px;
   border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.8);
@@ -209,12 +209,53 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.search-input[readonly] {
+  cursor: pointer;
+  background: rgba(248, 250, 252, 0.8);
+}
+
 .search-icon {
   position: absolute;
   left: 12px;
   color: #a0aec0;
   font-size: 16px;
   pointer-events: none;
+}
+
+/* Search Mode Toggle */
+.search-mode-toggle {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.search-mode-btn {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+
+.search-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(102, 126, 234, 0.5);
+  transform: translateY(-1px);
+}
+
+.search-mode-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 /* Enhanced sidebar collapsed state adjustments */

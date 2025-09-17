@@ -1,4 +1,6 @@
 // Contact Service - Complete Implementation
+import { secureTokenManager } from './secureTokenManager';
+
 class ContactService {
   constructor() {
     this.contacts = [];
@@ -27,7 +29,7 @@ class ContactService {
       // Try to fetch from API first
       const response = await fetch(`/api/contacts?limit=${limit}&offset=${offset}${search ? `&search=${encodeURIComponent(search)}` : ''}${group ? `&group=${encodeURIComponent(group)}` : ''}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${await secureTokenManager.getTokenForRequest()}`
         }
       });
       
@@ -94,7 +96,7 @@ class ContactService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${await secureTokenManager.getTokenForRequest()}`
           },
           body: JSON.stringify(contact)
         });
@@ -169,7 +171,7 @@ class ContactService {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${await secureTokenManager.getTokenForRequest()}`
           },
           body: JSON.stringify(updatedContact)
         });
@@ -228,7 +230,7 @@ class ContactService {
         const response = await fetch(`/api/contacts/${contactId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${await secureTokenManager.getTokenForRequest()}`
           }
         });
 

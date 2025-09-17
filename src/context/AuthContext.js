@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { secureTokenManager } from '../services/secureTokenManager';
 import { logActivity, ACTIVITY_TYPES } from '../components/Home/UserActivityService';
 
 // Create the auth context
@@ -152,35 +153,43 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Handle login with remember me preference
-  const login = (userData, newToken, remember = false) => {
+  // Handle login with secure token storage
+  const login = async (userData, newToken, remember = false) => {
     setCurrentUser(userData);
     setToken(newToken);
     setRememberMe(remember);
     
-    // Clear existing data to prevent conflicts
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('authToken');
-    
-    // Store in appropriate storage based on remember preference
-    const storage = remember ? localStorage : sessionStorage;
-    storage.setItem('user', JSON.stringify(userData));
-    storage.setItem('authToken', newToken);
-    
-    console.log(`User session saved to ${remember ? 'localStorage (remembered)' : 'sessionStorage (temporary)'}`);
-    
-    // Log login activity
-    logActivity(ACTIVITY_TYPES.LOGIN, { 
-      userId: userData.id || 'anonymous',
-      method: 'manual',
-      remembered: remember
-    });
+    try {
+      // Store token securely using secure token manager
+      await secureTokenManager.setToken(newToken);
+      
+      // Clear any old insecure storage
+      await secureTokenManager.clearInsecureStorage();
+      
+      // Store user data (less sensitive than token)
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem('user', JSON.stringify(userData));
+      
+      console.log(`🔐 User session saved securely (${remember ? 'remembered' : 'temporary'})`);
+      
+      // Log login activity
+      logActivity(ACTIVITY_TYPES.LOGIN, { 
+        userId: userData.id || 'anonymous',
+        method: 'manual',
+        remembered: remember,
+        secure: true
+      });
+    } catch (error) {
+      console.error('Error storing token securely:', error);
+      // Fallback to old method if secure storage fails
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem('authToken', newToken);
+      storage.setItem('user', JSON.stringify(userData));
+    }
   };
 
-  // Handle logout (clear all storage)
-  const logout = () => {
+  // Handle logout (clear all storage securely)
+  const logout = async () => {
     if (currentUser) {
       logActivity(ACTIVITY_TYPES.LOGOUT, { 
         userId: currentUser.id || 'anonymous' 
@@ -190,13 +199,14 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setRememberMe(false);
     
-    // Clear both storage types
-    localStorage.removeItem('authToken');
+    // Clear secure token storage
+    await secureTokenManager.clearTokens();
+    
+    // Clear user data from both storage types
     localStorage.removeItem('user');
-    sessionStorage.removeItem('authToken');
     sessionStorage.removeItem('user');
     
-    console.log('User session cleared from all storage');
+    console.log('🔐 User session cleared securely from all storage');
   };
 
   // Refresh user data

@@ -1,11 +1,30 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const User = require('../models/User');
+const { sanitizeInput, validateAuthInput } = require('../middleware/validation');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+// Secure JWT secret generation
+const JWT_SECRET = (() => {
+  if (process.env.JWT_SECRET) {
+    // Validate minimum length for production
+    if (process.env.JWT_SECRET.length < 32) {
+      throw new Error('JWT_SECRET must be at least 32 characters long for security');
+    }
+    return process.env.JWT_SECRET;
+  } else if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  } else {
+    // Generate secure random secret for development
+    const devSecret = crypto.randomBytes(64).toString('hex');
+    console.warn('⚠️ Using auto-generated JWT secret. Set JWT_SECRET environment variable for production.');
+    console.warn(`💡 Suggested JWT_SECRET: ${devSecret}`);
+    return devSecret;
+  }
+})();
 
 // Helper function to seed initial users if none exist
 const seedInitialUsers = async () => {
@@ -71,18 +90,25 @@ const seedInitialUsers = async () => {
 // Seed initial users when MongoDB is available and we're not in fallback mode
 // This will be handled by connectToMongoDB instead
 
-// Helper function to generate JWT token
-const generateToken = (user) => {
-  return jwt.sign(
-    { 
-      id: user.id, 
-      username: user.username, 
-      email: user.email,
-      role: user.role 
-    },
-    JWT_SECRET,
-    { expiresIn: '24h' }
-  );
+// Helper function to generate secure JWT token
+const generateToken = (user, req) => {
+  const payload = {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    iat: Math.floor(Date.now() / 1000),
+    jti: uuidv4(), // Unique token identifier
+    ip: req.ip || req.connection.remoteAddress,
+    userAgent: req.get('User-Agent')
+  };
+  
+  return jwt.sign(payload, JWT_SECRET, { 
+    expiresIn: '24h',
+    algorithm: 'HS256',
+    issuer: 'quibish-app',
+    audience: 'quibish-users'
+  });
 };
 
 // Helper function to find user by username or email with fallback support
@@ -104,7 +130,7 @@ const findUser = async (identifier) => {
 };
 
 // POST /api/auth/login - matches what frontend expects
-router.post('/login', async (req, res) => {
+router.post('/login', sanitizeInput, validateAuthInput, async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -283,7 +309,7 @@ router.post('/complete-login', async (req, res) => {
 });
 
 // POST /api/auth/register - matches what frontend expects
-router.post('/register', async (req, res) => {
+router.post('/register', sanitizeInput, validateAuthInput, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 

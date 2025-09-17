@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const { sanitizeInput, validateMessageInput } = require('../middleware/validation');
 const router = express.Router();
 
 // Import file storage if enabled
@@ -144,7 +145,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // POST /api/messages - send a new message
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, sanitizeInput, validateMessageInput, async (req, res) => {
   try {
     const { text, type = 'text' } = req.body;
 
