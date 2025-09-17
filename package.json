@@ -12,6 +12,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "postinstall": "node scripts/patch-gh-pages.js",
     "start": "react-scripts start",
     "start:memory": "node memory-start.js --frontend",
     "build": "react-scripts build",
