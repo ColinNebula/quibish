@@ -563,7 +563,8 @@
         // Activate protection immediately
         QUIBISH_PROTECTION.initialize();
         
-        // Service Worker Registration
+        // Service Worker Registration - Temporarily disabled for debugging
+        /*
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js')
@@ -575,6 +576,7 @@
               });
           });
         }
+        */
         
       })();
     </script>
