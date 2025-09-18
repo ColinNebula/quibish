@@ -26,6 +26,30 @@ const CACHE_STRATEGIES = {
   STALE_WHILE_REVALIDATE: 'stale-while-revalidate'
 };
 
+// Push notification configuration
+const NOTIFICATION_CONFIG = {
+  icon: '/logo192.png',
+  badge: '/logo192.png',
+  vibrate: [100, 50, 100],
+  requireInteraction: true,
+  actions: [
+    {
+      action: 'open',
+      title: 'Open Chat',
+      icon: '/logo192.png'
+    },
+    {
+      action: 'reply',
+      title: 'Quick Reply',
+      icon: '/logo192.png'
+    },
+    {
+      action: 'dismiss',
+      title: 'Dismiss'
+    }
+  ]
+};
+
 // Install event - cache critical resources
 self.addEventListener('install', (event) => {
   console.log('🔧 Service Worker: Installing...');
@@ -253,24 +277,201 @@ self.addEventListener('push', (event) => {
   );
 });
 
+// Push notification handling
+self.addEventListener('push', (event) => {
+  console.log('📨 Service Worker: Push received', event);
+  
+  let notificationData = {
+    title: 'New Message',
+    body: 'You have a new message in Quibish',
+    ...NOTIFICATION_CONFIG
+  };
+
+  if (event.data) {
+    try {
+      const payload = event.data.json();
+      console.log('📨 Push payload:', payload);
+      
+      notificationData = {
+        title: payload.title || `New message from ${payload.sender}`,
+        body: payload.body || payload.message || 'You have a new message',
+        icon: payload.senderAvatar || NOTIFICATION_CONFIG.icon,
+        badge: NOTIFICATION_CONFIG.badge,
+        tag: payload.tag || `message-${payload.messageId}`,
+        data: {
+          messageId: payload.messageId,
+          conversationId: payload.conversationId,
+          senderId: payload.senderId,
+          timestamp: Date.now()
+        },
+        actions: NOTIFICATION_CONFIG.actions,
+        requireInteraction: true,
+        vibrate: NOTIFICATION_CONFIG.vibrate
+      };
+    } catch (error) {
+      console.error('Failed to parse push payload:', error);
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, notificationData)
+  );
+});
+
 // Notification click handling
 self.addEventListener('notificationclick', (event) => {
   console.log('📨 Service Worker: Notification clicked', event);
   
   event.notification.close();
 
-  if (event.action === 'reply') {
-    // Open reply interface
+  const notificationData = event.notification.data || {};
+  
+  event.waitUntil(
+    (async () => {
+      // Get all window clients
+      const clients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true
+      });
+
+      // Check if app is already open
+      const appClient = clients.find(client => 
+        client.url.includes(self.location.origin)
+      );
+
+      if (event.action === 'reply') {
+        // Handle quick reply
+        const replyUrl = `/quibish?action=reply&conversation=${notificationData.conversationId}&message=${notificationData.messageId}`;
+        
+        if (appClient) {
+          appClient.focus();
+          appClient.postMessage({
+            type: 'QUICK_REPLY',
+            conversationId: notificationData.conversationId,
+            messageId: notificationData.messageId
+          });
+        } else {
+          await self.clients.openWindow(replyUrl);
+        }
+      } else if (event.action === 'dismiss') {
+        // Just close the notification
+        return;
+      } else {
+        // Default action - open conversation
+        const chatUrl = notificationData.conversationId 
+          ? `/quibish?conversation=${notificationData.conversationId}`
+          : '/quibish';
+        
+        if (appClient) {
+          appClient.focus();
+          appClient.postMessage({
+            type: 'OPEN_CONVERSATION',
+            conversationId: notificationData.conversationId
+          });
+        } else {
+          await self.clients.openWindow(chatUrl);
+        }
+      }
+    })()
+  );
+});
+
+// Notification close handling
+self.addEventListener('notificationclose', (event) => {
+  console.log('📨 Service Worker: Notification closed', event);
+  
+  // Track notification dismissal
+  const notificationData = event.notification.data || {};
+  
+  // Send analytics or track user engagement
+  if (notificationData.messageId) {
+    fetch('/api/notifications/dismissed', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messageId: notificationData.messageId,
+        timestamp: Date.now()
+      })
+    }).catch(error => {
+      console.error('Failed to track notification dismissal:', error);
+    });
+  }
+});
+
+// Background sync for offline message notifications
+self.addEventListener('sync', (event) => {
+  console.log('🔄 Service Worker: Background sync', event.tag);
+  
+  if (event.tag === 'background-message-sync') {
     event.waitUntil(
-      clients.openWindow('/chat?action=reply&id=' + event.notification.data.messageId)
-    );
-  } else {
-    // Default action - open app
-    event.waitUntil(
-      clients.openWindow('/')
+      syncOfflineMessages()
     );
   }
 });
+
+// Sync offline messages and show notifications
+async function syncOfflineMessages() {
+  try {
+    // Fetch unread messages while user was offline
+    const response = await fetch('/api/messages/unread', {
+      headers: {
+        'Authorization': `Bearer ${getStoredToken()}`
+      }
+    });
+    
+    if (response.ok) {
+      const unreadMessages = await response.json();
+      
+      // Show notifications for unread messages
+      for (const message of unreadMessages) {
+        await self.registration.showNotification(
+          `New message from ${message.sender}`,
+          {
+            body: message.text || 'You have a new message',
+            icon: message.senderAvatar || NOTIFICATION_CONFIG.icon,
+            badge: NOTIFICATION_CONFIG.badge,
+            tag: `message-${message.id}`,
+            data: {
+              messageId: message.id,
+              conversationId: message.conversationId,
+              senderId: message.senderId
+            },
+            actions: NOTIFICATION_CONFIG.actions,
+            requireInteraction: true
+          }
+        );
+      }
+    }
+  } catch (error) {
+    console.error('Background sync failed:', error);
+  }
+}
+
+// Helper function to get stored auth token
+function getStoredToken() {
+  // This is a simplified approach - in production, you'd want more secure storage
+  return new Promise((resolve) => {
+    self.clients.matchAll().then(clients => {
+      if (clients.length > 0) {
+        clients[0].postMessage({ type: 'GET_AUTH_TOKEN' });
+        
+        // Listen for response
+        const messageListener = (event) => {
+          if (event.data && event.data.type === 'AUTH_TOKEN_RESPONSE') {
+            self.removeEventListener('message', messageListener);
+            resolve(event.data.token);
+          }
+        };
+        
+        self.addEventListener('message', messageListener);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+}
 
 // Message from main thread
 self.addEventListener('message', (event) => {
@@ -282,6 +483,14 @@ self.addEventListener('message', (event) => {
   
   if (event.data && event.data.type === 'GET_VERSION') {
     event.ports[0].postMessage({ version: CACHE_NAME });
+  }
+  
+  if (event.data && event.data.type === 'AUTH_TOKEN_REQUEST') {
+    // This would be handled by the main thread
+    event.ports[0].postMessage({ 
+      type: 'AUTH_TOKEN_RESPONSE', 
+      token: event.data.token 
+    });
   }
 });
 
