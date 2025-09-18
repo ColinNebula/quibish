@@ -2294,6 +2294,9 @@ const ProChat = ({
                 💝
               </button>
               <button onClick={onToggleDarkMode} className="action-btn theme-toggle" title="Toggle theme">
+                <button className="action-btn settings-btn" title="Theme Settings" onClick={handleQuickSettings}>
+                  ⚙️
+                </button>
                 {darkMode ? '☀️' : '🌙'}
               </button>
               <button onClick={onLogout} className="action-btn logout-btn" title="Logout / Disconnect">
