@@ -14,6 +14,7 @@ import InternationalDialer from '../Dialer/InternationalDialer';
 import DonationModal from '../Donation/DonationModal';
 import DonationPrompt from '../Donation/DonationPrompt';
 import NotificationSettings from '../NotificationSettings/NotificationSettings';
+import VoiceRecorder, { VoiceMessagePlayer } from '../VoiceRecorder';
 import messageService from '../../services/messageService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
@@ -75,7 +76,6 @@ const ProChat = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
   // Mobile global voice modal removed - using internet-based calling only
   const [lightboxModal, setLightboxModal] = useState({ 
     open: false, 
@@ -141,7 +141,6 @@ const ProChat = ({
   const mobileCameraPhotoRef = useRef(null);
   const mobileCameraVideoRef = useRef(null);
   const mobileGalleryRef = useRef(null);
-  const recordingTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const sidebarRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -1129,54 +1128,71 @@ const ProChat = ({
     setShowEmojiPicker(false);
   }, []);
 
-  const formatRecordingTime = useCallback((seconds) => {
+  // Voice recording functions with enhanced recorder
+  const formatRecordingTime = useCallback((ms) => {
+    const seconds = Math.floor(ms / 1000);
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
-  const startRecording = useCallback(() => {
+  const handleVoiceRecordingStart = useCallback((data) => {
     setIsRecording(true);
-    setRecordingDuration(0);
     setShowEmojiPicker(false);
-    
-    recordingTimerRef.current = setInterval(() => {
-      setRecordingDuration(prev => prev + 1);
-    }, 1000);
-    
-    console.log('Voice recording started');
+    console.log('Enhanced voice recording started', data);
   }, []);
 
-  const stopRecording = useCallback((send = true) => {
-    clearInterval(recordingTimerRef.current);
+  const handleVoiceRecordingComplete = useCallback((data) => {
     setIsRecording(false);
     
-    if (send && recordingDuration > 0) {
+    if (data && data.audioBlob && data.duration > 1000) {
+      // Create audio URL for playback
+      const audioUrl = URL.createObjectURL(data.audioBlob);
+      
       const newMessage = {
         id: Date.now(),
-        text: `🎤 Voice message (${formatRecordingTime(recordingDuration)})`,
+        text: `🎤 Voice message (${formatRecordingTime(data.duration)})`,
         user: user,
         timestamp: new Date().toISOString(),
         reactions: [],
         type: 'voice',
-        duration: recordingDuration
+        duration: data.duration,
+        audioUrl: audioUrl,
+        audioBlob: data.audioBlob,
+        mimeType: data.mimeType
       };
+      
       setChatMessages(prev => [...prev, newMessage]);
+      
       // Auto-scroll to the new message
       setTimeout(() => {
         scrollToBottom();
       }, 100);
+      
+      console.log('Voice message sent:', data);
     }
-    
-    setRecordingDuration(0);
-  }, [recordingDuration, formatRecordingTime, user, scrollToBottom]);
+  }, [formatRecordingTime, user, scrollToBottom]);
 
-  // Cleanup recording timer
+  const handleVoiceRecordingCancel = useCallback(() => {
+    setIsRecording(false);
+    console.log('Voice recording cancelled');
+  }, []);
+
+  // Legacy functions for compatibility
+  const startRecording = useCallback(() => {
+    // This will be handled by the VoiceRecorder component
+    console.log('startRecording called - handled by VoiceRecorder component');
+  }, []);
+
+  const stopRecording = useCallback((send = true) => {
+    // This will be handled by the VoiceRecorder component
+    console.log('stopRecording called - handled by VoiceRecorder component');
+  }, []);
+
+  // Legacy cleanup (no longer needed with enhanced voice recorder)
   useEffect(() => {
     return () => {
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-      }
+      // Cleanup handled by VoiceRecorder component
     };
   }, []);
 
@@ -2562,12 +2578,23 @@ const ProChat = ({
                   </div>
                 )}
                 
-                {/* Voice Message Display */}
+                {/* Enhanced Voice Message Display */}
                 {message.type === 'voice' && (
-                  <div className="voice-message">
-                    <div className="voice-icon">🎤</div>
-                    <div className="voice-duration">{formatRecordingTime(message.duration || 0)}</div>
-                    <button className="play-voice-btn">▶️</button>
+                  <div className="voice-message enhanced">
+                    {message.audioUrl ? (
+                      <VoiceMessagePlayer
+                        audioUrl={message.audioUrl}
+                        duration={message.duration}
+                        compact={true}
+                        className="chat-voice-player"
+                      />
+                    ) : (
+                      <div className="voice-message-fallback">
+                        <div className="voice-icon">🎤</div>
+                        <div className="voice-duration">{formatRecordingTime(message.duration || 0)}</div>
+                        <div className="voice-placeholder">Legacy voice message</div>
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -2675,29 +2702,19 @@ const ProChat = ({
         {/* Enhanced Input Area with Voice and File Upload */}
         <div className="pro-chat-input-container enhanced mobile-input-bar keyboard-avoiding">
           <div className="input-wrapper enhanced touch-target">
-            {/* Voice Recording Interface */}
+            {/* Enhanced Voice Recording Interface */}
             {isRecording && (
-              <div className="recording-interface">
-                <div className="recording-indicator">
-                  <div className="recording-dot"></div>
-                  <span>Recording... {formatRecordingTime(recordingDuration)}</span>
-                </div>
-                <div className="recording-actions">
-                  <button 
-                    className="recording-btn cancel"
-                    onClick={() => stopRecording(false)}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    className="recording-btn send"
-                    onClick={() => stopRecording(true)}
-                    type="button"
-                  >
-                    Send
-                  </button>
-                </div>
+              <div className="enhanced-recording-container">
+                <VoiceRecorder
+                  onRecordingComplete={handleVoiceRecordingComplete}
+                  onRecordingCancel={handleVoiceRecordingCancel}
+                  onRecordingStart={handleVoiceRecordingStart}
+                  maxDuration={300000} // 5 minutes
+                  minDuration={1000} // 1 second
+                  compact={true}
+                  autoStart={false}
+                  className="chat-voice-recorder"
+                />
               </div>
             )}
 
@@ -2780,14 +2797,18 @@ const ProChat = ({
                   </button>
 
                   {/* Voice Input Button */}
-                  <button 
-                    className="input-btn voice-btn mobile-action-button touch-target touch-ripple haptic-light"
-                    onClick={startRecording}
-                    type="button"
-                    title="Voice message"
-                  >
-                    🎤
-                  </button>
+                  {!isRecording && (
+                    <VoiceRecorder
+                      onRecordingComplete={handleVoiceRecordingComplete}
+                      onRecordingCancel={handleVoiceRecordingCancel}
+                      onRecordingStart={handleVoiceRecordingStart}
+                      maxDuration={300000} // 5 minutes
+                      minDuration={1000} // 1 second
+                      compact={true}
+                      autoStart={false}
+                      className="inline-voice-recorder"
+                    />
+                  )}
 
                   {/* Mobile Global Voice Calls Button (when sidebar collapsed) */}
                   {sidebarCollapsed && window.innerWidth <= 768 && (
