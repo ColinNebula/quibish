@@ -12,6 +12,8 @@ import './styles/dynamic-themes.css';
 import './styles/enhanced-message-ui.css';
 import './components/EnhancedAvatar.css';
 import './components/PresenceManager.css';
+import './components/InteractiveMessageFeatures.css';
+import './components/MessageReactions.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';

@@ -224,16 +224,19 @@
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  margin-left: 16px;
+  flex-wrap: wrap;
 }
+
 .action-btn {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(248, 250, 252, 0.8);
   border: 1px solid rgba(226, 232, 240, 0.6);
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -241,6 +244,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 .action-btn::before {
   content: '';
@@ -569,12 +573,13 @@
     font-size: 12px;
   }
   .action-btn {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
   }
   .header-actions {
-    gap: 6px;
+    gap: 4px;
+    margin-left: 8px;
   }
   .dropdown-menu {
     min-width: 160px;
@@ -583,32 +588,49 @@
 @media (max-width: 480px) {
   .enhanced-chat-header {
     height: 56px;
-    padding: 0 12px;
+    padding: 0 8px;
   }
   .header-left {
-    gap: 12px;
+    gap: 8px;
   }
   .conversation-avatar {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
   }
   .conversation-info {
-    display: none; /* Hide conversation title and status on small screens */
+    flex: 1;
+    min-width: 0;
   }
-  .participant-count {
-    display: none; /* Hide participant count on very small screens */
+  .conversation-title {
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .conversation-status {
+    display: none; /* Hide status on very small screens to save space */
   }
   .action-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 13px;
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
   }
   .header-actions {
-    gap: 4px;
+    gap: 2px;
+    margin-left: 4px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-  /* Show only essential buttons on mobile */
-  .info-btn,
-  .voice-call-btn {
+  .header-actions::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide some less essential buttons on very small screens */
+  .donation-btn,
+  .info-btn {
     display: none;
   }
 }

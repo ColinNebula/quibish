@@ -2228,80 +2228,69 @@ const ProChat = ({
                 </span>
               </div>
             </div>
-          </div>
-          
-          <div className="header-center">
-            <div className="header-search">
-              <input 
-                type="text" 
-                placeholder="Search messages..." 
-                className="search-input"
-              />
-              <button className="search-btn">🔍</button>
-            </div>
-          </div>
-          
-          <div className="header-actions">
-            <button 
-              className="action-btn invite-user-btn" 
-              title="👥 Invite Users - Search and invite people to chat"
-              onClick={handleUserSearchClick}
-            >
-              👥
-            </button>
-            <button 
-              className="action-btn new-chat-btn" 
-              title="➕ New Chat - Start a new conversation"
-              onClick={handleNewChat}
-            >
-              ➕
-            </button>
-            <button 
-              className="action-btn unified-call-btn" 
-              title="📞 Make Calls - International phone calls & app-to-app voice calls"
-              onClick={handleUnifiedCall}
-            >
-              📞
-              {connectionStatus && (
-                <span 
-                  className="connection-indicator"
-                  style={{color: connectionStatus.color}}
-                >
-                  {connectionStatus.icon}
-                </span>
-              )}
-            </button>
-            <button 
-              className="action-btn donation-btn" 
-              title="💝 Support Our Free App - Help us keep it free for everyone!"
-              onClick={() => setShowDonationModal(true)}
-            >
-              💝
-            </button>
-            <button 
-              className="action-btn video-call-btn" 
-              title="Start video call"
-              onClick={handleVideoCall}
-            >
-              📹
-            </button>
-            <button className="action-btn info-btn" title="Chat info">
-              ℹ️
-            </button>
-            <button onClick={onToggleDarkMode} className="action-btn theme-toggle" title="Toggle theme">
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-            <button onClick={onLogout} className="action-btn logout-btn" title="Logout / Disconnect">
-              🚪
-            </button>
-            <div className="header-menu">
+            
+            {/* Navigation Actions - Moved to left side */}
+            <div className="header-actions">
               <button 
-                className="action-btn menu-btn" 
-                title="More options"
-                onClick={handleMoreMenuToggle}
+                className="action-btn invite-user-btn" 
+                title="👥 Invite Users - Search and invite people to chat"
+                onClick={handleUserSearchClick}
               >
-                ⋮
+                👥
               </button>
+              <button 
+                className="action-btn new-chat-btn" 
+                title="➕ New Chat - Start a new conversation"
+                onClick={handleNewChat}
+              >
+                ➕
+              </button>
+              <button 
+                className="action-btn unified-call-btn" 
+                title="📞 Make Calls - International phone calls & app-to-app voice calls"
+                onClick={handleUnifiedCall}
+              >
+                📞
+                {connectionStatus && (
+                  <span 
+                    className="connection-indicator"
+                    style={{color: connectionStatus.color}}
+                  >
+                    {connectionStatus.icon}
+                  </span>
+                )}
+              </button>
+              <button 
+                className="action-btn video-call-btn" 
+                title="Start video call"
+                onClick={handleVideoCall}
+              >
+                �
+              </button>
+              <button className="action-btn info-btn" title="Chat info">
+                ℹ️
+              </button>
+              <button 
+                className="action-btn donation-btn" 
+                title="💝 Support Our Free App - Help us keep it free for everyone!"
+                onClick={() => setShowDonationModal(true)}
+              >
+                💝
+              </button>
+              <button onClick={onToggleDarkMode} className="action-btn theme-toggle" title="Toggle theme">
+                {darkMode ? '☀️' : '🌙'}
+              </button>
+              <button onClick={onLogout} className="action-btn logout-btn" title="Logout / Disconnect">
+                🚪
+              </button>
+              <div className="header-menu">
+                <button 
+                  className="action-btn menu-btn" 
+                  title="More options"
+                  onClick={handleMoreMenuToggle}
+                >
+                  ⋮
+                </button>
               {showMoreMenu && (
                 <div className="dropdown-menu active">
                   <div className="dropdown-header">
@@ -2376,6 +2365,7 @@ const ProChat = ({
                   </button>
                 </div>
               )}
+            </div>
             </div>
           </div>
         </div>
