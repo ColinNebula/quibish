@@ -9,6 +9,7 @@ import './styles/image-display-fix.css';
 import './styles/advanced-animations.css';
 import './styles/enhanced-components.css';
 import './styles/dynamic-themes.css';
+import './styles/enhanced-message-ui.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';

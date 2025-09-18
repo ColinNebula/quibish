@@ -1,0 +1,375 @@
+/* MessageBubble Component Specific Styles */
+
+.message-bubble-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+/* Message Links */
+.message-link {
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.message-link:hover {
+  color: #1d4ed8;
+}
+
+.message-container.sent .message-link {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.message-container.sent .message-link:hover {
+  color: white;
+}
+
+/* Image Placeholder with Shimmer */
+.image-placeholder {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.shimmer-effect {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Reaction Picker */
+.reaction-picker {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  animation: reactionPickerSlideIn 0.2s ease-out;
+}
+
+.reaction-picker-content {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 25px;
+  padding: 6px 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.reaction-option {
+  background: none;
+  border: none;
+  font-size: 20px;
+  padding: 4px 6px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.reaction-option:hover {
+  background: rgba(59, 130, 246, 0.1);
+  transform: scale(1.2);
+}
+
+@keyframes reactionPickerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Message Actions */
+.message-actions {
+  position: absolute;
+  top: 50%;
+  right: -30px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  color: #666;
+}
+
+.message-container:hover .message-actions {
+  opacity: 1;
+}
+
+.message-container.sent .message-actions {
+  right: auto;
+  left: -30px;
+}
+
+.message-actions:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Enhanced Status Indicators */
+.status-text {
+  font-size: 8px;
+  line-height: 1;
+}
+
+/* Typing Indicator Enhancements */
+.typing-indicator {
+  align-self: flex-start;
+  animation: typingSlideIn 0.3s ease-out;
+}
+
+.typing-text {
+  font-size: 11px;
+  color: #666;
+  font-style: italic;
+}
+
+@keyframes typingSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Message Groups Styling */
+.message-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Enhanced hover effects for grouped messages */
+.message-group:hover .message-bubble {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Special styling for first and last messages in group */
+.message-group .message-container:first-child .message-bubble {
+  margin-top: 4px;
+}
+
+.message-group .message-container:last-child .message-bubble {
+  margin-bottom: 4px;
+}
+
+/* Improved message spacing in groups */
+.message-container.grouped {
+  margin: 1px 0;
+}
+
+.message-container.grouped .message-bubble {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.message-container.grouped:hover .message-bubble {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Better visual connection between grouped messages */
+.message-container.grouped.sent .message-bubble::after {
+  border-left-color: var(--theme-primary);
+  opacity: 0.7;
+}
+
+.message-container.grouped.received .message-bubble::after {
+  border-right-color: rgba(255, 255, 255, 0.6);
+  opacity: 0.7;
+}
+
+/* Enhanced reactions in grouped messages */
+.message-container.grouped .message-reactions {
+  margin-top: 2px;
+}
+
+.message-container.grouped .reaction {
+  padding: 1px 4px;
+  font-size: 9px;
+}
+
+/* Improved accessibility for grouped messages */
+.message-container.grouped .message-metadata {
+  font-size: 9px;
+  margin-top: 2px;
+}
+
+/* Dark theme improvements for message components */
+.dark-theme .reaction-picker-content {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(71, 85, 105, 0.3);
+}
+
+.dark-theme .reaction-option:hover {
+  background: rgba(99, 102, 241, 0.2);
+}
+
+.dark-theme .message-actions {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(71, 85, 105, 0.3);
+  color: #cbd5e1;
+}
+
+.dark-theme .message-actions:hover {
+  background: rgba(71, 85, 105, 0.9);
+}
+
+.dark-theme .typing-text {
+  color: #94a3b8;
+}
+
+.dark-theme .image-placeholder {
+  background: #374151;
+}
+
+/* Mobile specific enhancements */
+@media (max-width: 768px) {
+  .reaction-picker {
+    top: -45px;
+  }
+  
+  .reaction-picker-content {
+    padding: 4px 6px;
+  }
+  
+  .reaction-option {
+    font-size: 18px;
+    padding: 3px 5px;
+  }
+  
+  .message-actions {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    right: -25px;
+  }
+  
+  .message-container.sent .message-actions {
+    left: -25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .reaction-picker-content {
+    gap: 2px;
+    padding: 3px 4px;
+  }
+  
+  .reaction-option {
+    font-size: 16px;
+    padding: 2px 4px;
+  }
+  
+  .message-actions {
+    display: none; /* Hide on very small screens to save space */
+  }
+  
+  /* Enable long press for reactions on mobile */
+  .message-bubble {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Performance optimizations */
+.message-bubble,
+.reaction-picker,
+.message-actions {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .reaction-picker,
+  .typing-indicator,
+  .shimmer-effect {
+    animation: none !important;
+  }
+  
+  .message-bubble,
+  .reaction-option,
+  .message-actions {
+    transition: none !important;
+  }
+}
+
+/* Focus states for keyboard navigation */
+.reaction-option:focus,
+.message-actions:focus {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 2px;
+}
+
+.message-link:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .reaction-picker-content {
+    background: white;
+    border: 2px solid black;
+  }
+  
+  .message-actions {
+    background: white;
+    border: 2px solid black;
+  }
+  
+  .dark-theme .reaction-picker-content {
+    background: black;
+    border: 2px solid white;
+  }
+  
+  .dark-theme .message-actions {
+    background: black;
+    border: 2px solid white;
+  }
+}
