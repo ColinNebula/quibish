@@ -10,6 +10,8 @@ import './styles/advanced-animations.css';
 import './styles/enhanced-components.css';
 import './styles/dynamic-themes.css';
 import './styles/enhanced-message-ui.css';
+import './components/EnhancedAvatar.css';
+import './components/PresenceManager.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';
