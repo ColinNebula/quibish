@@ -6,6 +6,9 @@ import './styles/input-container-responsive-fix.css';
 import './styles/mobile-content-fix.css';
 import './styles/mobile-animation-fix.css';
 import './styles/image-display-fix.css';
+import './styles/advanced-animations.css';
+import './styles/enhanced-components.css';
+import './styles/dynamic-themes.css';
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';
@@ -15,6 +18,7 @@ import DynamicSplashScreen from './components/UI/DynamicSplashScreen';
 import ErrorBoundary from './components/ErrorHandling/ErrorBoundary';
 import PWAStatus from './components/ServiceWorker/PWAStatus';
 import InstallPrompt from './components/PWA/InstallPrompt';
+import ThemeSelector from './components/ThemeSelector';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 import pwaUtils from './utils/pwaUtils';
@@ -330,6 +334,9 @@ const App = () => {
       
       {/* PWA Install Prompt */}
       <InstallPrompt />
+      
+      {/* Theme Selector */}
+      <ThemeSelector />
     </ErrorBoundary>
   );
 };

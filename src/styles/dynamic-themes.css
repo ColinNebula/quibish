@@ -1,0 +1,434 @@
+/* Dynamic Themes and Backgrounds */
+
+/* Base Theme Variables */
+:root {
+  /* Dynamic theme colors (updated by theme service) */
+  --theme-primary: #3b82f6;
+  --theme-secondary: #60a5fa;
+  --theme-accent: #f59e0b;
+  --theme-background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+  
+  /* Background effect variables */
+  --particle-speed: 15s;
+  --shape-float-speed: 20s;
+  --theme-transition: 1s ease-in-out;
+}
+
+/* Main App Background */
+.app {
+  background: var(--theme-background);
+  transition: background var(--theme-transition);
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Seasonal Theme Overrides */
+.spring-theme {
+  --theme-primary: #10b981;
+  --theme-secondary: #34d399;
+  --theme-accent: #f59e0b;
+  --theme-background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+}
+
+.summer-theme {
+  --theme-primary: #3b82f6;
+  --theme-secondary: #60a5fa;
+  --theme-accent: #f59e0b;
+  --theme-background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 50%, #60a5fa 100%);
+}
+
+.autumn-theme {
+  --theme-primary: #f59e0b;
+  --theme-secondary: #fb923c;
+  --theme-accent: #dc2626;
+  --theme-background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 50%, #fdba74 100%);
+}
+
+.winter-theme {
+  --theme-primary: #6366f1;
+  --theme-secondary: #818cf8;
+  --theme-accent: #06b6d4;
+  --theme-background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #cbd5e1 100%);
+}
+
+/* Dark Theme */
+.dark-theme {
+  --theme-primary: #60a5fa;
+  --theme-secondary: #3b82f6;
+  --theme-accent: #fbbf24;
+  --theme-background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  
+  color: #f1f5f9;
+}
+
+.dark-theme .message-bubble {
+  background: rgba(51, 65, 85, 0.8);
+  color: #f1f5f9;
+}
+
+.dark-theme .conversation-item {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(71, 85, 105, 0.3);
+}
+
+.dark-theme .conversation-item:hover {
+  background: rgba(51, 65, 85, 0.7);
+}
+
+/* Dynamic Background Layers */
+.dynamic-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -10;
+  overflow: hidden;
+}
+
+/* Particle System Animations */
+.dynamic-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -5;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  animation: particleFloat var(--particle-speed) linear infinite;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translateY(100vh) translateX(0px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) translateX(50px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Animated Background Shapes */
+.animated-shapes {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -8;
+  overflow: hidden;
+}
+
+.background-shape {
+  position: absolute;
+  opacity: 0.1;
+  animation: shapeFloat var(--shape-float-speed) ease-in-out infinite;
+  backdrop-filter: blur(1px);
+}
+
+@keyframes shapeFloat {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-30px) translateX(20px) rotate(90deg) scale(1.1);
+  }
+  50% {
+    transform: translateY(0px) translateX(40px) rotate(180deg) scale(0.9);
+  }
+  75% {
+    transform: translateY(30px) translateX(20px) rotate(270deg) scale(1.1);
+  }
+}
+
+/* Gradient Orbs */
+.gradient-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.3;
+  animation: orbFloat 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -9;
+}
+
+.gradient-orb.orb-1 {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, var(--theme-primary), transparent);
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.gradient-orb.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, var(--theme-secondary), transparent);
+  top: 60%;
+  right: 15%;
+  animation-delay: -7s;
+}
+
+.gradient-orb.orb-3 {
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, var(--theme-accent), transparent);
+  bottom: 20%;
+  left: 50%;
+  animation-delay: -14s;
+}
+
+@keyframes orbFloat {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+  }
+  33% {
+    transform: translateY(-50px) translateX(30px) scale(1.2);
+  }
+  66% {
+    transform: translateY(30px) translateX(-30px) scale(0.8);
+  }
+}
+
+/* Mesh Gradient Background */
+.mesh-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(14, 165, 233, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, rgba(34, 197, 94, 0.1) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, rgba(248, 113, 113, 0.1) 0px, transparent 50%);
+  animation: meshMove 30s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -7;
+}
+
+@keyframes meshMove {
+  0%, 100% {
+    background-position: 0% 0%, 100% 0%, 0% 50%, 100% 50%, 0% 100%, 100% 100%, 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%, 0% 100%, 100% 0%, 0% 0%, 100% 50%, 0% 50%, 100% 100%;
+  }
+}
+
+/* Theme Transition Effects */
+.theme-transition {
+  transition: all var(--theme-transition);
+}
+
+.theme-transition * {
+  transition: 
+    background-color var(--theme-transition),
+    border-color var(--theme-transition),
+    color var(--theme-transition);
+}
+
+/* Interactive Theme Elements */
+.theme-selector {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 1000;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.theme-option {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-option:hover {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.theme-option.active {
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.theme-option.spring {
+  background: linear-gradient(45deg, #10b981, #34d399);
+}
+
+.theme-option.summer {
+  background: linear-gradient(45deg, #3b82f6, #60a5fa);
+}
+
+.theme-option.autumn {
+  background: linear-gradient(45deg, #f59e0b, #fb923c);
+}
+
+.theme-option.winter {
+  background: linear-gradient(45deg, #6366f1, #818cf8);
+}
+
+.theme-option.dark {
+  background: linear-gradient(45deg, #0f172a, #334155);
+}
+
+/* Seasonal Specific Effects */
+.spring-effects {
+  --particle-speed: 12s;
+}
+
+.summer-effects {
+  --particle-speed: 18s;
+}
+
+.autumn-effects {
+  --particle-speed: 8s;
+}
+
+.winter-effects {
+  --particle-speed: 10s;
+}
+
+/* Weather Effects */
+.weather-effect {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -6;
+}
+
+.rain-effect {
+  background-image: 
+    linear-gradient(to bottom, transparent 0%, rgba(59, 130, 246, 0.1) 100%);
+  animation: rainFall 1s linear infinite;
+}
+
+@keyframes rainFall {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+.snow-effect {
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 80px 100px, 120px 140px;
+  animation: snowFall 8s linear infinite;
+}
+
+@keyframes snowFall {
+  0% { background-position: 0% 0%, 0% 0%; }
+  100% { background-position: 80px 100px, 120px 140px; }
+}
+
+/* Performance Optimizations */
+.dynamic-particles,
+.animated-shapes,
+.gradient-orb,
+.mesh-gradient {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Accessibility Support */
+@media (prefers-reduced-motion: reduce) {
+  .dynamic-particles,
+  .animated-shapes,
+  .gradient-orb,
+  .mesh-gradient,
+  .weather-effect {
+    animation: none !important;
+    display: none;
+  }
+  
+  .theme-transition,
+  .theme-transition * {
+    transition: none !important;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .dynamic-particles {
+    opacity: 0.5;
+  }
+  
+  .gradient-orb {
+    opacity: 0.2;
+  }
+  
+  .theme-selector {
+    top: 10px;
+    right: 10px;
+    padding: 8px;
+  }
+  
+  .theme-option {
+    width: 25px;
+    height: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .animated-shapes,
+  .mesh-gradient {
+    display: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .dynamic-particles,
+  .animated-shapes,
+  .gradient-orb {
+    opacity: 0.1;
+  }
+}
+
+/* Print styles */
+@media print {
+  .dynamic-particles,
+  .animated-shapes,
+  .gradient-orb,
+  .mesh-gradient,
+  .theme-selector,
+  .weather-effect {
+    display: none !important;
+  }
+}

@@ -13,11 +13,13 @@ import UserSearchModal from '../Search/UserSearchModal';
 import InternationalDialer from '../Dialer/InternationalDialer';
 import DonationModal from '../Donation/DonationModal';
 import DonationPrompt from '../Donation/DonationPrompt';
+import NotificationSettings from '../NotificationSettings/NotificationSettings';
 import messageService from '../../services/messageService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import connectionService from '../../services/connectionService';
 import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
+import pushNotificationService from '../../services/pushNotificationService';
 import { feedbackService } from '../../services/feedbackService';
 import { contactService } from '../../services/contactService';
 import { conversationService } from '../../services/conversationService';
@@ -240,6 +242,64 @@ const ProChat = ({
 
     return () => clearInterval(interval);
   }, []);
+
+  // Initialize push notifications and presence detection
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      try {
+        console.log('🔔 Initializing notification system...');
+        
+        // Initialize push notification service
+        const notificationInit = await pushNotificationService.initialize(user.id);
+        
+        if (notificationInit) {
+          console.log('✅ Push notification service initialized');
+          
+          // Setup presence detection
+          pushNotificationService.setupPresenceDetection();
+          
+          // Update user as online on backend
+          await fetch('/api/notifications/presence', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              isOnline: true,
+              lastSeen: new Date().toISOString()
+            })
+          });
+        }
+      } catch (error) {
+        console.error('❌ Failed to initialize notifications:', error);
+      }
+    };
+
+    if (user?.id) {
+      initializeNotifications();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      // Update user as offline
+      if (user?.id) {
+        fetch('/api/notifications/presence', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            isOnline: false,
+            lastSeen: new Date().toISOString()
+          })
+        }).catch(console.error);
+      }
+    };
+  }, [user?.id]);
 
   // Auto-collapse sidebar on mobile screens (but preserve content)
   useEffect(() => {
@@ -1201,6 +1261,7 @@ const ProChat = ({
   const [newChatModal, setNewChatModal] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState(false);
   const [helpModal, setHelpModal] = useState(false);
+  const [notificationSettingsModal, setNotificationSettingsModal] = useState(false);
   const [videoCallState, setVideoCallState] = useState({ 
     active: false, 
     withUser: null, 
@@ -2292,6 +2353,11 @@ const ProChat = ({
                     Settings
                   </button>
                   
+                  <button className="dropdown-item" onClick={() => setNotificationSettingsModal(true)}>
+                    <span className="dropdown-icon">🔔</span>
+                    Notifications
+                  </button>
+                  
                   <button className="dropdown-item" onClick={() => setHelpModal(true)}>
                     <span className="dropdown-icon">❓</span>
                     Help & Support
@@ -2918,6 +2984,15 @@ const ProChat = ({
             initialSection={settingsModal.section}
           />
         </>
+      )}
+
+      {/* Notification Settings Modal */}
+      {notificationSettingsModal && (
+        <NotificationSettings
+          isOpen={notificationSettingsModal}
+          onClose={() => setNotificationSettingsModal(false)}
+          user={user}
+        />
       )}
 
       {/* Lightbox Modal */}

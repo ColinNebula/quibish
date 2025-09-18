@@ -124,6 +124,7 @@ const feedbackRoutes = require('./routes/feedback');
 const encryptionRoutes = require('./routes/encryption');
 const enhancedStorageRoutes = require('./routes/enhancedStorage');
 const contactRoutes = require('./routes/contacts');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -351,6 +352,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/encryption', encryptionRoutes);
 app.use('/api/storage', enhancedStorageRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Memory monitoring routes
 app.get('/api/memory/report', (req, res) => {
