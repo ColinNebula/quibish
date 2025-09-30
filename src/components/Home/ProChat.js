@@ -19,6 +19,7 @@ import messageService from '../../services/messageService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import connectionService from '../../services/connectionService';
+import { buildApiUrl } from '../../config/api';
 import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
 import pushNotificationService from '../../services/pushNotificationService';
 import { feedbackService } from '../../services/feedbackService';
@@ -258,7 +259,7 @@ const ProChat = ({
           pushNotificationService.setupPresenceDetection();
           
           // Update user as online on backend
-          await fetch('/api/notifications/presence', {
+          await fetch(buildApiUrl('/notifications/presence'), {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -284,7 +285,7 @@ const ProChat = ({
     return () => {
       // Update user as offline
       if (user?.id) {
-        fetch('/api/notifications/presence', {
+        fetch(buildApiUrl('/notifications/presence'), {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -1061,13 +1062,25 @@ const ProChat = ({
   // Close more menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showMoreMenu && !event.target.closest('.header-menu')) {
+      // Check if the click is outside the header menu container
+      if (showMoreMenu && 
+          !event.target.closest('.header-menu') && 
+          !event.target.classList.contains('menu-btn') &&
+          !event.target.classList.contains('action-btn')) {
+        console.log('Closing menu due to outside click');
         setShowMoreMenu(false);
       }
     };
     
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // Use a small timeout to prevent immediate conflict with the button click
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('click', handleClickOutside);
+    };
   }, [showMoreMenu]);
 
   // Handle adding reactions to messages
@@ -2294,33 +2307,273 @@ const ProChat = ({
                 💝
               </button>
               <button onClick={onToggleDarkMode} className="action-btn theme-toggle" title="Toggle theme">
-                <button className="action-btn settings-btn" title="Theme Settings" onClick={handleQuickSettings}>
-                  ⚙️
-                </button>
                 {darkMode ? '☀️' : '🌙'}
               </button>
               <button onClick={onLogout} className="action-btn logout-btn" title="Logout / Disconnect">
                 🚪
               </button>
-              <div className="header-menu">
+              <div className="header-menu">                
                 <button 
                   className="action-btn menu-btn" 
                   title="More options"
                   onClick={handleMoreMenuToggle}
+                  style={{ position: 'relative', zIndex: 10 }}
                 >
                   ⋮
                 </button>
               {showMoreMenu && (
-                <div className="dropdown-menu active">
-                  <div className="dropdown-header">
+                <div 
+                  style={{ 
+                    position: 'fixed',
+                    top: '80px',
+                    right: '20px',
+                    zIndex: 99999,
+                    width: '280px',
+                    maxWidth: 'calc(100vw - 40px)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(226, 232, 240, 0.8)',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+                    overflow: 'hidden',
+                    maxHeight: 'calc(100vh - 120px)',
+                    overflowY: 'auto'
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid rgba(226, 232, 240, 0.5)',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    color: '#374151',
+                    backgroundColor: 'rgba(249, 250, 251, 0.8)'
+                  }}>
                     <span>More Options</span>
                     <button 
-                      className="close-dropdown" 
                       onClick={() => setShowMoreMenu(false)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '18px',
+                        color: '#6b7280',
+                        cursor: 'pointer',
+                        padding: '0',
+                        width: '20px',
+                        height: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '4px'
+                      }}
                     >
                       ×
                     </button>
                   </div>
+                  
+                  <button className="dropdown-item" onClick={handleSearchInChat} 
+                    onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(59, 130, 246, 0.08)'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s ease'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>🔍</span>
+                    Search in Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleOpenContactManager}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(59, 130, 246, 0.08)'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s ease',
+                    minHeight: '44px'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>👥</span>
+                    Contacts
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleExportChat} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>📥</span>
+                    Export Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handlePrintChat} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>🖨️</span>
+                    Print Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleMuteNotifications} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>
+                      {localStorage.getItem('notificationsMuted') === 'true' ? '�' : '🔕'}
+                    </span>
+                    {localStorage.getItem('notificationsMuted') === 'true' ? 'Unmute' : 'Mute'} Notifications
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleClearChat} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>🗑️</span>
+                    Clear Chat
+                  </button>
+                  
+                  <hr style={{ height: '1px', background: 'rgba(226, 232, 240, 0.8)', border: 'none', margin: '4px 0' }} />
+                  
+                  <button className="dropdown-item" onClick={handleQuickSettings} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>⚙️</span>
+                    Settings
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={() => setNotificationSettingsModal(true)} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>🔔</span>
+                    Notifications
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={() => setHelpModal(true)} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>❓</span>
+                    Help & Support
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={() => setFeedbackModal(true)} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>💬</span>
+                    Send Feedback
+                  </button>
+                  
+                  <hr style={{ height: '1px', background: 'rgba(226, 232, 240, 0.8)', border: 'none', margin: '4px 0' }} />
+                  
+                  <button onClick={onLogout} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#dc2626',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>🚪</span>
+                    Logout
+                  </button>
                   
                   <button className="dropdown-item" onClick={handleSearchInChat}>
                     <span className="dropdown-icon">🔍</span>
