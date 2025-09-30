@@ -42,12 +42,15 @@ class EnhancedVoiceRecorderService {
       onVolumeChange: []
     };
 
-    this.initialize();
+    // Don't auto-initialize in constructor, let component control it
+    console.log('🎤 Voice Recorder Service created, awaiting initialization...');
   }
 
   // Initialize the service
   async initialize() {
     try {
+      console.log('🔄 Initializing Voice Recorder Service...');
+      
       // Check for MediaRecorder support
       if (!window.MediaRecorder) {
         throw new Error('MediaRecorder is not supported in this browser');
@@ -58,7 +61,14 @@ class EnhancedVoiceRecorderService {
         throw new Error('getUserMedia is not supported in this browser');
       }
 
+      // Check for supported MIME types
+      const supportedType = this.getSupportedMimeType();
+      if (!supportedType) {
+        throw new Error('No supported audio formats found');
+      }
+
       console.log('✅ Voice Recorder Service initialized successfully');
+      console.log('📊 Configuration:', this.config);
       return true;
     } catch (error) {
       console.error('❌ Voice Recorder Service initialization failed:', error);
@@ -80,14 +90,67 @@ class EnhancedVoiceRecorderService {
     ];
 
     for (const type of types) {
-      if (MediaRecorder.isTypeSupported(type)) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
         console.log(`📱 Using MIME type: ${type}`);
         return type;
       }
     }
 
     console.warn('⚠️ No preferred audio MIME type supported, using default');
-    return 'audio/webm'; // Fallback
+    // Try basic webm as fallback
+    if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) {
+      return 'audio/webm';
+    }
+    
+    // Last resort fallback
+    return 'audio/webm';
+  }
+
+  // Test microphone access without starting recording
+  async testMicrophoneAccess() {
+    try {
+      console.log('🔍 Testing microphone access...');
+      
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          sampleRate: 22050, // Lower sample rate for testing
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      
+      console.log('✅ Microphone access test successful');
+      
+      // Immediately stop the stream
+      stream.getTracks().forEach(track => track.stop());
+      
+      return { success: true, message: 'Microphone access granted' };
+    } catch (error) {
+      console.error('❌ Microphone access test failed:', error);
+      
+      let message = error.message;
+      switch (error.name) {
+        case 'NotAllowedError':
+          message = 'Microphone permission denied. Please allow microphone access in your browser settings.';
+          break;
+        case 'NotFoundError':
+          message = 'No microphone found. Please connect a microphone and try again.';
+          break;
+        case 'NotSupportedError':
+          message = 'Voice recording is not supported in this browser.';
+          break;
+        case 'AbortError':
+          message = 'Microphone access was aborted. Please try again.';
+          break;
+        case 'NotReadableError':
+          message = 'Microphone is already in use by another application.';
+          break;
+      }
+      
+      return { success: false, error: error.name, message };
+    }
   }
 
   // Request microphone permission and start recording
@@ -95,7 +158,15 @@ class EnhancedVoiceRecorderService {
     try {
       if (this.isRecording) {
         console.warn('⚠️ Recording already in progress');
+        this.emit('onError', { type: 'start', error: new Error('Recording already in progress') });
         return false;
+      }
+
+      console.log('🎤 Requesting microphone permission...');
+
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia is not supported in this browser');
       }
 
       // Request microphone permission
@@ -108,6 +179,8 @@ class EnhancedVoiceRecorderService {
           autoGainControl: this.config.autoGainControl
         }
       });
+
+      console.log('✅ Microphone permission granted');
 
       this.audioStream = stream;
       this.audioChunks = [];
@@ -157,7 +230,24 @@ class EnhancedVoiceRecorderService {
       return true;
     } catch (error) {
       console.error('❌ Failed to start recording:', error);
-      this.emit('onError', { type: 'start', error });
+      
+      // Provide specific error messages for common issues
+      let userFriendlyMessage = error.message;
+      
+      if (error.name === 'NotAllowedError') {
+        userFriendlyMessage = 'Microphone permission denied. Please allow microphone access and try again.';
+      } else if (error.name === 'NotFoundError') {
+        userFriendlyMessage = 'No microphone found. Please connect a microphone and try again.';
+      } else if (error.name === 'NotSupportedError') {
+        userFriendlyMessage = 'Voice recording is not supported in this browser.';
+      } else if (error.name === 'AbortError') {
+        userFriendlyMessage = 'Recording was aborted. Please try again.';
+      }
+      
+      const enhancedError = new Error(userFriendlyMessage);
+      enhancedError.originalError = error;
+      
+      this.emit('onError', { type: 'start', error: enhancedError });
       return false;
     }
   }

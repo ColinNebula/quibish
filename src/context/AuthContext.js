@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { secureTokenManager } from '../services/secureTokenManager';
 import { logActivity, ACTIVITY_TYPES } from '../components/Home/UserActivityService';
+import persistentStorageService from '../services/persistentStorageService';
 
 // Create the auth context
 const AuthContext = createContext();
@@ -14,45 +15,25 @@ export const AuthProvider = ({ children }) => {
   // Check for stored user data on mount
   useEffect(() => {
     const initializeAuth = async () => {
-      // Check both localStorage (remember me) and sessionStorage (current session)
-      const localToken = localStorage.getItem('authToken');
-      const sessionToken = sessionStorage.getItem('authToken');
-      const localUser = localStorage.getItem('user');
-      const sessionUser = sessionStorage.getItem('user');
+      console.log('🔄 Initializing authentication...');
       
-      // Prioritize localStorage if it exists (remember me was checked)
-      let storedToken = null;
-      let storedUser = null;
-      let isRemembered = false;
+      // Use persistent storage service to get user data
+      const storedUser = persistentStorageService.getUserData();
+      const storedToken = persistentStorageService.getAuthToken();
+      const isRemembered = persistentStorageService.getRememberMe();
       
-      if (localToken && localUser) {
-        storedToken = localToken;
-        storedUser = localUser;
-        isRemembered = true;
-        console.log('Found remembered session in localStorage');
-      } else if (sessionToken && sessionUser) {
-        storedToken = sessionToken;
-        storedUser = sessionUser;
-        isRemembered = false;
-        console.log('Found temporary session in sessionStorage');
-      }
-      
-      // Clear any corrupted or mismatched data
-      if (!storedToken || !storedUser) {
-        localStorage.removeItem('user');
-        localStorage.removeItem('authToken');
-        sessionStorage.removeItem('user');
-        sessionStorage.removeItem('authToken');
-      }
+      console.log('📦 Storage check:', {
+        hasUser: !!storedUser,
+        hasToken: !!storedToken,
+        remembered: isRemembered
+      });
       
       if (storedToken && storedUser) {
         try {
-          const userData = JSON.parse(storedUser);
           setToken(storedToken);
           setRememberMe(isRemembered);
           
-          // Try to fetch fresh user profile data from backend to get latest settings
-          // But first check if backend is available to avoid console errors
+          // Try to fetch fresh user profile data from backend
           const isDevelopmentMode = process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost';
           const offlineMode = process.env.REACT_APP_OFFLINE_MODE === 'true';
           let shouldTryBackend = !offlineMode;
@@ -79,7 +60,7 @@ export const AuthProvider = ({ children }) => {
           if (shouldTryBackend) {
             try {
               const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout for actual requests
+              const timeoutId = setTimeout(() => controller.abort(), 2000);
               
               const response = await fetch('http://localhost:5001/api/users/profile', {
                 headers: {
@@ -98,9 +79,8 @@ export const AuthProvider = ({ children }) => {
                   const freshUserData = profileData.user;
                   setCurrentUser(freshUserData);
                   
-                  // Update stored user data with fresh profile
-                  const storage = isRemembered ? localStorage : sessionStorage;
-                  storage.setItem('user', JSON.stringify(freshUserData));
+                  // Update persistent storage with fresh profile
+                  persistentStorageService.setUserData(freshUserData, isRemembered);
                   
                   console.log('✅ Restored session with fresh profile data:', { 
                     remembered: isRemembered, 
@@ -110,8 +90,8 @@ export const AuthProvider = ({ children }) => {
                   });
                 } else {
                   // Fallback to stored data if profile fetch fails
-                  setCurrentUser(userData);
-                  console.log('📱 Used stored session data (profile fetch failed):', { remembered: isRemembered, user: userData.username });
+                  setCurrentUser(storedUser);
+                  console.log('📱 Used stored session data (profile fetch failed):', { remembered: isRemembered, user: storedUser.username });
                 }
               } else {
                 // If token is invalid, clear session
@@ -127,26 +107,26 @@ export const AuthProvider = ({ children }) => {
                 console.warn('⚠️ Could not fetch fresh profile, using stored data:', fetchError.message);
               }
               // Fallback to stored user data (offline mode)
-              setCurrentUser(userData);
-              console.log('💾 Using stored session data (offline mode):', { remembered: isRemembered, user: userData.username });
+              setCurrentUser(storedUser);
+              console.log('💾 Using stored session data (offline mode):', { remembered: isRemembered, user: storedUser.username });
             }
           } else {
             // Skip backend call entirely and use stored data
-            setCurrentUser(userData);
+            setCurrentUser(storedUser);
             console.log('💾 Using stored session data (offline mode - backend unavailable):', { 
               remembered: isRemembered, 
-              user: userData.username 
+              user: storedUser.username 
             });
           }
         } catch (error) {
-          console.error('Error parsing stored user data:', error);
+          console.error('❌ Error initializing auth with stored data:', error);
           // Clear corrupted data
-          localStorage.removeItem('user');
-          localStorage.removeItem('authToken');
-          sessionStorage.removeItem('user');
-          sessionStorage.removeItem('authToken');
+          persistentStorageService.clearAllData();
         }
+      } else {
+        console.log('🔍 No valid session found');
       }
+      
       setLoading(false);
     };
 
@@ -160,17 +140,20 @@ export const AuthProvider = ({ children }) => {
     setRememberMe(remember);
     
     try {
-      // Store token securely using secure token manager
-      await secureTokenManager.setToken(newToken);
+      // Store using persistent storage service
+      persistentStorageService.setRememberMe(remember);
+      persistentStorageService.setAuthToken(newToken, remember);
+      persistentStorageService.setUserData(userData, remember);
       
-      // Clear any old insecure storage
-      await secureTokenManager.clearInsecureStorage();
+      console.log(`🔐 User session saved persistently (${remember ? 'remembered' : 'temporary'})`);
       
-      // Store user data (less sensitive than token)
-      const storage = remember ? localStorage : sessionStorage;
-      storage.setItem('user', JSON.stringify(userData));
-      
-      console.log(`🔐 User session saved securely (${remember ? 'remembered' : 'temporary'})`);
+      // Also try secure token manager
+      try {
+        await secureTokenManager.setToken(newToken);
+        await secureTokenManager.clearInsecureStorage();
+      } catch (error) {
+        console.warn('⚠️ Secure token storage failed, using persistent storage fallback');
+      }
       
       // Log login activity
       logActivity(ACTIVITY_TYPES.LOGIN, { 
@@ -180,8 +163,8 @@ export const AuthProvider = ({ children }) => {
         secure: true
       });
     } catch (error) {
-      console.error('Error storing token securely:', error);
-      // Fallback to old method if secure storage fails
+      console.error('❌ Error storing session data:', error);
+      // Emergency fallback to old method
       const storage = remember ? localStorage : sessionStorage;
       storage.setItem('authToken', newToken);
       storage.setItem('user', JSON.stringify(userData));
@@ -195,24 +178,79 @@ export const AuthProvider = ({ children }) => {
         userId: currentUser.id || 'anonymous' 
       });
     }
+    
     setCurrentUser(null);
     setToken(null);
     setRememberMe(false);
     
-    // Clear secure token storage
-    await secureTokenManager.clearTokens();
+    // Clear all persistent storage
+    persistentStorageService.clearAllData();
     
-    // Clear user data from both storage types
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('user');
+    // Also clear secure token storage
+    try {
+      await secureTokenManager.clearTokens();
+    } catch (error) {
+      console.warn('⚠️ Error clearing secure tokens:', error);
+    }
     
-    console.log('🔐 User session cleared securely from all storage');
+    console.log('🔐 User session cleared from all storage');
   };
 
   // Refresh user data
-  const refreshUser = () => {
-    // In a REST implementation, you could make an API call here to refresh user data
-    console.log('User refresh requested - implement if needed');
+  const refreshUser = async (forceRefresh = false) => {
+    if (!currentUser || !token) return;
+    
+    try {
+      if (forceRefresh) {
+        // Try to fetch fresh data from backend
+        const response = await fetch('http://localhost:5001/api/users/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const profileData = await response.json();
+          if (profileData.success && profileData.user) {
+            const freshUserData = profileData.user;
+            setCurrentUser(freshUserData);
+            persistentStorageService.updateUserData(freshUserData);
+            console.log('✅ User data refreshed from backend');
+            return freshUserData;
+          }
+        }
+      }
+      
+      // Fallback to stored data
+      const storedUser = persistentStorageService.getUserData();
+      if (storedUser) {
+        setCurrentUser(storedUser);
+        console.log('📱 User data refreshed from storage');
+        return storedUser;
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing user data:', error);
+    }
+    
+    return currentUser;
+  };
+
+  // Update user data
+  const updateUser = (updates) => {
+    if (!currentUser) return;
+    
+    const updatedUser = {
+      ...currentUser,
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    setCurrentUser(updatedUser);
+    persistentStorageService.updateUserData(updatedUser);
+    
+    console.log('👤 User data updated:', Object.keys(updates));
+    return updatedUser;
   };
 
   return (
@@ -225,7 +263,8 @@ export const AuthProvider = ({ children }) => {
         rememberMe,
         login,
         logout,
-        refreshUser
+        refreshUser,
+        updateUser
       }}
     >
       {children}

@@ -27,11 +27,23 @@ const VoiceRecorder = ({
   // Initialize the voice recorder service
   useEffect(() => {
     const initialize = async () => {
-      const initialized = await enhancedVoiceRecorderService.initialize();
-      setIsInitialized(initialized);
-      
-      if (!initialized) {
-        setError('Voice recording is not supported in your browser');
+      try {
+        console.log('🎤 Initializing voice recorder...');
+        const initialized = await enhancedVoiceRecorderService.initialize();
+        setIsInitialized(initialized);
+        
+        if (!initialized) {
+          const errorMsg = 'Voice recording is not supported in your browser or permissions denied';
+          console.error('❌ Voice recorder initialization failed:', errorMsg);
+          setError(errorMsg);
+        } else {
+          console.log('✅ Voice recorder initialized successfully');
+          setError(null);
+        }
+      } catch (error) {
+        console.error('❌ Voice recorder initialization error:', error);
+        setError(`Failed to initialize: ${error.message}`);
+        setIsInitialized(false);
       }
     };
 
@@ -131,18 +143,88 @@ const VoiceRecorder = ({
     };
   }, [isRecording, isPaused, maxDuration]);
 
+  // Check microphone permissions
+  const checkMicrophonePermission = useCallback(async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('MediaDevices API not supported in this browser');
+        return false;
+      }
+
+      // Try to get permission status
+      if (navigator.permissions) {
+        const permission = await navigator.permissions.query({ name: 'microphone' });
+        
+        if (permission.state === 'denied') {
+          setError('Microphone permission denied. Please enable in browser settings.');
+          return false;
+        }
+        
+        if (permission.state === 'prompt') {
+          setError('Click record to allow microphone access');
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.warn('Permission check failed:', error);
+      return true; // Fallback - let getUserMedia handle it
+    }
+  }, []);
+
+  // Check permissions when initialized
+  useEffect(() => {
+    if (isInitialized) {
+      checkMicrophonePermission();
+    }
+  }, [isInitialized, checkMicrophonePermission]);
+
   // Start recording
   const handleStartRecording = useCallback(async () => {
     if (!isInitialized) {
-      setError('Voice recorder not initialized');
-      return;
+      console.log('🔄 Service not initialized, initializing now...');
+      try {
+        const initialized = await enhancedVoiceRecorderService.initialize();
+        setIsInitialized(initialized);
+        
+        if (!initialized) {
+          setError('Failed to initialize voice recorder');
+          return;
+        }
+      } catch (error) {
+        console.error('❌ Initialization failed:', error);
+        setError(`Initialization failed: ${error.message}`);
+        return;
+      }
     }
 
-    setError(null);
-    const success = await enhancedVoiceRecorderService.startRecording();
-    
-    if (!success) {
-      setError('Failed to start recording. Please check microphone permissions.');
+    try {
+      console.log('🎤 Testing microphone access first...');
+      setError('Testing microphone access...');
+      
+      // Test microphone access first
+      const testResult = await enhancedVoiceRecorderService.testMicrophoneAccess();
+      
+      if (!testResult.success) {
+        console.error('❌ Microphone test failed:', testResult.message);
+        setError(testResult.message);
+        return;
+      }
+      
+      console.log('✅ Microphone test passed, starting recording...');
+      setError(null);
+      
+      const success = await enhancedVoiceRecorderService.startRecording();
+      
+      if (!success) {
+        throw new Error('Failed to start recording - unknown error');
+      }
+      
+      console.log('✅ Recording started successfully');
+    } catch (error) {
+      console.error('❌ Recording start error:', error);
+      setError(`Recording failed: ${error.message}`);
+      setIsRecording(false);
     }
   }, [isInitialized]);
 
@@ -154,7 +236,14 @@ const VoiceRecorder = ({
       return;
     }
 
-    await enhancedVoiceRecorderService.stopRecording();
+    try {
+      console.log('🛑 Stopping recording...');
+      await enhancedVoiceRecorderService.stopRecording();
+      console.log('✅ Recording stopped successfully');
+    } catch (error) {
+      console.error('❌ Stop recording error:', error);
+      setError(`Stop failed: ${error.message}`);
+    }
   }, [duration, minDuration]);
 
   // Pause recording
@@ -252,13 +341,28 @@ const VoiceRecorder = ({
       <div className={`voice-recorder error ${className}`}>
         <div className="recorder-message">
           <span className="error-icon">🎤❌</span>
-          <span>{error}</span>
-          <button 
-            className="retry-btn"
-            onClick={handleStartRecording}
-          >
-            Try Again
-          </button>
+          <span className="error-message">{error}</span>
+          <div className="error-actions">
+            <button 
+              className="retry-btn primary"
+              onClick={handleStartRecording}
+            >
+              🔄 Try Again
+            </button>
+            <button 
+              className="test-btn secondary"
+              onClick={async () => {
+                const result = await enhancedVoiceRecorderService.testMicrophoneAccess();
+                if (result.success) {
+                  setError('✅ Microphone test passed! Click "Try Again" to record.');
+                } else {
+                  setError(result.message);
+                }
+              }}
+            >
+              🔍 Test Microphone
+            </button>
+          </div>
         </div>
       </div>
     );

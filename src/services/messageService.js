@@ -1,18 +1,17 @@
 // Message Service - Complete Implementation
+import persistentStorageService from './persistentStorageService';
+
 class MessageService {
   constructor() {
     this.messages = [];
-    this.storage = localStorage;
-    this.storageKey = 'quibish_messages';
+    // Use persistent storage service instead of direct localStorage
+    this.persistentStorage = persistentStorageService;
   }
 
-  // Load messages from local storage
+  // Load messages from persistent storage
   loadMessagesFromStorage(conversationId = null) {
     try {
-      const stored = this.storage.getItem(this.storageKey);
-      if (!stored) return [];
-      
-      const allMessages = JSON.parse(stored);
+      const allMessages = this.persistentStorage.getMessages();
       
       if (conversationId) {
         return allMessages.filter(msg => msg.conversationId === conversationId);
@@ -20,18 +19,17 @@ class MessageService {
       
       return allMessages;
     } catch (error) {
-      console.error('Failed to load messages from storage:', error);
+      console.error('❌ Failed to load messages from storage:', error);
       return [];
     }
   }
 
-  // Save messages to local storage
+  // Save messages to persistent storage
   saveMessagesToStorage(messages) {
     try {
-      this.storage.setItem(this.storageKey, JSON.stringify(messages));
-      return true;
+      return this.persistentStorage.setMessages(messages);
     } catch (error) {
-      console.error('Failed to save messages to storage:', error);
+      console.error('❌ Failed to save messages to storage:', error);
       return false;
     }
   }
@@ -73,16 +71,18 @@ class MessageService {
       });
 
       if (response.ok) {
-        return await response.json();
+        const result = await response.json();
+        // Also save to persistent storage for offline access
+        this.persistentStorage.addMessage(result);
+        return result;
       }
     } catch (error) {
-      console.warn('API unavailable, saving locally:', error);
+      console.warn('⚠️ API unavailable, saving locally:', error);
     }
 
-    // Fallback to local storage
-    const existingMessages = this.loadMessagesFromStorage();
-    existingMessages.push(message);
-    this.saveMessagesToStorage(existingMessages);
+    // Fallback to persistent storage
+    this.persistentStorage.addMessage(message);
+    console.log('💾 Message saved to persistent storage');
     
     return message;
   }
@@ -97,20 +97,28 @@ class MessageService {
       });
 
       if (response.ok) {
-        return await response.json();
+        const result = await response.json();
+        // Update persistent storage
+        this.persistentStorage.updateMessage(messageId, result);
+        return result;
       }
     } catch (error) {
-      console.warn('API unavailable for reactions:', error);
+      console.warn('⚠️ API unavailable for reactions:', error);
     }
 
-    // Local fallback
+    // Local fallback using persistent storage
     const messages = this.loadMessagesFromStorage();
     const message = messages.find(m => m.id === messageId);
     
     if (message) {
       if (!message.reactions) message.reactions = [];
-      message.reactions.push({ emoji, userId: 'current-user', timestamp: new Date().toISOString() });
-      this.saveMessagesToStorage(messages);
+      message.reactions.push({ 
+        emoji, 
+        userId: 'current-user', 
+        timestamp: new Date().toISOString() 
+      });
+      
+      this.persistentStorage.updateMessage(messageId, message);
       return { success: true };
     }
     
@@ -125,18 +133,17 @@ class MessageService {
       });
 
       if (response.ok) {
+        // Also delete from persistent storage
+        this.persistentStorage.deleteMessage(messageId);
         return { success: true };
       }
     } catch (error) {
-      console.warn('API unavailable for deletion:', error);
+      console.warn('⚠️ API unavailable for deletion:', error);
     }
 
-    // Local fallback
-    const messages = this.loadMessagesFromStorage();
-    const filteredMessages = messages.filter(m => m.id !== messageId);
-    this.saveMessagesToStorage(filteredMessages);
-    
-    return { success: true };
+    // Local fallback using persistent storage
+    return this.persistentStorage.deleteMessage(messageId) ? 
+      { success: true } : { success: false };
   }
 
   // Search messages
@@ -151,8 +158,8 @@ class MessageService {
 
   // Clear all messages
   clearMessages() {
-    this.storage.removeItem(this.storageKey);
-    this.messages = [];
+    this.persistentStorage.setMessages([]);
+    console.log('🧹 All messages cleared from persistent storage');
   }
 }
 

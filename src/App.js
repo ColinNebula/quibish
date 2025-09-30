@@ -28,6 +28,8 @@ import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 import pwaUtils from './utils/pwaUtils';
 import pwaShortcutService from './services/pwaShortcutService';
+import dataMigrationManager from './services/dataMigrationManager';
+import persistentStorageService from './services/persistentStorageService';
 
 const App = () => {
   const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
@@ -139,12 +141,23 @@ const App = () => {
 
   // Initialize frontend health service
   useEffect(() => {
-    // Simplified initialization - skip complex services for now
+    // Initialize app with data persistence
     const initializeApp = async () => {
       try {
         console.log('🚀 Starting Quibish App...');
         
-        // Set initialization complete immediately to skip complex setup
+        // Initialize data persistence and migration
+        const persistenceInitialized = await dataMigrationManager.initializePersistence();
+        
+        if (!persistenceInitialized) {
+          console.warn('⚠️ Data persistence initialization failed, continuing with limited functionality');
+        }
+        
+        // Verify storage health
+        const storageHealth = persistentStorageService.healthCheck();
+        console.log('💾 Storage health:', storageHealth);
+        
+        console.log('✅ App initialization completed');
         setAppInitialized(true);
         console.log('✅ App initialized successfully');
       } catch (error) {
@@ -156,6 +169,18 @@ const App = () => {
     };
 
     initializeApp();
+
+    // Cleanup function to ensure data is saved before unmount
+    return () => {
+      console.log('🧹 App unmounting - ensuring data persistence...');
+      try {
+        // Create final backup
+        dataMigrationManager.createBackup();
+        console.log('💾 Final backup created before unmount');
+      } catch (error) {
+        console.warn('⚠️ Could not create final backup:', error);
+      }
+    };
   }, []);
 
   // Handle PWA shortcuts and deep links

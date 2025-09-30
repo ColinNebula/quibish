@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import persistentStorageService from '../../services/persistentStorageService';
 import UserProfileModal from '../UserProfile/UserProfileModal';
 import SettingsModal from './SettingsModal';
 // import VideoCall from './VideoCall'; // Temporarily disabled
@@ -41,13 +43,27 @@ import './ResponsiveFix.css';
 import './EncryptionStyles.css';
 
 const ProChat = ({ 
-  user = { id: 'user1', name: 'Current User', avatar: null },
+  user: propUser = { id: 'user1', name: 'Current User', avatar: null },
   conversations: initialConversations = [],
   currentConversation = null,
   onLogout = () => {},
   darkMode = false,
   onToggleDarkMode = () => {}
 }) => {
+  // Get authenticated user from context
+  const { user: authUser, updateUser, isAuthenticated } = useAuth();
+  
+  // Use authenticated user if available, otherwise fall back to prop user
+  const user = authUser || propUser;
+  
+  // Ensure user data is saved to persistent storage
+  useEffect(() => {
+    if (user && user.id) {
+      persistentStorageService.updateUserData(user);
+      console.log('💾 User data synced to persistent storage');
+    }
+  }, [user]);
+
   // Basic state
   const [isConnected] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -195,15 +211,15 @@ const ProChat = ({
         console.error('Failed to load messages:', error);
         setMessagesError('Failed to load messages');
         
-        // Try to load from localStorage as fallback
+        // Try to load from persistent storage as fallback
         try {
-          const cachedMessages = messageService.loadMessagesFromStorage();
+          const cachedMessages = persistentStorageService.getMessages();
           if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
             setChatMessages(cachedMessages);
-            console.log('Loaded messages from local storage');
+            console.log('📱 Loaded messages from persistent storage');
           }
         } catch (storageError) {
-          console.error('Failed to load from storage:', storageError);
+          console.error('❌ Failed to load from persistent storage:', storageError);
         }
       } finally {
         setMessagesLoading(false);
