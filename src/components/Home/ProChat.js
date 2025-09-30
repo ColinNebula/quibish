@@ -2590,67 +2590,6 @@ const ProChat = ({
                     <span style={{ fontSize: '16px', width: '20px' }}>🚪</span>
                     Logout
                   </button>
-                  
-                  <button className="dropdown-item" onClick={handleSearchInChat}>
-                    <span className="dropdown-icon">🔍</span>
-                    Search in Chat
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handleOpenContactManager}>
-                    <span className="dropdown-icon">👥</span>
-                    Contacts
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handleExportChat}>
-                    <span className="dropdown-icon">📥</span>
-                    Export Chat
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handlePrintChat}>
-                    <span className="dropdown-icon">🖨️</span>
-                    Print Chat
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handleMuteNotifications}>
-                    <span className="dropdown-icon">
-                      {localStorage.getItem('notificationsMuted') === 'true' ? '🔔' : '🔕'}
-                    </span>
-                    {localStorage.getItem('notificationsMuted') === 'true' ? 'Unmute' : 'Mute'} Notifications
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handleClearChat}>
-                    <span className="dropdown-icon">🗑️</span>
-                    Clear Chat
-                  </button>
-                  
-                  <hr className="dropdown-divider" />
-                  
-                  <button className="dropdown-item" onClick={handleQuickSettings}>
-                    <span className="dropdown-icon">⚙️</span>
-                    Settings
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={() => setNotificationSettingsModal(true)}>
-                    <span className="dropdown-icon">🔔</span>
-                    Notifications
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={() => setHelpModal(true)}>
-                    <span className="dropdown-icon">❓</span>
-                    Help & Support
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={() => setFeedbackModal(true)}>
-                    <span className="dropdown-icon">💬</span>
-                    Send Feedback
-                  </button>
-                  
-                  <hr className="dropdown-divider" />
-                  
-                  <button onClick={onLogout} className="dropdown-item logout-item">
-                    <span className="dropdown-icon">🚪</span>
-                    Logout
-                  </button>
                 </div>
               )}
             </div>
