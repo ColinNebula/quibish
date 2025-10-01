@@ -276,13 +276,14 @@
 }
 
 .action-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: none;
-  border-radius: 8px;
-  background: rgba(248, 250, 252, 0.8);
+  border-radius: 50%; /* Circular shape */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
   border: 1px solid rgba(226, 232, 240, 0.6);
-  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -294,6 +295,8 @@
   touch-action: manipulation; /* Optimize for touch */
   -webkit-tap-highlight-color: transparent;
   outline: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .action-btn:focus-visible {
@@ -319,51 +322,104 @@
   transition: left 0.5s;
 }
 .action-btn:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(59, 130, 246, 0.3);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 1) 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12), 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-3px) scale(1.05);
 }
 .action-btn:hover::before {
   left: 100%;
 }
 .action-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
+
+/* Pulse animation for active states */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+.action-btn.active::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid rgba(59, 130, 246, 0.6);
+  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* Specific button colors */
 .video-call-btn:hover {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.2), 0 0 0 3px rgba(34, 197, 94, 0.1);
 }
-.voice-call-btn:hover {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
+
+.voice-call-btn:hover,
+.unified-call-btn:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2), 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.info-btn:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 197, 253, 0.15) 100%);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2), 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.donation-btn:hover {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(219, 39, 119, 0.15) 100%);
+  border-color: rgba(236, 72, 153, 0.4);
+  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.2), 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+
+.logout-btn:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.2), 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.menu-btn:hover {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.15) 0%, rgba(75, 85, 99, 0.15) 100%);
+  border-color: rgba(107, 114, 128, 0.4);
+  box-shadow: 0 6px 16px rgba(107, 114, 128, 0.2), 0 0 0 3px rgba(107, 114, 128, 0.1);
 }
 
 /* Invite and New Chat button styles */
 .invite-user-btn {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
-  border-color: rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);
 }
 
 .invite-user-btn:hover {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
   border-color: rgba(99, 102, 241, 0.5);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3), 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .new-chat-btn {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1));
-  border-color: rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%);
+  border-color: rgba(34, 197, 94, 0.35);
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15);
 }
 
 .new-chat-btn:hover {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%);
   border-color: rgba(34, 197, 94, 0.5);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.3), 0 0 0 3px rgba(34, 197, 94, 0.1);
 }
 
 /* Connection indicator on voice call button */
@@ -557,12 +613,16 @@
   color: #64748b;
 }
 .dark-theme .action-btn {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(51, 65, 85, 0.6);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: rgba(71, 85, 105, 0.6);
   color: #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
+
 .dark-theme .action-btn:hover {
-  background: rgba(51, 65, 85, 0.9);
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 /* Dark theme support for invite and new chat buttons */
