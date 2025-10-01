@@ -2541,9 +2541,6 @@ const ProChat = ({
               >
                 💝
               </button>
-              <button onClick={onToggleDarkMode} className="action-btn theme-toggle" title="Toggle theme">
-                {darkMode ? '☀️' : '🌙'}
-              </button>
               <button onClick={onLogout} className="action-btn logout-btn" title="Logout / Disconnect">
                 🚪
               </button>
@@ -2719,6 +2716,26 @@ const ProChat = ({
                   }}>
                     <span style={{ fontSize: '16px', width: '20px' }}>🗑️</span>
                     Clear Chat
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={() => { onToggleDarkMode(); setShowMoreMenu(false); }} 
+                    onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(59, 130, 246, 0.08)'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>{darkMode ? '☀️' : '🌙'}</span>
+                    {darkMode ? 'Light Mode' : 'Dark Mode'}
                   </button>
                   
                   <hr style={{ height: '1px', background: 'rgba(226, 232, 240, 0.8)', border: 'none', margin: '4px 0' }} />
