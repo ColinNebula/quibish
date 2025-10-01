@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import enhancedVideoCallService from '../services/enhancedVideoCallService';
+import videoFiltersService from '../services/videoFiltersService';
 import './VideoCallPanel.css';
 
 const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
   const [callState, setCallState] = useState(null);
   const [devices, setDevices] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [layout, setLayout] = useState('grid');
   const [isMinimized, setIsMinimized] = useState(false);
+  const [filters, setFilters] = useState(null);
+  const [activePreset, setActivePreset] = useState('none');
   
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const screenShareRef = useRef(null);
+  const hiddenVideoRef = useRef(null);
 
   // Initialize and start call
   useEffect(() => {
@@ -56,16 +61,39 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const initializeCall = async () => {
-    await enhancedVideoCallService.initialize();
-    
-    const result = await enhancedVideoCallService.startCall({
-      callId,
-      participants,
-      quality: 'auto'
-    });
+    try {
+      await enhancedVideoCallService.initialize();
+      
+      const result = await enhancedVideoCallService.startCall({
+        callId,
+        participants,
+        quality: 'auto'
+      });
 
-    if (result.success && localVideoRef.current) {
-      localVideoRef.current.srcObject = result.stream;
+      if (result.success) {
+        // Initialize filters service first
+        setFilters(videoFiltersService.getFilters());
+        
+        // Initialize filters with hidden video element
+        if (hiddenVideoRef.current) {
+          hiddenVideoRef.current.srcObject = result.stream;
+          await hiddenVideoRef.current.play();
+          
+          videoFiltersService.initialize(hiddenVideoRef.current);
+          const filteredStream = videoFiltersService.startProcessing();
+          
+          if (localVideoRef.current && filteredStream) {
+            localVideoRef.current.srcObject = filteredStream;
+          }
+        }
+      } else {
+        // Still initialize filters state even if call fails
+        setFilters(videoFiltersService.getFilters());
+      }
+    } catch (error) {
+      console.error('Failed to initialize call:', error);
+      // Initialize filters state even on error
+      setFilters(videoFiltersService.getFilters());
     }
 
     updateCallState();
@@ -139,6 +167,29 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
     updateCallState();
   }, []);
 
+  // Filter handlers
+  const handleFilterChange = useCallback((filterName, value) => {
+    videoFiltersService.setFilter(filterName, value);
+    setFilters(videoFiltersService.getFilters());
+  }, []);
+
+  const handlePresetChange = useCallback((presetName) => {
+    videoFiltersService.applyPreset(presetName);
+    setFilters(videoFiltersService.getFilters());
+    setActivePreset(presetName);
+  }, []);
+
+  const handleAREffectChange = useCallback((effect) => {
+    videoFiltersService.setFilter('arEffect', effect);
+    setFilters(videoFiltersService.getFilters());
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    videoFiltersService.resetFilters();
+    setFilters(videoFiltersService.getFilters());
+    setActivePreset('none');
+  }, []);
+
   if (!callState) {
     return (
       <div className="video-call-panel loading">
@@ -162,6 +213,16 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
         <div className="header-actions">
           <button
             className="header-btn"
+            onClick={() => {
+              console.log('Filters button clicked. Current state:', showFilters, 'Filters:', filters);
+              setShowFilters(!showFilters);
+            }}
+            title="Filters & Effects"
+          >
+            ✨
+          </button>
+          <button
+            className="header-btn"
             onClick={() => setIsMinimized(!isMinimized)}
             title={isMinimized ? 'Maximize' : 'Minimize'}
           >
@@ -180,6 +241,9 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
       {/* Video Grid */}
       {!isMinimized && (
         <div className="video-grid">
+          {/* Hidden video for filter processing */}
+          <video ref={hiddenVideoRef} style={{ display: 'none' }} autoPlay playsInline muted />
+
           {/* Screen Share (if active) */}
           {callState.isScreenSharing && (
             <div className="video-container screen-share">
@@ -218,6 +282,239 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
                 <div className="waiting-icon">⏳</div>
                 <p>Waiting for others to join...</p>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Filters Panel */}
+      {showFilters && !isMinimized && (
+        <div className="filters-panel">
+          {filters ? (
+            <>
+              <div className="filters-header">
+                <h3>✨ Filters & Effects</h3>
+                <button className="reset-btn" onClick={handleResetFilters}>Reset All</button>
+              </div>
+
+              {/* Filter Presets */}
+              <div className="filter-section">
+                <label className="section-label">Presets</label>
+                <div className="preset-grid">
+                  {videoFiltersService.getPresets().map(preset => (
+                    <button
+                      key={preset}
+                      className={`preset-btn ${activePreset === preset ? 'active' : ''}`}
+                      onClick={() => handlePresetChange(preset)}
+                    >
+                      <div className="preset-icon">
+                    {preset === 'none' && '○'}
+                    {preset === 'natural' && '🌿'}
+                    {preset === 'vivid' && '🌈'}
+                    {preset === 'dramatic' && '🎭'}
+                    {preset === 'vintage' && '📽️'}
+                    {preset === 'cool' && '❄️'}
+                    {preset === 'warm' && '☀️'}
+                  </div>
+                  <div className="preset-name">{preset.charAt(0).toUpperCase() + preset.slice(1)}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Beauty Filters */}
+          <div className="filter-section">
+            <label className="section-label">💄 Beauty</label>
+            
+            <div className="slider-group">
+              <label>Smooth Skin</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={filters.smoothSkin}
+                  onChange={(e) => handleFilterChange('smoothSkin', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.smoothSkin}</span>
+              </div>
+            </div>
+
+            <div className="slider-group">
+              <label>Brighten</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={filters.brighten}
+                  onChange={(e) => handleFilterChange('brighten', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.brighten}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Color Adjustments */}
+          <div className="filter-section">
+            <label className="section-label">🎨 Color</label>
+            
+            <div className="slider-group">
+              <label>Brightness</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value={filters.brightness}
+                  onChange={(e) => handleFilterChange('brightness', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.brightness}</span>
+              </div>
+            </div>
+
+            <div className="slider-group">
+              <label>Contrast</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value={filters.contrast}
+                  onChange={(e) => handleFilterChange('contrast', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.contrast}</span>
+              </div>
+            </div>
+
+            <div className="slider-group">
+              <label>Saturation</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value={filters.saturation}
+                  onChange={(e) => handleFilterChange('saturation', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.saturation}</span>
+              </div>
+            </div>
+
+            <div className="slider-group">
+              <label>Temperature</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value={filters.temperature}
+                  onChange={(e) => handleFilterChange('temperature', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.temperature < 0 ? '❄️' : '🔥'} {Math.abs(filters.temperature)}</span>
+              </div>
+            </div>
+
+            <div className="slider-group">
+              <label>Vibrance</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={filters.vibrance}
+                  onChange={(e) => handleFilterChange('vibrance', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.vibrance}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Effects */}
+          <div className="filter-section">
+            <label className="section-label">✨ Effects</label>
+            
+            <div className="slider-group">
+              <label>Sharpen</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={filters.sharpen}
+                  onChange={(e) => handleFilterChange('sharpen', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.sharpen}</span>
+              </div>
+            </div>
+
+            <div className="slider-group">
+              <label>Vignette</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={filters.vignette}
+                  onChange={(e) => handleFilterChange('vignette', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.vignette}</span>
+              </div>
+            </div>
+
+            <div className="slider-group">
+              <label>Film Grain</label>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={filters.grain}
+                  onChange={(e) => handleFilterChange('grain', parseInt(e.target.value))}
+                />
+                <span className="slider-value">{filters.grain}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* AR Effects */}
+          <div className="filter-section">
+            <label className="section-label">🎭 AR Effects</label>
+            <div className="ar-effects-grid">
+              {videoFiltersService.getAREffects().map(effect => (
+                <button
+                  key={effect}
+                  className={`ar-effect-btn ${filters.arEffect === effect ? 'active' : ''}`}
+                  onClick={() => handleAREffectChange(effect)}
+                >
+                  {effect === 'none' && '○'}
+                  {effect === 'glasses' && '👓'}
+                  {effect === 'hat' && '🎩'}
+                  {effect === 'mask' && '🎭'}
+                  {effect === 'ears' && '🐰'}
+                  {effect === 'mustache' && '👨'}
+                  <div className="ar-effect-name">{effect.charAt(0).toUpperCase() + effect.slice(1)}</div>
+                </button>
+              ))}
+            </div>
+
+            {filters.arEffect !== 'none' && (
+              <div className="slider-group">
+                <label>Effect Color</label>
+                <input
+                  type="color"
+                  value={filters.arColor}
+                  onChange={(e) => handleFilterChange('arColor', e.target.value)}
+                  className="color-picker"
+                />
+              </div>
+            )}
+          </div>
+            </>
+          ) : (
+            <div className="filters-loading">
+              <div className="loading-spinner"></div>
+              <p>Initializing filters...</p>
             </div>
           )}
         </div>

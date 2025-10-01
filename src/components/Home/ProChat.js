@@ -3780,16 +3780,14 @@ const ProChat = ({
 
                   {/* Voice Input Button */}
                   {!isRecording && (
-                    <VoiceRecorder
-                      onRecordingComplete={handleVoiceRecordingComplete}
-                      onRecordingCancel={handleVoiceRecordingCancel}
-                      onRecordingStart={handleVoiceRecordingStart}
-                      maxDuration={300000} // 5 minutes
-                      minDuration={1000} // 1 second
-                      compact={true}
-                      autoStart={false}
-                      className="inline-voice-recorder"
-                    />
+                    <button 
+                      className="input-btn voice-btn mobile-action-button touch-target touch-ripple haptic-light"
+                      onClick={() => setIsRecording(true)}
+                      type="button"
+                      title="Record voice message"
+                    >
+                      🎤
+                    </button>
                   )}
 
                   {/* Native Camera Button (Mobile) */}

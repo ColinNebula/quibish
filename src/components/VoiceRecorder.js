@@ -449,7 +449,7 @@ const VoiceRecorder = ({
 
   return (
     <div className={`voice-recorder ${isRecording ? 'recording' : ''} ${isPaused ? 'paused' : ''} ${compact ? 'compact' : ''} ${className}`}>
-      {onClose && !isRecording && (
+      {onClose && (
         <button className="recorder-close-btn" onClick={onClose} title="Close">
           ✕
         </button>
