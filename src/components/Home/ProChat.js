@@ -16,6 +16,8 @@ import AdvancedSearchModal from '../Search/AdvancedSearchModal';
 import SmartRepliesPanel from '../AI/SmartRepliesPanel';
 import AIEnhancementPanel from '../AI/AIEnhancementPanel';
 import InternationalDialer from '../Dialer/InternationalDialer';
+import ThreadView from '../Thread/ThreadView';
+import ThreadIndicator from '../Thread/ThreadIndicator';
 import DonationModal from '../Donation/DonationModal';
 import DonationPrompt from '../Donation/DonationPrompt';
 import NotificationSettings from '../NotificationSettings/NotificationSettings';
@@ -23,6 +25,7 @@ import VoiceRecorder, { VoiceMessagePlayer } from '../VoiceRecorder';
 import messageService from '../../services/messageService';
 import searchService from '../../services/searchService';
 import aiService from '../../services/aiService';
+import messageThreadService from '../../services/messageThreadService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import connectionService from '../../services/connectionService';
@@ -47,6 +50,7 @@ import './ProChat.css';
 import './SearchHighlight.css';
 import './ResponsiveFix.css';
 import './EncryptionStyles.css';
+import './ProChatThreading.css';
 
 const ProChat = ({ 
   user: propUser = { id: 'user1', name: 'Current User', avatar: null },
@@ -149,6 +153,11 @@ const ProChat = ({
   const [smartReplies, setSmartReplies] = useState([]);
   const [showAIEnhancement, setShowAIEnhancement] = useState(false);
   const [currentMessageForAI, setCurrentMessageForAI] = useState('');
+
+  // Threading state
+  const [activeThread, setActiveThread] = useState(null);
+  const [showThreadView, setShowThreadView] = useState(false);
+  const [threads, setThreads] = useState(new Map());
 
   // Encryption state
   const [encryptionEnabled, setEncryptionEnabled] = useState(false);
@@ -462,12 +471,6 @@ const ProChat = ({
     setTouchStart(null);
     setTouchEnd(null);
   }, [touchStart, touchEnd, sidebarCollapsed]);
-
-  // Mobile global voice removed - using internet-based calling only
-  const handleMobileGlobalVoice = useCallback(() => {
-    // Global voice functionality removed
-    console.log('Global voice calls have been removed - use internet-based calling');
-  }, []);
 
   // Close sidebar when clicking outside on mobile
   const handleOverlayClick = useCallback(() => {
@@ -1524,6 +1527,101 @@ const ProChat = ({
     generateReplies();
   }, [chatMessages, user]);
 
+  // Initialize thread service and event handlers
+  useEffect(() => {
+    const handleThreadCreated = (thread) => {
+      setThreads(prev => new Map(prev).set(thread.id, thread));
+    };
+
+    const handleReplyAdded = (threadId) => {
+      const thread = messageThreadService.getThread(threadId);
+      if (thread) {
+        setThreads(prev => new Map(prev).set(threadId, thread));
+      }
+    };
+
+    const handleThreadUpdated = (thread) => {
+      setThreads(prev => new Map(prev).set(thread.id, thread));
+    };
+
+    const handleThreadDeleted = (threadId) => {
+      setThreads(prev => {
+        const newThreads = new Map(prev);
+        newThreads.delete(threadId);
+        return newThreads;
+      });
+      if (activeThread?.id === threadId) {
+        setActiveThread(null);
+        setShowThreadView(false);
+      }
+    };
+
+    // Subscribe to thread events
+    messageThreadService.onThreadCreated = handleThreadCreated;
+    messageThreadService.onReplyAdded = handleReplyAdded;
+    messageThreadService.onThreadUpdated = handleThreadUpdated;
+    messageThreadService.onThreadDeleted = handleThreadDeleted;
+
+    // Load existing threads for conversation
+    if (selectedConversation) {
+      const conversationThreads = messageThreadService.getThreadsForConversation(selectedConversation);
+      const threadsMap = new Map();
+      conversationThreads.forEach(thread => threadsMap.set(thread.id, thread));
+      setThreads(threadsMap);
+    }
+
+    return () => {
+      // Cleanup event handlers
+      messageThreadService.onThreadCreated = null;
+      messageThreadService.onReplyAdded = null;
+      messageThreadService.onThreadUpdated = null;
+      messageThreadService.onThreadDeleted = null;
+    };
+  }, [selectedConversation, activeThread]);
+
+  // Thread handlers
+  const handleCreateThread = useCallback((message) => {
+    try {
+      const thread = messageThreadService.createThread(message, selectedConversation);
+      setActiveThread(thread);
+      setShowThreadView(true);
+      console.log('Thread created:', thread);
+    } catch (error) {
+      console.error('Failed to create thread:', error);
+      alert('Failed to create thread. Please try again.');
+    }
+  }, [selectedConversation]);
+
+  const handleOpenThread = useCallback((threadId) => {
+    const thread = messageThreadService.getThread(threadId);
+    if (thread) {
+      setActiveThread(thread);
+      setShowThreadView(true);
+    }
+  }, []);
+
+  const handleCloseThread = useCallback(() => {
+    setActiveThread(null);
+    setShowThreadView(false);
+  }, []);
+
+  const handleThreadReply = useCallback((threadId, reply) => {
+    try {
+      messageThreadService.addReply(threadId, reply);
+      console.log('Reply added to thread:', threadId);
+    } catch (error) {
+      console.error('Failed to add reply:', error);
+      alert('Failed to add reply. Please try again.');
+    }
+  }, []);
+
+  // Get thread for a message
+  const getMessageThread = useCallback((messageId) => {
+    return Array.from(threads.values()).find(thread => 
+      thread.parentMessage.id === messageId
+    );
+  }, [threads]);
+
   // Modal handlers
   const handleViewUserProfile = useCallback((userId, username) => {
     console.log('🎯 Profile button clicked!', { userId, username, user });
@@ -2304,10 +2402,9 @@ const ProChat = ({
             ))}
           </div>
 
-          {/* Global Voice Calls */}
           {!sidebarCollapsed && (
             <div className="placeholder-content">
-              {/* Global users removed - all calls now use internet-based connections */}
+              {/* All calls use internet-based connections */}
             </div>
           )}
         </div>
@@ -3029,6 +3126,32 @@ const ProChat = ({
                 )}
               </div>
               
+              {/* Threading UI */}
+              <div className="message-threading-actions">
+                {(() => {
+                  const messageThread = getMessageThread(message.id);
+                  return messageThread ? (
+                    <ThreadIndicator
+                      thread={messageThread}
+                      onClick={() => handleOpenThread(messageThread.id)}
+                      compact={false}
+                      showParticipants={true}
+                    />
+                  ) : (
+                    <button
+                      className="reply-in-thread-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCreateThread(message);
+                      }}
+                      title="Reply in thread"
+                    >
+                      💬 Reply in thread
+                    </button>
+                  );
+                })()}
+              </div>
+              
               {/* Context-Aware Message Actions - Placeholder for future implementation */}
               {/* <MessageActions component will be implemented later /> */}
             </div>
@@ -3146,18 +3269,6 @@ const ProChat = ({
                       autoStart={false}
                       className="inline-voice-recorder"
                     />
-                  )}
-
-                  {/* Mobile Global Voice Calls Button (when sidebar collapsed) */}
-                  {sidebarCollapsed && window.innerWidth <= 768 && (
-                    <button 
-                      className="input-btn global-voice-btn mobile-action-button touch-target touch-ripple haptic-light"
-                      onClick={handleMobileGlobalVoice}
-                      type="button"
-                      title="Global Voice Calls"
-                    >
-                      🌍
-                    </button>
                   )}
 
                   {/* Native Camera Button (Mobile) */}
@@ -3756,6 +3867,21 @@ const ProChat = ({
           onResultSelect={handleSearchResultSelect}
           currentConversationId={selectedConversation}
         />
+      )}
+
+      {/* Thread View Panel */}
+      {showThreadView && activeThread && (
+        <div className="thread-view-overlay" onClick={handleCloseThread}>
+          <div className="thread-view-panel" onClick={(e) => e.stopPropagation()}>
+            <ThreadView
+              thread={activeThread}
+              onReply={handleThreadReply}
+              onClose={handleCloseThread}
+              currentUser={user}
+              compact={false}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

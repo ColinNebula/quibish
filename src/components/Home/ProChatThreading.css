@@ -1,0 +1,209 @@
+/* Threading UI Integration Styles */
+
+/* Message Threading Actions */
+.message-threading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.reply-in-thread-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.reply-in-thread-btn:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.reply-in-thread-btn:active {
+  transform: translateY(0);
+}
+
+/* Thread View Overlay */
+.thread-view-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.thread-view-panel {
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .message-threading-actions {
+    border-top-color: rgba(51, 51, 51, 0.5);
+  }
+
+  .reply-in-thread-btn {
+    background: linear-gradient(135deg, #2d2d2d 0%, #1e1e1e 100%);
+    border-color: #333;
+    color: #e1e4e8;
+  }
+
+  .reply-in-thread-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+  }
+
+  .thread-view-panel {
+    background: #1e1e1e;
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .thread-view-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .thread-view-panel {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+    animation: slideUpMobile 0.3s ease;
+  }
+
+  @keyframes slideUpMobile {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .message-threading-actions {
+    flex-wrap: wrap;
+  }
+
+  .reply-in-thread-btn {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+}
+
+/* Animation for thread indicator appearance */
+.thread-indicator.entering {
+  animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Smooth transitions for threading UI */
+.message-threading-actions > * {
+  transition: all 0.3s ease;
+}
+
+/* Accessibility */
+.reply-in-thread-btn:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .message-threading-actions {
+    break-inside: avoid;
+  }
+
+  .thread-view-overlay {
+    display: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .reply-in-thread-btn {
+    border-width: 2px;
+  }
+
+  .message-threading-actions {
+    border-top-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .thread-view-overlay,
+  .thread-view-panel,
+  .thread-indicator,
+  .reply-in-thread-btn {
+    animation: none;
+    transition: none;
+  }
+}
