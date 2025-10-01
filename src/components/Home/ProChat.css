@@ -829,26 +829,55 @@
     display: none;
   }
 }
+/* Recording Overlay */
+.recording-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  animation: overlayFadeIn 0.2s ease-out;
+  cursor: pointer;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Enhanced Voice Recorder Integration */
 .enhanced-recording-container {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 500px;
+  width: 90%;
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(99, 102, 241, 0.2);
   border-radius: 16px;
   padding: 16px;
-  margin: 12px 0;
   box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
-  animation: recordingSlideDown 0.3s ease-out;
+  animation: recordingSlideUp 0.3s ease-out;
+  z-index: 1000;
 }
 
-@keyframes recordingSlideDown {
+@keyframes recordingSlideUp {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateX(-50%) translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
   }
 }
 
@@ -935,7 +964,12 @@
   }
   
   .enhanced-recording-container {
-    margin: 8px 0;
+    bottom: 70px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-width: none;
+    transform: none;
     padding: 12px;
   }
 }
@@ -943,6 +977,12 @@
 @media (max-width: 480px) {
   .inline-voice-recorder .voice-recorder {
     bottom: 70px;
+    left: 12px;
+    right: 12px;
+  }
+  
+  .enhanced-recording-container {
+    bottom: 60px;
     left: 12px;
     right: 12px;
   }

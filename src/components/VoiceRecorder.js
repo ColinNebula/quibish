@@ -6,6 +6,7 @@ const VoiceRecorder = ({
   onRecordingComplete,
   onRecordingCancel,
   onRecordingStart,
+  onClose,
   maxDuration = 300000, // 5 minutes default
   minDuration = 1000, // 1 second minimum
   className = '',
@@ -35,7 +36,7 @@ const VoiceRecorder = ({
         
         // Check browser support first
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          throw new Error('Your browser does not support voice recording. Please use Chrome, Firefox, or Safari.');
+          throw new Error('Voice recording not supported. Please use Chrome, Firefox, Edge, or Safari.');
         }
         
         const initialized = await enhancedVoiceRecorderService.initialize();
@@ -397,6 +398,11 @@ const VoiceRecorder = ({
   if (error && !hasPermission && !isRecording) {
     return (
       <div className={`voice-recorder error ${className}`}>
+        {onClose && (
+          <button className="recorder-close-btn" onClick={onClose} title="Close">
+            ✕
+          </button>
+        )}
         <div className="recorder-message">
           <span className="error-icon">🎤❌</span>
           <span className="error-message">{error}</span>
@@ -443,6 +449,11 @@ const VoiceRecorder = ({
 
   return (
     <div className={`voice-recorder ${isRecording ? 'recording' : ''} ${isPaused ? 'paused' : ''} ${compact ? 'compact' : ''} ${className}`}>
+      {onClose && !isRecording && (
+        <button className="recorder-close-btn" onClick={onClose} title="Close">
+          ✕
+        </button>
+      )}
       {/* Recording Status */}
       {isRecording && (
         <div className="recording-status">

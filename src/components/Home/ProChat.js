@@ -103,6 +103,15 @@ const ProChat = ({
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   
+  // Enhanced sidebar state
+  const [sortBy, setSortBy] = useState('recent'); // 'recent', 'unread', 'alphabetical', 'custom'
+  const [groupByDate, setGroupByDate] = useState(true);
+  const [draggedConversation, setDraggedConversation] = useState(null);
+  const [contextMenuState, setContextMenuState] = useState({ visible: false, x: 0, y: 0, conversation: null });
+  const [batchSelectMode, setBatchSelectMode] = useState(false);
+  const [selectedConversations, setSelectedConversations] = useState(new Set());
+  const [hoveredConversation, setHoveredConversation] = useState(null);
+  
   // Enhanced input state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
@@ -657,6 +666,156 @@ const ProChat = ({
       conversationService.saveConversationsToStorage();
     }
   }, [conversations]);
+
+  // Enhanced sidebar handlers
+  const handleDragStart = useCallback((e, conversation) => {
+    setDraggedConversation(conversation);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', conversation.id);
+    e.currentTarget.classList.add('dragging');
+  }, []);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const handleDrop = useCallback((e, targetConversation) => {
+    e.preventDefault();
+    if (!draggedConversation || draggedConversation.id === targetConversation.id) return;
+
+    const draggedIndex = conversations.findIndex(c => c.id === draggedConversation.id);
+    const targetIndex = conversations.findIndex(c => c.id === targetConversation.id);
+
+    const newConversations = [...conversations];
+    newConversations.splice(draggedIndex, 1);
+    newConversations.splice(targetIndex, 0, draggedConversation);
+
+    setConversations(newConversations);
+    setDraggedConversation(null);
+    
+    // Save custom order
+    setSortBy('custom');
+  }, [draggedConversation, conversations]);
+
+  const handleDragEnd = useCallback((e) => {
+    e.currentTarget.classList.remove('dragging');
+    setDraggedConversation(null);
+  }, []);
+
+  const handleContextMenu = useCallback((e, conversation) => {
+    e.preventDefault();
+    setContextMenuState({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      conversation
+    });
+  }, []);
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenuState({ visible: false, x: 0, y: 0, conversation: null });
+  }, []);
+
+  const handlePinConversation = useCallback((conversationId) => {
+    setConversations(prev => prev.map(conv => 
+      conv.id === conversationId 
+        ? { ...conv, isPinned: !conv.isPinned }
+        : conv
+    ));
+    handleCloseContextMenu();
+  }, [handleCloseContextMenu]);
+
+  const handleMuteConversation = useCallback((conversationId) => {
+    setConversations(prev => prev.map(conv => 
+      conv.id === conversationId 
+        ? { ...conv, isMuted: !conv.isMuted }
+        : conv
+    ));
+    handleCloseContextMenu();
+  }, [handleCloseContextMenu]);
+
+  const handleArchiveConversation = useCallback((conversationId) => {
+    setConversations(prev => prev.map(conv => 
+      conv.id === conversationId 
+        ? { ...conv, isArchived: !conv.isArchived }
+        : conv
+    ));
+    handleCloseContextMenu();
+  }, [handleCloseContextMenu]);
+
+  const handleDeleteConversation = useCallback((conversationId) => {
+    if (window.confirm('Are you sure you want to delete this conversation?')) {
+      setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+      if (selectedConversation === conversationId) {
+        setSelectedConversation(conversations[0]?.id || null);
+      }
+    }
+    handleCloseContextMenu();
+  }, [selectedConversation, conversations, handleCloseContextMenu]);
+
+  const handleMarkAsRead = useCallback((conversationId) => {
+    setConversations(prev => prev.map(conv => 
+      conv.id === conversationId 
+        ? { ...conv, unreadCount: 0 }
+        : conv
+    ));
+    handleCloseContextMenu();
+  }, [handleCloseContextMenu]);
+
+  const toggleBatchSelect = useCallback(() => {
+    setBatchSelectMode(prev => !prev);
+    setSelectedConversations(new Set());
+  }, []);
+
+  const handleBatchToggle = useCallback((conversationId) => {
+    setSelectedConversations(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(conversationId)) {
+        newSet.delete(conversationId);
+      } else {
+        newSet.add(conversationId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleBatchMarkRead = useCallback(() => {
+    setConversations(prev => prev.map(conv => 
+      selectedConversations.has(conv.id)
+        ? { ...conv, unreadCount: 0 }
+        : conv
+    ));
+    setSelectedConversations(new Set());
+    setBatchSelectMode(false);
+  }, [selectedConversations]);
+
+  const handleBatchArchive = useCallback(() => {
+    setConversations(prev => prev.map(conv => 
+      selectedConversations.has(conv.id)
+        ? { ...conv, isArchived: true }
+        : conv
+    ));
+    setSelectedConversations(new Set());
+    setBatchSelectMode(false);
+  }, [selectedConversations]);
+
+  const handleBatchDelete = useCallback(() => {
+    if (window.confirm(`Delete ${selectedConversations.size} conversations?`)) {
+      setConversations(prev => prev.filter(conv => !selectedConversations.has(conv.id)));
+      setSelectedConversations(new Set());
+      setBatchSelectMode(false);
+    }
+  }, [selectedConversations]);
+
+  // Close context menu on click outside
+  useEffect(() => {
+    if (contextMenuState.visible) {
+      const handleClick = () => handleCloseContextMenu();
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [contextMenuState.visible, handleCloseContextMenu]);
 
   const handleFilterChange = useCallback((filter) => {
     setActiveFilter(filter);
@@ -1308,7 +1467,12 @@ const ProChat = ({
 
     let filtered = conversations.filter(conv => {
       // Ensure conversation has required fields
-      return conv && typeof conv === 'object' && conv.id && conv.name;
+      if (!conv || typeof conv !== 'object' || !conv.id || !conv.name) return false;
+      
+      // Filter out archived conversations unless in 'archived' filter
+      if (conv.isArchived && activeFilter !== 'archived') return false;
+      
+      return true;
     });
     
     // Apply text search with null safety
@@ -1333,6 +1497,9 @@ const ProChat = ({
             return name.includes('Team') || name.includes('Group');
           });
           break;
+        case 'archived':
+          filtered = filtered.filter(conv => conv.isArchived === true);
+          break;
         default:
           // 'all' - no additional filtering
           break;
@@ -1342,8 +1509,137 @@ const ProChat = ({
       // Return unfiltered results if filter fails
     }
     
+    // Apply sorting
+    try {
+      switch (sortBy) {
+        case 'unread':
+          filtered.sort((a, b) => (b.unreadCount || 0) - (a.unreadCount || 0));
+          break;
+        case 'alphabetical':
+          filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          break;
+        case 'recent':
+          filtered.sort((a, b) => {
+            const timeA = new Date(a.lastMessageTime || 0).getTime();
+            const timeB = new Date(b.lastMessageTime || 0).getTime();
+            return timeB - timeA;
+          });
+          break;
+        case 'custom':
+          // Keep custom order (no sorting)
+          break;
+        default:
+          break;
+      }
+      
+      // Always put pinned conversations at the top
+      filtered.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return 0;
+      });
+    } catch (error) {
+      console.error('Error sorting conversations:', error);
+    }
+    
     return filtered;
-  }, [conversations, searchQuery, activeFilter]);
+  }, [conversations, searchQuery, activeFilter, sortBy]);
+
+  // Group conversations by date
+  const groupedConversations = useMemo(() => {
+    if (!groupByDate) {
+      return { 'All Conversations': filteredConversations };
+    }
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(today);
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    const groups = {
+      'Today': [],
+      'Yesterday': [],
+      'This Week': [],
+      'This Month': [],
+      'Older': []
+    };
+
+    filteredConversations.forEach(conv => {
+      const convDate = new Date(conv.lastMessageTime || 0);
+      const convDateOnly = new Date(convDate.getFullYear(), convDate.getMonth(), convDate.getDate());
+
+      if (convDateOnly.getTime() === today.getTime()) {
+        groups['Today'].push(conv);
+      } else if (convDateOnly.getTime() === yesterday.getTime()) {
+        groups['Yesterday'].push(conv);
+      } else if (convDateOnly >= weekAgo) {
+        groups['This Week'].push(conv);
+      } else if (convDateOnly >= monthAgo) {
+        groups['This Month'].push(conv);
+      } else {
+        groups['Older'].push(conv);
+      }
+    });
+
+    // Remove empty groups
+    Object.keys(groups).forEach(key => {
+      if (groups[key].length === 0) {
+        delete groups[key];
+      }
+    });
+
+    return groups;
+  }, [filteredConversations, groupByDate]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (sidebarCollapsed || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const currentIndex = filteredConversations.findIndex(c => c.id === selectedConversation);
+      
+      switch(e.key) {
+        case 'ArrowUp':
+          e.preventDefault();
+          if (currentIndex > 0) {
+            handleConversationSelect(filteredConversations[currentIndex - 1].id);
+          }
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          if (currentIndex < filteredConversations.length - 1) {
+            handleConversationSelect(filteredConversations[currentIndex + 1].id);
+          }
+          break;
+        case 'Delete':
+          if (selectedConversation && e.shiftKey) {
+            handleDeleteConversation(selectedConversation);
+          }
+          break;
+        case 'p':
+          if (selectedConversation && e.ctrlKey) {
+            e.preventDefault();
+            handlePinConversation(selectedConversation);
+          }
+          break;
+        case 'm':
+          if (selectedConversation && e.ctrlKey) {
+            e.preventDefault();
+            handleMuteConversation(selectedConversation);
+          }
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedConversation, filteredConversations, sidebarCollapsed, handleConversationSelect, handleDeleteConversation, handlePinConversation, handleMuteConversation]);
 
   const getFilterCounts = useMemo(() => {
     if (!Array.isArray(conversations)) {
@@ -2362,47 +2658,201 @@ const ProChat = ({
           </div>
         )}
 
+        {/* Toolbar - Sort, Group, Batch Select */}
+        {!sidebarCollapsed && (
+          <div className="sidebar-toolbar">
+            <div className="toolbar-left">
+              <button
+                className={`toolbar-btn ${sortBy === 'recent' ? 'active' : ''}`}
+                onClick={() => setSortBy('recent')}
+                title="Sort by recent"
+              >
+                🕒
+              </button>
+              <button
+                className={`toolbar-btn ${sortBy === 'unread' ? 'active' : ''}`}
+                onClick={() => setSortBy('unread')}
+                title="Sort by unread"
+              >
+                📬
+              </button>
+              <button
+                className={`toolbar-btn ${sortBy === 'alphabetical' ? 'active' : ''}`}
+                onClick={() => setSortBy('alphabetical')}
+                title="Sort alphabetically"
+              >
+                🔤
+              </button>
+              <button
+                className={`toolbar-btn ${groupByDate ? 'active' : ''}`}
+                onClick={() => setGroupByDate(!groupByDate)}
+                title={groupByDate ? 'Ungroup' : 'Group by date'}
+              >
+                📅
+              </button>
+            </div>
+            <div className="toolbar-right">
+              <button
+                className={`toolbar-btn ${batchSelectMode ? 'active' : ''}`}
+                onClick={toggleBatchSelect}
+                title="Batch select"
+              >
+                ☑️
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Batch Operations Bar */}
+        {!sidebarCollapsed && batchSelectMode && selectedConversations.size > 0 && (
+          <div className="batch-operations-bar">
+            <div className="batch-info">
+              <span>{selectedConversations.size} selected</span>
+            </div>
+            <div className="batch-actions">
+              <button onClick={handleBatchMarkRead} title="Mark as read">
+                ✅
+              </button>
+              <button onClick={handleBatchArchive} title="Archive">
+                📦
+              </button>
+              <button onClick={handleBatchDelete} title="Delete">
+                🗑️
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Conversations List */}
         <div className="pro-sidebar-content">
-          <div className="conversations-header">
-            {!sidebarCollapsed && <h4>Recent Conversations</h4>}
-          </div>
           <div className="conversations-list">
-            {filteredConversations.map(conv => (
-              <div 
-                key={conv.id} 
-                className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
-                onClick={() => handleConversationSelect(conv.id)}
-              >
-                <div className="conversation-avatar" data-tooltip={conv.name}>
-                  <img 
-                    src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
-                    alt={conv.name}
-                  />
-                  {conv.isOnline && <div className="online-dot"></div>}
-                  {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
-                </div>
-                {!sidebarCollapsed && (
-                  <div className="conversation-details">
-                    <div className="conversation-header">
-                      <h5 className="conversation-name">{conv.name}</h5>
-                      <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
+            {!groupByDate ? (
+              // Non-grouped list
+              filteredConversations.map((conv, index) => (
+                <div 
+                  key={conv.id} 
+                  className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''} ${draggedConversation?.id === conv.id ? 'dragging' : ''}`}
+                  onClick={() => !batchSelectMode && handleConversationSelect(conv.id)}
+                  onContextMenu={(e) => handleContextMenu(e, conv)}
+                  draggable={sortBy === 'custom' && !batchSelectMode}
+                  onDragStart={(e) => handleDragStart(e, conv)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, conv)}
+                  onDragEnd={handleDragEnd}
+                  onMouseEnter={() => setHoveredConversation(conv.id)}
+                  onMouseLeave={() => setHoveredConversation(null)}
+                >
+                  {batchSelectMode && !sidebarCollapsed && (
+                    <div className="batch-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedConversations.has(conv.id)}
+                        onChange={() => handleBatchToggle(conv.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
                     </div>
-                    <div className="conversation-preview">
-                      <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
-                      <div className="conversation-meta">
-                        {conv.isPinned && <span className="pin-icon">📌</span>}
-                        {conv.isMuted && <span className="mute-icon">🔇</span>}
-                        {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
+                  )}
+                  
+                  <div className="conversation-avatar" data-tooltip={conv.name}>
+                    <img 
+                      src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
+                      alt={conv.name}
+                    />
+                    {conv.isOnline && <div className="online-dot"></div>}
+                    {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
+                  </div>
+                  
+                  {!sidebarCollapsed && (
+                    <div className="conversation-details">
+                      <div className="conversation-header">
+                        <h5 className="conversation-name">
+                          {conv.isPinned && <span className="pin-indicator">📌</span>}
+                          {conv.name}
+                        </h5>
+                        <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
+                      </div>
+                      <div className="conversation-preview">
+                        <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
+                        <div className="conversation-meta">
+                          {conv.isMuted && <span className="mute-icon">🔇</span>}
+                          {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                {sidebarCollapsed && conv.unreadCount > 0 && (
-                  <div className="collapsed-unread-indicator"></div>
-                )}
-              </div>
-            ))}
+                  )}
+                  
+                  {sidebarCollapsed && conv.unreadCount > 0 && (
+                    <div className="collapsed-unread-indicator"></div>
+                  )}
+                  
+                  {sortBy === 'custom' && !sidebarCollapsed && !batchSelectMode && (
+                    <div className="drag-handle" title="Drag to reorder">
+                      ⋮⋮
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              // Grouped list
+              Object.entries(groupedConversations).map(([groupName, convs]) => (
+                <div key={groupName} className="conversation-group">
+                  {!sidebarCollapsed && <div className="group-header">{groupName}</div>}
+                  {convs.map((conv) => (
+                    <div 
+                      key={conv.id} 
+                      className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
+                      onClick={() => !batchSelectMode && handleConversationSelect(conv.id)}
+                      onContextMenu={(e) => handleContextMenu(e, conv)}
+                      onMouseEnter={() => setHoveredConversation(conv.id)}
+                      onMouseLeave={() => setHoveredConversation(null)}
+                    >
+                      {batchSelectMode && !sidebarCollapsed && (
+                        <div className="batch-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={selectedConversations.has(conv.id)}
+                            onChange={() => handleBatchToggle(conv.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="conversation-avatar" data-tooltip={conv.name}>
+                        <img 
+                          src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
+                          alt={conv.name}
+                        />
+                        {conv.isOnline && <div className="online-dot"></div>}
+                        {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
+                      </div>
+                      
+                      {!sidebarCollapsed && (
+                        <div className="conversation-details">
+                          <div className="conversation-header">
+                            <h5 className="conversation-name">
+                              {conv.isPinned && <span className="pin-indicator">📌</span>}
+                              {conv.name}
+                            </h5>
+                            <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
+                          </div>
+                          <div className="conversation-preview">
+                            <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
+                            <div className="conversation-meta">
+                              {conv.isMuted && <span className="mute-icon">🔇</span>}
+                              {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {sidebarCollapsed && conv.unreadCount > 0 && (
+                        <div className="collapsed-unread-indicator"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))
+            )}
           </div>
 
           {!sidebarCollapsed && (
@@ -2411,6 +2861,42 @@ const ProChat = ({
             </div>
           )}
         </div>
+
+        {/* Context Menu */}
+        {contextMenuState.visible && (
+          <div 
+            className="conversation-context-menu"
+            style={{
+              position: 'fixed',
+              left: `${contextMenuState.x}px`,
+              top: `${contextMenuState.y}px`,
+              zIndex: 9999
+            }}
+          >
+            <div className="context-menu-item" onClick={() => handlePinConversation(contextMenuState.conversation.id)}>
+              <span className="menu-icon">{contextMenuState.conversation.isPinned ? '📍' : '📌'}</span>
+              <span className="menu-text">{contextMenuState.conversation.isPinned ? 'Unpin' : 'Pin'}</span>
+            </div>
+            <div className="context-menu-item" onClick={() => handleMuteConversation(contextMenuState.conversation.id)}>
+              <span className="menu-icon">{contextMenuState.conversation.isMuted ? '🔔' : '🔇'}</span>
+              <span className="menu-text">{contextMenuState.conversation.isMuted ? 'Unmute' : 'Mute'}</span>
+            </div>
+            <div className="context-menu-item" onClick={() => handleMarkAsRead(contextMenuState.conversation.id)}>
+              <span className="menu-icon">✅</span>
+              <span className="menu-text">Mark as Read</span>
+            </div>
+            <div className="context-menu-divider"></div>
+            <div className="context-menu-item" onClick={() => handleArchiveConversation(contextMenuState.conversation.id)}>
+              <span className="menu-icon">{contextMenuState.conversation.isArchived ? '📥' : '📦'}</span>
+              <span className="menu-text">{contextMenuState.conversation.isArchived ? 'Unarchive' : 'Archive'}</span>
+            </div>
+            <div className="context-menu-item danger" onClick={() => handleDeleteConversation(contextMenuState.conversation.id)}>
+              <span className="menu-icon">🗑️</span>
+              <span className="menu-text">Delete</span>
+            </div>
+          </div>
+        )}
+
 
         {/* Sidebar Footer */}
         <div className="sidebar-footer">
@@ -3192,18 +3678,26 @@ const ProChat = ({
           <div className="input-wrapper enhanced touch-target">
             {/* Enhanced Voice Recording Interface */}
             {isRecording && (
-              <div className="enhanced-recording-container">
-                <VoiceRecorder
-                  onRecordingComplete={handleVoiceRecordingComplete}
-                  onRecordingCancel={handleVoiceRecordingCancel}
-                  onRecordingStart={handleVoiceRecordingStart}
-                  maxDuration={300000} // 5 minutes
-                  minDuration={1000} // 1 second
-                  compact={true}
-                  autoStart={false}
-                  className="chat-voice-recorder"
+              <>
+                <div 
+                  className="recording-overlay" 
+                  onClick={() => setIsRecording(false)}
+                  title="Click to close"
                 />
-              </div>
+                <div className="enhanced-recording-container">
+                  <VoiceRecorder
+                    onRecordingComplete={handleVoiceRecordingComplete}
+                    onRecordingCancel={handleVoiceRecordingCancel}
+                    onRecordingStart={handleVoiceRecordingStart}
+                    onClose={() => setIsRecording(false)}
+                    maxDuration={300000} // 5 minutes
+                    minDuration={1000} // 1 second
+                    compact={true}
+                    autoStart={false}
+                    className="chat-voice-recorder"
+                  />
+                </div>
+              </>
             )}
 
             {/* Regular Input Interface */}

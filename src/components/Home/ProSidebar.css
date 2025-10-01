@@ -517,3 +517,450 @@
     background-size: 200% 100%;
   }
 }
+
+/* Enhanced Sidebar Features */
+
+/* Toolbar Styles */
+.sidebar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+  background: rgba(248, 250, 252, 0.8);
+  gap: 8px;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  gap: 4px;
+}
+
+.toolbar-btn {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-btn.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Batch Operations Bar */
+.batch-operations-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+  animation: slideDown 0.3s ease;
+}
+
+.batch-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.batch-actions button {
+  background: white;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.batch-actions button:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: scale(1.1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Batch Checkbox */
+.batch-checkbox {
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.batch-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+/* Drag and Drop Styles */
+.conversation-item[draggable="true"] {
+  cursor: move;
+}
+
+.conversation-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.conversation-item[draggable="true"]:hover {
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.drag-handle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a0aec0;
+  font-size: 16px;
+  cursor: move;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.conversation-item:hover .drag-handle {
+  opacity: 1;
+}
+
+/* Context Menu */
+.conversation-context-menu {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.07),
+    0 10px 20px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  min-width: 180px;
+  animation: contextMenuFadeIn 0.15s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+.context-menu-item:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  transform: translateX(2px);
+}
+
+.context-menu-item.danger {
+  color: #e53e3e;
+}
+
+.context-menu-item.danger:hover {
+  background: rgba(229, 62, 62, 0.1);
+  color: #c53030;
+}
+
+.menu-icon {
+  font-size: 16px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-text {
+  flex: 1;
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: rgba(226, 232, 240, 0.6);
+  margin: 6px 0;
+}
+
+/* Group Header */
+.conversation-group {
+  margin-bottom: 8px;
+}
+
+.group-header {
+  padding: 12px 20px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(248, 250, 252, 0.98) 0%,
+    rgba(248, 250, 252, 0.95) 100%
+  );
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+}
+
+/* Pin Indicator */
+.pin-indicator {
+  font-size: 12px;
+  margin-right: 4px;
+  color: #667eea;
+  animation: pinPulse 2s ease-in-out infinite;
+}
+
+@keyframes pinPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Enhanced Conversation Item Animations */
+.conversation-item.enhanced {
+  position: relative;
+  overflow: hidden;
+}
+
+.conversation-item.enhanced::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.3s ease;
+}
+
+.conversation-item.enhanced.active::after {
+  transform: scaleY(1);
+}
+
+.conversation-item.enhanced:hover::after {
+  transform: scaleY(0.3);
+}
+
+/* Hover Preview Tooltip */
+.conversation-item[data-hover="true"]::before {
+  content: attr(data-preview);
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 12px;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  width: 280px;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.conversation-item:hover[data-hover="true"]::before {
+  opacity: 1;
+}
+
+/* Activity Indicators */
+.activity-indicator {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: activityPulse 1.5s ease-in-out infinite;
+}
+
+.activity-indicator.typing {
+  background: #667eea;
+}
+
+.activity-indicator.recording {
+  background: #e53e3e;
+}
+
+.activity-indicator.calling {
+  background: #48bb78;
+}
+
+@keyframes activityPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* Empty State */
+.conversations-list:empty::after {
+  content: 'No conversations found';
+  display: block;
+  text-align: center;
+  padding: 40px 20px;
+  color: #a0aec0;
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* Keyboard Navigation Highlight */
+.conversation-item:focus {
+  outline: 2px solid #667eea;
+  outline-offset: -2px;
+}
+
+/* Smooth Scrolling */
+.conversations-list {
+  scroll-behavior: smooth;
+}
+
+/* Loading State for Individual Items */
+.conversation-item.loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.conversation-item.loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 100%
+  );
+  animation: shimmerSweep 1.5s infinite;
+}
+
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Responsive Updates */
+@media (max-width: 768px) {
+  .sidebar-toolbar {
+    padding: 8px 12px;
+  }
+
+  .toolbar-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .batch-operations-bar {
+    padding: 10px 16px;
+  }
+
+  .context-menu-item {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .group-header {
+    padding: 10px 16px 6px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-toolbar {
+    padding: 6px 10px;
+  }
+
+  .toolbar-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+
+  .batch-operations-bar {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .batch-actions button {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+}
