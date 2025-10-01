@@ -22,12 +22,16 @@ import DonationModal from '../Donation/DonationModal';
 import DonationPrompt from '../Donation/DonationPrompt';
 import NotificationSettings from '../NotificationSettings/NotificationSettings';
 import VoiceRecorder, { VoiceMessagePlayer } from '../VoiceRecorder';
+import FileSharePanel from '../FileSharePanel';
+import FilePreview from '../FilePreview';
+import VideoCallPanel from '../VideoCallPanel';
 import messageService from '../../services/messageService';
 import searchService from '../../services/searchService';
 import aiService from '../../services/aiService';
 import messageThreadService from '../../services/messageThreadService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
+import enhancedVideoCallService from '../../services/enhancedVideoCallService';
 import connectionService from '../../services/connectionService';
 import { buildApiUrl } from '../../config/api';
 import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
@@ -158,6 +162,11 @@ const ProChat = ({
   const [activeThread, setActiveThread] = useState(null);
   const [showThreadView, setShowThreadView] = useState(false);
   const [threads, setThreads] = useState(new Map());
+
+  // File Sharing state
+  const [showFileShare, setShowFileShare] = useState(false);
+  const [showFilePreview, setShowFilePreview] = useState(false);
+  const [selectedFileId, setSelectedFileId] = useState(null);
 
   // Encryption state
   const [encryptionEnabled, setEncryptionEnabled] = useState(false);
@@ -2043,40 +2052,34 @@ const ProChat = ({
     }
 
     try {
-      // Start video call using enhanced voice call service
-      const callInstance = await enhancedVoiceCallService.initiateEnhancedCall(currentUser, 'video');
+      // Initialize video call service
+      await enhancedVideoCallService.initialize();
       
-      if (callInstance.success) {
-        // Update video call state
-        setVideoCallState({
-          active: true,
-          withUser: {
-            name: currentUser.name,
-            avatar: currentUser.avatar,
-            phone: currentUser.phone
-          },
-          minimized: false,
-          audioOnly: false,
-          callInstance
-        });
+      // Update video call state to show panel
+      setVideoCallState({
+        active: true,
+        withUser: {
+          name: currentUser.name,
+          avatar: currentUser.avatar,
+          id: currentUser.id
+        },
+        minimized: false,
+        audioOnly: false,
+        callId: `call_${Date.now()}`
+      });
 
-        // Add video call message to chat
-        const videoCallMessage = {
-          id: callInstance.callId,
-          text: `📹 Video call with ${currentUser.name}`,
-          user: 'You',
-          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-          type: 'video_call',
-          callStatus: 'connecting',
-          isSystemMessage: true
-        };
+      // Add video call message to chat
+      const videoCallMessage = {
+        id: `call_${Date.now()}`,
+        text: `📹 Video call with ${currentUser.name}`,
+        user: 'You',
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        type: 'video_call',
+        callStatus: 'connecting',
+        isSystemMessage: true
+      };
 
-        setChatMessages(prev => [...prev, videoCallMessage]);
-        
-        alert('📹 Video call initiated!\n\nNote: This is a demo implementation. In a real app, you would see the video call interface.');
-      } else {
-        throw new Error(callInstance.error);
-      }
+      setChatMessages(prev => [...prev, videoCallMessage]);
     } catch (error) {
       console.error('Failed to start video call:', error);
       alert('Failed to start video call. Please check your camera and microphone permissions.');
@@ -2533,6 +2536,13 @@ const ProChat = ({
               </button>
               <button className="action-btn info-btn" title="Chat info">
                 ℹ️
+              </button>
+              <button 
+                className="action-btn file-share-btn" 
+                title="📎 File Sharing - Upload, manage, and share files"
+                onClick={() => setShowFileShare(true)}
+              >
+                📎
               </button>
               <button 
                 className="action-btn donation-btn" 
@@ -3899,6 +3909,47 @@ const ProChat = ({
             />
           </div>
         </div>
+      )}
+
+      {/* File Share Panel */}
+      {showFileShare && (
+        <FileSharePanel
+          userId={user.id}
+          conversationId={selectedConversation}
+          onClose={() => setShowFileShare(false)}
+          onFileSelect={(file) => {
+            setSelectedFileId(file.id);
+            setShowFilePreview(true);
+          }}
+        />
+      )}
+
+      {/* File Preview Modal */}
+      {showFilePreview && selectedFileId && (
+        <FilePreview
+          fileId={selectedFileId}
+          onClose={() => {
+            setShowFilePreview(false);
+            setSelectedFileId(null);
+          }}
+        />
+      )}
+
+      {/* Video Call Panel */}
+      {videoCallState.active && (
+        <VideoCallPanel
+          callId={videoCallState.callId}
+          participants={videoCallState.withUser ? [videoCallState.withUser] : []}
+          onClose={() => {
+            setVideoCallState({
+              active: false,
+              withUser: null,
+              minimized: false,
+              audioOnly: false,
+              callId: null
+            });
+          }}
+        />
       )}
     </div>
   );
