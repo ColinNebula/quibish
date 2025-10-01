@@ -13,6 +13,7 @@
 .reply-in-thread-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 6px 12px;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -24,6 +25,14 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+}
+
+/* Icon-only variant for compact display */
+.reply-in-thread-btn.icon-only {
+  padding: 6px 8px;
+  font-size: 16px;
+  min-width: 32px;
+  gap: 0;
 }
 
 .reply-in-thread-btn:hover {

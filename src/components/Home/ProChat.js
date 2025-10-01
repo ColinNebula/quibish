@@ -3156,14 +3156,14 @@ const ProChat = ({
                     />
                   ) : (
                     <button
-                      className="reply-in-thread-btn"
+                      className="reply-in-thread-btn icon-only"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCreateThread(message);
                       }}
                       title="Reply in thread"
                     >
-                      💬 Reply in thread
+                      💬
                     </button>
                   );
                 })()}
