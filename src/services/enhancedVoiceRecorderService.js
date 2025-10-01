@@ -154,7 +154,7 @@ class EnhancedVoiceRecorderService {
   }
 
   // Request microphone permission and start recording
-  async startRecording() {
+  async startRecording(qualityConfig = null) {
     try {
       if (this.isRecording) {
         console.warn('⚠️ Recording already in progress');
@@ -162,23 +162,43 @@ class EnhancedVoiceRecorderService {
         return false;
       }
 
-      console.log('🎤 Requesting microphone permission...');
+      // Apply quality config if provided
+      if (qualityConfig) {
+        if (qualityConfig.bitrate) {
+          this.config.audioBitsPerSecond = qualityConfig.bitrate;
+        }
+        if (qualityConfig.sampleRate) {
+          this.config.sampleRate = qualityConfig.sampleRate;
+        }
+        console.log('�️ Using quality config:', qualityConfig);
+      }
+
+      console.log('�🎤 Requesting microphone permission...');
 
       // Check if getUserMedia is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('getUserMedia is not supported in this browser');
       }
 
-      // Request microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: this.config.channelCount,
-          sampleRate: this.config.sampleRate,
-          echoCancellation: this.config.echoCancellation,
-          noiseSuppression: this.config.noiseSuppression,
-          autoGainControl: this.config.autoGainControl
-        }
-      });
+      // Request microphone permission with retry logic
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: this.config.channelCount,
+            sampleRate: this.config.sampleRate,
+            echoCancellation: this.config.echoCancellation,
+            noiseSuppression: this.config.noiseSuppression,
+            autoGainControl: this.config.autoGainControl
+          }
+        });
+      } catch (mediaError) {
+        // Try with fallback settings if advanced settings fail
+        console.warn('⚠️ Advanced audio settings failed, trying basic settings...');
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: true
+        });
+      }
 
       console.log('✅ Microphone permission granted');
 

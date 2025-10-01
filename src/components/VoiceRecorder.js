@@ -19,6 +19,9 @@ const VoiceRecorder = ({
   const [hasPermission, setHasPermission] = useState(false);
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [audioPreview, setAudioPreview] = useState(null);
+  const [quality, setQuality] = useState('standard'); // 'low', 'standard', 'high'
   
   const durationTimerRef = useRef(null);
   const waveformCanvasRef = useRef(null);
@@ -29,11 +32,17 @@ const VoiceRecorder = ({
     const initialize = async () => {
       try {
         console.log('🎤 Initializing voice recorder...');
+        
+        // Check browser support first
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Your browser does not support voice recording. Please use Chrome, Firefox, or Safari.');
+        }
+        
         const initialized = await enhancedVoiceRecorderService.initialize();
         setIsInitialized(initialized);
         
         if (!initialized) {
-          const errorMsg = 'Voice recording is not supported in your browser or permissions denied';
+          const errorMsg = 'Voice recording is not supported in your browser';
           console.error('❌ Voice recorder initialization failed:', errorMsg);
           setError(errorMsg);
         } else {
@@ -213,8 +222,16 @@ const VoiceRecorder = ({
       
       console.log('✅ Microphone test passed, starting recording...');
       setError(null);
+      setRetryCount(0);
       
-      const success = await enhancedVoiceRecorderService.startRecording();
+      // Configure quality before starting
+      const qualityConfig = {
+        low: { bitrate: 64000, sampleRate: 22050 },
+        standard: { bitrate: 128000, sampleRate: 44100 },
+        high: { bitrate: 256000, sampleRate: 48000 }
+      }[quality];
+      
+      const success = await enhancedVoiceRecorderService.startRecording(qualityConfig);
       
       if (!success) {
         throw new Error('Failed to start recording - unknown error');
@@ -226,25 +243,42 @@ const VoiceRecorder = ({
       setError(`Recording failed: ${error.message}`);
       setIsRecording(false);
     }
-  }, [isInitialized]);
+  }, [isInitialized, quality]);
+
+  // Cancel recording - defined before handleStopRecording to avoid use-before-define
+  const handleCancelRecording = useCallback(() => {
+    enhancedVoiceRecorderService.cancelRecording();
+    setDuration(0);
+    setVolume(0);
+    setAudioPreview(null);
+    setError(null);
+    if (onRecordingCancel) onRecordingCancel();
+  }, [onRecordingCancel]);
 
   // Stop recording
   const handleStopRecording = useCallback(async () => {
     if (duration < minDuration) {
       setError(`Recording too short. Minimum duration is ${minDuration / 1000} seconds.`);
+      setTimeout(() => setError(null), 3000);
       handleCancelRecording();
       return;
     }
 
     try {
       console.log('🛑 Stopping recording...');
-      await enhancedVoiceRecorderService.stopRecording();
+      const recordingData = await enhancedVoiceRecorderService.stopRecording();
+      
+      if (recordingData && recordingData.url) {
+        setAudioPreview(recordingData);
+      }
+      
       console.log('✅ Recording stopped successfully');
     } catch (error) {
       console.error('❌ Stop recording error:', error);
       setError(`Stop failed: ${error.message}`);
+      setTimeout(() => setError(null), 5000);
     }
-  }, [duration, minDuration]);
+  }, [duration, minDuration, handleCancelRecording]);
 
   // Pause recording
   const handlePauseRecording = useCallback(() => {
@@ -256,29 +290,40 @@ const VoiceRecorder = ({
     enhancedVoiceRecorderService.resumeRecording();
   }, []);
 
-  // Cancel recording
-  const handleCancelRecording = useCallback(() => {
-    enhancedVoiceRecorderService.cancelRecording();
-    setDuration(0);
-    setVolume(0);
-    if (onRecordingCancel) onRecordingCancel();
-  }, [onRecordingCancel]);
-
-  // Update volume visualization
-  const updateVolumeVisualization = (volumeLevel) => {
-    if (volumeBarRef.current) {
-      const percentage = Math.min(100, Math.max(0, volumeLevel));
-      volumeBarRef.current.style.width = `${percentage}%`;
+  // Retry recording with backoff
+  const handleRetryRecording = useCallback(async () => {
+    const attempt = retryCount + 1;
+    setRetryCount(attempt);
+    
+    if (attempt > 3) {
+      setError('Too many failed attempts. Please check your microphone settings and refresh the page.');
+      return;
     }
+    
+    setError('Retrying...');
+    setTimeout(() => {
+      handleStartRecording();
+    }, attempt * 1000); // Exponential backoff: 1s, 2s, 3s
+  }, [retryCount, handleStartRecording]);
 
-    // Update waveform canvas if available
-    if (waveformCanvasRef.current && isRecording) {
-      drawWaveform(volumeLevel);
+  // Save preview recording
+  const handleSavePreview = useCallback(() => {
+    if (audioPreview && onRecordingComplete) {
+      onRecordingComplete(audioPreview);
+      setAudioPreview(null);
     }
-  };
+  }, [audioPreview, onRecordingComplete]);
+
+  // Discard preview and record again
+  const handleDiscardPreview = useCallback(() => {
+    if (audioPreview && audioPreview.url) {
+      URL.revokeObjectURL(audioPreview.url);
+    }
+    setAudioPreview(null);
+  }, [audioPreview]);
 
   // Draw waveform visualization
-  const drawWaveform = (volumeLevel) => {
+  const drawWaveform = useCallback((volumeLevel) => {
     const canvas = waveformCanvasRef.current;
     if (!canvas) return;
 
@@ -302,7 +347,20 @@ const VoiceRecorder = ({
 
     ctx.fillStyle = gradient;
     ctx.fillRect(width - 2, height - barHeight, 2, barHeight);
-  };
+  }, []);
+
+  // Update volume visualization
+  const updateVolumeVisualization = useCallback((volumeLevel) => {
+    if (volumeBarRef.current) {
+      const percentage = Math.min(100, Math.max(0, volumeLevel));
+      volumeBarRef.current.style.width = `${percentage}%`;
+    }
+
+    // Update waveform canvas if available
+    if (waveformCanvasRef.current && isRecording) {
+      drawWaveform(volumeLevel);
+    }
+  }, [isRecording, drawWaveform]);
 
   // Format duration for display
   const formatDuration = (ms) => {
@@ -336,18 +394,31 @@ const VoiceRecorder = ({
     );
   }
 
-  if (error && !hasPermission) {
+  if (error && !hasPermission && !isRecording) {
     return (
       <div className={`voice-recorder error ${className}`}>
         <div className="recorder-message">
           <span className="error-icon">🎤❌</span>
           <span className="error-message">{error}</span>
+          <div className="error-help">
+            <details>
+              <summary>How to fix microphone issues</summary>
+              <ul>
+                <li>✅ Click the lock icon in your browser's address bar</li>
+                <li>✅ Allow microphone permissions for this site</li>
+                <li>✅ Check your system microphone settings</li>
+                <li>✅ Make sure no other app is using the microphone</li>
+                <li>✅ Try refreshing the page</li>
+              </ul>
+            </details>
+          </div>
           <div className="error-actions">
             <button 
               className="retry-btn primary"
-              onClick={handleStartRecording}
+              onClick={handleRetryRecording}
+              disabled={retryCount >= 3}
             >
-              🔄 Try Again
+              🔄 {retryCount > 0 ? `Retry (${3 - retryCount} left)` : 'Try Again'}
             </button>
             <button 
               className="test-btn secondary"
@@ -355,6 +426,8 @@ const VoiceRecorder = ({
                 const result = await enhancedVoiceRecorderService.testMicrophoneAccess();
                 if (result.success) {
                   setError('✅ Microphone test passed! Click "Try Again" to record.');
+                  setHasPermission(true);
+                  setTimeout(() => setError(null), 3000);
                 } else {
                   setError(result.message);
                 }
@@ -421,6 +494,76 @@ const VoiceRecorder = ({
           ></div>
           <div className="progress-time">
             {formatDuration(maxDuration - duration)} remaining
+          </div>
+        </div>
+      )}
+
+      {/* Audio Preview Player */}
+      {audioPreview && !isRecording && (
+        <div className="audio-preview">
+          <div className="preview-header">
+            <span className="preview-title">🎵 Recording Preview</span>
+            <span className="preview-info">
+              {formatDuration(audioPreview.duration)} • {(audioPreview.size / 1024).toFixed(0)}KB
+            </span>
+          </div>
+          <VoiceMessagePlayer 
+            audioUrl={audioPreview.url}
+            duration={audioPreview.duration}
+            compact={false}
+          />
+          <div className="preview-actions">
+            <button 
+              className="preview-btn save-btn"
+              onClick={handleSavePreview}
+              title="Save recording"
+            >
+              <span className="btn-icon">✅</span>
+              <span className="btn-text">Save & Send</span>
+            </button>
+            <button 
+              className="preview-btn discard-btn"
+              onClick={handleDiscardPreview}
+              title="Record again"
+            >
+              <span className="btn-icon">🔄</span>
+              <span className="btn-text">Record Again</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Recording Quality Selector */}
+      {!isRecording && !audioPreview && !compact && (
+        <div className="quality-selector">
+          <label className="quality-label">Recording Quality:</label>
+          <div className="quality-options">
+            <button 
+              className={`quality-btn ${quality === 'low' ? 'active' : ''}`}
+              onClick={() => setQuality('low')}
+              title="Low quality - Smaller file size"
+            >
+              📉 Low
+            </button>
+            <button 
+              className={`quality-btn ${quality === 'standard' ? 'active' : ''}`}
+              onClick={() => setQuality('standard')}
+              title="Standard quality - Balanced"
+            >
+              📊 Standard
+            </button>
+            <button 
+              className={`quality-btn ${quality === 'high' ? 'active' : ''}`}
+              onClick={() => setQuality('high')}
+              title="High quality - Larger file size"
+            >
+              📈 High
+            </button>
+          </div>
+          <div className="quality-info">
+            {quality === 'low' && '22kHz, 64kbps - Best for voice notes'}
+            {quality === 'standard' && '44kHz, 128kbps - Recommended'}
+            {quality === 'high' && '48kHz, 256kbps - Best quality'}
           </div>
         </div>
       )}

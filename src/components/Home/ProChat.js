@@ -13,6 +13,8 @@ import NativeContactPicker from '../Contacts/NativeContactPicker';
 import ContactManager from '../Contacts/ContactManager';
 import UserSearchModal from '../Search/UserSearchModal';
 import AdvancedSearchModal from '../Search/AdvancedSearchModal';
+import SmartRepliesPanel from '../AI/SmartRepliesPanel';
+import AIEnhancementPanel from '../AI/AIEnhancementPanel';
 import InternationalDialer from '../Dialer/InternationalDialer';
 import DonationModal from '../Donation/DonationModal';
 import DonationPrompt from '../Donation/DonationPrompt';
@@ -20,6 +22,7 @@ import NotificationSettings from '../NotificationSettings/NotificationSettings';
 import VoiceRecorder, { VoiceMessagePlayer } from '../VoiceRecorder';
 import messageService from '../../services/messageService';
 import searchService from '../../services/searchService';
+import aiService from '../../services/aiService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import connectionService from '../../services/connectionService';
@@ -140,6 +143,12 @@ const ProChat = ({
 
   // Donation modal state
   const [showDonationModal, setShowDonationModal] = useState(false);
+
+  // AI Features state
+  const [showSmartReplies, setShowSmartReplies] = useState(false);
+  const [smartReplies, setSmartReplies] = useState([]);
+  const [showAIEnhancement, setShowAIEnhancement] = useState(false);
+  const [currentMessageForAI, setCurrentMessageForAI] = useState('');
 
   // Encryption state
   const [encryptionEnabled, setEncryptionEnabled] = useState(false);
@@ -1464,6 +1473,56 @@ const ProChat = ({
       handleSendMessage();
     }
   }, [handleSendMessage]);
+
+  // AI Feature Handlers
+  const handleSmartReplySelect = useCallback((reply) => {
+    setInputText(reply);
+    setShowSmartReplies(false);
+  }, []);
+
+  const handleOpenAIEnhancement = useCallback(() => {
+    if (inputText.trim()) {
+      setCurrentMessageForAI(inputText);
+      setShowAIEnhancement(true);
+    }
+  }, [inputText]);
+
+  const handleAIEnhance = useCallback((enhancedText) => {
+    setInputText(enhancedText);
+    setShowAIEnhancement(false);
+  }, []);
+
+  // Effect: Generate smart replies when conversation context changes
+  useEffect(() => {
+    const generateReplies = async () => {
+      if (chatMessages.length > 0) {
+        // Get last message from conversation
+        const lastMessage = chatMessages[chatMessages.length - 1];
+        
+        // Don't generate replies for own messages
+        if (lastMessage.user?.id === user.id) {
+          setShowSmartReplies(false);
+          return;
+        }
+        
+        try {
+          const replies = await aiService.generateSmartReplies(lastMessage.text, {
+            conversationHistory: chatMessages.slice(-5).map(m => m.text),
+            userName: user.name
+          });
+          
+          setSmartReplies(replies);
+          setShowSmartReplies(replies.length > 0);
+        } catch (error) {
+          console.error('Failed to generate smart replies:', error);
+          setSmartReplies([]);
+          setShowSmartReplies(false);
+        }
+      }
+    };
+
+    generateReplies();
+  }, [chatMessages, user]);
 
   // Modal handlers
   const handleViewUserProfile = useCallback((userId, username) => {
@@ -3135,6 +3194,17 @@ const ProChat = ({
                     😊
                   </button>
 
+                  {/* AI Enhancement Button */}
+                  <button 
+                    className="input-btn ai-btn mobile-action-button touch-target touch-ripple haptic-light"
+                    onClick={handleOpenAIEnhancement}
+                    disabled={!inputText.trim()}
+                    type="button"
+                    title="AI Enhance & Translate"
+                  >
+                    ✨
+                  </button>
+
                   {/* Encryption Toggle */}
                   {encryptionEnabled && (
                     <button 
@@ -3244,6 +3314,25 @@ const ProChat = ({
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Smart Replies Panel */}
+          {showSmartReplies && smartReplies.length > 0 && (
+            <SmartRepliesPanel
+              replies={smartReplies}
+              onSelectReply={handleSmartReplySelect}
+              onClose={() => setShowSmartReplies(false)}
+              lastMessage={chatMessages[chatMessages.length - 1]}
+            />
+          )}
+
+          {/* AI Enhancement Panel */}
+          {showAIEnhancement && (
+            <AIEnhancementPanel
+              message={currentMessageForAI}
+              onEnhance={handleAIEnhance}
+              onClose={() => setShowAIEnhancement(false)}
+            />
           )}
         </div>
       </div>
