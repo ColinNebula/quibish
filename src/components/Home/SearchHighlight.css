@@ -1,0 +1,56 @@
+/* ================================
+   SEARCH HIGHLIGHT STYLES
+   ================================ */
+
+/* Highlighted message from search results */
+.pro-message-blurb.search-highlighted {
+  background: linear-gradient(135deg, rgba(255, 235, 59, 0.3) 0%, rgba(255, 193, 7, 0.2) 100%);
+  border-left: 4px solid #ffc107;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+  animation: searchPulse 2s ease-in-out;
+  position: relative;
+  transform: scale(1.02);
+  transition: all 0.3s ease;
+}
+
+.pro-message-blurb.search-highlighted::before {
+  content: '🔍';
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  animation: searchBounce 1s infinite;
+}
+
+@keyframes searchPulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+  }
+  50% {
+    box-shadow: 0 8px 24px rgba(255, 193, 7, 0.5);
+  }
+}
+
+@keyframes searchBounce {
+  0%, 100% {
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    transform: translateY(-50%) scale(1.2);
+  }
+}
+
+/* Search result text highlighting */
+.message-text mark {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+/* Smooth scroll behavior for jumping to search results */
+.pro-message-list {
+  scroll-behavior: smooth;
+}

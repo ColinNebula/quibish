@@ -12,12 +12,14 @@ import NativeCamera from '../Camera/NativeCamera';
 import NativeContactPicker from '../Contacts/NativeContactPicker';
 import ContactManager from '../Contacts/ContactManager';
 import UserSearchModal from '../Search/UserSearchModal';
+import AdvancedSearchModal from '../Search/AdvancedSearchModal';
 import InternationalDialer from '../Dialer/InternationalDialer';
 import DonationModal from '../Donation/DonationModal';
 import DonationPrompt from '../Donation/DonationPrompt';
 import NotificationSettings from '../NotificationSettings/NotificationSettings';
 import VoiceRecorder, { VoiceMessagePlayer } from '../VoiceRecorder';
 import messageService from '../../services/messageService';
+import searchService from '../../services/searchService';
 import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import connectionService from '../../services/connectionService';
@@ -39,6 +41,7 @@ import '../../styles/DynamicBackground.css';
 import './ProSidebar.css';
 import './ProHeader.css';
 import './ProChat.css';
+import './SearchHighlight.css';
 import './ResponsiveFix.css';
 import './EncryptionStyles.css';
 
@@ -126,6 +129,10 @@ const ProChat = ({
 
   // Contact manager state
   const [showContactManager, setShowContactManager] = useState(false);
+  
+  // Advanced search state
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [highlightedMessageId, setHighlightedMessageId] = useState(null);
   
   // International dialer state
   const [showCallOptions, setShowCallOptions] = useState(false);
@@ -316,6 +323,55 @@ const ProChat = ({
       }
     };
   }, [user?.id]);
+
+  // Initialize search index on mount
+  useEffect(() => {
+    const initializeSearchIndex = async () => {
+      try {
+        console.log('🔍 Initializing search index...');
+        
+        // Build search index from existing messages
+        const messages = persistentStorageService.getMessages();
+        await searchService.buildSearchIndex(messages);
+        
+        console.log('✅ Search index built successfully');
+        
+        // Notify service worker to build background index
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'INDEX_MESSAGES'
+          });
+        }
+      } catch (error) {
+        console.error('❌ Failed to initialize search index:', error);
+      }
+    };
+
+    initializeSearchIndex();
+  }, []);
+
+  // Add keyboard shortcuts (including Ctrl+F for search)
+  useEffect(() => {
+    const handleKeyboardShortcuts = (e) => {
+      // Ctrl+F or Cmd+F - Open advanced search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setShowAdvancedSearch(true);
+      }
+      
+      // Escape - Close modals
+      if (e.key === 'Escape') {
+        if (showAdvancedSearch) {
+          setShowAdvancedSearch(false);
+        } else if (showMoreMenu) {
+          setShowMoreMenu(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboardShortcuts);
+    return () => window.removeEventListener('keydown', handleKeyboardShortcuts);
+  }, [showAdvancedSearch, showMoreMenu]);
 
   // Auto-collapse sidebar on mobile screens (but preserve content)
   useEffect(() => {
@@ -995,41 +1051,37 @@ const ProChat = ({
     }
   }, []);
 
-  // Handle search in chat
+  // Handle search in chat - Now uses Advanced Search Modal
   const handleSearchInChat = useCallback(() => {
-    const searchTerm = prompt('Search in chat:');
-    if (searchTerm && searchTerm.trim()) {
-      const matchingMessages = chatMessages.filter(msg => 
-        msg.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        msg.user.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      
-      setShowMoreMenu(false);
-      
-      if (matchingMessages.length > 0) {
-        const searchMessage = {
-          id: `search_${Date.now()}`,
-          text: `🔍 Found ${matchingMessages.length} message(s) containing "${searchTerm}"`,
-          user: 'System',
-          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-          type: 'system',
-          isSystemMessage: true,
-          searchResults: matchingMessages
-        };
-        setChatMessages(prev => [...prev, searchMessage]);
-      } else {
-        const noResultsMessage = {
-          id: `search_${Date.now()}`,
-          text: `🔍 No messages found containing "${searchTerm}"`,
-          user: 'System',
-          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-          type: 'system',
-          isSystemMessage: true
-        };
-        setChatMessages(prev => [...prev, noResultsMessage]);
-      }
+    setShowAdvancedSearch(true);
+    setShowMoreMenu(false);
+  }, []);
+
+  // Handle search result selection
+  const handleSearchResultSelect = useCallback((result) => {
+    console.log('Search result selected:', result);
+    
+    // Switch to the conversation containing the result
+    if (result.conversationId && result.conversationId !== selectedConversation) {
+      setSelectedConversation(result.conversationId);
     }
-  }, [chatMessages]);
+    
+    // Highlight the message in the chat
+    setHighlightedMessageId(result.messageId);
+    
+    // Scroll to the message after a short delay to allow rendering
+    setTimeout(() => {
+      const messageElement = document.getElementById(`message-${result.messageId}`);
+      if (messageElement) {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Remove highlight after 3 seconds
+        setTimeout(() => {
+          setHighlightedMessageId(null);
+        }, 3000);
+      }
+    }, 300);
+  }, [selectedConversation]);
 
   // Handle print chat
   const handlePrintChat = useCallback(() => {
@@ -1362,6 +1414,17 @@ const ProChat = ({
       
       setChatMessages(prev => [...prev, newMessage]);
       setInputText('');
+      
+      // Index the new message for search
+      await searchService.indexMessage(newMessage);
+      
+      // Notify service worker to index the message
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'INDEX_NEW_MESSAGE',
+          message: newMessage
+        });
+      }
       
       // Auto-scroll to the new message
       setTimeout(() => {
@@ -2635,7 +2698,12 @@ const ProChat = ({
           )}
           
           {chatMessages.map(message => (
-            <div key={message.id} className="pro-message-blurb" data-message-id={message.id}>
+            <div 
+              key={message.id} 
+              id={`message-${message.id}`}
+              className={`pro-message-blurb ${highlightedMessageId === message.id ? 'search-highlighted' : ''}`}
+              data-message-id={message.id}
+            >
               <div className="message-avatar">
                 <img 
                   src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
@@ -3588,6 +3656,16 @@ const ProChat = ({
           onUserSelect={handleUserSelect}
           searchQuery={searchMode === 'users' ? searchQuery : ''}
           onSearchQueryChange={setSearchQuery}
+        />
+      )}
+
+      {/* Advanced Search Modal */}
+      {showAdvancedSearch && (
+        <AdvancedSearchModal
+          isOpen={showAdvancedSearch}
+          onClose={() => setShowAdvancedSearch(false)}
+          onResultSelect={handleSearchResultSelect}
+          currentConversationId={selectedConversation}
         />
       )}
     </div>
