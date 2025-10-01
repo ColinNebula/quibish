@@ -18,7 +18,7 @@ const STATIC_ASSETS = [
 
 // Runtime caching strategies
 const CACHE_STRATEGIES = {
-  // Cache first for static assets
+  // Cache first for static assetsP
   CACHE_FIRST: 'cache-first',
   // Network first for API calls
   NETWORK_FIRST: 'network-first',
@@ -208,6 +208,10 @@ self.addEventListener('sync', (event) => {
   if (event.tag === 'background-sync-messages') {
     event.waitUntil(syncMessages());
   }
+  
+  if (event.tag === 'background-index-messages') {
+    event.waitUntil(indexMessagesForSearch());
+  }
 });
 
 // Sync pending messages when back online
@@ -234,6 +238,120 @@ async function syncMessages() {
   } catch (error) {
     console.error('❌ Background sync failed:', error);
   }
+}
+
+// Index messages for fast searching
+async function indexMessagesForSearch() {
+  try {
+    console.log('🔍 Service Worker: Indexing messages for search...');
+    
+    // Get messages from persistent storage
+    const messages = await getMessagesFromStorage();
+    
+    if (!messages || messages.length === 0) {
+      console.log('No messages to index');
+      return;
+    }
+    
+    // Open IndexedDB for search index
+    const db = await openSearchIndexDB();
+    const transaction = db.transaction(['searchIndex'], 'readwrite');
+    const store = transaction.objectStore('searchIndex');
+    
+    // Build search index
+    const searchIndex = new Map();
+    
+    for (const message of messages) {
+      if (!message.text) continue;
+      
+      // Tokenize message text
+      const tokens = tokenizeText(message.text);
+      
+      for (const token of tokens) {
+        if (!searchIndex.has(token)) {
+          searchIndex.set(token, []);
+        }
+        searchIndex.get(token).push({
+          messageId: message.id,
+          conversationId: message.conversationId,
+          userId: message.userId,
+          timestamp: message.timestamp,
+          text: message.text,
+          type: message.type || 'text'
+        });
+      }
+    }
+    
+    // Clear old index
+    await store.clear();
+    
+    // Save new index to IndexedDB
+    for (const [term, results] of searchIndex.entries()) {
+      await store.add({ term, results });
+    }
+    
+    console.log(`✅ Indexed ${searchIndex.size} unique terms from ${messages.length} messages`);
+    
+    // Notify clients that indexing is complete
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'SEARCH_INDEX_UPDATED',
+        termsCount: searchIndex.size,
+        messagesCount: messages.length
+      });
+    });
+    
+  } catch (error) {
+    console.error('❌ Failed to index messages:', error);
+  }
+}
+
+// Get messages from storage
+async function getMessagesFromStorage() {
+  try {
+    const stored = localStorage.getItem('quibish_messages');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Failed to get messages from storage:', error);
+    return [];
+  }
+}
+
+// Open search index database
+async function openSearchIndexDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('QuibishSearchDB', 1);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      
+      if (!db.objectStoreNames.contains('searchIndex')) {
+        const indexStore = db.createObjectStore('searchIndex', { keyPath: 'term' });
+        indexStore.createIndex('term', 'term', { unique: true });
+      }
+    };
+  });
+}
+
+// Tokenize text for search indexing
+function tokenizeText(text) {
+  if (!text) return [];
+  
+  const stopWords = new Set([
+    'the', 'is', 'at', 'which', 'on', 'a', 'an', 'and', 'or', 'but',
+    'in', 'with', 'to', 'for', 'of', 'as', 'by', 'that', 'this', 'it'
+  ]);
+  
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(token => token.length >= 2)
+    .filter(token => !stopWords.has(token));
 }
 
 // Helper functions for message queue management
@@ -492,6 +610,55 @@ self.addEventListener('message', (event) => {
       token: event.data.token 
     });
   }
+  
+  if (event.data && event.data.type === 'INDEX_MESSAGES') {
+    // Trigger background indexing
+    indexMessagesForSearch();
+  }
+  
+  if (event.data && event.data.type === 'INDEX_NEW_MESSAGE') {
+    // Index a single new message
+    indexSingleMessage(event.data.message);
+  }
 });
+
+// Index a single message (for real-time updates)
+async function indexSingleMessage(message) {
+  try {
+    if (!message || !message.text) return;
+    
+    const db = await openSearchIndexDB();
+    const transaction = db.transaction(['searchIndex'], 'readwrite');
+    const store = transaction.objectStore('searchIndex');
+    
+    const tokens = tokenizeText(message.text);
+    
+    for (const token of tokens) {
+      // Get existing index entry
+      const request = store.get(token);
+      
+      request.onsuccess = () => {
+        const indexEntry = request.result || { term: token, results: [] };
+        
+        // Add new message reference
+        indexEntry.results.push({
+          messageId: message.id,
+          conversationId: message.conversationId,
+          userId: message.userId,
+          timestamp: message.timestamp,
+          text: message.text,
+          type: message.type || 'text'
+        });
+        
+        // Update index
+        store.put(indexEntry);
+      };
+    }
+    
+    console.log('✅ Indexed new message:', message.id);
+  } catch (error) {
+    console.error('❌ Failed to index message:', error);
+  }
+}
 
 console.log('🚀 Service Worker: Script loaded successfully');
