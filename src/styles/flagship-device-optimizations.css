@@ -1,0 +1,474 @@
+/* Flagship Device Optimizations
+ * Optimized for iPhone 17 Pro Max, Samsung Galaxy S24 Ultra, Google Pixel 9 Pro XL
+ * and similar devices with:
+ * - Large displays (6.7"+ / 900px+ width)
+ * - High refresh rates (120Hz ProMotion)
+ * - Dynamic Island / Notch
+ * - 3x pixel density
+ */
+
+/* ===== Dynamic Island & Safe Area Support ===== */
+:root {
+  /* Safe area insets for Dynamic Island and notches */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  
+  /* Dynamic Island specific spacing */
+  --dynamic-island-height: max(44px, env(safe-area-inset-top));
+  --dynamic-island-safe-top: max(54px, calc(env(safe-area-inset-top) + 10px));
+}
+
+/* Apply safe areas to main app container */
+.App {
+  padding-top: var(--safe-area-top);
+  padding-right: var(--safe-area-right);
+  padding-bottom: var(--safe-area-bottom);
+  padding-left: var(--safe-area-left);
+}
+
+/* Header with Dynamic Island spacing */
+.header,
+.main-header,
+.app-header {
+  padding-top: var(--dynamic-island-safe-top) !important;
+  min-height: calc(60px + var(--safe-area-top));
+}
+
+/* ===== ProMotion 120Hz Optimization ===== */
+* {
+  /* Hardware acceleration for smooth 120Hz scrolling */
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth scrolling containers */
+.scrollable,
+.messages-container,
+.chat-container,
+.sidebar-content,
+.conversation-list {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  /* GPU acceleration */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Optimized animations for 120Hz */
+.animated,
+.fade-in,
+.slide-in,
+.message,
+.notification {
+  will-change: transform, opacity;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* ===== Large Phone Breakpoint (900px+) ===== */
+/* iPhone 17 Pro Max, Galaxy S24 Ultra in landscape */
+@media screen and (min-width: 900px) and (max-width: 1024px) {
+  /* Better use of horizontal space */
+  .pro-sidebar {
+    width: 320px !important;
+    min-width: 320px;
+  }
+  
+  .main-content {
+    margin-left: 320px;
+  }
+  
+  /* Larger touch targets */
+  .message-input {
+    min-height: 56px;
+    font-size: 17px;
+  }
+  
+  button,
+  .btn {
+    min-height: 48px;
+    min-width: 48px;
+    font-size: 16px;
+  }
+  
+  /* Better message layout */
+  .message-bubble {
+    max-width: 75%;
+    font-size: 17px;
+    padding: 14px 18px;
+  }
+  
+  /* Enhanced video call UI */
+  .video-call-panel {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  
+  .local-video,
+  .remote-video {
+    border-radius: 20px;
+  }
+  
+  /* Larger filter controls */
+  .filter-slider {
+    height: 8px;
+  }
+  
+  .filter-preset-btn {
+    min-height: 80px;
+    font-size: 15px;
+  }
+  
+  /* Better navigation */
+  .nav-item {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+  
+  /* Enhanced search */
+  .search-input {
+    font-size: 17px;
+    padding: 14px 20px;
+  }
+}
+
+/* ===== Extra Large Phone & Tablet Breakpoint (1024px+) ===== */
+@media screen and (min-width: 1024px) {
+  /* Desktop-like layout for large devices */
+  .pro-sidebar {
+    width: 360px !important;
+    min-width: 360px;
+  }
+  
+  .main-content {
+    margin-left: 360px;
+  }
+  
+  /* Three-column layout if space allows */
+  .chat-container {
+    display: grid;
+    grid-template-columns: 360px 1fr 320px;
+    gap: 0;
+  }
+  
+  /* Larger video containers */
+  .video-call-panel {
+    max-width: 1200px;
+  }
+  
+  .remote-video {
+    border-radius: 24px;
+  }
+  
+  /* Enhanced filter panel for large screens */
+  .filters-panel {
+    max-width: 500px;
+  }
+  
+  .filter-presets-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .ar-effects-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ===== Landscape Optimization for Large Phones ===== */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  /* Compact header for landscape */
+  .header,
+  .main-header {
+    min-height: 48px;
+    padding: 8px var(--safe-area-left) 8px var(--safe-area-right);
+  }
+  
+  /* Side-by-side layout */
+  .video-call-panel {
+    display: flex;
+    flex-direction: row;
+  }
+  
+  .video-container {
+    flex: 1;
+  }
+  
+  .filters-panel {
+    width: 360px;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  /* Horizontal navigation */
+  .sidebar-footer {
+    display: flex;
+    flex-direction: row;
+    padding: 8px var(--safe-area-left) 8px var(--safe-area-right);
+  }
+  
+  /* Compact input */
+  .message-input {
+    min-height: 44px;
+  }
+  
+  /* Hide less critical UI in landscape */
+  .sidebar-header .subtitle {
+    display: none;
+  }
+}
+
+/* ===== 3x Retina Display Support ===== */
+@media screen and (-webkit-min-device-pixel-ratio: 3),
+       screen and (min-resolution: 3dppx) {
+  /* Crisp rendering for 3x displays */
+  * {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  /* Higher quality avatars */
+  .avatar,
+  .user-avatar {
+    image-rendering: -webkit-optimize-contrast;
+  }
+  
+  /* SVG icons stay sharp */
+  svg,
+  .icon {
+    shape-rendering: geometricPrecision;
+  }
+  
+  /* Sharper borders */
+  .message-bubble,
+  .card,
+  .modal {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+}
+
+/* ===== Enhanced Touch Gestures for Large Screens ===== */
+@media screen and (min-width: 900px) {
+  /* Larger swipe zones */
+  .swipeable {
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Better pinch-to-zoom for video */
+  .video-container {
+    touch-action: pinch-zoom;
+  }
+  
+  /* Enhanced pull-to-refresh */
+  .messages-container {
+    overscroll-behavior: contain;
+  }
+  
+  /* Prevent accidental zooms */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* ===== Video Call Enhancements for Large Displays ===== */
+@media screen and (min-width: 900px) {
+  /* Larger video quality */
+  .video-call-panel video {
+    max-width: 1280px;
+    max-height: 720px;
+  }
+  
+  /* Better filter visualization */
+  .filter-slider-container {
+    padding: 16px 24px;
+  }
+  
+  .filter-value {
+    font-size: 15px;
+    min-width: 45px;
+  }
+  
+  /* Enhanced AR effects preview */
+  .ar-effect-btn {
+    min-height: 100px;
+    font-size: 32px;
+  }
+  
+  /* Larger color picker */
+  .color-picker-input {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+  }
+  
+  /* Better preset grid */
+  .filter-preset-btn {
+    padding: 18px;
+    border-radius: 16px;
+  }
+  
+  .filter-preset-btn .emoji {
+    font-size: 36px;
+  }
+  
+  .filter-preset-btn .preset-name {
+    font-size: 14px;
+    margin-top: 10px;
+  }
+}
+
+/* ===== Performance Optimizations ===== */
+/* Reduce animations for better battery life on flagships */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High performance mode for 120Hz displays */
+@media screen and (min-width: 900px) {
+  /* Optimize repaints */
+  .message,
+  .notification,
+  .modal {
+    contain: layout style paint;
+  }
+  
+  /* Reduce layout thrashing */
+  .sidebar,
+  .main-content {
+    contain: layout;
+  }
+}
+
+/* ===== Dark Mode Optimizations for OLED ===== */
+@media (prefers-color-scheme: dark) {
+  /* True black for OLED displays */
+  .App.dark,
+  .dark-mode {
+    background-color: #000000;
+  }
+  
+  .sidebar.dark,
+  .message-bubble.dark {
+    background-color: #0a0a0a;
+  }
+  
+  /* Reduce white point for less eye strain */
+  .text-primary {
+    color: #e5e5e5;
+  }
+  
+  /* Better contrast ratios */
+  .message-bubble {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* ===== Notch/Island Detection and Handling ===== */
+/* Devices with notch or Dynamic Island */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .fixed-header,
+  .sticky-header {
+    padding-top: calc(var(--safe-area-top) + 12px);
+  }
+  
+  .fixed-footer,
+  .sticky-footer {
+    padding-bottom: calc(var(--safe-area-bottom) + 12px);
+  }
+  
+  /* Sidebar adjustments */
+  .pro-sidebar {
+    padding-top: var(--safe-area-top);
+  }
+  
+  /* Modal positioning */
+  .modal-overlay {
+    padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left);
+  }
+  
+  /* Full-screen video calls */
+  .video-call-panel.fullscreen {
+    padding: var(--dynamic-island-safe-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left);
+  }
+}
+
+/* ===== Hover Effects for Large Screen Touch Devices ===== */
+@media screen and (min-width: 900px) {
+  /* Better hover feedback */
+  button:hover,
+  .btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  .message:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Interactive filter sliders */
+  .filter-slider:hover {
+    height: 10px;
+    transition: height 0.2s ease;
+  }
+  
+  /* Enhanced preset hover */
+  .filter-preset-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+  }
+}
+
+/* ===== Accessibility Enhancements for Large Displays ===== */
+@media screen and (min-width: 900px) {
+  /* Larger focus indicators */
+  *:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  
+  /* Better text readability */
+  body {
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  
+  /* Enhanced contrast for links */
+  a {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+}
+
+/* ===== Foldable Device Support ===== */
+@media screen and (min-width: 900px) and (max-width: 1366px) {
+  /* Detect potential foldable devices in unfolded state */
+  .App {
+    /* Adapt to foldable screen crease */
+    padding-left: max(var(--safe-area-left), 20px);
+    padding-right: max(var(--safe-area-right), 20px);
+  }
+  
+  /* Avoid content in crease area */
+  .modal,
+  .video-call-panel {
+    max-width: calc(100vw - 40px);
+    margin: 0 auto;
+  }
+}

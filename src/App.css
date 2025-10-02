@@ -6,6 +6,7 @@
 @import './styles/mobile-content-fix.css';
 @import './styles/mobile-animation-fix.css';
 @import './styles/image-display-fix.css';
+@import './styles/flagship-device-optimizations.css';
 
 /* CSS Variables for theming */
 :root {
@@ -169,6 +170,13 @@ body::before {
   position: relative;
   backdrop-filter: blur(0px);
   transition: backdrop-filter 0.3s ease;
+  
+  /* ProMotion 120Hz Optimization */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .App.glass-enabled {
