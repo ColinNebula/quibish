@@ -2506,7 +2506,7 @@ const ProChat = ({
         <div className="pro-sidebar-header">
           <div className="sidebar-logo">
             <div className="logo-icon" data-tooltip="Quibish Chat">
-              💬
+              <span className="logo-emoji">💬</span>
               {totalUnreadCount > 0 && (
                 <div className="logo-unread-badge">{totalUnreadCount > 99 ? '99+' : totalUnreadCount}</div>
               )}

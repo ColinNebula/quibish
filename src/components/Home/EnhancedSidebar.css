@@ -67,6 +67,7 @@
   flex-shrink: 0;
   position: relative;
   z-index: 2;
+  overflow: visible;
 }
 
 .pro-sidebar-header::after {
@@ -88,6 +89,7 @@
   color: #1a202c;
   text-decoration: none;
   transition: all 0.3s ease;
+  overflow: visible;
 }
 
 .sidebar-logo:hover {
@@ -98,6 +100,8 @@
 .logo-icon {
   width: 32px;
   height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 8px;
   display: flex;
@@ -107,15 +111,75 @@
   font-size: 16px;
   font-weight: bold;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  position: relative;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.logo-emoji {
+  display: block;
+  line-height: 1;
+  user-select: none;
+}
+
+.logo-unread-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5),
+              0 0 0 2px white;
+  animation: badgePulse 2s ease-in-out infinite;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1;
+}
+
+.logo-text h2 {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-weight: 800;
+  font-size: 20px;
   letter-spacing: -0.5px;
+  margin: 0;
+  padding: 0;
+  line-height: 1.2;
+}
+
+.logo-text .version {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
 }
 
 /* Collapsed sidebar logo */

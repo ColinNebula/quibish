@@ -10,65 +10,389 @@
   justify-content: center;
   z-index: 9999;
   color: white;
+  overflow: hidden;
+  animation: gradientShift 10s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  50% {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  }
+}
+
+/* Animated Particles */
+.splash-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: float 5s infinite ease-in-out;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translateY(-30px) translateX(15px) scale(1.2);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-60px) translateX(-10px) scale(0.8);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translateY(-30px) translateX(-20px) scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+/* Ripple Effects */
+.splash-ripples {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ripple {
+  position: absolute;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  animation: ripple 3s ease-out infinite;
+}
+
+.ripple-1 {
+  width: 300px;
+  height: 300px;
+  animation-delay: 0s;
+}
+
+.ripple-2 {
+  width: 300px;
+  height: 300px;
+  animation-delay: 1s;
+}
+
+.ripple-3 {
+  width: 300px;
+  height: 300px;
+  animation-delay: 2s;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Floating Geometric Shapes */
+.floating-shapes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.shape {
+  position: absolute;
+  opacity: 0.15;
+}
+
+.shape-circle {
+  width: 80px;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+  top: 20%;
+  left: 10%;
+  animation: floatShape 8s ease-in-out infinite;
+}
+
+.shape-triangle {
+  width: 0;
+  height: 0;
+  border-left: 40px solid transparent;
+  border-right: 40px solid transparent;
+  border-bottom: 70px solid white;
+  top: 60%;
+  right: 15%;
+  animation: floatShape 6s ease-in-out infinite reverse;
+}
+
+.shape-square {
+  width: 60px;
+  height: 60px;
+  background: white;
+  bottom: 20%;
+  left: 20%;
+  animation: rotateShape 10s linear infinite;
+}
+
+@keyframes floatShape {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-50px) rotate(180deg);
+  }
+}
+
+@keyframes rotateShape {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .splash-content {
   text-align: center;
   max-width: 400px;
   padding: 20px;
+  position: relative;
+  z-index: 10;
+  animation: fadeInUp 1s ease-out;
 }
 
-.splash-logo h1 {
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Logo Wrapper with Glow Effect */
+.logo-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+.logo-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%);
+  animation: pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.logo-text {
   font-size: 3rem;
   font-weight: bold;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  animation: fadeInScale 0.8s ease-out;
+  margin: 0;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.letter {
+  display: inline-block;
+  animation: letterBounce 0.8s ease-out both;
+  transition: transform 0.3s ease;
+}
+
+.letter:hover {
+  transform: scale(1.2) rotate(-5deg);
+  color: #ffd700;
+}
+
+@keyframes letterBounce {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.5) rotate(-10deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(10px) scale(1.1) rotate(2deg);
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
 }
 
 .splash-logo .version {
   font-size: 1rem;
   opacity: 0.8;
-  margin: 0 0 1.5rem 0;
+  margin: 0.5rem 0;
   font-weight: normal;
+  animation: fadeIn 1.2s ease-in-out;
+  letter-spacing: 2px;
+}
+
+.tagline {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 1rem 0 0 0;
+  font-weight: 300;
+  letter-spacing: 3px;
+  animation: fadeInSlide 1.5s ease-out;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+@keyframes fadeInSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 0.9;
+    transform: translateX(0);
+  }
 }
 
 .splash-progress {
-  margin-top: 2rem;
+  margin-top: 3rem;
 }
 
 .progress-bar {
   width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 2px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
   overflow: hidden;
   margin-bottom: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  position: relative;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #fff, rgba(255, 255, 255, 0.8));
-  border-radius: 2px;
-  transition: width 0.3s ease;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  background: linear-gradient(90deg, #fff, rgba(255, 255, 255, 0.9));
+  border-radius: 3px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 200%;
+  }
 }
 
 .loading-text {
   font-size: 1rem;
   opacity: 0.9;
-  margin: 0;
+  margin: 0 0 1rem 0;
   animation: fadeIn 0.5s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
 }
 
-@keyframes fadeInScale {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
+.loading-icon {
+  display: inline-block;
+  animation: zap 0.6s ease-in-out infinite;
+}
+
+@keyframes zap {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
   }
-  100% {
+  50% {
+    transform: scale(1.3) rotate(-10deg);
+  }
+}
+
+/* Loading Dots Animation */
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: dotBounce 1.4s infinite ease-in-out;
+}
+
+.dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes dotBounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1.2);
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -81,12 +405,67 @@
   }
 }
 
-@media (max-width: 480px) {
-  .splash-logo h1 {
+/* Dark Mode Support */
+.dynamic-splash-screen.dark-mode {
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+}
+
+.dynamic-splash-screen.dark-mode .shape {
+  opacity: 0.08;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .logo-text {
     font-size: 2.5rem;
   }
   
   .splash-content {
     padding: 16px;
+  }
+
+  .tagline {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+  }
+
+  .ripple-1, .ripple-2, .ripple-3 {
+    width: 200px;
+    height: 200px;
+  }
+
+  .shape-circle {
+    width: 50px;
+    height: 50px;
+  }
+
+  .shape-triangle {
+    border-left-width: 25px;
+    border-right-width: 25px;
+    border-bottom-width: 45px;
+  }
+
+  .shape-square {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-text {
+    font-size: 2rem;
+  }
+  
+  .tagline {
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+  }
+
+  .splash-progress {
+    margin-top: 2rem;
+  }
+
+  .particle {
+    display: none; /* Hide particles on very small screens for performance */
   }
 }
