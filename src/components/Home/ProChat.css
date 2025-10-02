@@ -11535,6 +11535,21 @@ body.dark-theme .call-option-info p {
   }
 }
 
+/* More Options Dropdown - Base Styles */
+.more-options-dropdown {
+  /* Desktop default positioning */
+  top: 80px;
+  right: 20px;
+  width: 280px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 120px);
+  
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+}
+
 /* More Options Dropdown - Mobile Optimizations */
 @media (max-width: 768px) {
   .more-options-dropdown {
