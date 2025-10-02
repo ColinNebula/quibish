@@ -2949,6 +2949,16 @@ const ProChat = ({
         {/* Enhanced Header */}
         <div className="pro-header enhanced-chat-header">
           <div className="header-left">
+            {/* Mobile Hamburger Menu Button */}
+            <button 
+              className="mobile-menu-btn" 
+              onClick={toggleSidebar}
+              title="Toggle sidebar"
+              aria-label="Toggle sidebar"
+            >
+              ☰
+            </button>
+            
             <div className="conversation-avatar">
               <img 
                 src={currentSelectedConversation?.avatar || currentConversation?.avatar || `https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=40&h=40&fit=crop&crop=face`}
@@ -2978,13 +2988,6 @@ const ProChat = ({
                 onClick={handleUserSearchClick}
               >
                 👥
-              </button>
-              <button 
-                className="action-btn new-chat-btn" 
-                title="➕ New Chat - Start a new conversation"
-                onClick={handleNewChat}
-              >
-                ➕
               </button>
               <button 
                 className="action-btn unified-call-btn" 
@@ -3019,9 +3022,6 @@ const ProChat = ({
                   <circle cx="7" cy="11" r="1.5" fill="currentColor" opacity="0.5"/>
                 </svg>
                 <span className="btn-label">Video</span>
-              </button>
-              <button className="action-btn info-btn" title="Chat info">
-                ℹ️
               </button>
               <button 
                 className="action-btn file-share-btn" 

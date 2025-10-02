@@ -11,6 +11,14 @@ const FileSharePanel = ({ userId, conversationId, onClose, onFileSelect }) => {
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const fileInputRef = useRef(null);
 
+  // Add body class when panel opens, remove on close
+  useEffect(() => {
+    document.body.classList.add('file-share-open');
+    return () => {
+      document.body.classList.remove('file-share-open');
+    };
+  }, []);
+
   // Load files
   useEffect(() => {
     loadFiles();

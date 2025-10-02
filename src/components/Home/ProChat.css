@@ -80,6 +80,55 @@
   min-width: 0;
   max-width: calc(100% - 300px); /* Reserve space for actions */
 }
+
+/* Mobile Menu Button - Hidden by default */
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 12px;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  transform: scale(1.05);
+}
+
+.mobile-menu-btn:active {
+  transform: scale(0.95);
+}
+
+/* Show mobile menu button only on mobile */
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+  
+  .header-left {
+    max-width: calc(100% - 200px);
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-menu-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
+  
+  .header-left {
+    gap: 12px;
+  }
+}
 .conversation-avatar {
   position: relative;
   width: 44px;

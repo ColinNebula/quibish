@@ -255,12 +255,19 @@
   right: 20px;
   display: flex;
   gap: 10px;
-  z-index: 1000;
+  z-index: 999;
   padding: 10px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 15px;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* Move theme selector when file share panel is open */
+.file-share-panel ~ .theme-selector,
+body:has(.file-share-panel) .theme-selector {
+  top: 80px;
 }
 
 .theme-option {

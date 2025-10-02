@@ -385,10 +385,9 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: space-around;
   gap: 8px;
   margin-top: 12px;
-  flex-wrap: wrap;
   width: 100%;
 }
 
@@ -405,7 +404,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 20px;
-  flex-shrink: 0;
+  flex: 0 0 44px;
   padding: 0;
 }
 
@@ -548,35 +547,50 @@
     left: 0;
     bottom: 0;
     width: 280px;
-    transform: translateX(-100%);
-    z-index: 95;
+    z-index: 9999; /* Higher z-index to ensure it's above content */
+    transition: transform 0.3s ease-in-out;
   }
   
+  /* When not collapsed, show the sidebar */
+  .enhanced-sidebar:not(.collapsed) {
+    transform: translateX(0);
+  }
+  
+  /* When collapsed, hide the sidebar */
+  .enhanced-sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+
+  /* Hide footer when sidebar is collapsed on mobile */
+  .enhanced-sidebar.collapsed .sidebar-footer {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  /* Legacy support for show class */
   .enhanced-sidebar.show {
     transform: translateX(0);
   }
   
-  .enhanced-sidebar.collapsed {
-    transform: translateX(-100%);
-  }
-  
-  /* Better footer button layout on tablets */
-  .footer-actions {
-    gap: 10px;
-    justify-content: space-between;
-    padding: 0 4px;
-  }
-  
-  .footer-btn {
-    flex: 1;
-    max-width: 60px;
-  }
+  /* Remove conflicting footer button styles */
 }
 
 @media (max-width: 480px) {
   .enhanced-sidebar {
-    width: 100%;
+    width: 85%;
     max-width: 320px;
+    z-index: 9999;
+  }
+  
+  /* Ensure sidebar is hidden when collapsed on mobile */
+  .enhanced-sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+  
+  /* Show sidebar when not collapsed */
+  .enhanced-sidebar:not(.collapsed) {
+    transform: translateX(0);
   }
   
   .pro-sidebar-header {
@@ -594,8 +608,6 @@
   .sidebar-footer {
     padding: 12px 16px;
   }
-  
-  /* Ensure footer actions stay horizontal on mobile */
   .footer-actions {
     gap: 6px;
     justify-content: space-between;
@@ -604,12 +616,12 @@
   }
   
   .footer-btn {
-    width: auto;
-    min-width: 40px;
+    width: 40px;
     height: 40px;
+    min-width: 40px;
     font-size: 18px;
-    flex: 1;
-    border-radius: 10px;
+    border-radius: 50%;
+    flex: 0 0 40px;
   }
   
   .footer-stats {
@@ -620,6 +632,32 @@
   .stat-item {
     flex: 1;
     min-width: 70px;
+  }
+  
+  /* Make user action buttons circular on mobile */
+  .user-actions {
+    gap: 6px;
+    justify-content: space-around;
+  }
+  
+  .action-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    flex: 0 0 48px;
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  .action-icon {
+    font-size: 20px;
+  }
+  
+  .action-label {
+    display: none;
   }
   
   .stat-label {
@@ -643,10 +681,12 @@
   }
   
   .footer-btn {
-    min-width: 36px;
-    height: 36px;
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
     font-size: 16px;
-    border-radius: 8px;
+    border-radius: 50% !important;
+    flex: 0 0 38px;
   }
   
   .footer-stats {
@@ -659,6 +699,19 @@
   
   .stat-value {
     font-size: 13px;
+  }
+  
+  .action-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    border-radius: 50% !important;
+    flex: 0 0 42px;
+  }
+  
+  .action-icon {
+    font-size: 18px;
   }
 }
 
@@ -821,86 +874,6 @@
 
 .action-btn.logout-btn:hover .action-label {
   color: #dc2626;
-}
-
-/* Enhanced Mobile Touch Interactions */
-@media (max-width: 768px) {
-  .enhanced-sidebar {
-    width: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
-  }
-
-  .enhanced-sidebar:not(.collapsed) {
-    transform: translateX(0);
-  }
-
-  .conversation-item {
-    min-height: 60px;
-    padding: 12px 15px;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .conversation-item:active {
-    background: rgba(59, 130, 246, 0.1);
-    transform: scale(0.98);
-    transition: all 0.1s ease;
-  }
-
-  .filter-tab {
-    min-height: 44px;
-    padding: 12px 16px;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .filter-tab:active {
-    background: rgba(59, 130, 246, 0.15);
-    transform: scale(0.95);
-  }
-
-  .search-input {
-    height: 44px;
-    font-size: 16px; /* Prevents zoom on iOS */
-    touch-action: manipulation;
-  }
-
-  .sidebar-toggle-btn {
-    min-height: 44px;
-    min-width: 44px;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .sidebar-toggle-btn:active {
-    transform: scale(0.9);
-    background: rgba(59, 130, 246, 0.2);
-  }
-
-  /* Swipe gesture indicators */
-  .enhanced-sidebar::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: -10px;
-    width: 6px;
-    height: 40px;
-    background: rgba(59, 130, 246, 0.3);
-    border-radius: 3px;
-    transform: translateY(-50%);
-    opacity: 0;
-    animation: swipeIndicator 3s ease-in-out infinite;
-  }
-
-  @keyframes swipeIndicator {
-    0%, 80%, 100% { opacity: 0; }
-    10%, 70% { opacity: 0.6; }
-  }
 }
 
 /* Touch feedback improvements */

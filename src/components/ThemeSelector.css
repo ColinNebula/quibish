@@ -21,6 +21,13 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
+/* Hide theme toggle when file share panel is open */
+body.file-share-open .theme-toggle {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(100px);
+}
+
 .theme-toggle:hover {
   transform: scale(1.1);
   background: rgba(255, 255, 255, 0.2);

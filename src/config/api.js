@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api',
-  WS_URL: process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost:5000',
+  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api',
+  WS_URL: process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost:5001',
   TIMEOUT: 10000, // 10 seconds
 };
 

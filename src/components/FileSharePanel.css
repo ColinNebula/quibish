@@ -6,7 +6,7 @@
   height: 100vh;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 1050;
   display: flex;
   flex-direction: column;
   animation: slideInRight 0.3s ease-out;
@@ -31,6 +31,8 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  position: relative;
+  z-index: 1051;
 }
 
 .file-share-header h2 {
@@ -52,6 +54,9 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  position: relative;
+  z-index: 1100;
+  flex-shrink: 0;
 }
 
 .close-btn:hover {
