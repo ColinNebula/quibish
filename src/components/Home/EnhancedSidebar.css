@@ -380,6 +380,76 @@
   flex-shrink: 0;
 }
 
+/* Footer actions - horizontal layout */
+.footer-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.footer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 20px;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.footer-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.footer-btn:active {
+  transform: translateY(0);
+}
+
+/* Footer stats above actions */
+.footer-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2d3748;
+}
+
 .user-profile-button {
   display: flex;
   align-items: center;
@@ -489,11 +559,24 @@
   .enhanced-sidebar.collapsed {
     transform: translateX(-100%);
   }
+  
+  /* Better footer button layout on tablets */
+  .footer-actions {
+    gap: 10px;
+    justify-content: space-between;
+    padding: 0 4px;
+  }
+  
+  .footer-btn {
+    flex: 1;
+    max-width: 60px;
+  }
 }
 
 @media (max-width: 480px) {
   .enhanced-sidebar {
     width: 100%;
+    max-width: 320px;
   }
   
   .pro-sidebar-header {
@@ -510,6 +593,72 @@
   
   .sidebar-footer {
     padding: 12px 16px;
+  }
+  
+  /* Ensure footer actions stay horizontal on mobile */
+  .footer-actions {
+    gap: 6px;
+    justify-content: space-between;
+    padding: 0 2px;
+    flex-wrap: nowrap;
+  }
+  
+  .footer-btn {
+    width: auto;
+    min-width: 40px;
+    height: 40px;
+    font-size: 18px;
+    flex: 1;
+    border-radius: 10px;
+  }
+  
+  .footer-stats {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .stat-item {
+    flex: 1;
+    min-width: 70px;
+  }
+  
+  .stat-label {
+    font-size: 10px;
+  }
+  
+  .stat-value {
+    font-size: 14px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  .sidebar-footer {
+    padding: 10px 12px;
+  }
+  
+  .footer-actions {
+    gap: 4px;
+    padding: 0;
+  }
+  
+  .footer-btn {
+    min-width: 36px;
+    height: 36px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+  
+  .footer-stats {
+    gap: 6px;
+  }
+  
+  .stat-label {
+    font-size: 9px;
+  }
+  
+  .stat-value {
+    font-size: 13px;
   }
 }
 
@@ -564,6 +713,25 @@
   
   .user-status {
     color: #a0aec0;
+  }
+  
+  /* Footer buttons dark mode */
+  .footer-btn {
+    background: rgba(26, 32, 44, 0.8);
+    border-color: rgba(74, 85, 104, 0.6);
+  }
+  
+  .footer-btn:hover {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.4);
+  }
+  
+  .stat-label {
+    color: #a0aec0;
+  }
+  
+  .stat-value {
+    color: #e2e8f0;
   }
 }
 

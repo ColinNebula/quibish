@@ -11414,9 +11414,20 @@ body.dark-theme .call-option-info p {
 
 /* Mobile responsive */
 @media screen and (max-width: 768px) {
+  /* Ensure modal overlay is above all content */
+  .modal-overlay {
+    z-index: 10100 !important;
+    position: fixed !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
   .call-options-modal {
     max-width: 95vw;
     margin: 20px;
+    z-index: 10101 !important;
+    position: relative;
   }
   
   .call-option-btn {
@@ -11435,6 +11446,43 @@ body.dark-theme .call-option-info p {
   
   .call-option-info p {
     font-size: 13px;
+  }
+}
+
+/* Extra small screens */
+@media screen and (max-width: 480px) {
+  .modal-overlay {
+    z-index: 10100 !important;
+  }
+  
+  .call-options-modal {
+    max-width: 90vw;
+    margin: 16px;
+    padding: 0;
+  }
+  
+  .call-options-content {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .call-option-btn {
+    padding: 12px 14px;
+    min-height: 65px;
+    gap: 12px;
+  }
+  
+  .call-option-icon {
+    font-size: 24px;
+    min-width: 32px;
+  }
+  
+  .call-option-info h4 {
+    font-size: 14px;
+  }
+  
+  .call-option-info p {
+    font-size: 12px;
   }
 }
 
