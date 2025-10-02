@@ -2575,10 +2575,6 @@ const ProChat = ({
                 <span className="action-icon">👤</span>
                 <span className="action-label">Profile</span>
               </button>
-              <button className="action-btn logout-btn" title="Logout" onClick={onLogout}>
-                <span className="action-icon">🚪</span>
-                <span className="action-label">Logout</span>
-              </button>
             </div>
           )}
         </div>
@@ -2929,14 +2925,6 @@ const ProChat = ({
             >
               ⚙️
             </button>
-            <button 
-              className="footer-btn logout-btn" 
-              title="Logout" 
-              onClick={onLogout}
-              data-mobile-action="logout"
-            >
-              🚪
-            </button>
             {!sidebarCollapsed && (
               <button className="footer-btn" title="Help" onClick={() => setHelpModal(true)}>❓</button>
             )}
@@ -3014,11 +3002,23 @@ const ProChat = ({
                 )}
               </button>
               <button 
-                className="action-btn video-call-btn" 
-                title="Start video call"
+                className="action-btn video-call-btn enhanced-video-btn" 
+                title="Start Video Call"
                 onClick={handleVideoCall}
               >
-                �
+                <svg 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="video-icon"
+                >
+                  <rect x="2" y="6" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M16 10L22 7V17L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="7" cy="11" r="1.5" fill="currentColor" opacity="0.5"/>
+                </svg>
+                <span className="btn-label">Video</span>
               </button>
               <button className="action-btn info-btn" title="Chat info">
                 ℹ️
@@ -3036,9 +3036,6 @@ const ProChat = ({
                 onClick={() => setShowDonationModal(true)}
               >
                 💝
-              </button>
-              <button onClick={onLogout} className="action-btn logout-btn" title="Logout / Disconnect">
-                🚪
               </button>
               <div className="header-menu">                
                 <button 

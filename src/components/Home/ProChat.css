@@ -364,6 +364,106 @@
   box-shadow: 0 6px 16px rgba(34, 197, 94, 0.2), 0 0 0 3px rgba(34, 197, 94, 0.1);
 }
 
+/* Enhanced Video Call Button */
+.enhanced-video-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.enhanced-video-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.enhanced-video-btn:hover::before {
+  opacity: 1;
+}
+
+.enhanced-video-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 197, 94, 0.6);
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.25), 0 0 0 4px rgba(34, 197, 94, 0.1);
+}
+
+.enhanced-video-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+}
+
+.enhanced-video-btn .video-icon {
+  color: #22c55e;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.enhanced-video-btn:hover .video-icon {
+  color: #16a34a;
+  transform: scale(1.1);
+}
+
+.enhanced-video-btn .btn-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.enhanced-video-btn:hover .btn-label {
+  color: #16a34a;
+}
+
+/* Pulse animation for video button */
+@keyframes video-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+  }
+}
+
+.enhanced-video-btn:focus {
+  animation: video-pulse 1.5s infinite;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .enhanced-video-btn {
+    padding: 6px 10px;
+    gap: 3px;
+  }
+  
+  .enhanced-video-btn .video-icon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .enhanced-video-btn .btn-label {
+    font-size: 9px;
+  }
+}
+
 .voice-call-btn:hover,
 .unified-call-btn:hover {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%);
@@ -10922,7 +11022,7 @@
   border: none;
   color: white;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 16px;
@@ -10934,8 +11034,8 @@
 
 .unified-call-btn:hover {
   background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
 }
 
 /* Dark mode support */
