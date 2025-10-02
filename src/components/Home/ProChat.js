@@ -2911,6 +2911,14 @@ const ProChat = ({
           <div className="footer-actions">
             <button 
               className="footer-btn" 
+              title={darkMode ? 'Light Mode' : 'Dark Mode'}
+              onClick={onToggleDarkMode}
+              data-mobile-action="theme"
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
+            <button 
+              className="footer-btn" 
               title="Profile" 
               onClick={() => handleViewUserProfile(user?.id, user?.name)}
               data-mobile-action="profile"
@@ -3211,62 +3219,6 @@ const ProChat = ({
                     Clear Chat
                   </button>
                   
-                  <button className="dropdown-item" onClick={() => { onToggleDarkMode(); setShowMoreMenu(false); }} 
-                    onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(59, 130, 246, 0.08)'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>{darkMode ? '☀️' : '🌙'}</span>
-                    {darkMode ? 'Light Mode' : 'Dark Mode'}
-                  </button>
-                  
-                  <hr style={{ height: '1px', background: 'rgba(226, 232, 240, 0.8)', border: 'none', margin: '4px 0' }} />
-                  
-                  <button className="dropdown-item" onClick={handleQuickSettings} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>⚙️</span>
-                    Settings
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={() => setNotificationSettingsModal(true)} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>🔔</span>
-                    Notifications
-                  </button>
-                  
                   <button className="dropdown-item" onClick={() => setHelpModal(true)} style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -3297,8 +3249,44 @@ const ProChat = ({
                     color: '#374151',
                     cursor: 'pointer'
                   }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>💬</span>
+                    <span style={{ fontSize: '16px', width: '20px' }}>�</span>
                     Send Feedback
+                  </button>
+                  
+                  <hr style={{ height: '1px', background: 'rgba(226, 232, 240, 0.8)', border: 'none', margin: '4px 0' }} />
+                  
+                  <button className="dropdown-item" onClick={() => setNotificationSettingsModal(true)} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>🔔</span>
+                    Notifications
+                  </button>
+                  
+                  <button className="dropdown-item" onClick={handleQuickSettings} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}>
+                    <span style={{ fontSize: '16px', width: '20px' }}>⚙️</span>
+                    Settings
                   </button>
                   
                   <hr style={{ height: '1px', background: 'rgba(226, 232, 240, 0.8)', border: 'none', margin: '4px 0' }} />

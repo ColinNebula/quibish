@@ -1,4 +1,6 @@
 // Push Notification Service for offline message alerts
+import { buildApiUrl } from '../config/api';
+
 class PushNotificationService {
   constructor() {
     this.vapidPublicKey = null;
@@ -106,7 +108,7 @@ class PushNotificationService {
   // Get VAPID public key from backend
   async getVapidKey() {
     try {
-      const response = await fetch('/api/notifications/vapid-key', {
+      const response = await fetch(buildApiUrl('notifications/vapid-key'), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -131,7 +133,7 @@ class PushNotificationService {
   // Send subscription to backend
   async sendSubscriptionToBackend(subscription) {
     try {
-      const response = await fetch('/api/notifications/subscribe', {
+      const response = await fetch(buildApiUrl('notifications/subscribe'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -244,7 +246,7 @@ class PushNotificationService {
       }
 
       // Notify backend
-      await fetch('/api/notifications/unsubscribe', {
+      await fetch(buildApiUrl('notifications/unsubscribe'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -318,7 +320,7 @@ class PushNotificationService {
   // Update user presence on backend
   async updateUserPresence(isOnline) {
     try {
-      await fetch('/api/users/presence', {
+      await fetch(buildApiUrl('users/presence'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
