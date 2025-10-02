@@ -3055,24 +3055,46 @@ const ProChat = ({
                   ⋮
                 </button>
               {showMoreMenu && (
-                <div 
-                  style={{ 
-                    position: 'fixed',
-                    top: '80px',
-                    right: '20px',
-                    zIndex: 99999,
-                    width: '280px',
-                    maxWidth: 'calc(100vw - 40px)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(226, 232, 240, 0.8)',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
-                    overflow: 'hidden',
-                    maxHeight: 'calc(100vh - 120px)',
-                    overflowY: 'auto'
-                  }}
-                >
+                <>
+                  {/* Backdrop overlay for mobile */}
+                  <div
+                    onClick={() => setShowMoreMenu(false)}
+                    style={{
+                      position: 'fixed',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                      zIndex: 99998,
+                      WebkitTapHighlightColor: 'transparent'
+                    }}
+                  />
+                  {/* Dropdown menu */}
+                  <div 
+                    className="more-options-dropdown"
+                    style={{ 
+                      position: 'fixed',
+                      top: 'max(env(safe-area-inset-top, 0px) + 80px, 80px)',
+                      right: '20px',
+                      zIndex: 99999,
+                      width: '280px',
+                      maxWidth: 'calc(100vw - 40px)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                      backdropFilter: 'blur(20px)',
+                      WebkitBackdropFilter: 'blur(20px)',
+                      border: '1px solid rgba(226, 232, 240, 0.8)',
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+                      overflow: 'hidden',
+                      maxHeight: 'calc(100vh - max(env(safe-area-inset-top, 0px) + 120px, 120px))',
+                      overflowY: 'auto',
+                      WebkitOverflowScrolling: 'touch',
+                      transform: 'translateZ(0)',
+                      WebkitTransform: 'translateZ(0)',
+                      willChange: 'transform'
+                    }}
+                  >
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -3308,6 +3330,7 @@ const ProChat = ({
                     Logout
                   </button>
                 </div>
+                </>
               )}
             </div>
             </div>

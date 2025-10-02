@@ -11535,4 +11535,50 @@ body.dark-theme .call-option-info p {
   }
 }
 
+/* More Options Dropdown - Mobile Optimizations */
+@media (max-width: 768px) {
+  .more-options-dropdown {
+    /* Better positioning for mobile devices */
+    top: max(env(safe-area-inset-top, 0px) + 70px, 70px) !important;
+    right: 10px !important;
+    left: 10px !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 auto;
+    
+    /* Ensure it's on top of everything */
+    z-index: 999999 !important;
+    
+    /* Better touch scrolling */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    
+    /* Force hardware acceleration */
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-transform: translate3d(0, 0, 0) !important;
+  }
+  
+  .more-options-dropdown .dropdown-item {
+    min-height: 48px;
+    padding: 14px 18px;
+    font-size: 15px;
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+  }
+  
+  .more-options-dropdown .dropdown-item:active {
+    background: rgba(59, 130, 246, 0.15);
+    transform: scale(0.98);
+  }
+}
+
+/* iPhone specific optimizations */
+@supports (-webkit-touch-callout: none) {
+  .more-options-dropdown {
+    /* Account for iPhone notch and home indicator */
+    top: max(env(safe-area-inset-top, 0px) + 80px, 80px) !important;
+    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+  }
+}
+
+
 
