@@ -11537,12 +11537,19 @@ body.dark-theme .call-option-info p {
 
 /* More Options Dropdown - Base Styles */
 .more-options-dropdown {
-  /* Desktop default positioning */
+  /* Positioning */
+  position: fixed;
   top: 80px;
   right: 20px;
   width: 280px;
   max-width: calc(100vw - 40px);
   max-height: calc(100vh - 120px);
+  z-index: 99999;
+  
+  /* Overflow */
+  overflow: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   
   /* Hardware acceleration */
   transform: translateZ(0);

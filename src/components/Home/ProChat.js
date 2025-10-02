@@ -3074,17 +3074,12 @@ const ProChat = ({
                   <div 
                     className="more-options-dropdown"
                     style={{ 
-                      position: 'fixed',
-                      zIndex: 99999,
                       backgroundColor: 'rgba(255, 255, 255, 0.98)',
                       backdropFilter: 'blur(20px)',
                       WebkitBackdropFilter: 'blur(20px)',
                       border: '1px solid rgba(226, 232, 240, 0.8)',
                       borderRadius: '12px',
-                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
-                      overflow: 'hidden',
-                      overflowY: 'auto',
-                      WebkitOverflowScrolling: 'touch'
+                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)'
                     }}
                   >
                   <div style={{

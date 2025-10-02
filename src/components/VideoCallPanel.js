@@ -12,11 +12,15 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [filters, setFilters] = useState(null);
   const [activePreset, setActivePreset] = useState('none');
+  const [connectionQuality, setConnectionQuality] = useState('good');
+  const [swipeStartY, setSwipeStartY] = useState(0);
+  const [swipeDistance, setSwipeDistance] = useState(0);
   
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const screenShareRef = useRef(null);
   const hiddenVideoRef = useRef(null);
+  const headerRef = useRef(null);
 
   // Initialize and start call
   useEffect(() => {
@@ -52,13 +56,59 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
     enhancedVideoCallService.on('onScreenShare', handleScreenShare);
     enhancedVideoCallService.on('onRecordingUpdate', handleRecordingUpdate);
 
+    // Simulate connection quality monitoring
+    const qualityInterval = setInterval(() => {
+      const qualities = ['excellent', 'good', 'poor'];
+      const randomQuality = qualities[Math.floor(Math.random() * qualities.length)];
+      setConnectionQuality(randomQuality);
+    }, 10000); // Update every 10 seconds
+
     return () => {
       enhancedVideoCallService.off('onCallEnd', handleCallEnd);
       enhancedVideoCallService.off('onStreamUpdate', handleStreamUpdate);
       enhancedVideoCallService.off('onScreenShare', handleScreenShare);
       enhancedVideoCallService.off('onRecordingUpdate', handleRecordingUpdate);
+      clearInterval(qualityInterval);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Swipe gesture handling for mobile
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+
+    const handleTouchStart = (e) => {
+      setSwipeStartY(e.touches[0].clientY);
+    };
+
+    const handleTouchMove = (e) => {
+      const currentY = e.touches[0].clientY;
+      const distance = currentY - swipeStartY;
+      
+      // Only allow downward swipe
+      if (distance > 0) {
+        setSwipeDistance(distance);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      // If swiped down more than 100px, minimize
+      if (swipeDistance > 100) {
+        setIsMinimized(true);
+      }
+      setSwipeDistance(0);
+    };
+
+    header.addEventListener('touchstart', handleTouchStart);
+    header.addEventListener('touchmove', handleTouchMove);
+    header.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      header.removeEventListener('touchstart', handleTouchStart);
+      header.removeEventListener('touchmove', handleTouchMove);
+      header.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [swipeStartY, swipeDistance]);
 
   const initializeCall = async () => {
     try {
@@ -190,53 +240,98 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
     setActivePreset('none');
   }, []);
 
+  // Close on backdrop click
+  const handleBackdropClick = useCallback(() => {
+    if (!isMinimized) {
+      const confirm = window.confirm('End video call?');
+      if (confirm) {
+        handleEndCall();
+      }
+    }
+  }, [isMinimized, handleEndCall]);
+
+  // Check if filters are active
+  const hasActiveFilters = filters && (
+    activePreset !== 'none' ||
+    filters.smoothSkin > 0 ||
+    filters.brighten > 0 ||
+    filters.brightness !== 0 ||
+    filters.contrast !== 0 ||
+    filters.saturation !== 0 ||
+    filters.temperature !== 0 ||
+    filters.vibrance > 0 ||
+    filters.sharpen > 0 ||
+    filters.vignette > 0 ||
+    filters.grain > 0 ||
+    filters.arEffect !== 'none'
+  );
+
   if (!callState) {
     return (
-      <div className="video-call-panel loading">
-        <div className="loading-spinner"></div>
-        <p>Starting video call...</p>
-      </div>
+      <>
+        <div className="video-call-backdrop" onClick={handleBackdropClick}></div>
+        <div className="video-call-panel loading">
+          <div className="loading-spinner"></div>
+          <p>Starting video call...</p>
+        </div>
+      </>
     );
   }
 
+  const participantCount = participants.length + 1; // Including yourself
+
   return (
-    <div className={`video-call-panel ${isMinimized ? 'minimized' : ''} layout-${layout}`}>
-      {/* Header */}
-      <div className="video-call-header">
-        <div className="call-info">
-          <span className="call-status">🔴 {callState.isRecording ? 'Recording' : 'Live'}</span>
-          <span className="call-duration">
-            {enhancedVideoCallService.formatDuration(callState.duration)}
-          </span>
+    <>
+      {/* Backdrop */}
+      <div className="video-call-backdrop" onClick={handleBackdropClick}></div>
+      
+      <div className={`video-call-panel ${isMinimized ? 'minimized' : ''} layout-${layout}`}>
+        {/* Header */}
+        <div className="video-call-header" ref={headerRef}>
+          <div className="call-info">
+            <span className="call-status">🔴 {callState.isRecording ? 'Recording' : 'Live'}</span>
+            <span className="participant-badge">
+              <span className="badge-icon">👥</span>
+              {participantCount}
+            </span>
+            <span className="call-duration">
+              {enhancedVideoCallService.formatDuration(callState.duration)}
+            </span>
+          </div>
+
+          {/* Connection Quality Indicator */}
+          <div className="connection-quality">
+            <span className={`quality-dot ${connectionQuality}`}></span>
+            <span>{connectionQuality === 'excellent' ? 'Excellent' : connectionQuality === 'good' ? 'Good' : 'Poor'}</span>
+          </div>
+          
+          <div className="header-actions">
+            <button
+              className={`header-btn ${hasActiveFilters ? 'has-filters' : ''}`}
+              onClick={() => {
+                console.log('Filters button clicked. Current state:', showFilters, 'Filters:', filters);
+                setShowFilters(!showFilters);
+              }}
+              title="Filters & Effects"
+            >
+              ✨
+            </button>
+            <button
+              className="header-btn"
+              onClick={() => setIsMinimized(!isMinimized)}
+              title={isMinimized ? 'Maximize' : 'Minimize'}
+            >
+              {isMinimized ? '🔼' : '🔽'}
+            </button>
+            <button
+              className="header-btn"
+              onClick={() => setShowSettings(!showSettings)}
+              title="Settings"
+            >
+              ⚙️
+            </button>
+          </div>
         </div>
-        
-        <div className="header-actions">
-          <button
-            className="header-btn"
-            onClick={() => {
-              console.log('Filters button clicked. Current state:', showFilters, 'Filters:', filters);
-              setShowFilters(!showFilters);
-            }}
-            title="Filters & Effects"
-          >
-            ✨
-          </button>
-          <button
-            className="header-btn"
-            onClick={() => setIsMinimized(!isMinimized)}
-            title={isMinimized ? 'Maximize' : 'Minimize'}
-          >
-            {isMinimized ? '🔼' : '🔽'}
-          </button>
-          <button
-            className="header-btn"
-            onClick={() => setShowSettings(!showSettings)}
-            title="Settings"
-          >
-            ⚙️
-          </button>
-        </div>
-      </div>
 
       {/* Video Grid */}
       {!isMinimized && (
@@ -652,6 +747,7 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
         </button>
       </div>
     </div>
+    </>
   );
 };
 
