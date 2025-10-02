@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/quibish/static/css/main.53dab9d9.css",
-    "main.js": "/quibish/static/js/main.5b206a92.js",
+    "main.css": "/quibish/static/css/main.220ff4d1.css",
+    "main.js": "/quibish/static/js/main.2b9d55cf.js",
     "index.html": "/quibish/index.html",
-    "main.53dab9d9.css.map": "/quibish/static/css/main.53dab9d9.css.map",
-    "main.5b206a92.js.map": "/quibish/static/js/main.5b206a92.js.map"
+    "main.220ff4d1.css.map": "/quibish/static/css/main.220ff4d1.css.map",
+    "main.2b9d55cf.js.map": "/quibish/static/js/main.2b9d55cf.js.map"
   },
   "entrypoints": [
-    "static/css/main.53dab9d9.css",
-    "static/js/main.5b206a92.js"
+    "static/css/main.220ff4d1.css",
+    "static/js/main.2b9d55cf.js"
   ]
 }
