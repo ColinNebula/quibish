@@ -3054,6 +3054,9 @@ const ProChat = ({
                 >
                   ⋮
                 </button>
+              </div>
+              
+              {/* More Options Modal - Moved outside header-menu to avoid stacking context issues */}
               {showMoreMenu && (
                 <>
                   {/* Backdrop overlay for mobile */}
@@ -3081,9 +3084,44 @@ const ProChat = ({
                       WebkitBackdropFilter: 'blur(20px)',
                       border: '1px solid rgba(226, 232, 240, 0.8)',
                       borderRadius: '12px',
-                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)'
+                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+                      zIndex: 2147483647,
+                      pointerEvents: 'auto',
+                      touchAction: 'manipulation'
                     }}
                   >
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid rgba(226, 232, 240, 0.5)',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    color: '#374151',
+                    backgroundColor: 'rgba(249, 250, 251, 0.8)'
+                  }}>
+                    <span>More Options</span>
+                    <button 
+                      onClick={() => setShowMoreMenu(false)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '18px',
+                        color: '#6b7280',
+                        cursor: 'pointer',
+                        padding: '0',
+                        width: '20px',
+                        height: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -3318,7 +3356,7 @@ const ProChat = ({
                     <span style={{ fontSize: '16px', width: '20px' }}>🚪</span>
                     Logout
                   </button>
-                </div>
+                  </div>
                 </>
               )}
             </div>
@@ -3903,66 +3941,67 @@ const ProChat = ({
                     >
                       {emoji}
                     </button>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Reaction Picker for Messages */}
-          {showReactionPicker && selectedMessageId && (
-            <div className="emoji-picker-overlay" onClick={() => {
-              setShowReactionPicker(false);
-              setSelectedMessageId(null);
-            }}>
-              <div className="emoji-picker" onClick={(e) => e.stopPropagation()}>
-                <div className="emoji-picker-header">
-                  <span>Add Reaction</span>
-                  <button 
-                    className="emoji-close"
-                    onClick={() => {
-                      setShowReactionPicker(false);
-                      setSelectedMessageId(null);
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="emoji-grid">
-                  {['😊', '😂', '🥰', '😍', '🤔', '😮', '😅', '👍', '👎', '❤️', '🔥', '🎉', '👏', '🙌', '✨', '💯', '🚀', '💡', '🎯', '✅', '❌', '⚡', '🌟', '🤝', '💪', '🌈', '☀️', '🌙', '⭐', '💝', '🎈'].map(emoji => (
-                    <button
-                      key={emoji}
-                      className="emoji-item"
-                      onClick={() => handleEmojiClick(emoji)}
+            )}
+  
+            {/* Reaction Picker for Messages */}
+            {showReactionPicker && selectedMessageId && (
+              <div className="emoji-picker-overlay" onClick={() => {
+                setShowReactionPicker(false);
+                setSelectedMessageId(null);
+              }}>
+                <div className="emoji-picker" onClick={(e) => e.stopPropagation()}>
+                  <div className="emoji-picker-header">
+                    <span>Add Reaction</span>
+                    <button 
+                      className="emoji-close"
+                      onClick={() => {
+                        setShowReactionPicker(false);
+                        setSelectedMessageId(null);
+                      }}
                     >
-                      {emoji}
+                      ✕
                     </button>
-                  ))}
+                  </div>
+                  <div className="emoji-grid">
+                    {['😊', '😂', '🥰', '😍', '🤔', '😮', '😅', '👍', '👎', '❤️', '🔥', '🎉', '👏', '🙌', '✨', '💯', '🚀', '💡', '🎯', '✅', '❌', '⚡', '🌟', '🤝', '💪', '🌈', '☀️', '🌙', '⭐', '💝', '🎈'].map(emoji => (
+                      <button
+                        key={emoji}
+                        className="emoji-item"
+                        onClick={() => handleEmojiClick(emoji)}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-
+            )}
+          </div>
+  
           {/* Smart Replies Panel */}
-          {showSmartReplies && smartReplies.length > 0 && (
-            <SmartRepliesPanel
-              replies={smartReplies}
-              onSelectReply={handleSmartReplySelect}
-              onClose={() => setShowSmartReplies(false)}
-              lastMessage={chatMessages[chatMessages.length - 1]}
-            />
-          )}
+          <div className="pro-chat-input-container">
+            {showSmartReplies && smartReplies.length > 0 && (
+              <SmartRepliesPanel
+                replies={smartReplies}
+                onSelectReply={handleSmartReplySelect}
+                onClose={() => setShowSmartReplies(false)}
+                lastMessage={chatMessages[chatMessages.length - 1]}
+              />
+            )}
 
-          {/* AI Enhancement Panel */}
-          {showAIEnhancement && (
-            <AIEnhancementPanel
-              message={currentMessageForAI}
-              onEnhance={handleAIEnhance}
-              onClose={() => setShowAIEnhancement(false)}
-            />
-          )}
-        </div>
-      </div>
+            {/* AI Enhancement Panel */}
+            {showAIEnhancement && (
+              <AIEnhancementPanel
+                message={currentMessageForAI}
+                onEnhance={handleAIEnhance}
+                onClose={() => setShowAIEnhancement(false)}
+              />
+            )}
+          </div>
 
       {/* Profile Modal */}
       {profileModal.open && (
@@ -4443,6 +4482,7 @@ const ProChat = ({
     </div>
   );
 };
+
 
 // PropTypes
 ProChat.propTypes = {
