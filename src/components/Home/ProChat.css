@@ -11544,7 +11544,7 @@ body.dark-theme .call-option-info p {
   width: 280px;
   max-width: calc(100vw - 40px);
   max-height: calc(100vh - 120px);
-  z-index: 99999;
+  z-index: 2147483647;
   
   /* Overflow */
   overflow: hidden;
@@ -11569,7 +11569,8 @@ body.dark-theme .call-option-info p {
     margin: 0 auto;
     
     /* Ensure it's on top of everything */
-    z-index: 999999 !important;
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
     
     /* Better touch scrolling */
     -webkit-overflow-scrolling: touch;
@@ -11599,6 +11600,9 @@ body.dark-theme .call-option-info p {
     /* Account for iPhone notch and home indicator */
     top: max(env(safe-area-inset-top, 0px) + 80px, 80px) !important;
     max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
+    z-index: 2147483647 !important;
+    isolation: isolate;
+    pointer-events: auto !important;
   }
 }
 

@@ -3066,8 +3066,10 @@ const ProChat = ({
                       right: 0,
                       bottom: 0,
                       backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                      zIndex: 99998,
-                      WebkitTapHighlightColor: 'transparent'
+                      zIndex: 2147483646,
+                      WebkitTapHighlightColor: 'transparent',
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none'
                     }}
                   />
                   {/* Dropdown menu */}
