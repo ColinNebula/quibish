@@ -1166,3 +1166,500 @@
     grid-template-columns: var(--pro-sidebar-collapsed-width) 1fr;
   }
 }
+
+/* ===== LARGE DISPLAY OPTIMIZATIONS ===== */
+
+/* Large Desktop (1440px - QHD) */
+@media (min-width: 1440px) {
+  :root {
+    --pro-max-content-width: 1300px;
+    --pro-sidebar-width: 320px;
+  }
+
+  .pro-layout {
+    grid-template-columns: var(--pro-sidebar-width) 1fr;
+  }
+
+  .pro-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .pro-content {
+    max-width: var(--pro-max-content-width);
+    margin: 0 auto;
+  }
+
+  /* Enhanced chat messages */
+  .message-bubble {
+    max-width: 65%;
+    font-size: 15.5px;
+    line-height: 1.6;
+    padding: 14px 18px;
+  }
+
+  /* Better header spacing */
+  .enhanced-chat-header {
+    padding: 0 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Enhanced sidebar */
+  .pro-sidebar {
+    width: var(--pro-sidebar-width);
+  }
+
+  .conversation-item {
+    padding: 14px 18px;
+  }
+
+  /* Better input area */
+  .pro-chat-input-container {
+    max-width: var(--pro-max-content-width);
+    margin: 0 auto;
+    padding: 20px 24px;
+  }
+
+  .pro-input {
+    font-size: 15.5px;
+    padding: 14px 18px;
+  }
+}
+
+/* Full HD (1920px) */
+@media (min-width: 1920px) {
+  :root {
+    --pro-max-content-width: 1600px;
+    --pro-sidebar-width: 360px;
+  }
+
+  .pro-layout {
+    grid-template-columns: var(--pro-sidebar-width) 1fr;
+    max-width: 2400px;
+    margin: 0 auto;
+  }
+
+  .pro-main {
+    max-width: 1800px;
+    padding: 0 40px;
+  }
+
+  .pro-content {
+    max-width: var(--pro-max-content-width);
+  }
+
+  /* Larger typography for better readability */
+  body {
+    font-size: 16px;
+  }
+
+  .message-bubble {
+    max-width: 60%;
+    font-size: 16px;
+    line-height: 1.65;
+    padding: 16px 20px;
+  }
+
+  /* Enhanced header */
+  .enhanced-chat-header {
+    padding: 0 40px;
+    max-width: 1800px;
+    height: 72px;
+  }
+
+  .conversation-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .conversation-title {
+    font-size: 18px;
+  }
+
+  .action-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  /* Sidebar enhancements */
+  .pro-sidebar {
+    width: var(--pro-sidebar-width);
+  }
+
+  .conversation-item {
+    padding: 16px 20px;
+    font-size: 15px;
+  }
+
+  .logo-text h2 {
+    font-size: 22px;
+  }
+
+  .logo-text .version {
+    font-size: 12px;
+  }
+
+  /* Input area */
+  .pro-chat-input-container {
+    max-width: var(--pro-max-content-width);
+    padding: 24px 32px;
+  }
+
+  .pro-input {
+    font-size: 16px;
+    padding: 16px 20px;
+    min-height: 56px;
+  }
+
+  /* Modal improvements */
+  .modal-content,
+  .profile-modal-content {
+    max-width: 900px;
+  }
+
+  /* Video call panel */
+  .video-call-panel {
+    max-width: 1600px;
+  }
+}
+
+/* 2K/QHD+ (2560px) */
+@media (min-width: 2560px) {
+  :root {
+    --pro-max-content-width: 2000px;
+    --pro-sidebar-width: 400px;
+  }
+
+  .pro-layout {
+    grid-template-columns: var(--pro-sidebar-width) 1fr;
+    max-width: 3000px;
+    margin: 0 auto;
+  }
+
+  .pro-main {
+    max-width: 2400px;
+    padding: 0 60px;
+  }
+
+  .pro-content {
+    max-width: var(--pro-max-content-width);
+  }
+
+  /* Ultra-high resolution typography */
+  body {
+    font-size: 17px;
+  }
+
+  .message-bubble {
+    max-width: 55%;
+    font-size: 17px;
+    line-height: 1.7;
+    padding: 18px 24px;
+    border-radius: 14px;
+  }
+
+  /* Enhanced header */
+  .enhanced-chat-header {
+    padding: 0 60px;
+    max-width: 2400px;
+    height: 80px;
+  }
+
+  .conversation-avatar {
+    width: 52px;
+    height: 52px;
+  }
+
+  .conversation-title {
+    font-size: 20px;
+  }
+
+  .conversation-status {
+    font-size: 14px;
+  }
+
+  .action-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  /* Sidebar enhancements */
+  .pro-sidebar {
+    width: var(--pro-sidebar-width);
+  }
+
+  .pro-sidebar-header {
+    padding: 24px;
+  }
+
+  .conversation-item {
+    padding: 18px 24px;
+    font-size: 16px;
+  }
+
+  .logo-text h2 {
+    font-size: 24px;
+  }
+
+  .logo-text .version {
+    font-size: 13px;
+  }
+
+  /* Input area */
+  .pro-chat-input-container {
+    max-width: var(--pro-max-content-width);
+    padding: 28px 40px;
+  }
+
+  .pro-input {
+    font-size: 17px;
+    padding: 18px 24px;
+    min-height: 60px;
+    border-radius: 14px;
+  }
+
+  /* Enhanced buttons */
+  button,
+  .btn {
+    font-size: 15px;
+    padding: 12px 24px;
+    min-height: 48px;
+  }
+
+  /* Modal improvements */
+  .modal-content,
+  .profile-modal-content {
+    max-width: 1200px;
+  }
+
+  /* Video call panel */
+  .video-call-panel {
+    max-width: 2000px;
+  }
+
+  /* Three-column layout for ultra-wide */
+  .pro-layout.has-panel {
+    grid-template-columns: var(--pro-sidebar-width) 1fr 400px;
+  }
+}
+
+/* 4K/UHD (3840px) */
+@media (min-width: 3840px) {
+  :root {
+    --pro-max-content-width: 3000px;
+    --pro-sidebar-width: 480px;
+  }
+
+  .pro-layout {
+    grid-template-columns: var(--pro-sidebar-width) 1fr;
+    max-width: 4200px;
+    margin: 0 auto;
+  }
+
+  .pro-main {
+    max-width: 3400px;
+    padding: 0 80px;
+  }
+
+  .pro-content {
+    max-width: var(--pro-max-content-width);
+  }
+
+  /* 4K typography */
+  body {
+    font-size: 18px;
+  }
+
+  .message-bubble {
+    max-width: 50%;
+    font-size: 18px;
+    line-height: 1.75;
+    padding: 20px 28px;
+    border-radius: 16px;
+  }
+
+  /* Enhanced header */
+  .enhanced-chat-header {
+    padding: 0 80px;
+    max-width: 3400px;
+    height: 96px;
+  }
+
+  .conversation-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .conversation-title {
+    font-size: 22px;
+  }
+
+  .conversation-status {
+    font-size: 16px;
+  }
+
+  .action-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+  }
+
+  /* Sidebar enhancements */
+  .pro-sidebar {
+    width: var(--pro-sidebar-width);
+  }
+
+  .pro-sidebar-header {
+    padding: 32px;
+  }
+
+  .conversation-item {
+    padding: 20px 28px;
+    font-size: 17px;
+  }
+
+  .logo-text h2 {
+    font-size: 28px;
+  }
+
+  .logo-text .version {
+    font-size: 14px;
+  }
+
+  /* Input area */
+  .pro-chat-input-container {
+    max-width: var(--pro-max-content-width);
+    padding: 32px 48px;
+  }
+
+  .pro-input {
+    font-size: 18px;
+    padding: 20px 28px;
+    min-height: 68px;
+    border-radius: 16px;
+  }
+
+  /* Enhanced buttons */
+  button,
+  .btn {
+    font-size: 16px;
+    padding: 14px 28px;
+    min-height: 52px;
+    border-radius: 12px;
+  }
+
+  /* Modal improvements */
+  .modal-content,
+  .profile-modal-content {
+    max-width: 1600px;
+  }
+
+  /* Video call panel */
+  .video-call-panel {
+    max-width: 2800px;
+  }
+
+  /* Three-column layout */
+  .pro-layout.has-panel {
+    grid-template-columns: var(--pro-sidebar-width) 1fr 480px;
+  }
+
+  /* Enhanced scrollbars for 4K */
+  ::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+  }
+}
+
+/* Ultra-Wide Displays (21:9 aspect ratio and wider) */
+@media (min-aspect-ratio: 21/9) and (min-width: 2560px) {
+  .pro-layout {
+    grid-template-columns: var(--pro-sidebar-width) minmax(auto, 2400px) 400px;
+    gap: 40px;
+  }
+
+  .pro-main {
+    max-width: none;
+  }
+
+  .pro-content {
+    margin: 0;
+  }
+
+  /* Utilize extra width for info panel */
+  .pro-layout.has-info-panel {
+    grid-template-columns: var(--pro-sidebar-width) 1fr 480px;
+  }
+
+  /* Center content with sidebars */
+  .message-bubble {
+    max-width: 65%;
+  }
+}
+
+/* Super Ultra-Wide (32:9) */
+@media (min-aspect-ratio: 32/9) and (min-width: 3440px) {
+  .pro-layout {
+    grid-template-columns: var(--pro-sidebar-width) minmax(auto, 2000px) 420px 320px;
+    gap: 48px;
+    padding: 0 60px;
+  }
+
+  /* Four-column layout: sidebar, main chat, info panel, extras */
+  .pro-layout.has-extras {
+    grid-template-columns: 400px 1fr 480px 400px;
+  }
+}
+
+/* High DPI Display Optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Crisp rendering for retina displays */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Sharper borders */
+  .message-bubble,
+  .conversation-item,
+  .modal-content,
+  button {
+    border-width: 0.5px;
+  }
+
+  /* Higher quality images */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Vertical monitors (portrait orientation on large displays) */
+@media (orientation: portrait) and (min-height: 1440px) {
+  .pro-layout {
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
+  }
+
+  .pro-sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+  }
+
+  .message-bubble {
+    max-width: 85%;
+  }
+
+  .pro-content {
+    max-width: 100%;
+  }
+}

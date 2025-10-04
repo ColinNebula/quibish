@@ -44,9 +44,12 @@
   justify-content: space-between;
   padding: 0 24px;
   z-index: 100;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: visible; /* Allow dropdown to show outside header */
+  overflow: visible;
   min-height: 75px;
+  width: 100%;
+  box-sizing: border-box;
+  left: 0;
+  right: 0;
 }
 .enhanced-chat-header::before {
   content: '';
@@ -1992,23 +1995,27 @@
 }
 /* Messages container */
 .messages-container {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  height: 100%;
   min-height: 0;
-  overflow-x: visible; /* Allow messages to extend horizontally */
-  overflow-y: hidden; /* Let child handle vertical scrolling */
+  max-height: 100%;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
 }
 /* Messages list */
 .messages-list {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
-  overflow-x: visible; /* Allow horizontal overflow for long messages */
+  overflow-x: hidden;
   padding: 16px;
-  padding-bottom: 96px; /* leave room for sticky input */
+  padding-bottom: 16px;
+  min-height: 0;
+  max-height: 100%;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  box-sizing: border-box;
 }
 /* Date separator */
 .date-separator {
@@ -2036,6 +2043,7 @@
 }
 /* Pro Input Area Wrapper */
 .pro-input-area {
+  flex: 0 0 auto;
   position: relative;
   width: 100%;
   background-color: rgba(var(--pro-surface-rgb, 248, 249, 250), 0.5);
@@ -2045,10 +2053,7 @@
   flex-direction: column;
   gap: 12px;
   /* Ensure proper stacking */
-  z-index: 1010;
-  /* Sticky positioning for mobile */
-  position: sticky;
-  bottom: 0;
+  z-index: 10;
   /* Glass effect */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -2241,6 +2246,8 @@
   width: 100%;
   /* Ensure proper grid placement */
   grid-column: 2;
+  min-height: 0;
+  box-sizing: border-box;
 }
 .pro-main.collapsed {
   /* Grid layout automatically handles this in ProLayout.css */
@@ -2248,9 +2255,9 @@
 }
 /* Message List Container */
 .pro-message-list {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
-  overflow-x: visible; /* Allow horizontal expansion */
+  overflow-x: hidden;
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
@@ -2258,10 +2265,11 @@
   background: transparent;
   /* Ensure proper scrolling */
   min-height: 0;
+  max-height: 100%;
   width: 100%;
   box-sizing: border-box;
   /* Allow messages to size naturally */
-  align-items: flex-start; /* Align messages to start */
+  align-items: flex-start;
   /* Enhanced smooth scrolling */
   scroll-behavior: smooth;
   scroll-snap-type: y proximity;
@@ -2269,21 +2277,18 @@
 /* Input Container Styles */
 .pro-chat-input-container,
 .message-input-container {
+  flex: 0 0 auto;
   padding: 20px 32px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 16px;
-  position: sticky;
-  bottom: 4px;
-  z-index: 999 !important;
+  position: relative;
+  z-index: 999;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   /* Enhanced mobile keyboard support */
   padding-bottom: max(20px, env(safe-area-inset-bottom));
-  /* Smooth transitions */
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   /* Prevent layout shifts */
   box-sizing: border-box;
   /* Elegant glassmorphism background */
@@ -2295,11 +2300,10 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   /* Full width within container */
   width: 100%;
-  margin: 0 auto;
-  /* Grid placement for proper layout */
-  grid-row: 2;
+  margin: 0;
   /* Ensure proper content centering */
   max-width: 100%;
+  min-width: 0;
 }
 /* Responsive Layout Fixes */
 @media (max-width: 768px) {
@@ -2584,6 +2588,7 @@
   max-width: 900px;
   margin: 0 auto;
   position: relative;
+  box-sizing: border-box;
 }
 /* Input Actions Row */
 .input-actions-row {
@@ -4428,15 +4433,13 @@
 .input-wrapper {
   display: flex;
   align-items: center;
-  justify-content: center;
   flex: 1;
   position: relative;
   gap: 12px;
-  /* Center the content */
-  align-items: stretch;
-  /* Make sure elements align properly */
   width: 100%;
   max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
 }
 /* ================================
    SIMPLIFIED MESSAGE INPUT
@@ -6641,8 +6644,7 @@
   
   /* Fix input container for desktop */
   .pro-chat-input-container.enhanced.mobile-input-bar {
-    position: sticky;
-    bottom: 0;
+    position: relative;
     left: auto;
     right: auto;
     width: 100%;
@@ -6652,8 +6654,7 @@
   }
   
   .pro-chat-input-container.keyboard-avoiding {
-    position: sticky;
-    bottom: 0;
+    position: relative;
   }
 }
 /* Tablet screens */
@@ -6669,8 +6670,7 @@
   
   /* Fix input container for tablet */
   .pro-chat-input-container.enhanced.mobile-input-bar {
-    position: sticky;
-    bottom: 0;
+    position: relative;
     left: auto;
     right: auto;
     width: 100%;
@@ -6679,8 +6679,7 @@
   }
   
   .pro-chat-input-container.keyboard-avoiding {
-    position: sticky;
-    bottom: 0;
+    position: relative;
   }
 }
 /* Mobile screens */
@@ -11598,13 +11597,529 @@ body.dark-theme .call-option-info p {
 @supports (-webkit-touch-callout: none) {
   .more-options-dropdown {
     /* Account for iPhone notch and home indicator */
-    top: max(env(safe-area-inset-top, 0px) + 80px, 80px) !important;
-    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 100px) !important;
-    z-index: 2147483647 !important;
-    isolation: isolate;
-    pointer-events: auto !important;
+    top: max(env(safe-area-inset-top, 0px) + 70px, 70px) !important;
+    bottom: max(env(safe-area-inset-bottom, 0px) + 10px, 10px) !important;
   }
 }
+
+/* ===== LARGE DISPLAY ENHANCEMENTS FOR PROCHAT ===== */
+
+/* Large Desktop (1440px - QHD) */
+@media (min-width: 1440px) {
+  .pro-main {
+    max-width: 100%;
+  }
+
+  .messages-container {
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 24px 32px;
+  }
+
+  .messages-list {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 24px 32px;
+  }
+
+  .message-group {
+    margin-bottom: 24px;
+  }
+
+  .message-bubble {
+    max-width: 65%;
+    font-size: 15.5px;
+    padding: 14px 18px;
+    border-radius: 14px;
+  }
+
+  .message-bubble img,
+  .message-bubble video {
+    max-width: 600px;
+    border-radius: 12px;
+  }
+
+  /* Enhanced action buttons */
+  .action-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+
+  /* Better dropdowns */
+  .dropdown-menu,
+  .more-options-dropdown {
+    min-width: 260px;
+    border-radius: 14px;
+    padding: 8px;
+  }
+
+  .dropdown-item {
+    padding: 12px 16px;
+    font-size: 14.5px;
+    border-radius: 10px;
+  }
+
+  /* Fix input container positioning */
+  .pro-chat-input-container {
+    padding: 20px max(32px, calc((100% - 1300px) / 2));
+  }
+
+  /* Enhanced header positioning */
+  .enhanced-chat-header {
+    padding: 0 max(32px, calc((100% - 1300px) / 2));
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .input-wrapper,
+  .input-wrapper.enhanced {
+    max-width: 1300px;
+    margin: 0 auto;
+  }
+}
+
+/* Full HD (1920px) */
+@media (min-width: 1920px) {
+  .pro-main {
+    max-width: 100%;
+  }
+
+  .messages-container {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 28px 40px;
+  }
+
+  .messages-list {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 28px 40px;
+  }
+
+  .message-group {
+    margin-bottom: 28px;
+  }
+
+  .message-bubble {
+    max-width: 60%;
+    font-size: 16px;
+    line-height: 1.65;
+    padding: 16px 20px;
+    border-radius: 16px;
+  }
+
+  .message-bubble img,
+  .message-bubble video {
+    max-width: 800px;
+    border-radius: 14px;
+  }
+
+  .message-time {
+    font-size: 12px;
+  }
+
+  /* Enhanced header - full width with centered content */
+  .enhanced-chat-header {
+    width: 100%;
+    padding: 0 max(40px, calc((100% - 1600px) / 2));
+    box-sizing: border-box;
+  }
+
+  .header-left,
+  .header-center,
+  .header-actions {
+    max-width: 1600px;
+  }
+
+  /* Better action buttons */
+  .action-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  /* Input area - full width with centered content */
+  .pro-chat-input-container {
+    width: 100%;
+    padding: 20px max(40px, calc((100% - 1600px) / 2));
+  }
+
+  .input-wrapper,
+  .input-wrapper.enhanced {
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Enhanced dropdowns */
+  .dropdown-menu,
+  .more-options-dropdown {
+    min-width: 280px;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+  }
+
+  .dropdown-item {
+    padding: 14px 18px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  /* Better emoji picker */
+  .emoji-picker {
+    width: 420px;
+    height: 480px;
+  }
+
+  /* Enhanced file preview */
+  .file-preview {
+    max-width: 1000px;
+  }
+}
+
+/* 2K/QHD+ (2560px) */
+@media (min-width: 2560px) {
+  .pro-main {
+    max-width: 100%;
+  }
+
+  .messages-container {
+    width: 100%;
+    max-width: 2000px;
+    margin: 0 auto;
+    padding: 32px 60px;
+  }
+
+  .messages-list {
+    max-width: 2000px;
+    margin: 0 auto;
+    padding: 32px 60px;
+  }
+
+  .message-group {
+    margin-bottom: 32px;
+  }
+
+  .message-bubble {
+    max-width: 55%;
+    font-size: 17px;
+    line-height: 1.7;
+    padding: 18px 24px;
+    border-radius: 18px;
+  }
+
+  .message-bubble img,
+  .message-bubble video {
+    max-width: 1000px;
+    border-radius: 16px;
+  }
+
+  .message-time {
+    font-size: 13px;
+  }
+
+  .message-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* Enhanced header - full width with centered content */
+  .enhanced-chat-header {
+    width: 100%;
+    height: 80px;
+    padding: 0 max(60px, calc((100% - 2000px) / 2));
+    box-sizing: border-box;
+  }
+
+  /* Better action buttons */
+  .action-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+    border-radius: 14px;
+  }
+
+  /* Input area - full width with centered content */
+  .pro-chat-input-container {
+    width: 100%;
+    padding: 24px max(60px, calc((100% - 2000px) / 2));
+  }
+
+  .input-wrapper,
+  .input-wrapper.enhanced {
+    max-width: 2000px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Enhanced dropdowns */
+  .dropdown-menu,
+  .more-options-dropdown {
+    min-width: 320px;
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  }
+
+  .dropdown-item {
+    padding: 16px 20px;
+    font-size: 16px;
+    border-radius: 14px;
+  }
+
+  /* Better emoji picker */
+  .emoji-picker {
+    width: 500px;
+    height: 560px;
+  }
+
+  /* Enhanced modals */
+  .modal-content,
+  .profile-modal-content {
+    max-width: 1200px;
+    border-radius: 20px;
+  }
+
+  /* Enhanced file preview */
+  .file-preview {
+    max-width: 1400px;
+  }
+
+  /* Better input area */
+  .message-input,
+  .pro-input {
+    font-size: 17px;
+    padding: 18px 24px;
+    min-height: 60px;
+    border-radius: 16px;
+  }
+
+  /* Enhanced typing indicator */
+  .typing-indicator {
+    font-size: 14px;
+  }
+
+  .typing-indicator .dot {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* 4K/UHD (3840px) */
+@media (min-width: 3840px) {
+  .pro-main {
+    max-width: 100%;
+  }
+
+  .messages-container {
+    width: 100%;
+    max-width: 3000px;
+    margin: 0 auto;
+    padding: 40px 80px;
+  }
+
+  .messages-list {
+    max-width: 3000px;
+    margin: 0 auto;
+    padding: 40px 80px;
+  }
+
+  .message-group {
+    margin-bottom: 40px;
+  }
+
+  .message-bubble {
+    max-width: 50%;
+    font-size: 18px;
+    line-height: 1.75;
+    padding: 20px 28px;
+    border-radius: 20px;
+  }
+
+  .message-bubble img,
+  .message-bubble video {
+    max-width: 1400px;
+    border-radius: 18px;
+  }
+
+  .message-time {
+    font-size: 14px;
+  }
+
+  .message-avatar {
+    width: 56px;
+    height: 56px;
+  }
+
+  /* Enhanced header - full width with centered content */
+  .enhanced-chat-header {
+    width: 100%;
+    height: 96px;
+    padding: 0 max(80px, calc((100% - 3000px) / 2));
+    box-sizing: border-box;
+  }
+
+  /* Better action buttons */
+  .action-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+    border-radius: 16px;
+  }
+
+  /* Input area - full width with centered content */
+  .pro-chat-input-container {
+    width: 100%;
+    padding: 32px max(80px, calc((100% - 3000px) / 2));
+  }
+
+  .input-wrapper,
+  .input-wrapper.enhanced {
+    max-width: 3000px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Enhanced dropdowns */
+  .dropdown-menu,
+  .more-options-dropdown {
+    min-width: 360px;
+    border-radius: 20px;
+    padding: 14px;
+    box-shadow: 0 24px 72px rgba(0, 0, 0, 0.18);
+  }
+
+  .dropdown-item {
+    padding: 18px 24px;
+    font-size: 17px;
+    border-radius: 16px;
+  }
+
+  /* Better emoji picker */
+  .emoji-picker {
+    width: 600px;
+    height: 680px;
+  }
+
+  /* Enhanced modals */
+  .modal-content,
+  .profile-modal-content {
+    max-width: 1600px;
+    border-radius: 24px;
+  }
+
+  /* Enhanced file preview */
+  .file-preview {
+    max-width: 1800px;
+  }
+
+  /* Better input area */
+  .message-input,
+  .pro-input {
+    font-size: 18px;
+    padding: 20px 28px;
+    min-height: 68px;
+    border-radius: 18px;
+  }
+
+  /* Enhanced buttons */
+  .send-btn,
+  .attach-btn {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+    border-radius: 18px;
+  }
+
+  /* Enhanced typing indicator */
+  .typing-indicator {
+    font-size: 15px;
+  }
+
+  .typing-indicator .dot {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Better reactions */
+  .message-reactions {
+    gap: 10px;
+  }
+
+  .reaction-btn {
+    min-width: 48px;
+    height: 32px;
+    font-size: 16px;
+    border-radius: 18px;
+  }
+}
+
+/* Ultra-Wide Display Optimizations */
+@media (min-aspect-ratio: 21/9) and (min-width: 2560px) {
+  .messages-container {
+    max-width: 2200px;
+  }
+
+  .messages-list {
+    max-width: 2200px;
+  }
+
+  .message-bubble {
+    max-width: 60%;
+  }
+
+  /* Better file attachments layout */
+  .file-attachments-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+}
+
+/* Super Ultra-Wide (32:9) */
+@media (min-aspect-ratio: 32/9) and (min-width: 3440px) {
+  .messages-container {
+    max-width: 2600px;
+  }
+
+  .messages-list {
+    max-width: 2600px;
+  }
+
+  /* Better file attachments layout */
+  .file-attachments-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 24px;
+  }
+}
+
+/* High Refresh Rate Display Optimizations (120Hz+) */
+@media (min-width: 1920px) {
+  /* Smoother animations for high refresh rate displays */
+  .message-bubble,
+  .action-btn,
+  .dropdown-item {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Smooth scrolling */
+  .messages-container {
+    scroll-behavior: smooth;
+  }
+
+  /* Hardware acceleration */
+  .message,
+  .notification,
+  .modal {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+}
+
 
 
 

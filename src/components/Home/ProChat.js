@@ -879,6 +879,10 @@ const ProChat = ({
     console.log('⚙️ Settings button clicked!');
     setSettingsModal({ open: true, section: 'general' });
     console.log('✅ Settings modal state set to open');
+    // Collapse sidebar on mobile and tablet to avoid obstruction
+    if (window.innerWidth <= 1024) {
+      setSidebarCollapsed(true);
+    }
   }, []);
 
   // Enhanced input functions
@@ -1933,6 +1937,10 @@ const ProChat = ({
     console.log('📱 Current user data:', user);
     setProfileModal({ open: true, userId, username });
     console.log('✅ Profile modal state set to open');
+    // Collapse sidebar on mobile and tablet to avoid obstruction
+    if (window.innerWidth <= 1024) {
+      setSidebarCollapsed(true);
+    }
   }, [user]);
 
   const handleCloseProfileModal = useCallback(() => {
@@ -3090,38 +3098,6 @@ const ProChat = ({
                       touchAction: 'manipulation'
                     }}
                   >
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px 16px',
-                    borderBottom: '1px solid rgba(226, 232, 240, 0.5)',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    color: '#374151',
-                    backgroundColor: 'rgba(249, 250, 251, 0.8)'
-                  }}>
-                    <span>More Options</span>
-                    <button 
-                      onClick={() => setShowMoreMenu(false)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        fontSize: '18px',
-                        color: '#6b7280',
-                        cursor: 'pointer',
-                        padding: '0',
-                        width: '20px',
-                        height: '20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '4px'
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',

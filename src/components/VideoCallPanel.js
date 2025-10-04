@@ -15,12 +15,17 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
   const [connectionQuality, setConnectionQuality] = useState('good');
   const [swipeStartY, setSwipeStartY] = useState(0);
   const [swipeDistance, setSwipeDistance] = useState(0);
+  const [isScreenRecording, setIsScreenRecording] = useState(false);
+  const [screenRecordingTime, setScreenRecordingTime] = useState(0);
   
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const screenShareRef = useRef(null);
   const hiddenVideoRef = useRef(null);
   const headerRef = useRef(null);
+  const screenRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const screenRecordingTimerRef = useRef(null);
 
   // Initialize and start call
   useEffect(() => {
@@ -69,6 +74,12 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
       enhancedVideoCallService.off('onScreenShare', handleScreenShare);
       enhancedVideoCallService.off('onRecordingUpdate', handleRecordingUpdate);
       clearInterval(qualityInterval);
+      if (screenRecordingTimerRef.current) {
+        clearInterval(screenRecordingTimerRef.current);
+      }
+      if (screenRecorderRef.current && screenRecorderRef.current.state !== 'inactive') {
+        screenRecorderRef.current.stop();
+      }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -239,6 +250,114 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
     setFilters(videoFiltersService.getFilters());
     setActivePreset('none');
   }, []);
+
+  // Screen recording handlers
+  const handleToggleScreenRecording = useCallback(async () => {
+    if (isScreenRecording) {
+      // Stop recording
+      if (screenRecorderRef.current && screenRecorderRef.current.state !== 'inactive') {
+        screenRecorderRef.current.stop();
+      }
+      if (screenRecordingTimerRef.current) {
+        clearInterval(screenRecordingTimerRef.current);
+        screenRecordingTimerRef.current = null;
+      }
+      setIsScreenRecording(false);
+      setScreenRecordingTime(0);
+    } else {
+      // Start recording
+      try {
+        // Request screen capture
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            displaySurface: 'monitor',
+            cursor: 'always',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 }
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 44100
+          }
+        });
+
+        // Check if browser supports MediaRecorder
+        if (!window.MediaRecorder) {
+          throw new Error('Screen recording not supported in this browser');
+        }
+
+        // Determine best codec
+        let options = { mimeType: 'video/webm;codecs=vp9' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          options = { mimeType: 'video/webm;codecs=vp8' };
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/webm' };
+          }
+        }
+
+        recordedChunksRef.current = [];
+        screenRecorderRef.current = new MediaRecorder(screenStream, options);
+
+        screenRecorderRef.current.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            recordedChunksRef.current.push(event.data);
+          }
+        };
+
+        screenRecorderRef.current.onstop = () => {
+          const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          
+          // Create download link
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `screen-recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          
+          // Cleanup
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 100);
+
+          // Stop all tracks
+          screenStream.getTracks().forEach(track => track.stop());
+          recordedChunksRef.current = [];
+        };
+
+        // Handle user stopping the share
+        screenStream.getVideoTracks()[0].onended = () => {
+          if (isScreenRecording) {
+            handleToggleScreenRecording();
+          }
+        };
+
+        screenRecorderRef.current.start(1000); // Collect data every second
+        setIsScreenRecording(true);
+        setScreenRecordingTime(0);
+
+        // Start timer
+        screenRecordingTimerRef.current = setInterval(() => {
+          setScreenRecordingTime(prev => prev + 1);
+        }, 1000);
+
+      } catch (error) {
+        console.error('Failed to start screen recording:', error);
+        alert(error.message || 'Failed to start screen recording. Please ensure you granted permission.');
+      }
+    }
+  }, [isScreenRecording]);
+
+  // Format recording time
+  const formatRecordingTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Close on backdrop click
   const handleBackdropClick = useCallback(() => {
@@ -736,6 +855,19 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
           title={callState.isRecording ? 'Stop Recording' : 'Start Recording'}
         >
           {callState.isRecording ? '⏹️' : '⏺️'}
+        </button>
+
+        <button
+          className={`control-btn screen-record-btn ${isScreenRecording ? 'active recording' : ''}`}
+          onClick={handleToggleScreenRecording}
+          title={isScreenRecording ? `Stop Screen Recording (${formatRecordingTime(screenRecordingTime)})` : 'Record Screen'}
+        >
+          {isScreenRecording ? (
+            <span className="recording-indicator">
+              ⏺️
+              <span className="recording-time">{formatRecordingTime(screenRecordingTime)}</span>
+            </span>
+          ) : '🎬'}
         </button>
 
         <button
