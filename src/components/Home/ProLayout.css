@@ -1120,29 +1120,42 @@
 }
 
 /* Responsive Layout Overrides */
+/* Mobile: Maintain grid with compressed sidebar */
 @media (max-width: 768px) {
   .pro-layout {
-    display: flex !important;
-    flex-direction: column;
-    grid-template-columns: none !important;
-    grid-template-rows: none !important;
+    display: grid !important;
+    grid-template-columns: 60px 1fr !important;
+    grid-template-rows: 1fr !important;
     height: 100vh;
     height: 100dvh; /* Dynamic viewport height */
     overflow: hidden;
+    gap: 0;
+  }
+
+  .pro-sidebar {
+    grid-column: 1;
+    width: 60px !important;
+    min-width: 60px !important;
+    overflow-x: hidden;
   }
 
   .pro-main {
-    flex: 1;
-    height: 100%;
+    grid-column: 2 !important;
+    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
   }
 
   .pro-content {
-    height: calc(100vh - 80px);
-    height: calc(100dvh - 80px);
+    height: 100%;
     grid-template-rows: 1fr auto;
     overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 }
 
@@ -1153,17 +1166,43 @@
   }
 }
 
-/* Ensure grid layout on larger screens */
+/* Tablet and Desktop: Always maintain grid layout with sidebar left, content right */
 @media (min-width: 769px) {
   .pro-layout {
     display: grid !important;
-    grid-template-columns: var(--pro-sidebar-width) 1fr;
+    grid-template-columns: var(--pro-sidebar-width) 1fr !important;
     grid-template-rows: 1fr;
     flex-direction: unset;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .pro-layout:has(.pro-sidebar.collapsed) {
-    grid-template-columns: var(--pro-sidebar-collapsed-width) 1fr;
+    grid-template-columns: var(--pro-sidebar-collapsed-width) 1fr !important;
+  }
+  
+  .pro-layout.sidebar-collapsed {
+    grid-template-columns: var(--pro-sidebar-collapsed-width) 1fr !important;
+  }
+
+  /* Ensure sidebar stays visible and in left column */
+  .pro-sidebar {
+    grid-column: 1;
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  /* Ensure main content stays in right column */
+  .pro-main {
+    grid-column: 2;
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 }
 
