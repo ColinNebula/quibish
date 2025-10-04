@@ -186,6 +186,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Import route modules
+const notificationsRoutes = require('./routes/notifications');
+
 // Enhanced health check with network diagnostics
 app.get('/api/health', (req, res) => {
   const healthData = {
@@ -212,6 +215,9 @@ app.get('/api/health', (req, res) => {
   
   res.json(healthData);
 });
+
+// Register API routes
+app.use('/api/notifications', notificationsRoutes);
 
 // Auth endpoints
 app.post('/api/auth/register', (req, res) => {

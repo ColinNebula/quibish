@@ -3,17 +3,29 @@ const router = express.Router();
 const webpush = require('web-push');
 const emailNotificationService = require('../services/emailNotificationService');
 
-// Configure web-push with VAPID keys
+// Configure web-push with VAPID keys (disabled for now to avoid dependency issues)
 const vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY || 'BMqSvZyI8NzEp_G-Jw5i5L7-8K9yJ8xI7qU6vN2mL4kP3oT8fF1R9eA2cX5nH7jQ6wE4dY9pM8vL3zK2aB1sC0f',
-  privateKey: process.env.VAPID_PRIVATE_KEY || 'your-private-key-here'
+  publicKey: process.env.VAPID_PUBLIC_KEY || null,
+  privateKey: process.env.VAPID_PRIVATE_KEY || null
 };
 
-webpush.setVapidDetails(
-  'mailto:admin@quibish.app',
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
+// Only set VAPID details if both keys are provided and valid
+if (vapidKeys.publicKey && vapidKeys.privateKey && vapidKeys.privateKey !== 'your-private-key-here') {
+  try {
+    webpush.setVapidDetails(
+      'mailto:admin@quibish.app',
+      vapidKeys.publicKey,
+      vapidKeys.privateKey
+    );
+    console.log('✅ VAPID keys configured for push notifications');
+  } catch (error) {
+    console.warn('⚠️ Invalid VAPID keys, push notifications disabled:', error.message);
+    vapidKeys.publicKey = null;
+    vapidKeys.privateKey = null;
+  }
+} else {
+  console.warn('⚠️ VAPID keys not configured, push notifications disabled');
+}
 
 // In-memory storage for push subscriptions (in production, use database)
 const pushSubscriptions = new Map();

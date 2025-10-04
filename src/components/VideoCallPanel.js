@@ -17,6 +17,17 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
   const [swipeDistance, setSwipeDistance] = useState(0);
   const [isScreenRecording, setIsScreenRecording] = useState(false);
   const [screenRecordingTime, setScreenRecordingTime] = useState(0);
+  const [showCaptions, setShowCaptions] = useState(false);
+  const [captions, setCaptions] = useState('');
+  const [showStats, setShowStats] = useState(false);
+  const [callStats, setCallStats] = useState(null);
+  const [noiseCancellation, setNoiseCancellation] = useState(true);
+  const [gestures, setGestures] = useState([]);
+  const [activeSpeaker, setActiveSpeaker] = useState(null);
+  const [spotlightMode, setSpotlightMode] = useState(false);
+  const [batterySaver, setBatterySaver] = useState(false);
+  const [recordingPaused, setRecordingPaused] = useState(false);
+  const [recordingQuality, setRecordingQuality] = useState('high');
   
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -26,6 +37,8 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
   const screenRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
   const screenRecordingTimerRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const statsIntervalRef = useRef(null);
 
   // Initialize and start call
   useEffect(() => {
@@ -79,6 +92,12 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
       }
       if (screenRecorderRef.current && screenRecorderRef.current.state !== 'inactive') {
         screenRecorderRef.current.stop();
+      }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      if (statsIntervalRef.current) {
+        clearInterval(statsIntervalRef.current);
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -358,6 +377,148 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Live Captions Toggle
+  const handleToggleCaptions = useCallback(() => {
+    if (!showCaptions) {
+      // Start speech recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onresult = (event) => {
+          let interimTranscript = '';
+          let finalTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript + ' ';
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+
+          setCaptions(finalTranscript || interimTranscript);
+        };
+
+        recognitionRef.current.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+        };
+
+        recognitionRef.current.start();
+      } else {
+        alert('Speech recognition not supported in this browser');
+        return;
+      }
+    } else {
+      // Stop speech recognition
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setCaptions('');
+    }
+    setShowCaptions(!showCaptions);
+  }, [showCaptions]);
+
+  // Noise Cancellation Toggle
+  const handleToggleNoiseCancellation = useCallback(() => {
+    setNoiseCancellation(!noiseCancellation);
+    // Apply noise cancellation to audio track
+    if (callState?.localStream) {
+      const audioTrack = callState.localStream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.applyConstraints({
+          noiseSuppression: !noiseCancellation,
+          echoCancellation: true,
+          autoGainControl: true
+        });
+      }
+    }
+  }, [noiseCancellation, callState]);
+
+  // Toggle Stats Dashboard
+  const handleToggleStats = useCallback(() => {
+    if (!showStats) {
+      // Start collecting stats
+      statsIntervalRef.current = setInterval(() => {
+        const stats = enhancedVideoCallService.getStats();
+        setCallStats({
+          bandwidth: `${(stats.bandwidth / 1000).toFixed(1)} kbps`,
+          fps: '30',
+          packetLoss: `${stats.packetsLost || 0}`,
+          latency: `${stats.roundTripTime || 0} ms`,
+          jitter: `${stats.jitter || 0} ms`,
+          quality: connectionQuality
+        });
+      }, 1000);
+    } else {
+      if (statsIntervalRef.current) {
+        clearInterval(statsIntervalRef.current);
+        statsIntervalRef.current = null;
+      }
+      setCallStats(null);
+    }
+    setShowStats(!showStats);
+  }, [showStats, connectionQuality]);
+
+  // Send Gesture/Reaction
+  const handleSendGesture = useCallback((gesture) => {
+    const newGesture = {
+      id: Date.now(),
+      emoji: gesture,
+      timestamp: Date.now()
+    };
+    setGestures(prev => [...prev, newGesture]);
+    
+    // Remove gesture after 3 seconds
+    setTimeout(() => {
+      setGestures(prev => prev.filter(g => g.id !== newGesture.id));
+    }, 3000);
+  }, []);
+
+  // Toggle Spotlight Mode
+  const handleToggleSpotlight = useCallback(() => {
+    setSpotlightMode(!spotlightMode);
+    if (!spotlightMode) {
+      setLayout('speaker');
+    } else {
+      setLayout('grid');
+    }
+  }, [spotlightMode]);
+
+  // Toggle Battery Saver
+  const handleToggleBatterySaver = useCallback(() => {
+    setBatterySaver(!batterySaver);
+    if (!batterySaver) {
+      // Reduce quality for battery saving
+      handleChangeQuality('low');
+    } else {
+      handleChangeQuality('auto');
+    }
+  }, [batterySaver]);
+
+  // Pause/Resume Recording
+  const handlePauseResumeRecording = useCallback(() => {
+    if (!callState?.isRecording) return;
+    
+    if (recordingPaused) {
+      enhancedVideoCallService.resumeRecording();
+    } else {
+      enhancedVideoCallService.pauseRecording();
+    }
+    setRecordingPaused(!recordingPaused);
+  }, [recordingPaused, callState]);
+
+  // Change Recording Quality
+  const handleChangeRecordingQuality = useCallback((quality) => {
+    setRecordingQuality(quality);
+    enhancedVideoCallService.setRecordingQuality(quality);
+  }, []);
 
   // Close on backdrop click
   const handleBackdropClick = useCallback(() => {
@@ -820,6 +981,117 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
               Enable Blur
             </button>
           </div>
+
+          {/* Noise Cancellation */}
+          <div className="setting-group">
+            <label>🎯 Noise Cancellation</label>
+            <button 
+              className={`toggle-btn ${noiseCancellation ? 'active' : ''}`}
+              onClick={handleToggleNoiseCancellation}
+            >
+              {noiseCancellation ? '✓ Enabled' : 'Enable'}
+            </button>
+          </div>
+
+          {/* Spotlight Mode */}
+          <div className="setting-group">
+            <label>👤 Spotlight Mode</label>
+            <button 
+              className={`toggle-btn ${spotlightMode ? 'active' : ''}`}
+              onClick={handleToggleSpotlight}
+            >
+              {spotlightMode ? '✓ Active' : 'Activate'}
+            </button>
+          </div>
+
+          {/* Battery Saver (Mobile) */}
+          <div className="setting-group mobile-only">
+            <label>🔋 Battery Saver</label>
+            <button 
+              className={`toggle-btn ${batterySaver ? 'active' : ''}`}
+              onClick={handleToggleBatterySaver}
+            >
+              {batterySaver ? '✓ Enabled' : 'Enable'}
+            </button>
+          </div>
+
+          {/* Recording Quality */}
+          {callState.isRecording && (
+            <div className="setting-group">
+              <label>Recording Quality</label>
+              <div className="quality-buttons">
+                {['low', 'medium', 'high'].map(q => (
+                  <button
+                    key={q}
+                    className={`quality-btn ${recordingQuality === q ? 'active' : ''}`}
+                    onClick={() => handleChangeRecordingQuality(q)}
+                  >
+                    {q.charAt(0).toUpperCase() + q.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Live Captions Display */}
+      {showCaptions && captions && (
+        <div className="captions-overlay">
+          <div className="captions-text">{captions}</div>
+        </div>
+      )}
+
+      {/* Statistics Dashboard */}
+      {showStats && callStats && (
+        <div className="stats-dashboard">
+          <div className="stats-header">
+            <h4>📊 Call Statistics</h4>
+            <button className="close-stats" onClick={handleToggleStats}>×</button>
+          </div>
+          <div className="stats-grid">
+            <div className="stat-item">
+              <div className="stat-label">Bandwidth</div>
+              <div className="stat-value">{callStats.bandwidth}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">FPS</div>
+              <div className="stat-value">{callStats.fps}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">Packet Loss</div>
+              <div className="stat-value">{callStats.packetLoss}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">Latency</div>
+              <div className="stat-value">{callStats.latency}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">Jitter</div>
+              <div className="stat-value">{callStats.jitter}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">Quality</div>
+              <div className={`stat-value quality-${callStats.quality}`}>
+                {callStats.quality.toUpperCase()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gesture/Reactions Display */}
+      {gestures.length > 0 && (
+        <div className="gestures-overlay">
+          {gestures.map(gesture => (
+            <div 
+              key={gesture.id} 
+              className="gesture-emoji"
+              style={{ animationDelay: `${(Date.now() - gesture.timestamp) / 1000}s` }}
+            >
+              {gesture.emoji}
+            </div>
+          ))}
         </div>
       )}
 
@@ -857,6 +1129,17 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
           {callState.isRecording ? '⏹️' : '⏺️'}
         </button>
 
+        {/* Pause/Resume Recording */}
+        {callState.isRecording && (
+          <button
+            className={`control-btn ${recordingPaused ? 'active' : ''}`}
+            onClick={handlePauseResumeRecording}
+            title={recordingPaused ? 'Resume Recording' : 'Pause Recording'}
+          >
+            {recordingPaused ? '▶️' : '⏸️'}
+          </button>
+        )}
+
         <button
           className={`control-btn screen-record-btn ${isScreenRecording ? 'active recording' : ''}`}
           onClick={handleToggleScreenRecording}
@@ -869,6 +1152,42 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
             </span>
           ) : '🎬'}
         </button>
+
+        {/* Live Captions Toggle */}
+        <button
+          className={`control-btn ${showCaptions ? 'active' : ''}`}
+          onClick={handleToggleCaptions}
+          title={showCaptions ? 'Hide Captions' : 'Show Live Captions'}
+        >
+          💬
+        </button>
+
+        {/* Stats Toggle */}
+        <button
+          className={`control-btn ${showStats ? 'active' : ''}`}
+          onClick={handleToggleStats}
+          title={showStats ? 'Hide Statistics' : 'Show Statistics'}
+        >
+          📊
+        </button>
+
+        {/* Reactions Menu */}
+        <div className="reactions-menu">
+          <button
+            className="control-btn reactions-btn"
+            title="Send Reaction"
+          >
+            ✋
+          </button>
+          <div className="reactions-dropdown">
+            <button onClick={() => handleSendGesture('👍')}>👍</button>
+            <button onClick={() => handleSendGesture('❤️')}>❤️</button>
+            <button onClick={() => handleSendGesture('😂')}>😂</button>
+            <button onClick={() => handleSendGesture('👏')}>👏</button>
+            <button onClick={() => handleSendGesture('🎉')}>🎉</button>
+            <button onClick={() => handleSendGesture('✋')}>✋</button>
+          </div>
+        </div>
 
         <button
           className="control-btn end-call"

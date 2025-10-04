@@ -470,6 +470,42 @@ class EnhancedVideoCallService {
   }
 
   /**
+   * Pause recording
+   */
+  async pauseRecording() {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+      this.mediaRecorder.pause();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Resume recording
+   */
+  async resumeRecording() {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'paused') {
+      this.mediaRecorder.resume();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Set recording quality
+   */
+  setRecordingQuality(quality) {
+    // Quality would be applied when starting new recording
+    const qualityMap = {
+      'low': 1000000,    // 1 Mbps
+      'medium': 2500000, // 2.5 Mbps
+      'high': 5000000    // 5 Mbps
+    };
+    this.recordingBitrate = qualityMap[quality] || qualityMap.high;
+    return true;
+  }
+
+  /**
    * Download recorded video
    */
   downloadRecording(blob, filename = 'video-call-recording.webm') {

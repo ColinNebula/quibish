@@ -15,12 +15,13 @@
     "postinstall": "node scripts/patch-gh-pages.js",
     "start": "react-scripts start",
     "start:memory": "node memory-start.js --frontend",
-    "build": "react-scripts build",
-    "build:no-sourcemap": "GENERATE_SOURCEMAP=false react-scripts build",
+    "build": "set GENERATE_SOURCEMAP=false&& set INLINE_RUNTIME_CHUNK=false&& react-scripts build",
+    "build:analyze": "npm run build && npx bundle-analyzer build/static/js/*.js",
+    "build:original": "react-scripts build",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "smoke-check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/smoke-check.ps1",
-    "test": "react-scripts test",
+    "test": "react-scripts test --watchAll=false",
     "eject": "react-scripts eject",
     "dev": "concurrently \"npm run backend:start\" \"npm run start\" --names \"API,APP\" --prefix-colors \"green,blue\"",
     "backend:start": "cd backend && node server.js",
@@ -32,7 +33,8 @@
     "pm2:monitor": "pm2 monit",
     "pm2:status": "pm2 status",
     "startup": "pm2 startup",
-    "save": "pm2 save"
+    "save": "pm2 save",
+    "size-check": "npm run build && powershell -Command \"Get-ChildItem build/static -Recurse | Measure-Object -Property Length -Sum | Select-Object @{Name='TotalMB';Expression={[math]::Round($_.Sum/1MB,2)}}\""
   },
   "eslintConfig": {
     "extends": [

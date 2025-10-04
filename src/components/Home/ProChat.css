@@ -2277,33 +2277,36 @@
 /* Input Container Styles */
 .pro-chat-input-container,
 .message-input-container {
+  /* Essential layout */
   flex: 0 0 auto;
-  padding: 20px 32px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 16px;
   position: relative;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  
+  /* Responsive sizing */
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 16px 20px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  
+  /* Layout properties */
+  align-items: center;
+  gap: 12px;
   z-index: 999;
+  
+  /* Visual styling */
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  /* Enhanced mobile keyboard support */
-  padding-bottom: max(20px, env(safe-area-inset-bottom));
-  /* Prevent layout shifts */
-  box-sizing: border-box;
-  /* Elegant glassmorphism background */
-  background: rgba(255, 255, 255, 0.95);
-  /* Enhanced shadow for depth */
   box-shadow: 
     0 -8px 32px rgba(0, 0, 0, 0.1),
     0 -2px 8px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  /* Full width within container */
-  width: 100%;
-  margin: 0;
-  /* Ensure proper content centering */
-  max-width: 100%;
-  min-width: 0;
 }
 /* Responsive Layout Fixes */
 @media (max-width: 768px) {
@@ -2318,18 +2321,21 @@
   
   .pro-chat-input-container,
   .message-input-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100vw;
-    max-width: 100vw;
-    padding: 16px 20px;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
-    margin: 0 auto;
-    box-sizing: border-box;
-    justify-content: center;
-    z-index: 1001;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 12px 16px !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+    z-index: 1001 !important;
+    
+    /* Reset any tablet overrides */
+    transform: none !important;
+    top: auto !important;
   }
   
   .input-wrapper {
@@ -11110,8 +11116,33 @@ body.dark-theme .call-option-info p {
   color: #94a3b8;
 }
 
-/* iPhone Pro Max Specific Optimizations */
+/* iPhone 14/15 Pro Max Specific Optimizations (430×932px) */
 @media screen and (max-width: 430px) and (min-height: 900px) {
+  /* Pro Max Portrait Mode - More Options Dropdown */
+  .more-options-dropdown {
+    position: fixed !important;
+    top: max(env(safe-area-inset-top, 47px), min(25%, calc(100vh - 40px))) !important;
+    left: 50% !important;
+    transform: translate(-50%, 0) !important;
+    -webkit-transform: translate(-50%, 0) !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 340px !important;
+    max-height: calc(100vh - max(env(safe-area-inset-top, 47px), 47px) - max(env(safe-area-inset-bottom, 34px), 34px)) !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  }
   /* Pro Max Portrait Mode - Chat Header */
   .enhanced-chat-header {
     height: 80px;
@@ -11185,11 +11216,13 @@ body.dark-theme .call-option-info p {
   /* Pro Max Portrait Mode - Messages */
   .pro-message-list {
     padding: 20px 24px;
+    padding-bottom: calc(120px + max(24px, env(safe-area-inset-bottom))) !important;
     gap: 16px;
-    height: calc(100vh - 80px - 100px);
-    height: calc(100dvh - 80px - 100px);
+    height: calc(100vh - 80px);
+    height: calc(100dvh - 80px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
   }
 
   .pro-message-container {
@@ -11223,10 +11256,21 @@ body.dark-theme .call-option-info p {
 
   /* Pro Max Portrait Mode - Input Area */
   .pro-chat-input-container {
-    padding: 20px 24px;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 20px 24px !important;
+    padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
     background: var(--pro-bg);
     border-top: 1px solid var(--pro-border);
-    min-height: 100px;
+    min-height: auto !important;
+    box-sizing: border-box !important;
+    z-index: 1000 !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .pro-input-wrapper {
@@ -11460,6 +11504,169 @@ body.dark-theme .call-option-info p {
   }
 }
 
+/* iPhone 14/15 Pro Specific Optimizations (393×852px) */
+@media screen and (max-width: 393px) and (min-height: 850px) {
+  /* Pro Portrait Mode - More Options Dropdown */
+  .more-options-dropdown {
+    position: fixed !important;
+    top: max(env(safe-area-inset-top, 47px), min(25%, calc(100vh - 40px))) !important;
+    left: 50% !important;
+    transform: translate(-50%, 0) !important;
+    -webkit-transform: translate(-50%, 0) !important;
+    width: calc(100vw - 16px) !important;
+    max-width: 320px !important;
+    max-height: calc(100vh - max(env(safe-area-inset-top, 47px), 47px) - max(env(safe-area-inset-bottom, 34px), 34px)) !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  }
+  /* Pro Portrait Mode - Input Area */
+  .pro-chat-input-container,
+  .message-input-container {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 18px 20px !important;
+    padding-bottom: max(22px, env(safe-area-inset-bottom)) !important;
+    background: var(--pro-bg, rgba(255, 255, 255, 0.95));
+    border-top: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1));
+    min-height: auto !important;
+    box-sizing: border-box !important;
+    z-index: 1000 !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Pro Portrait Mode - Messages with proper spacing */
+  .pro-message-list,
+  .messages-container {
+    padding: 18px 20px;
+    padding-bottom: calc(110px + max(22px, env(safe-area-inset-bottom))) !important;
+    height: calc(100vh - 70px);
+    height: calc(100dvh - 70px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+  }
+
+  /* Input wrapper optimization */
+  .input-wrapper,
+  .input-wrapper.enhanced {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Message input optimization */
+  .message-input,
+  .pro-input {
+    font-size: 16px; /* Prevents iOS zoom */
+    line-height: 1.4;
+    max-height: 100px;
+    padding: 12px 16px;
+    border-radius: 20px;
+  }
+
+  /* Send button optimization */
+  .pro-send-button,
+  .send-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 21px;
+    flex-shrink: 0;
+  }
+
+  /* Header adjustment for Pro */
+  .enhanced-chat-header {
+    height: 70px;
+    padding: 0 20px;
+  }
+}
+
+/* iPhone Modern Devices - Universal Fix for 14/15 Series */
+@media screen and (max-width: 430px) and (min-height: 800px) and (-webkit-min-device-pixel-ratio: 3) {
+  /* More Options Dropdown - Universal iPhone Fix */
+  .more-options-dropdown {
+    position: fixed !important;
+    top: max(env(safe-area-inset-top, 34px), min(25%, calc(100vh - 40px))) !important;
+    left: 50% !important;
+    transform: translate(-50%, 0) !important;
+    -webkit-transform: translate(-50%, 0) !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 340px !important;
+    max-height: calc(100vh - max(env(safe-area-inset-top, 34px), 34px) - max(env(safe-area-inset-bottom, 34px), 34px)) !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  }
+  /* Ensure input is never cut off on any modern iPhone */
+  .pro-chat-input-container,
+  .message-input-container {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding: 16px 20px !important;
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 34px)) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-sizing: border-box !important;
+    z-index: 1001 !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+  }
+
+  /* Messages container spacing */
+  .pro-message-list,
+  .messages-container {
+    padding-bottom: calc(100px + max(20px, env(safe-area-inset-bottom, 34px))) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Fallback for safe area if not supported */
+  @supports not (padding: max(0px, env(safe-area-inset-bottom))) {
+    .pro-chat-input-container,
+    .message-input-container {
+      padding-bottom: 34px !important; /* Standard iPhone home indicator height */
+    }
+    
+    .pro-message-list,
+    .messages-container {
+      padding-bottom: 134px !important; /* 100px input + 34px safe area */
+    }
+  }
+}
+
 /* Mobile responsive */
 @media screen and (max-width: 768px) {
   /* Ensure modal overlay is above all content */
@@ -11536,48 +11743,80 @@ body.dark-theme .call-option-info p {
 
 /* More Options Dropdown - Base Styles */
 .more-options-dropdown {
-  /* Positioning */
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  width: 280px;
-  max-width: calc(100vw - 40px);
-  max-height: calc(100vh - 120px);
-  z-index: 2147483647;
+  /* Smart positioning to avoid cutoff - highest priority */
+  position: fixed !important;
+  top: max(20px, min(30%, calc(100vh - 400px))) !important;
+  left: 50% !important;
+  transform: translate(-50%, 0) !important;
+  -webkit-transform: translate(-50%, 0) !important;
+  width: 280px !important;
+  max-width: calc(100vw - 40px) !important;
+  max-height: calc(100vh - 60px) !important;
+  min-height: 200px !important;
+  z-index: 2147483647 !important;
   
-  /* Overflow */
-  overflow: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  /* Overflow handling */
+  overflow: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  
+  /* Ensure visibility */
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
   
   /* Hardware acceleration */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  will-change: transform;
+  will-change: transform !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  
+  /* Reset any conflicting styles */
+  bottom: auto !important;
+  right: auto !important;
+  margin: 0 !important;
 }
 
 /* More Options Dropdown - Mobile Optimizations */
 @media (max-width: 768px) {
   .more-options-dropdown {
-    /* Better positioning for mobile devices */
-    top: max(env(safe-area-inset-top, 0px) + 70px, 70px) !important;
-    right: 10px !important;
-    left: 10px !important;
-    width: auto !important;
-    max-width: none !important;
-    margin: 0 auto;
+    /* Safe positioning for mobile devices - prevents top cutoff */
+    position: fixed !important;
+    top: max(20px, min(30%, calc(100vh - 20px))) !important;
+    left: 50% !important;
+    transform: translate(-50%, 0) !important;
+    -webkit-transform: translate(-50%, 0) !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 340px !important;
+    max-height: calc(100vh - 40px) !important;
+    
+    /* Reset positioning overrides */
+    right: auto !important;
+    bottom: auto !important;
+    margin: 0;
     
     /* Ensure it's on top of everything */
     z-index: 2147483647 !important;
     pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
     
     /* Better touch scrolling */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     
-    /* Force hardware acceleration */
-    transform: translate3d(0, 0, 0) !important;
-    -webkit-transform: translate3d(0, 0, 0) !important;
+    /* Hardware acceleration */
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    
+    /* Improve visibility */
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
   }
   
   .more-options-dropdown .dropdown-item {
@@ -11596,13 +11835,99 @@ body.dark-theme .call-option-info p {
 /* iPhone specific optimizations */
 @supports (-webkit-touch-callout: none) {
   .more-options-dropdown {
-    /* Account for iPhone notch and home indicator */
-    top: max(env(safe-area-inset-top, 0px) + 70px, 70px) !important;
-    bottom: max(env(safe-area-inset-bottom, 0px) + 10px, 10px) !important;
+    /* Safe positioning for iPhone devices - prevents top cutoff */
+    position: fixed !important;
+    top: max(env(safe-area-inset-top, 20px), min(30%, calc(100vh - 40px))) !important;
+    left: 50% !important;
+    transform: translate(-50%, 0) !important;
+    -webkit-transform: translate(-50%, 0) !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 340px !important;
+    max-height: calc(100vh - max(env(safe-area-inset-top, 20px), 20px) - max(env(safe-area-inset-bottom, 20px), 20px)) !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 }
 
 /* ===== LARGE DISPLAY ENHANCEMENTS FOR PROCHAT ===== */
+
+/* Tablet and Medium Devices (769px - 1439px) - Surface Pro, iPad Pro, Nest Hub */
+@media (min-width: 769px) and (max-width: 1439px) {
+  .pro-main {
+    max-width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .messages-container {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: 20px 24px;
+    overflow-y: auto;
+  }
+
+  .pro-message-list {
+    flex: 1 1 auto;
+    max-height: 100%;
+    padding: 16px 20px;
+  }
+
+  /* CRITICAL: Ensure input container is visible and positioned correctly */
+  .pro-chat-input-container,
+  .message-input-container {
+    flex: 0 0 auto;
+    position: relative !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 18px 24px !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 999;
+    box-sizing: border-box;
+  }
+
+  .input-wrapper,
+  .input-wrapper.enhanced {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    gap: 12px;
+    margin: 0;
+  }
+
+  .message-input,
+  .pro-input {
+    flex: 1;
+    min-height: 48px;
+    font-size: 15px;
+    padding: 12px 18px;
+  }
+
+  .pro-send-button {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  /* Action buttons */
+  .action-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+}
 
 /* Large Desktop (1440px - QHD) */
 @media (min-width: 1440px) {
@@ -11648,8 +11973,7 @@ body.dark-theme .call-option-info p {
   }
 
   /* Better dropdowns */
-  .dropdown-menu,
-  .more-options-dropdown {
+  .dropdown-menu {
     min-width: 260px;
     border-radius: 14px;
     padding: 8px;
@@ -11663,6 +11987,7 @@ body.dark-theme .call-option-info p {
 
   /* Fix input container positioning */
   .pro-chat-input-container {
+    max-width: 100%;
     padding: 20px max(32px, calc((100% - 1300px) / 2));
   }
 
@@ -11744,7 +12069,7 @@ body.dark-theme .call-option-info p {
 
   /* Input area - full width with centered content */
   .pro-chat-input-container {
-    width: 100%;
+    max-width: 100%;
     padding: 20px max(40px, calc((100% - 1600px) / 2));
   }
 
@@ -11756,8 +12081,7 @@ body.dark-theme .call-option-info p {
   }
 
   /* Enhanced dropdowns */
-  .dropdown-menu,
-  .more-options-dropdown {
+  .dropdown-menu {
     min-width: 280px;
     border-radius: 16px;
     padding: 10px;
@@ -11846,7 +12170,7 @@ body.dark-theme .call-option-info p {
 
   /* Input area - full width with centered content */
   .pro-chat-input-container {
-    width: 100%;
+    max-width: 100%;
     padding: 24px max(60px, calc((100% - 2000px) / 2));
   }
 
@@ -11858,8 +12182,7 @@ body.dark-theme .call-option-info p {
   }
 
   /* Enhanced dropdowns */
-  .dropdown-menu,
-  .more-options-dropdown {
+  .dropdown-menu {
     min-width: 320px;
     border-radius: 18px;
     padding: 12px;
@@ -11974,7 +12297,7 @@ body.dark-theme .call-option-info p {
 
   /* Input area - full width with centered content */
   .pro-chat-input-container {
-    width: 100%;
+    max-width: 100%;
     padding: 32px max(80px, calc((100% - 3000px) / 2));
   }
 
@@ -11986,8 +12309,7 @@ body.dark-theme .call-option-info p {
   }
 
   /* Enhanced dropdowns */
-  .dropdown-menu,
-  .more-options-dropdown {
+  .dropdown-menu {
     min-width: 360px;
     border-radius: 20px;
     padding: 14px;
