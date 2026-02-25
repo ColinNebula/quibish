@@ -47,6 +47,9 @@ class NativeDeviceFeaturesService {
         this.features.microphone = devices.some(device => device.kind === 'audioinput');
       } catch (error) {
         console.warn('Could not enumerate devices:', error);
+        // Set features to false if enumeration fails
+        this.features.camera = false;
+        this.features.microphone = false;
       }
     }
     
@@ -104,6 +107,7 @@ class NativeDeviceFeaturesService {
   // Request camera access
   async requestCamera(constraints = { video: true }) {
     if (!this.features.camera) {
+      console.warn('📹 Camera feature not available');
       return { success: false, error: 'Camera not available' };
     }
     
@@ -115,10 +119,22 @@ class NativeDeviceFeaturesService {
         deviceId: stream.getVideoTracks()[0]?.getSettings().deviceId
       };
     } catch (error) {
+      console.error('❌ Camera access failed:', error);
+      
+      let userMessage = error.message;
+      if (error.name === 'NotFoundError') {
+        userMessage = 'No camera found. Please connect a camera and try again.';
+      } else if (error.name === 'NotAllowedError') {
+        userMessage = 'Camera permission denied. Please allow camera access in browser settings.';
+      } else if (error.name === 'NotReadableError') {
+        userMessage = 'Camera is already in use by another application.';
+      }
+      
       return {
         success: false,
-        error: error.message,
-        name: error.name
+        error: userMessage,
+        name: error.name,
+        originalMessage: error.message
       };
     }
   }
@@ -126,6 +142,7 @@ class NativeDeviceFeaturesService {
   // Request microphone access
   async requestMicrophone(constraints = { audio: true }) {
     if (!this.features.microphone) {
+      console.warn('🎤 Microphone feature not available');
       return { success: false, error: 'Microphone not available' };
     }
     
@@ -137,10 +154,22 @@ class NativeDeviceFeaturesService {
         deviceId: stream.getAudioTracks()[0]?.getSettings().deviceId
       };
     } catch (error) {
+      console.error('❌ Microphone access failed:', error);
+      
+      let userMessage = error.message;
+      if (error.name === 'NotFoundError') {
+        userMessage = 'No microphone found. Please connect a microphone and try again.';
+      } else if (error.name === 'NotAllowedError') {
+        userMessage = 'Microphone permission denied. Please allow microphone access in browser settings.';
+      } else if (error.name === 'NotReadableError') {
+        userMessage = 'Microphone is already in use by another application.';
+      }
+      
       return {
         success: false,
-        error: error.message,
-        name: error.name
+        error: userMessage,
+        name: error.name,
+        originalMessage: error.message
       };
     }
   }

@@ -3,16 +3,16 @@
 /* Enhanced Chat Header */
 .pro-header {
   position: relative;
-  height: 75px;
+  height: auto;
+  min-height: 75px;
   background: linear-gradient(135deg, 
     rgba(255, 255, 255, 0.95) 0%,
     rgba(248, 250, 252, 0.93) 50%,
     rgba(241, 245, 249, 0.95) 100%);
   backdrop-filter: blur(20px) saturate(150%);
   border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-  box-shadow: 
-    0 1px 3px rgba(0, 0, 0, 0.05),
-    0 4px 12px rgba(0, 0, 0, 0.03);
+  border-radius: 0;
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -20,6 +20,7 @@
   z-index: 100;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 /* Header shimmer effect */
@@ -495,8 +496,10 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
   .pro-header {
-    padding: 0 16px;
-    height: 65px;
+    padding: 0 10px;
+    height: auto;
+    min-height: 52px;
+    border-radius: 0;
   }
   
   .mobile-menu-toggle {
@@ -518,16 +521,60 @@
   }
   
   .conversation-subtitle {
-    font-size: 11px;
+    display: none !important;
+  }
+
+  .participant-count {
+    display: none !important;
+  }
+
+  .conversation-status {
+    display: flex !important;
+    align-items: center;
+  }
+
+  .connection-status {
+    position: static !important;
+    transform: none !important;
+    background: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    font-size: 11px !important;
+    font-weight: 500;
+    color: #f56565 !important;
+    animation: none !important;
+  }
+
+  .connection-status.connected {
+    color: #48bb78 !important;
+    background: none !important;
+    box-shadow: none !important;
   }
   
-  .header-action {
-    width: 36px;
-    height: 36px;
+  /* Hide less critical action buttons on mobile */
+  .header-actions .notification-btn,
+  .header-actions .invite-user-btn,
+  .header-actions .file-share-btn,
+  .header-actions .donation-btn {
+    display: none !important;
   }
   
-  .header-right {
+  /* Keep only call/video buttons visible */
+  .header-actions {
     gap: 6px;
+  }
+  
+  .header-action,
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .header-actions {
+    gap: 4px;
   }
 }
 

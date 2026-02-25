@@ -1,0 +1,467 @@
+/* ============================================
+   MOBILE OVERLAPPING ISSUES FIX
+   Addresses: Header, Input, Sidebar, Modal overlaps
+   ============================================ */
+
+@media screen and (max-width: 768px) {
+  /* ========================================
+     Z-INDEX HIERARCHY FIX
+     ======================================== */
+  
+  /* Define clear z-index layers for mobile */
+  :root {
+    --z-mobile-backdrop: 999;
+    --z-mobile-sidebar: 1000;
+    --z-mobile-modal: 1050;
+    --z-mobile-header: 100;
+    --z-mobile-input: 90;
+    --z-mobile-dropdown: 1100;
+    --z-mobile-toast: 1200;
+  }
+  
+  /* ========================================
+     HEADER OVERLAP FIX
+     ======================================== */
+  
+  /* DISABLED - Controlled by mobile-final-override.css */
+  /* .pro-header,
+  .enhanced-chat-header {
+    position: sticky !important;
+    top: env(safe-area-inset-top, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-height: 56px !important;
+    max-height: 80px !important;
+    padding: 8px 12px !important;
+    z-index: var(--z-mobile-header) !important;
+    background: var(--pro-surface, #ffffff) !important;
+    backdrop-filter: blur(10px) !important;
+    border-bottom: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
+    border-radius: 0 0 20px 20px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+  } */
+  
+  /* Simplify header on mobile - hide non-essential status info */
+  .participant-count {
+    display: none !important;
+  }
+  
+  /* Hide less critical buttons on mobile */
+  .header-actions .notification-btn,
+  .header-actions .invite-user-btn,
+  .header-actions .file-share-btn,
+  .header-actions .donation-btn {
+    display: none !important;
+  }
+  
+  /* Ensure header content doesn't overflow */
+  .pro-header *,
+  .enhanced-chat-header * {
+    z-index: auto !important;
+  }
+  
+  /* Header dropdowns should appear above everything */
+  .pro-header .dropdown-menu,
+  .enhanced-chat-header .dropdown-menu,
+  .pro-header .more-options-menu,
+  .enhanced-chat-header .more-options-menu {
+    z-index: var(--z-mobile-dropdown) !important;
+    position: fixed !important;
+  }
+  
+  /* ========================================
+     MESSAGE AREA & INPUT FIX
+     No overlap between messages and input
+     ======================================== */
+  
+  /* Main content wrapper */
+  .pro-content,
+  .pro-main > .pro-content {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 0% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+  
+  /* Message list - prevent overlap with input */
+  /* DISABLED - Controlled by mobile-final-override.css */
+  /* .pro-message-list,
+  .pro-message-area,
+  .messages-container {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 12px !important;
+    padding-bottom: 140px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+    position: relative !important;
+    z-index: 1 !important;
+    order: 1 !important;
+  } */
+  
+  /* Add bottom padding to last message */
+  .pro-message-list > *:last-child,
+  .pro-message-area > *:last-child {
+    margin-bottom: 20px !important;
+  }
+  
+  /* Input container - always at bottom, never overlapping */
+  .pro-chat-input-container,
+  .message-input-container,
+  .input-container {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 12px !important;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--pro-surface, #ffffff) !important;
+    border-top: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05) !important;
+    z-index: var(--z-mobile-input) !important;
+    backdrop-filter: blur(10px) !important;
+    order: 2 !important;
+  }
+  
+  /* Ensure input stays in flow when keyboard opens */
+  .pro-chat-input-container.keyboard-open,
+  .message-input-container.keyboard-open {
+    position: relative !important;
+  }
+  
+  /* ========================================
+     SIDEBAR OVERLAY FIX
+     Prevent sidebar from being cut off or overlapping incorrectly
+     ======================================== */
+  
+  /* Sidebar backdrop */
+  .pro-sidebar-overlay,
+  .sidebar-overlay,
+  .sidebar-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(2px) !important;
+    z-index: var(--z-mobile-backdrop) !important;
+    display: block !important;
+    opacity: 1 !important;
+    transition: opacity 0.3s ease !important;
+  }
+  
+  /* Hide backdrop when sidebar is closed */
+  .pro-sidebar.collapsed ~ .pro-sidebar-overlay,
+  .enhanced-sidebar.collapsed ~ .sidebar-overlay,
+  .pro-sidebar-overlay.hidden,
+  .sidebar-overlay.hidden {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  
+  /* Sidebar panel */
+  .pro-sidebar,
+  .enhanced-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    background: var(--pro-surface, #ffffff) !important;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.15) !important;
+    z-index: var(--z-mobile-sidebar) !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  /* Show sidebar */
+  .pro-sidebar:not(.collapsed),
+  .enhanced-sidebar:not(.collapsed),
+  .pro-sidebar.active,
+  .enhanced-sidebar.active,
+  .pro-sidebar.open,
+  .enhanced-sidebar.open {
+    transform: translateX(0) !important;
+  }
+  
+  /* ========================================
+     MODAL OVERLAP FIX
+     Ensure modals appear above everything
+     ======================================== */
+  
+  .modal,
+  .pro-modal,
+  .modal-overlay,
+  [role="dialog"] {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: var(--z-mobile-modal) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(4px) !important;
+  }
+  
+  .modal-content,
+  .pro-modal-content {
+    position: relative !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    background: var(--pro-surface, #ffffff) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+    z-index: calc(var(--z-mobile-modal) + 1) !important;
+  }
+  
+  /* ========================================
+     DROPDOWN OVERLAP FIX
+     Ensure dropdowns don't get clipped
+     ======================================== */
+  
+  .dropdown,
+  .dropdown-menu,
+  .more-options-menu,
+  .context-menu {
+    position: fixed !important; /* Use fixed instead of absolute for better mobile behavior */
+    z-index: var(--z-mobile-dropdown) !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    background: var(--pro-surface, #ffffff) !important;
+    border-radius: 8px !important;
+  }
+  
+  /* Parent containers must allow overflow */
+  .header-actions,
+  .header-menu,
+  .message-actions,
+  .pro-header-actions {
+    overflow: visible !important;
+  }
+  
+  /* ========================================
+     TOAST/NOTIFICATION OVERLAP FIX
+     ======================================== */
+  
+  .toast,
+  .notification,
+  .snackbar,
+  [class*="toast"],
+  [class*="notification"] {
+    position: fixed !important;
+    z-index: var(--z-mobile-toast) !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+  
+  /* ========================================
+     PREVENT CONTENT SHIFTING
+     ======================================== */
+  
+  /* Ensure flex containers don't cause shifts */
+  .pro-layout,
+  .pro-main,
+  .pro-content {
+    will-change: auto !important;
+    transform: translateZ(0) !important; /* Create layer for smooth rendering */
+  }
+  
+  /* ========================================
+     LANDSCAPE MODE ADJUSTMENTS
+     ======================================== */
+  
+  @media (orientation: landscape) and (max-height: 500px) {
+    /* Reduce header height in landscape */
+    .pro-header,
+    .enhanced-chat-header {
+      min-height: 48px !important;
+      padding: 6px 12px !important;
+    }
+    
+    /* Adjust input padding */
+    .pro-chat-input-container,
+    .message-input-container {
+      padding: 8px 12px !important;
+    }
+    
+    /* Modals should be scrollable in landscape */
+    .modal-content,
+    .pro-modal-content {
+      max-height: 85vh !important;
+    }
+  }
+  
+  /* ========================================
+     SAFE AREA INSETS
+     For notched devices
+     ======================================== */
+  
+  @supports (padding: max(0px)) {
+    .pro-header,
+    .enhanced-chat-header {
+      padding-top: max(8px, env(safe-area-inset-top)) !important;
+      padding-left: max(12px, env(safe-area-inset-left)) !important;
+      padding-right: max(12px, env(safe-area-inset-right)) !important;
+    }
+    
+    .pro-chat-input-container,
+    .message-input-container {
+      padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+      padding-left: max(12px, env(safe-area-inset-left)) !important;
+      padding-right: max(12px, env(safe-area-inset-right)) !important;
+    }
+    
+    .pro-sidebar,
+    .enhanced-sidebar {
+      padding-top: max(0px, env(safe-area-inset-top)) !important;
+      padding-bottom: max(0px, env(safe-area-inset-bottom)) !important;
+    }
+  }
+  
+  /* ========================================
+     DEVICE-SPECIFIC FIXES
+     ======================================== */
+  
+  /* All mobile devices - Reduce top spacing */
+  @media only screen and (max-width: 768px) {
+    .pro-header,
+    .enhanced-chat-header {
+      min-height: 54px !important;
+      padding: 8px 12px !important;
+    }
+    
+    .pro-message-list,
+    .messages-container,
+    .pro-message-area {
+      padding-top: 8px !important;
+      margin-top: 0 !important;
+    }
+    
+    .pro-main,
+    .pro-content {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+      gap: 0 !important;
+    }
+  }
+  
+  /* iPhone 14 Pro Max - Extra spacing to prevent overlap */
+  @media only screen and (max-width: 430px) and (min-height: 800px) {
+    .pro-message-list,
+    .messages-container,
+    .pro-message-area {
+      padding-bottom: 160px !important; /* Extra space for input container */
+      margin-bottom: 0 !important;
+    }
+    
+    /* Ensure last message has extra margin */
+    .pro-message-list > *:last-child,
+    .messages-container > *:last-child {
+      margin-bottom: 40px !important;
+    }
+    
+    /* Force input to stay at bottom */
+    .pro-chat-input-container,
+    .message-input-container {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100vw !important;
+      max-width: 100vw !important;
+      min-height: 80px !important;
+      z-index: 1001 !important;
+    }
+  }
+  
+  /* ========================================
+     DEBUGGING UTILITIES
+     Uncomment to visualize layers
+     ======================================== */
+  
+  /* 
+  .pro-header::after {
+    content: 'HEADER Z:' attr(data-z);
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: red;
+    color: white;
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+  
+  .pro-chat-input-container::after {
+    content: 'INPUT Z:' attr(data-z);
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: blue;
+    color: white;
+    padding: 2px 4px;
+    font-size: 10px;
+  }
+  */
+}
+
+/* ========================================
+   TABLET ADJUSTMENTS (769px - 1024px)
+   ======================================== */
+
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  /* Adjust z-index for tablet */
+  .pro-header,
+  .enhanced-chat-header {
+    z-index: 50 !important;
+  }
+  
+  .pro-chat-input-container,
+  .message-input-container {
+    z-index: 40 !important;
+  }
+  
+  /* Sidebar should still overlay on tablet */
+  .pro-sidebar,
+  .enhanced-sidebar {
+    z-index: 900 !important;
+  }
+  
+  .pro-sidebar-overlay,
+  .sidebar-overlay {
+    z-index: 899 !important;
+  }
+}
+
+/* ========================================
+   PRINT STYLES
+   Hide overlays when printing
+   ======================================== */
+
+@media print {
+  .pro-sidebar-overlay,
+  .sidebar-overlay,
+  .modal,
+  .toast,
+  .dropdown-menu {
+    display: none !important;
+  }
+}

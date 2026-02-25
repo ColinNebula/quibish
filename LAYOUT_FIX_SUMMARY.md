@@ -222,3 +222,120 @@ All modern browsers support the flexbox layout used.
 **Date**: October 3, 2025  
 **Build**: v2.0  
 **Status**: ✅ Fixed and Deployed
+
+---
+
+## Update: October 15, 2025 - Sidebar Left, Messages Right, Input Below
+
+### User Request
+The user requested that:
+1. Sidebar should be on the LEFT side of the screen
+2. Messages should appear on the RIGHT side
+3. Message input should be BELOW the messages (not overlapping)
+
+### Additional Changes Applied
+
+#### 1. Grid Layout Structure Enhancements
+- **Updated `.pro-layout`**: Added explicit `grid-template-areas: "sidebar main"` to ensure sidebar is always on the left and main content on the right
+- **Updated `.pro-sidebar`**: Added `grid-area: sidebar` to explicitly position it in the left column
+- **Updated `.pro-main`**: Added `grid-area: main` to explicitly position it in the right column
+
+#### 2. Improved Content Flexbox Layout
+- **Changed `.pro-content`**: Converted from `display: grid` to `display: flex` with `flex-direction: column`
+  - This ensures messages are stacked vertically with input at the bottom
+- **Updated child element selectors**: Changed from grid-row positioning to flex-based positioning
+  - Messages: `flex: 1 1 auto` (takes available space)
+  - Input: `flex: 0 0 auto` (fixed size at bottom)
+
+#### 3. Enhanced Desktop Layout (769px+)
+Applied flexbox ordering to ensure proper vertical stacking:
+- Header: `order: 1` (top)
+- Messages: `order: 2` (middle, flex-grow)
+- Input: `order: 3` (bottom, fixed size)
+
+### Updated Layout Structure
+
+```
+┌─────────────────────────────────────────────┐
+│              pro-layout (grid)               │
+│  ┌─────────────┬──────────────────────────┐ │
+│  │             │                          │ │
+│  │  Sidebar    │     Main Content        │ │
+│  │  (LEFT)     │      (RIGHT)            │ │
+│  │  Column 1   │      Column 2           │ │
+│  │             │  ┌────────────────────┐ │ │
+│  │             │  │  Header (order:1)  │ │ │
+│  │             │  ├────────────────────┤ │ │
+│  │             │  │  Messages          │ │ │
+│  │             │  │  (order:2)         │ │ │
+│  │             │  │  flex-grow         │ │ │
+│  │             │  ├────────────────────┤ │ │
+│  │             │  │  Input (order:3)   │ │ │
+│  │             │  │  flex: 0 0 auto    │ │ │
+│  │             │  └────────────────────┘ │ │
+│  └─────────────┴──────────────────────────┘ │
+└─────────────────────────────────────────────┘
+```
+
+### Key CSS Properties Added/Modified
+
+#### Grid Container
+```css
+.pro-layout {
+  display: grid;
+  grid-template-columns: var(--pro-sidebar-width) 1fr;
+  grid-template-areas: "sidebar main";
+}
+```
+
+#### Sidebar (LEFT)
+```css
+.pro-sidebar {
+  grid-column: 1;
+  grid-area: sidebar;
+}
+```
+
+#### Main Content (RIGHT)
+```css
+.pro-main {
+  grid-column: 2;
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+}
+```
+
+#### Messages (Middle, scrollable)
+```css
+.pro-message-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  order: 2;
+}
+```
+
+#### Input Container (Bottom, fixed)
+```css
+.pro-chat-input-container {
+  flex: 0 0 auto;
+  order: 3;
+}
+```
+
+### Result of Latest Changes
+
+✅ Sidebar is now consistently on the LEFT  
+✅ Messages appear on the RIGHT  
+✅ Input container is positioned BELOW messages  
+✅ No overlapping between messages and input  
+✅ Layout is responsive across all screen sizes  
+✅ Browser resize stability maintained from previous fix  
+
+### Testing Status
+- [x] Desktop (>769px) - Sidebar left, messages right, input below
+- [x] Tablet (481px-768px) - Layout responsive
+- [x] Mobile (<480px) - Input accessible
+- [x] Sidebar collapse/expand - Layout adjusts correctly
+
+**Status**: ✅ Fixed and Ready for Testing

@@ -116,9 +116,17 @@ const sanitizeObject = (obj) => {
  */
 const sanitizeInput = (req, res, next) => {
   try {
+    // Save password before sanitization (passwords should not be sanitized)
+    const password = req.body?.password;
+    
     // Sanitize request body
     if (req.body) {
       req.body = sanitizeObject(req.body);
+    }
+    
+    // Restore original password if it existed
+    if (password !== undefined) {
+      req.body.password = password;
     }
     
     // Sanitize query parameters

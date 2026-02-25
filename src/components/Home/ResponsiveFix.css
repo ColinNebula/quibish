@@ -65,10 +65,7 @@
     padding-right: max(12px, env(safe-area-inset-right));
     padding-bottom: max(0px, env(safe-area-inset-bottom));
   }
-  
-  .pro-header {
-    padding-top: max(0px, env(safe-area-inset-top));
-  }
+  /* Note: safe-area-inset-top on .pro-header is handled exclusively in safe-area-fix.css */
 }
 
 /* Landscape mode fixes */

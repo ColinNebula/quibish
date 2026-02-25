@@ -18,7 +18,7 @@ const STATIC_ASSETS = [
 
 // Runtime caching strategies
 const CACHE_STRATEGIES = {
-  // Cache first for static assetsP
+  // Cache first for static assets
   CACHE_FIRST: 'cache-first',
   // Network first for API calls
   NETWORK_FIRST: 'network-first',
@@ -108,7 +108,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API requests - Network first strategy
+  // Skip cross-origin requests entirely — let the browser handle them directly.
+  // This prevents the service worker from interfering with API calls to a
+  // different port (e.g. localhost:5001) or external servers.
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // API requests (same-origin) - Network first strategy
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(request));
     return;
@@ -307,11 +314,27 @@ async function indexMessagesForSearch() {
   }
 }
 
-// Get messages from storage
+// Get messages from storage (using messaging to main thread)
 async function getMessagesFromStorage() {
   try {
-    const stored = localStorage.getItem('quibish_messages');
-    return stored ? JSON.parse(stored) : [];
+    // Service workers can't access localStorage directly
+    // Need to communicate with the main thread
+    const clients = await self.clients.matchAll();
+    if (clients.length === 0) return [];
+    
+    return new Promise((resolve) => {
+      const messageChannel = new MessageChannel();
+      messageChannel.port1.onmessage = (event) => {
+        resolve(event.data || []);
+      };
+      
+      clients[0].postMessage({
+        type: 'GET_MESSAGES_FOR_INDEXING'
+      }, [messageChannel.port2]);
+      
+      // Timeout after 5 seconds
+      setTimeout(() => resolve([]), 5000);
+    });
   } catch (error) {
     console.error('Failed to get messages from storage:', error);
     return [];
@@ -356,44 +379,41 @@ function tokenizeText(text) {
 
 // Helper functions for message queue management
 async function getPendingMessages() {
-  // In a real app, this would use IndexedDB
-  return JSON.parse(localStorage.getItem('pendingMessages') || '[]');
+  try {
+    const clients = await self.clients.matchAll();
+    if (clients.length === 0) return [];
+    
+    return new Promise((resolve) => {
+      const messageChannel = new MessageChannel();
+      messageChannel.port1.onmessage = (event) => {
+        resolve(event.data || []);
+      };
+      
+      clients[0].postMessage({
+        type: 'GET_PENDING_MESSAGES'
+      }, [messageChannel.port2]);
+      
+      setTimeout(() => resolve([]), 3000);
+    });
+  } catch (error) {
+    console.error('Failed to get pending messages:', error);
+    return [];
+  }
 }
 
 async function removePendingMessage(messageId) {
-  const pending = await getPendingMessages();
-  const filtered = pending.filter(msg => msg.id !== messageId);
-  localStorage.setItem('pendingMessages', JSON.stringify(filtered));
+  try {
+    const clients = await self.clients.matchAll();
+    if (clients.length > 0) {
+      clients[0].postMessage({
+        type: 'REMOVE_PENDING_MESSAGE',
+        messageId
+      });
+    }
+  } catch (error) {
+    console.error('Failed to remove pending message:', error);
+  }
 }
-
-// Push notification handling
-self.addEventListener('push', (event) => {
-  console.log('📨 Service Worker: Push notification received', event);
-  
-  const options = {
-    body: event.data ? event.data.text() : 'New message in Quibish',
-    icon: '/logo192.png',
-    badge: '/favicon.ico',
-    vibrate: [100, 50, 100],
-    data: event.data ? JSON.parse(event.data.text()) : {},
-    actions: [
-      {
-        action: 'reply',
-        title: 'Reply',
-        icon: '/icons/reply.png'
-      },
-      {
-        action: 'view',
-        title: 'View',
-        icon: '/icons/view.png'
-      }
-    ]
-  };
-
-  event.waitUntil(
-    self.registration.showNotification('Quibish', options)
-  );
-});
 
 // Push notification handling
 self.addEventListener('push', (event) => {
@@ -464,7 +484,8 @@ self.addEventListener('notificationclick', (event) => {
         if (appClient) {
           appClient.focus();
           appClient.postMessage({
-            type: 'QUICK_REPLY',
+            type: 'NOTIFICATION_CLICK',
+            action: 'reply',
             conversationId: notificationData.conversationId,
             messageId: notificationData.messageId
           });
@@ -483,7 +504,8 @@ self.addEventListener('notificationclick', (event) => {
         if (appClient) {
           appClient.focus();
           appClient.postMessage({
-            type: 'OPEN_CONVERSATION',
+            type: 'NOTIFICATION_CLICK',
+            action: 'open',
             conversationId: notificationData.conversationId
           });
         } else {
@@ -595,30 +617,49 @@ function getStoredToken() {
 self.addEventListener('message', (event) => {
   console.log('📨 Service Worker: Message received', event.data);
   
+  // Always respond to messages to prevent channel hanging
+  const respondToClient = (data) => {
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage(data);
+    } else if (event.source) {
+      event.source.postMessage(data);
+    }
+  };
+  
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+    respondToClient({ type: 'SKIP_WAITING_RESPONSE', success: true });
   }
   
   if (event.data && event.data.type === 'GET_VERSION') {
-    event.ports[0].postMessage({ version: CACHE_NAME });
+    respondToClient({ version: CACHE_NAME });
   }
   
   if (event.data && event.data.type === 'AUTH_TOKEN_REQUEST') {
-    // This would be handled by the main thread
-    event.ports[0].postMessage({ 
+    respondToClient({ 
       type: 'AUTH_TOKEN_RESPONSE', 
       token: event.data.token 
     });
   }
   
   if (event.data && event.data.type === 'INDEX_MESSAGES') {
-    // Trigger background indexing
-    indexMessagesForSearch();
+    // Trigger background indexing and respond immediately
+    indexMessagesForSearch().then(() => {
+      console.log('✅ Background indexing completed');
+    }).catch((error) => {
+      console.error('❌ Background indexing failed:', error);
+    });
+    respondToClient({ type: 'INDEX_MESSAGES_RESPONSE', success: true });
   }
   
   if (event.data && event.data.type === 'INDEX_NEW_MESSAGE') {
-    // Index a single new message
-    indexSingleMessage(event.data.message);
+    // Index a single new message and respond immediately
+    indexSingleMessage(event.data.message).then(() => {
+      console.log('✅ Message indexed');
+    }).catch((error) => {
+      console.error('❌ Message indexing failed:', error);
+    });
+    respondToClient({ type: 'INDEX_NEW_MESSAGE_RESPONSE', success: true });
   }
 });
 

@@ -26,7 +26,7 @@ class PWAUtils {
   async registerServiceWorker() {
     try {
       if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.register('/sw.js');
+        const registration = await navigator.serviceWorker.register(`${process.env.PUBLIC_URL}/sw.js`, { scope: `${process.env.PUBLIC_URL}/` });
         console.log('PWA: Service Worker registered successfully:', registration.scope);
         
         // Handle updates

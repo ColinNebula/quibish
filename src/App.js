@@ -5,6 +5,7 @@ import './styles/mobile-first-responsive.css';
 import './styles/input-container-responsive-fix.css';
 import './styles/mobile-content-fix.css';
 import './styles/mobile-animation-fix.css';
+import './styles/mobile-layout-fix.css';
 import './styles/image-display-fix.css';
 import './styles/advanced-animations.css';
 import './styles/enhanced-components.css';
@@ -14,6 +15,7 @@ import './components/EnhancedAvatar.css';
 import './components/PresenceManager.css';
 import './components/InteractiveMessageFeatures.css';
 import './components/MessageReactions.css';
+import './styles/mobile-final-override.css'; // MUST BE ABSOLUTELY LAST - Final mobile fix
 
 import ProChat from './components/Home/ProChat';
 import Login from './components/Login';
@@ -30,6 +32,7 @@ import pwaUtils from './utils/pwaUtils';
 import pwaShortcutService from './services/pwaShortcutService';
 import dataMigrationManager from './services/dataMigrationManager';
 import persistentStorageService from './services/persistentStorageService';
+import imageProcessor from './services/imageProcessorService';
 
 const App = () => {
   const { isAuthenticated, user, loading: authLoading, logout } = useAuth();

@@ -116,8 +116,12 @@ const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for health checks and options
-    return req.path === '/api/health' || req.method === 'OPTIONS';
+    // Skip rate limiting for health checks, notifications, and options
+    // Note: req.path here is relative to the mount point (/api/)
+    return req.path === '/health' || 
+           req.path.startsWith('/notifications') ||
+           req.path.startsWith('/presence') ||
+           req.method === 'OPTIONS';
   },
   keyGenerator: (req) => {
     // Use X-Forwarded-For if available, otherwise use remoteAddress
@@ -293,6 +297,13 @@ app.get('/api/network/test', (req, res) => {
     data: testData
   });
 });
+
+// Import and mount routes
+const friendsRoutes = require('./routes/friends');
+const notificationsRoutes = require('./routes/notifications');
+
+app.use('/api/friends', friendsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Auth endpoints with enhanced error handling
 app.post('/api/auth/register', async (req, res) => {
@@ -540,6 +551,13 @@ app.use('*', (req, res) => {
       'POST /api/auth/send-verification',
       'POST /api/auth/verify-email',
       'GET /api/user/profile',
+      'GET /api/friends',
+      'POST /api/friends/request',
+      'GET /api/notifications',
+      'PUT /api/notifications/:id/read',
+      'PUT /api/notifications/read-all',
+      'DELETE /api/notifications/:id',
+      'POST /api/notifications/create',
       'GET /signaling',
       'GET /ws'
     ],

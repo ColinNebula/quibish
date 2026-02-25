@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './UserProfileModal.css';
+import imageProcessor from '../../services/imageProcessorService';
 
 const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
   console.log('🚀 UserProfileModal rendered with props:', { isOpen, user, hasOnClose: !!onClose, hasOnUpdateProfile: !!onUpdateProfile });
@@ -44,8 +45,8 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  // Handle avatar upload
-  const handleAvatarChange = (event) => {
+  // Handle avatar upload with WebAssembly optimization
+  const handleAvatarChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -62,27 +63,46 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
     }
     
     setLoading(true);
-    const reader = new FileReader();
     
-    reader.onload = (e) => {
-      try {
+    try {
+      // Use WebAssembly for ultra-fast image optimization
+      // Converts to 512x512 square avatar with 90% quality
+      const optimizedBlob = await imageProcessor.optimizeAvatar(file);
+      
+      // Show size reduction
+      const reduction = ((1 - optimizedBlob.size / file.size) * 100).toFixed(1);
+      console.log(`🎨 Avatar optimized: ${(file.size / 1024).toFixed(0)}KB → ${(optimizedBlob.size / 1024).toFixed(0)}KB (${reduction}% smaller)`);
+      
+      // Convert optimized blob to data URL for preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
         const result = e.target.result;
         setAvatarPreview(result);
         setProfile(prev => ({ ...prev, avatar: result }));
         setLoading(false);
-      } catch (error) {
-        console.error('Error reading file:', error);
-        alert('Error processing image file');
+      };
+      reader.onerror = () => {
+        alert('Error reading optimized image');
         setLoading(false);
-      }
-    };
-    
-    reader.onerror = () => {
-      alert('Error reading file');
-      setLoading(false);
-    };
-    
-    reader.readAsDataURL(file);
+      };
+      reader.readAsDataURL(optimizedBlob);
+      
+    } catch (error) {
+      console.error('Error optimizing image:', error);
+      // Fallback to original processing if optimization fails
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target.result;
+        setAvatarPreview(result);
+        setProfile(prev => ({ ...prev, avatar: result }));
+        setLoading(false);
+      };
+      reader.onerror = () => {
+        alert('Error reading file');
+        setLoading(false);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Enhanced form validation

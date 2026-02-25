@@ -1,0 +1,358 @@
+/* Mutual Friends Modal Styles */
+.mutual-friends-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mutual-friends-modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mutual-friends-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mutual-friends-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.mutual-friends-content {
+  padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #666;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-state, .empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.error-icon, .empty-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.error-state h4, .empty-state h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.error-state p, .empty-state p {
+  margin: 0 0 20px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.retry-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.mutual-friends-summary {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.mutual-friends-summary p {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.mutual-friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mutual-friend-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.mutual-friend-item:hover {
+  background: #f1f3f4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.mutual-friend-avatar {
+  flex-shrink: 0;
+}
+
+.mutual-friend-avatar img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid #e0e0e0;
+  background: #f0f0f0;
+}
+
+.mutual-friend-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mutual-friend-name {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.mutual-friend-username {
+  margin: 0 0 4px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.friends-since {
+  margin: 0;
+  color: #999;
+  font-size: 12px;
+}
+
+.mutual-friend-actions {
+  flex-shrink: 0;
+}
+
+.view-profile-btn {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.view-profile-btn:hover {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  transform: translateY(-1px);
+}
+
+/* Custom scrollbar for modal content */
+.mutual-friends-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mutual-friends-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.mutual-friends-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.mutual-friends-content::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .mutual-friends-modal {
+    width: 95%;
+    max-height: 85vh;
+  }
+  
+  .mutual-friends-header {
+    padding: 15px;
+  }
+  
+  .mutual-friends-header h3 {
+    font-size: 18px;
+  }
+  
+  .mutual-friends-content {
+    padding: 15px;
+  }
+  
+  .mutual-friend-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+  
+  .mutual-friend-info {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .mutual-friends-modal {
+    width: 98%;
+    margin: 10px;
+  }
+  
+  .mutual-friends-header {
+    padding: 12px;
+  }
+  
+  .mutual-friends-header h3 {
+    font-size: 16px;
+  }
+  
+  .mutual-friends-content {
+    padding: 12px;
+  }
+  
+  .mutual-friend-avatar img {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .mutual-friend-name {
+    font-size: 14px;
+  }
+  
+  .mutual-friend-username {
+    font-size: 12px;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .mutual-friends-modal {
+    border: 2px solid #000;
+  }
+  
+  .mutual-friend-item {
+    border: 1px solid #000;
+  }
+  
+  .view-profile-btn {
+    background: #008000;
+    border: 1px solid #000;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .mutual-friends-overlay, .mutual-friends-modal {
+    animation: none;
+  }
+  
+  .spinner {
+    animation: none;
+  }
+  
+  .mutual-friend-item, .view-profile-btn, .close-btn, .retry-btn {
+    transition: none;
+  }
+}

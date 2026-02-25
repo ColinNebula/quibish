@@ -3,7 +3,13 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
-import './test-voice-recorder';
+
+// Voice recorder diagnostics - only import if explicitly enabled
+// Set REACT_APP_AUTO_DIAGNOSTICS=true in .env to enable auto-run
+// Or run manually in console: window.runVoiceRecorderDiagnostics()
+if (process.env.REACT_APP_ENABLE_DIAGNOSTICS === 'true') {
+  import('./test-voice-recorder');
+}
 
 // Global error handler for browser extension errors
 window.addEventListener('error', (event) => {

@@ -7,7 +7,7 @@ const router = express.Router();
 // Import file storage if enabled
 const fileStorage = process.env.USE_FILE_STORAGE === 'true' ? require('../storage/fileStorage') : null;
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+const { JWT_SECRET } = require('../config/jwt');
 
 // Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {

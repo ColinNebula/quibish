@@ -98,16 +98,44 @@ class EnhancedVideoCallService {
    */
   async initialize() {
     try {
-      // Request permissions
-      await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('⚠️ getUserMedia not supported');
+        return false;
+      }
 
-      // Enumerate devices
+      // Enumerate devices without requesting permissions yet
       await this.enumerateDevices();
+
+      // Only request permissions if devices are available
+      const hasCamera = this.devices.cameras.length > 0;
+      const hasMicrophone = this.devices.microphones.length > 0;
+
+      if (hasCamera || hasMicrophone) {
+        try {
+          // Request minimal permissions to unlock device labels
+          const constraints = {};
+          if (hasCamera) constraints.video = true;
+          if (hasMicrophone) constraints.audio = true;
+          
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          // Stop the tracks immediately - we just needed permission
+          stream.getTracks().forEach(track => track.stop());
+          
+          // Re-enumerate to get proper device labels
+          await this.enumerateDevices();
+        } catch (permissionError) {
+          // Permission denied or device not available - not critical for initialization
+          console.warn('⚠️ Could not get device permissions:', permissionError.message);
+        }
+      } else {
+        console.warn('⚠️ No camera or microphone devices found');
+      }
 
       console.log('EnhancedVideoCallService: Initialized');
       return true;
     } catch (error) {
-      console.error('Failed to initialize video call service:', error);
+      console.error('❌ Failed to initialize video call service:', error);
       this.emitEvent('onError', { error: 'Failed to initialize devices' });
       return false;
     }
@@ -183,24 +211,67 @@ class EnhancedVideoCallService {
         quality = 'auto'
       } = options;
 
+      // Check if devices are available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia is not supported in this browser');
+      }
+
       // Get video quality constraints
       const videoConstraints = this.getQualityConstraints(quality);
 
-      // Get local stream
+      // Get local stream with fallback for device selection
       const constraints = {
         video: {
           ...videoConstraints,
-          deviceId: this.devices.selectedCamera ? { exact: this.devices.selectedCamera } : undefined
+          // Use ideal instead of exact to allow fallback
+          deviceId: this.devices.selectedCamera ? { ideal: this.devices.selectedCamera } : undefined
         },
         audio: {
-          deviceId: this.devices.selectedMicrophone ? { exact: this.devices.selectedMicrophone } : undefined,
+          // Use ideal instead of exact to allow fallback
+          deviceId: this.devices.selectedMicrophone ? { ideal: this.devices.selectedMicrophone } : undefined,
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
         }
       };
 
-      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      try {
+        this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (error) {
+        // If specific devices fail, try without device constraints
+        if (error.name === 'NotFoundError' || error.name === 'OverconstrainedError') {
+          console.warn('⚠️ Stored device not found, trying default devices');
+          this.devices.selectedCamera = null;
+          this.devices.selectedMicrophone = null;
+          
+          const fallbackConstraints = {
+            video: videoConstraints,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          };
+          
+          try {
+            this.localStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+          } catch (fallbackError) {
+            // Try audio-only if video fails
+            if (fallbackError.name === 'NotFoundError') {
+              console.warn('⚠️ No camera found, trying audio-only');
+              try {
+                this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+              } catch (audioError) {
+                throw new Error('No camera or microphone found. Please connect a device and try again.');
+              }
+            } else {
+              throw fallbackError;
+            }
+          }
+        } else {
+          throw error;
+        }
+      }
 
       // Update call state
       this.callState = {
@@ -552,11 +623,11 @@ class EnhancedVideoCallService {
       const videoTrack = this.localStream.getVideoTracks()[0];
       videoTrack.stop();
 
-      // Get new video stream
+      // Get new video stream - use ideal instead of exact for graceful fallback
       const constraints = {
         video: {
           ...this.getQualityConstraints(this.callState.quality),
-          deviceId: { exact: deviceId }
+          deviceId: { ideal: deviceId }
         }
       };
 
@@ -580,7 +651,12 @@ class EnhancedVideoCallService {
 
       return true;
     } catch (error) {
-      console.error('Failed to switch camera:', error);
+      console.error('❌ Failed to switch camera:', error);
+      
+      if (error.name === 'NotFoundError') {
+        console.error('Camera device not found:', deviceId);
+      }
+      
       return false;
     }
   }
@@ -596,10 +672,10 @@ class EnhancedVideoCallService {
       const audioTrack = this.localStream.getAudioTracks()[0];
       audioTrack.stop();
 
-      // Get new audio stream
+      // Get new audio stream - use ideal instead of exact for graceful fallback
       const constraints = {
         audio: {
-          deviceId: { exact: deviceId },
+          deviceId: { ideal: deviceId },
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
@@ -626,7 +702,12 @@ class EnhancedVideoCallService {
 
       return true;
     } catch (error) {
-      console.error('Failed to switch microphone:', error);
+      console.error('❌ Failed to switch microphone:', error);
+      
+      if (error.name === 'NotFoundError') {
+        console.error('Microphone device not found:', deviceId);
+      }
+      
       return false;
     }
   }

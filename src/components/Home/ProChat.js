@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+﻿import React, { useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import persistentStorageService from '../../services/persistentStorageService';
 import UserProfileModal from '../UserProfile/UserProfileModal';
@@ -39,6 +40,7 @@ import pushNotificationService from '../../services/pushNotificationService';
 import { feedbackService } from '../../services/feedbackService';
 import { contactService } from '../../services/contactService';
 import { conversationService } from '../../services/conversationService';
+import realtimeService from '../../services/realtimeService';
 
 // All service implementations are now properly imported above
 
@@ -55,6 +57,14 @@ import './SearchHighlight.css';
 import './ResponsiveFix.css';
 import './EncryptionStyles.css';
 import './ProChatThreading.css';
+import '../../styles/sidebar-simplified.css';
+import '../../styles/input-click-fix.css';
+import './NewsFeedModal.css';
+import NotificationCenter from '../NotificationCenter/NotificationCenter';
+import NotificationButton from '../NotificationCenter/NotificationButton';
+import NotificationPermissionPrompt from '../NotificationPermissionPrompt';
+import notificationService from '../../services/notificationService';
+import { NewsFeed } from '../Social';
 
 const ProChat = ({ 
   user: propUser = { id: 'user1', name: 'Current User', avatar: null },
@@ -78,9 +88,73 @@ const ProChat = ({
     }
   }, [user]);
 
-  // Basic state
-  const [isConnected] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // ── Real-time service: connect/disconnect lifecycle ──
+  useEffect(() => {
+    if (!user?.id) return;
+
+    realtimeService.connect(user.id, user.name || user.username || 'User');
+
+    // Attach the notification service to the shared WS so it can receive
+    // real-time message & post notifications without a second connection.
+    notificationService.attachRealtime(realtimeService);
+
+    const offConnect = realtimeService.on('connect', () => setIsConnected(true));
+    const offDisconnect = realtimeService.on('disconnect', () => setIsConnected(false));
+
+    // Incoming message from another user
+    const offMessage = realtimeService.on('message', (msg) => {
+      setChatMessages(prev => {
+        // Deduplicate by id
+        if (prev.some(m => m.id === msg.id)) return prev;
+        return [...prev, {
+          id: msg.id,
+          text: msg.text,
+          user: { id: msg.senderId, name: msg.senderName },
+          timestamp: msg.timestamp,
+          reactions: [],
+          conversationId: msg.conversationId
+        }];
+      });
+    });
+
+    // Presence updates
+    const offPresence = realtimeService.on('presence', (data) => {
+      setConversations(prev => prev.map(c => {
+        if (String(c.id) === String(data.userId) || c.participants?.includes?.(data.userId)) {
+          return { ...c, isOnline: data.online };
+        }
+        return c;
+      }));
+    });
+
+    // Typing indicator
+    const offTyping = realtimeService.on('typing', ({ fromUsername }) => {
+      setTypingUser(fromUsername);
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = setTimeout(() => setTypingUser(null), 3000);
+    });
+
+    return () => {
+      offConnect();
+      offDisconnect();
+      offMessage();
+      offPresence();
+      offTyping();
+      clearTimeout(typingTimerRef.current);
+      realtimeService.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Basic state — real-time connection status
+  const [isConnected, setIsConnected] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // Initialize sidebar based on screen size
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 768; // Collapsed on mobile by default
+    }
+    return false;
+  });
   
   // Conversation management
   const [conversations, setConversations] = useState(() => {
@@ -116,6 +190,10 @@ const ProChat = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  
+  // Notification system state
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   // Mobile global voice modal removed - using internet-based calling only
   const [lightboxModal, setLightboxModal] = useState({ 
     open: false, 
@@ -204,6 +282,27 @@ const ProChat = ({
   const messagesEndRef = useRef(null);
   const sidebarRef = useRef(null);
   const messagesContainerRef = useRef(null);
+
+  // Inject definitive mobile layout fix at runtime — sits after ALL webpack CSS so it unconditionally wins the cascade
+  useLayoutEffect(() => {
+    const id = 'quibish-layout-fix';
+    let el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('style');
+      el.id = id;
+      document.head.appendChild(el);
+    }
+    el.textContent = [
+      '@media screen and (max-width: 768px) {',
+      '  html body .pro-layout { height: 100vh !important; height: 100dvh !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; gap: 0 !important; }',
+      '  html body .pro-main { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; gap: 0 !important; }',
+      '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { flex: 0 0 auto !important; position: relative !important; top: auto !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important; max-height: none !important; padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: #ffffff !important; }',
+      '  html body .pro-main .pro-content { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; background: #f5f5f5 !important; gap: 0 !important; }',
+      '  html body .pro-main .pro-message-list { flex: 1 1 0% !important; min-height: 0 !important; height: 0 !important; max-height: none !important; overflow-y: auto !important; overflow-x: hidden !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
+      '  html body .pro-main .pro-chat-input-container { flex: 0 0 auto !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }',
+      '}'
+    ].join('\n');
+  }, []);
 
   // Chat messages state - loaded from database
   const [chatMessages, setChatMessages] = useState([]);
@@ -318,18 +417,23 @@ const ProChat = ({
           pushNotificationService.setupPresenceDetection();
           
           // Update user as online on backend
-          await fetch(buildApiUrl('/notifications/presence'), {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              userId: user.id,
-              isOnline: true,
-              lastSeen: new Date().toISOString()
-            })
-          });
+          try {
+            await fetch(buildApiUrl('/notifications/presence'), {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                userId: user.id,
+                isOnline: true,
+                lastSeen: new Date().toISOString()
+              })
+            });
+            console.log('✅ User presence set to online');
+          } catch (presenceError) {
+            console.warn('⚠️ Failed to update presence:', presenceError);
+          }
         }
       } catch (error) {
         console.error('❌ Failed to initialize notifications:', error);
@@ -355,7 +459,9 @@ const ProChat = ({
             isOnline: false,
             lastSeen: new Date().toISOString()
           })
-        }).catch(console.error);
+        }).catch(error => {
+          console.warn('⚠️ Failed to update offline presence:', error);
+        });
       }
     };
   }, [user?.id]);
@@ -374,9 +480,13 @@ const ProChat = ({
         
         // Notify service worker to build background index
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-            type: 'INDEX_MESSAGES'
-          });
+          try {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'INDEX_MESSAGES'
+            });
+          } catch (error) {
+            console.warn('SW message failed:', error);
+          }
         }
       } catch (error) {
         console.error('❌ Failed to initialize search index:', error);
@@ -385,6 +495,112 @@ const ProChat = ({
 
     initializeSearchIndex();
   }, []);
+
+  // Handle notification quick reply URL parameters
+  useEffect(() => {
+    const handleNotificationAction = () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const action = urlParams.get('action');
+        const conversationId = urlParams.get('conversation');
+        const messageId = urlParams.get('message');
+
+        if (action === 'reply' && conversationId) {
+          console.log('📬 Opening conversation from notification:', conversationId);
+          
+          // Find and select the conversation
+          const conversation = conversations.find(c => c.id === conversationId);
+          if (conversation) {
+            setSelectedConversation(conversationId);
+            
+            // Expand sidebar on mobile if needed to show the conversation
+            if (window.innerWidth <= 768) {
+              setSidebarCollapsed(false);
+            }
+            
+            // Focus the message input after a short delay
+            setTimeout(() => {
+              const messageInput = document.querySelector('.pro-message-input');
+              if (messageInput) {
+                messageInput.focus();
+                messageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                console.log('✅ Quick reply ready - input focused');
+              }
+            }, 500);
+
+            // If messageId is provided, scroll to that message
+            if (messageId) {
+              setTimeout(() => {
+                const messageElement = document.getElementById(`message-${messageId}`);
+                if (messageElement) {
+                  messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  console.log('✅ Scrolled to message:', messageId);
+                }
+              }, 700);
+            }
+          } else {
+            console.warn('⚠️ Conversation not found:', conversationId);
+          }
+
+          // Clean up URL parameters
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        } else if (conversationId && !action) {
+          // Just open conversation (from "Open Chat" action)
+          console.log('💬 Opening conversation:', conversationId);
+          const conversation = conversations.find(c => c.id === conversationId);
+          if (conversation) {
+            setSelectedConversation(conversationId);
+            
+            // Expand sidebar on mobile
+            if (window.innerWidth <= 768) {
+              setSidebarCollapsed(false);
+            }
+          }
+
+          // Clean up URL parameters
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      } catch (error) {
+        console.error('❌ Error handling notification action:', error);
+      }
+    };
+
+    // Run on mount
+    handleNotificationAction();
+
+    // Listen for service worker messages (when notification clicked while app is open)
+    const handleServiceWorkerMessage = (event) => {
+      if (event.data && event.data.type === 'NOTIFICATION_CLICK') {
+        const { action, conversationId, messageId } = event.data;
+        
+        if (action === 'reply' && conversationId) {
+          const conversation = conversations.find(c => c.id === conversationId);
+          if (conversation) {
+            setSelectedConversation(conversationId);
+            
+            setTimeout(() => {
+              const messageInput = document.querySelector('.pro-message-input');
+              if (messageInput) {
+                messageInput.focus();
+              }
+            }, 300);
+          }
+        } else if (conversationId) {
+          setSelectedConversation(conversationId);
+        }
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+      
+      return () => {
+        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+      };
+    }
+  }, [conversations]);
 
   // Add keyboard shortcuts (including Ctrl+F for search)
   useEffect(() => {
@@ -412,16 +628,14 @@ const ProChat = ({
   // Auto-collapse sidebar on mobile screens (but preserve content)
   useEffect(() => {
     const handleResize = () => {
-      // Only auto-collapse on very small screens (like phone portrait)
-      if (window.innerWidth <= 480) {
+      // Only auto-collapse on mobile screens (≤768px) - sidebar becomes overlay
+      if (window.innerWidth <= 768) {
         setSidebarCollapsed(true);
         // Mobile global voice modal removed
       } else if (window.innerWidth > 768) {
-        // Auto-expand on larger screens
+        // Auto-expand on larger screens (desktop view)
         setSidebarCollapsed(false);
       }
-      // For tablets (481-768px), maintain current state
-      // Mobile global voice modal removed
     };
 
     // Set initial state
@@ -595,6 +809,7 @@ const ProChat = ({
   const handleUserSearchClick = useCallback(() => {
     setSearchMode('users');
     setShowUserSearch(true);
+    if (window.innerWidth <= 768) setSidebarCollapsed(true);
   }, []);
 
   // Handle user selection from search
@@ -819,10 +1034,12 @@ const ProChat = ({
 
   const handleFilterChange = useCallback((filter) => {
     setActiveFilter(filter);
+    if (window.innerWidth <= 768) setSidebarCollapsed(true);
   }, []);
 
   const handleNewChat = useCallback(() => {
     setNewChatModal(true);
+    if (window.innerWidth <= 768) setSidebarCollapsed(true);
   }, []);
 
   const handleCreateGroup = useCallback(() => {
@@ -885,41 +1102,79 @@ const ProChat = ({
     }
   }, []);
 
-  // Enhanced input functions
-  const handleFileChange = useCallback((e) => {
+  // Enhanced input functions with WebAssembly image optimization
+  const handleFileChange = useCallback(async (e) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      Array.from(files).forEach(file => {
+      for (const file of Array.from(files)) {
         console.log('Processing file:', file.name, file.type); // Debug log
         
         if (file.type.startsWith('image/')) {
-          // Handle image files
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            console.log('Image loaded, creating message with URL:', event.target.result?.substring(0, 50) + '...'); // Debug log
-            const newMessage = {
-              id: Date.now() + Math.random(),
-              text: `� ${file.name}`,
-              user: user,
-              timestamp: new Date().toISOString(),
-              reactions: [],
-              file: {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                url: event.target.result
-              }
+          // Handle image files with WebAssembly optimization
+          try {
+            // Import image processor dynamically
+            const imageProcessor = (await import('../../services/imageProcessorService')).default;
+            
+            // Optimize image for chat (max 1920x1080, 85% quality)
+            const optimizedBlob = await imageProcessor.optimizeChatImage(file);
+            
+            // Show optimization stats
+            const reduction = ((1 - optimizedBlob.size / file.size) * 100).toFixed(1);
+            console.log(`📸 Image optimized: ${(file.size / 1024).toFixed(0)}KB → ${(optimizedBlob.size / 1024).toFixed(0)}KB (${reduction}% smaller)`);
+            
+            // Read optimized image
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              console.log('Optimized image loaded, creating message'); // Debug log
+              const newMessage = {
+                id: Date.now() + Math.random(),
+                text: `📸 ${file.name} (optimized)`,
+                user: user,
+                timestamp: new Date().toISOString(),
+                reactions: [],
+                file: {
+                  name: file.name,
+                  size: optimizedBlob.size,
+                  originalSize: file.size,
+                  type: file.type,
+                  url: event.target.result,
+                  optimized: true
+                }
+              };
+              setChatMessages(prev => [...prev, newMessage]);
+              // Auto-scroll to the new message
+              setTimeout(() => {
+                scrollToBottom();
+              }, 100);
             };
-            setChatMessages(prev => [...prev, newMessage]);
-            // Auto-scroll to the new message
-            setTimeout(() => {
-              scrollToBottom();
-            }, 100);
-          };
-          reader.onerror = (error) => {
-            console.error('Error reading file:', error);
-          };
-          reader.readAsDataURL(file);
+            reader.onerror = (error) => {
+              console.error('Error reading optimized file:', error);
+            };
+            reader.readAsDataURL(optimizedBlob);
+            
+          } catch (error) {
+            console.warn('Image optimization failed, using original:', error);
+            // Fallback to original processing
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const newMessage = {
+                id: Date.now() + Math.random(),
+                text: `📷 ${file.name}`,
+                user: user,
+                timestamp: new Date().toISOString(),
+                reactions: [],
+                file: {
+                  name: file.name,
+                  size: file.size,
+                  type: file.type,
+                  url: event.target.result
+                }
+              };
+              setChatMessages(prev => [...prev, newMessage]);
+              setTimeout(() => scrollToBottom(), 100);
+            };
+            reader.readAsDataURL(file);
+          }
         } else {
           // Handle non-image files
           const newMessage = {
@@ -941,7 +1196,7 @@ const ProChat = ({
             scrollToBottom();
           }, 100);
         }
-      });
+      }
       
       // Reset file input
       e.target.value = '';
@@ -1172,6 +1427,8 @@ const ProChat = ({
   const handleOpenContactManager = useCallback(() => {
     setShowContactManager(true);
     setShowMoreMenu(false);
+    if (window.innerWidth <= 768) setSidebarCollapsed(true);
+    document.body.classList.add('contact-manager-open');
   }, []);
 
   // Handle contact selection for starting a chat
@@ -1645,6 +1902,63 @@ const ProChat = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedConversation, filteredConversations, sidebarCollapsed, handleConversationSelect, handleDeleteConversation, handlePinConversation, handleMuteConversation]);
 
+  // Notification handlers
+  const handleNotificationClick = useCallback((notification) => {
+    // Handle different notification types
+    switch (notification.type) {
+      case 'message':
+        if (notification.data.conversationId) {
+          handleConversationSelect(notification.data.conversationId);
+        }
+        break;
+      case 'friend_request':
+        // Navigate to friends page or show friend request modal
+        console.log('Friend request notification clicked:', notification);
+        break;
+      case 'video_call':
+      case 'voice_call':
+        // Handle call notification
+        console.log('Call notification clicked:', notification);
+        break;
+      default:
+        console.log('Notification clicked:', notification);
+    }
+  }, [handleConversationSelect]);
+
+  const handleShowNotificationCenter = useCallback(() => {
+    setShowNotificationCenter(true);
+  }, []);
+
+  const handleCloseNotificationCenter = useCallback(() => {
+    setShowNotificationCenter(false);
+  }, []);
+
+  // Initialize notification service
+  useEffect(() => {
+    const handleNotificationEvent = (eventType, data) => {
+      switch (eventType) {
+        case 'newNotification':
+          // Create system notification for new messages
+          if (data.type === 'message') {
+            notificationService.showBrowserNotification(data);
+          }
+          break;
+        case 'unreadCountUpdated':
+          setUnreadNotificationCount(data);
+          break;
+      }
+    };
+
+    const removeListener = notificationService.addEventListener(handleNotificationEvent);
+    
+    // Load initial data
+    notificationService.getUnreadCount().then(count => {
+      setUnreadNotificationCount(count);
+    });
+    
+    return removeListener;
+  }, []);
+
   const getFilterCounts = useMemo(() => {
     if (!Array.isArray(conversations)) {
       return { all: 0, unread: 0, groups: 0 };
@@ -1672,13 +1986,18 @@ const ProChat = ({
   // chatMessages state already defined above
 
   const [inputText, setInputText] = useState('');
+  const [typingUser, setTypingUser] = useState(null);
+  const typingTimerRef = React.useRef(null);
+  const typingThrottleRef = React.useRef(0);
 
   // Enhanced features state
+  const [contactProfilePopup, setContactProfilePopup] = useState(false);
   const [profileModal, setProfileModal] = useState({ open: false, userId: null, username: null });
   const [settingsModal, setSettingsModal] = useState({ open: false, section: 'profile' });
   const [newChatModal, setNewChatModal] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState(false);
   const [helpModal, setHelpModal] = useState(false);
+  const [newsFeedModal, setNewsFeedModal] = useState(false);
   const [notificationSettingsModal, setNotificationSettingsModal] = useState(false);
   const [videoCallState, setVideoCallState] = useState({ 
     active: false, 
@@ -1695,6 +2014,63 @@ const ProChat = ({
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [availableCallMethods, setAvailableCallMethods] = useState([]);
   const [showCallMethodSelector, setShowCallMethodSelector] = useState(false);
+
+  // ── WebRTC peer connection ref for signaling ──────────
+  const peerConnectionRef = useRef(null);
+  const localStreamRef = useRef(null);
+
+  // ── Incoming call signaling via WebSocket ─────────────
+  useEffect(() => {
+    const offOffer = realtimeService.on('call-offer', async (data) => {
+      // Another user is calling us — show their call
+      const accept = window.confirm(`📞 Incoming ${data.audioOnly ? 'voice' : 'video'} call from ${data.fromUsername || 'Someone'}. Accept?`);
+      if (!accept) {
+        realtimeService.sendSignal('call-reject', data.fromUserId);
+        return;
+      }
+      try {
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        peerConnectionRef.current = pc;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: !data.audioOnly }).catch(() => null);
+        if (stream) {
+          localStreamRef.current = stream;
+          stream.getTracks().forEach(t => pc.addTrack(t, stream));
+        }
+        pc.onicecandidate = e => {
+          if (e.candidate) realtimeService.sendSignal('ice-candidate', data.fromUserId, { candidate: e.candidate });
+        };
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        realtimeService.sendSignal('call-answer', data.fromUserId, { answer });
+        setVideoCallState({ active: true, withUser: { id: data.fromUserId, name: data.fromUsername }, minimized: false, audioOnly: !!data.audioOnly });
+      } catch (e) {
+        console.error('Failed to handle incoming call:', e);
+      }
+    });
+
+    const offAnswer = realtimeService.on('call-answer', async (data) => {
+      if (peerConnectionRef.current) {
+        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(console.error);
+      }
+    });
+
+    const offIce = realtimeService.on('ice-candidate', async (data) => {
+      if (peerConnectionRef.current && data.candidate) {
+        await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(console.error);
+      }
+    });
+
+    const offEnd = realtimeService.on('call-end', () => {
+      if (peerConnectionRef.current) { peerConnectionRef.current.close(); peerConnectionRef.current = null; }
+      if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
+      setVideoCallState({ active: false, withUser: null, minimized: false, audioOnly: false });
+      setVoiceCallState({ active: false, withUser: null, minimized: false, audioOnly: true });
+    });
+
+    return () => { offOffer(); offAnswer(); offIce(); offEnd(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Reaction system state already defined above
 
@@ -1703,22 +2079,27 @@ const ProChat = ({
     if (!inputText.trim()) return;
     
     try {
-      // Send message via encrypted service with conversation context
+      // Get conversation participants for routing
+      const conversationParticipants = currentSelectedConversation?.participants || [];
+      const recipientId = conversationParticipants.find(p => String(p) !== String(user?.id)) || null;
+
+      // ── 1. Broadcast over WebSocket for real-time delivery ──
+      realtimeService.sendMessage({
+        text: inputText.trim(),
+        conversationId: selectedConversation,
+        recipientId
+      });
+
+      // ── 2. Persist via REST (best-effort, fallback to local) ──
       const messageData = {
         text: inputText.trim(),
         conversationId: selectedConversation,
         user: user?.name || 'User'
       };
-      
-      // Get conversation participants for encryption
-      const conversationParticipants = currentSelectedConversation?.participants || [];
-      const recipientId = conversationParticipants.find(p => p !== user.id);
-      
-      // Send with encryption options
       const sentMessage = await encryptedMessageService.sendMessage(messageData, {
         encrypt: defaultEncryption && encryptionEnabled,
-        recipientId: recipientId,
-        conversationParticipants: conversationParticipants
+        recipientId,
+        conversationParticipants
       });
       
       // Add to local state immediately for responsive UI
@@ -1741,10 +2122,14 @@ const ProChat = ({
       
       // Notify service worker to index the message
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'INDEX_NEW_MESSAGE',
-          message: newMessage
-        });
+        try {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'INDEX_NEW_MESSAGE',
+            message: newMessage
+          });
+        } catch (error) {
+          console.warn('SW message indexing failed:', error);
+        }
       }
       
       // Auto-scroll to the new message
@@ -2191,8 +2576,12 @@ const ProChat = ({
 
   // Video call handlers
   const handleEndCall = useCallback(() => {
+    const remoteId = videoCallState.withUser?.id;
+    if (remoteId) realtimeService.sendSignal('call-end', remoteId);
+    if (peerConnectionRef.current) { peerConnectionRef.current.close(); peerConnectionRef.current = null; }
+    if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
     setVideoCallState(prev => ({ ...prev, active: false }));
-  }, []);
+  }, [videoCallState.withUser?.id]);
 
   const handleToggleMinimize = useCallback(() => {
     setVideoCallState(prev => ({ ...prev, minimized: !prev.minimized }));
@@ -2205,7 +2594,7 @@ const ProChat = ({
     // If no current user, create a demo user for testing
     if (!currentUser && conversations.length > 0) {
       currentUser = conversations[0];
-      console.log('� Using first conversation as fallback:', currentUser);
+      console.log('ï¿½ Using first conversation as fallback:', currentUser);
     }
     
     // Last resort: create a demo user
@@ -2220,7 +2609,7 @@ const ProChat = ({
       console.log('📞 Using demo user for voice call test');
     }
     
-    console.log('�🔍 Voice call debug - currentUser:', currentUser);
+    console.log('ï¿½🔍 Voice call debug - currentUser:', currentUser);
     console.log('🔍 Voice call debug - currentSelectedConversation:', currentSelectedConversation);
     console.log('🔍 Voice call debug - currentConversation:', currentConversation);
     console.log('🔍 Voice call debug - conversations:', conversations);
@@ -2252,7 +2641,28 @@ const ProChat = ({
   const startEnhancedVoiceCall = useCallback(async (targetUser, method = 'auto') => {
     try {
       console.log('🚀 Starting enhanced voice call - targetUser:', targetUser, 'method:', method);
-      
+
+      // Attempt real WebRTC voice call via signaling
+      try {
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        peerConnectionRef.current = pc;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        localStreamRef.current = stream;
+        stream.getTracks().forEach(track => pc.addTrack(track, stream));
+        pc.onicecandidate = (e) => {
+          if (e.candidate) realtimeService.sendSignal('ice-candidate', targetUser.id, { candidate: e.candidate });
+        };
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        realtimeService.sendSignal('call-offer', targetUser.id, {
+          offer,
+          fromUser: { id: user?.id, name: user?.name || user?.username },
+          audioOnly: true
+        });
+      } catch (rtcErr) {
+        console.warn('WebRTC voice call setup failed, falling back to stub:', rtcErr);
+      }
+
       const callInstance = await enhancedVoiceCallService.initiateEnhancedCall(targetUser, method);
       console.log('📞 Call instance result:', callInstance);
       
@@ -2264,6 +2674,7 @@ const ProChat = ({
       setVoiceCallState({
         active: true,
         withUser: {
+          id: targetUser.id,
           name: targetUser.name || targetUser.username,
           avatar: targetUser.avatar,
           phone: targetUser.phone
@@ -2295,11 +2706,15 @@ const ProChat = ({
       console.error('❌ Failed to start enhanced voice call:', error);
       alert(`Failed to start voice call: ${error.message}`);
     }
-  }, []);
+  }, [user]);
 
   const handleEndVoiceCall = useCallback(() => {
+    const remoteId = voiceCallState.withUser?.id;
+    if (remoteId) realtimeService.sendSignal('call-end', remoteId);
+    if (peerConnectionRef.current) { peerConnectionRef.current.close(); peerConnectionRef.current = null; }
+    if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
     setVoiceCallState(prev => ({ ...prev, active: false }));
-  }, []);
+  }, [voiceCallState.withUser?.id]);
 
   // Unified call handler for both international and app calls
   const handleUnifiedCall = useCallback(() => {
@@ -2356,23 +2771,34 @@ const ProChat = ({
     }
 
     try {
-      // Initialize video call service
       await enhancedVideoCallService.initialize();
-      
-      // Update video call state to show panel
+
+      // ── WebRTC offer via signaling ──
+      const targetUserId = currentUser.id;
+      if (targetUserId && realtimeService.isConnected()) {
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        peerConnectionRef.current = pc;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => null);
+        if (stream) {
+          localStreamRef.current = stream;
+          stream.getTracks().forEach(t => pc.addTrack(t, stream));
+        }
+        pc.onicecandidate = e => {
+          if (e.candidate) realtimeService.sendSignal('ice-candidate', targetUserId, { candidate: e.candidate });
+        };
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        realtimeService.sendSignal('call-offer', targetUserId, { offer, audioOnly: false });
+      }
+
       setVideoCallState({
         active: true,
-        withUser: {
-          name: currentUser.name,
-          avatar: currentUser.avatar,
-          id: currentUser.id
-        },
+        withUser: { name: currentUser.name, avatar: currentUser.avatar, id: currentUser.id },
         minimized: false,
         audioOnly: false,
         callId: `call_${Date.now()}`
       });
 
-      // Add video call message to chat
       const videoCallMessage = {
         id: `call_${Date.now()}`,
         text: `📹 Video call with ${currentUser.name}`,
@@ -2382,7 +2808,6 @@ const ProChat = ({
         callStatus: 'connecting',
         isSystemMessage: true
       };
-
       setChatMessages(prev => [...prev, videoCallMessage]);
     } catch (error) {
       console.error('Failed to start video call:', error);
@@ -2493,9 +2918,6 @@ const ProChat = ({
         </div>
       </div>
       
-      {/* Content Backdrop for Readability */}
-      <div className="content-backdrop"></div>
-      
       {/* Video Call Component */}
       {MemoizedVideoCall}
       
@@ -2510,8 +2932,8 @@ const ProChat = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Sidebar Header */}
-        <div className="pro-sidebar-header">
+        {/* Simplified Sidebar Header */}
+        <div className="pro-sidebar-header simplified">
           <div className="sidebar-logo">
             <div className="logo-icon" data-tooltip="Quibish Chat">
               <span className="logo-emoji">💬</span>
@@ -2520,10 +2942,7 @@ const ProChat = ({
               )}
             </div>
             {!sidebarCollapsed && (
-              <div className="logo-text">
-                <h2>Quibish</h2>
-                <span className="version">v2.0</span>
-              </div>
+              <h2 className="logo-text">Quibish</h2>
             )}
           </div>
           <button onClick={toggleSidebar} className="sidebar-toggle-btn" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
@@ -2531,8 +2950,8 @@ const ProChat = ({
           </button>
         </div>
 
-        {/* User Profile Section */}
-        <div className="sidebar-user-profile">
+        {/* Simplified User Profile Section */}
+        <div className="sidebar-user-profile simplified">
           <div 
             className={`user-avatar ${user?.role === 'admin' ? 'admin-user' : ''}`} 
             data-tooltip={user?.role === 'admin' ? `${user?.name || 'Admin'} (Administrator)` : user?.name || 'User Profile'}
@@ -2573,365 +2992,115 @@ const ProChat = ({
               <p className="user-status">Online</p>
             </div>
           )}
-          {!sidebarCollapsed && (
-            <div className="user-actions">
-              <button className="action-btn settings-btn" title="Settings" onClick={handleQuickSettings}>
-                <span className="action-icon">⚙️</span>
-                <span className="action-label">Settings</span>
-              </button>
-              <button className="action-btn profile-btn" title="Profile" onClick={() => handleViewUserProfile(user?.id, user?.name)}>
-                <span className="action-icon">👤</span>
-                <span className="action-label">Profile</span>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Quick Actions */}
         {!sidebarCollapsed && (
-          <div className="sidebar-quick-actions">
-            <button className="quick-action-btn primary" onClick={handleNewChat}>
+          <div className="sidebar-actions">
+            <button className="action-btn primary" onClick={handleNewChat}>
               <span className="icon">➕</span>
               <span className="text">New Chat</span>
             </button>
-            <button className="quick-action-btn secondary" onClick={handleCreateGroup}>
-              <span className="icon">👥</span>
-              <span className="text">Create Group</span>
+            <button className="action-btn secondary" onClick={handleUserSearchClick}>
+              <span className="icon">🔍</span>
+              <span className="text">Find Users</span>
             </button>
           </div>
         )}
 
-        {/* Search Bar */}
+        {/* Simple Search */}
         {!sidebarCollapsed && (
-          <div className="sidebar-search">
+          <div className="sidebar-search simplified">
             <div className="search-container">
               <span className="search-icon">🔍</span>
               <input 
                 type="text" 
-                placeholder={searchMode === 'conversations' ? "Search conversations..." : "Click to search users..."}
+                placeholder="Search conversations..."
                 className="search-input"
-                value={searchMode === 'conversations' ? searchQuery : ''}
-                onChange={searchMode === 'conversations' ? handleSearchChange : undefined}
-                onClick={searchMode === 'users' ? handleUserSearchClick : undefined}
-                readOnly={searchMode === 'users'}
+                value={searchQuery}
+                onChange={handleSearchChange}
               />
-              <div className="search-mode-toggle">
-                <button
-                  className={`search-mode-btn ${searchMode === 'conversations' ? 'active' : ''}`}
-                  onClick={() => setSearchMode('conversations')}
-                  title="Search conversations"
-                >
-                  💬
-                </button>
-                <button
-                  className={`search-mode-btn ${searchMode === 'users' ? 'active' : ''}`}
-                  onClick={handleUserSearchClick}
-                  title="Search users"
-                >
-                  👥
-                </button>
-              </div>
             </div>
           </div>
         )}
 
-        {/* Filter Tabs */}
+        {/* Simple Filter Tabs */}
         {!sidebarCollapsed && (
-          <div className="sidebar-filters">
+          <div className="sidebar-filters simplified">
             <button 
               className={`filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
               onClick={() => handleFilterChange('all')}
             >
-              <span className="tab-text">All</span>
-              <span className="tab-count">{getFilterCounts.all}</span>
+              All ({getFilterCounts.all})
             </button>
             <button 
               className={`filter-tab ${activeFilter === 'unread' ? 'active' : ''}`}
               onClick={() => handleFilterChange('unread')}
             >
-              <span className="tab-text">Unread</span>
-              <span className="tab-count">{getFilterCounts.unread}</span>
-            </button>
-            <button 
-              className={`filter-tab ${activeFilter === 'groups' ? 'active' : ''}`}
-              onClick={() => handleFilterChange('groups')}
-            >
-              <span className="tab-text">Groups</span>
-              <span className="tab-count">{getFilterCounts.groups}</span>
+              Unread ({getFilterCounts.unread})
             </button>
           </div>
         )}
 
-        {/* Toolbar - Sort, Group, Batch Select */}
+        {/* Essential Toolbar - Sort Only */}
         {!sidebarCollapsed && (
-          <div className="sidebar-toolbar">
-            <div className="toolbar-left">
-              <button
-                className={`toolbar-btn ${sortBy === 'recent' ? 'active' : ''}`}
-                onClick={() => setSortBy('recent')}
-                title="Sort by recent"
-              >
-                🕒
-              </button>
-              <button
-                className={`toolbar-btn ${sortBy === 'unread' ? 'active' : ''}`}
-                onClick={() => setSortBy('unread')}
-                title="Sort by unread"
-              >
-                📬
-              </button>
-              <button
-                className={`toolbar-btn ${sortBy === 'alphabetical' ? 'active' : ''}`}
-                onClick={() => setSortBy('alphabetical')}
-                title="Sort alphabetically"
-              >
-                🔤
-              </button>
-              <button
-                className={`toolbar-btn ${groupByDate ? 'active' : ''}`}
-                onClick={() => setGroupByDate(!groupByDate)}
-                title={groupByDate ? 'Ungroup' : 'Group by date'}
-              >
-                📅
-              </button>
-            </div>
-            <div className="toolbar-right">
-              <button
-                className={`toolbar-btn ${batchSelectMode ? 'active' : ''}`}
-                onClick={toggleBatchSelect}
-                title="Batch select"
-              >
-                ☑️
-              </button>
-            </div>
+          <div className="sidebar-toolbar simplified">
+            <select 
+              className="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              title="Sort conversations"
+            >
+              <option value="recent">Recent</option>
+              <option value="unread">Unread</option>
+              <option value="alphabetical">A-Z</option>
+            </select>
           </div>
         )}
 
-        {/* Batch Operations Bar */}
-        {!sidebarCollapsed && batchSelectMode && selectedConversations.size > 0 && (
-          <div className="batch-operations-bar">
-            <div className="batch-info">
-              <span>{selectedConversations.size} selected</span>
-            </div>
-            <div className="batch-actions">
-              <button onClick={handleBatchMarkRead} title="Mark as read">
-                ✅
-              </button>
-              <button onClick={handleBatchArchive} title="Archive">
-                📦
-              </button>
-              <button onClick={handleBatchDelete} title="Delete">
-                🗑️
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Conversations List */}
+        {/* Simplified Conversations List */}
         <div className="pro-sidebar-content">
-          <div className="conversations-list">
-            {!groupByDate ? (
-              // Non-grouped list
-              filteredConversations.map((conv, index) => (
-                <div 
-                  key={conv.id} 
-                  className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''} ${draggedConversation?.id === conv.id ? 'dragging' : ''}`}
-                  onClick={() => !batchSelectMode && handleConversationSelect(conv.id)}
-                  onContextMenu={(e) => handleContextMenu(e, conv)}
-                  draggable={sortBy === 'custom' && !batchSelectMode}
-                  onDragStart={(e) => handleDragStart(e, conv)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, conv)}
-                  onDragEnd={handleDragEnd}
-                  onMouseEnter={() => setHoveredConversation(conv.id)}
-                  onMouseLeave={() => setHoveredConversation(null)}
-                >
-                  {batchSelectMode && !sidebarCollapsed && (
-                    <div className="batch-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={selectedConversations.has(conv.id)}
-                        onChange={() => handleBatchToggle(conv.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
+          <div className="conversations-list simplified">
+            {filteredConversations.map((conv, index) => (
+              <div 
+                key={conv.id} 
+                className={`conversation-item simple ${selectedConversation === conv.id ? 'active' : ''}`}
+                onClick={() => handleConversationSelect(conv.id)}
+              >
+                <div className="conversation-avatar">
+                  <img 
+                    src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
+                    alt={conv.name}
+                  />
+                  {conv.isOnline && <div className="online-dot"></div>}
+                  {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
+                </div>
+                
+                {!sidebarCollapsed && (
+                  <div className="conversation-details">
+                    <div className="conversation-header">
+                      <h5 className="conversation-name">{conv.name}</h5>
+                      <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
                     </div>
-                  )}
-                  
-                  <div className="conversation-avatar" data-tooltip={conv.name}>
-                    <img 
-                      src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
-                      alt={conv.name}
-                    />
-                    {conv.isOnline && <div className="online-dot"></div>}
-                    {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
+                    <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
                   </div>
-                  
-                  {!sidebarCollapsed && (
-                    <div className="conversation-details">
-                      <div className="conversation-header">
-                        <h5 className="conversation-name">
-                          {conv.isPinned && <span className="pin-indicator">📌</span>}
-                          {conv.name}
-                        </h5>
-                        <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
-                      </div>
-                      <div className="conversation-preview">
-                        <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
-                        <div className="conversation-meta">
-                          {conv.isMuted && <span className="mute-icon">🔇</span>}
-                          {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {sidebarCollapsed && conv.unreadCount > 0 && (
-                    <div className="collapsed-unread-indicator"></div>
-                  )}
-                  
-                  {sortBy === 'custom' && !sidebarCollapsed && !batchSelectMode && (
-                    <div className="drag-handle" title="Drag to reorder">
-                      ⋮⋮
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              // Grouped list
-              Object.entries(groupedConversations).map(([groupName, convs]) => (
-                <div key={groupName} className="conversation-group">
-                  {!sidebarCollapsed && <div className="group-header">{groupName}</div>}
-                  {convs.map((conv) => (
-                    <div 
-                      key={conv.id} 
-                      className={`conversation-item enhanced ${selectedConversation === conv.id ? 'active' : ''}`}
-                      onClick={() => !batchSelectMode && handleConversationSelect(conv.id)}
-                      onContextMenu={(e) => handleContextMenu(e, conv)}
-                      onMouseEnter={() => setHoveredConversation(conv.id)}
-                      onMouseLeave={() => setHoveredConversation(null)}
-                    >
-                      {batchSelectMode && !sidebarCollapsed && (
-                        <div className="batch-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={selectedConversations.has(conv.id)}
-                            onChange={() => handleBatchToggle(conv.id)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                      )}
-                      
-                      <div className="conversation-avatar" data-tooltip={conv.name}>
-                        <img 
-                          src={conv.avatar || `https://ui-avatars.com/api/?name=${conv.name}&background=random&size=40`}
-                          alt={conv.name}
-                        />
-                        {conv.isOnline && <div className="online-dot"></div>}
-                        {conv.unreadCount > 0 && <div className="unread-badge">{conv.unreadCount}</div>}
-                      </div>
-                      
-                      {!sidebarCollapsed && (
-                        <div className="conversation-details">
-                          <div className="conversation-header">
-                            <h5 className="conversation-name">
-                              {conv.isPinned && <span className="pin-indicator">📌</span>}
-                              {conv.name}
-                            </h5>
-                            <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
-                          </div>
-                          <div className="conversation-preview">
-                            <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
-                            <div className="conversation-meta">
-                              {conv.isMuted && <span className="mute-icon">🔇</span>}
-                              {conv.messageStatus && <span className={`message-status ${conv.messageStatus}`}>✓</span>}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {sidebarCollapsed && conv.unreadCount > 0 && (
-                        <div className="collapsed-unread-indicator"></div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ))
-            )}
+                )}
+              </div>
+            ))}
           </div>
-
-          {!sidebarCollapsed && (
-            <div className="placeholder-content">
-              {/* All calls use internet-based connections */}
-            </div>
-          )}
         </div>
 
-        {/* Context Menu */}
-        {contextMenuState.visible && (
-          <div 
-            className="conversation-context-menu"
-            style={{
-              position: 'fixed',
-              left: `${contextMenuState.x}px`,
-              top: `${contextMenuState.y}px`,
-              zIndex: 9999
-            }}
-          >
-            <div className="context-menu-item" onClick={() => handlePinConversation(contextMenuState.conversation.id)}>
-              <span className="menu-icon">{contextMenuState.conversation.isPinned ? '📍' : '📌'}</span>
-              <span className="menu-text">{contextMenuState.conversation.isPinned ? 'Unpin' : 'Pin'}</span>
-            </div>
-            <div className="context-menu-item" onClick={() => handleMuteConversation(contextMenuState.conversation.id)}>
-              <span className="menu-icon">{contextMenuState.conversation.isMuted ? '🔔' : '🔇'}</span>
-              <span className="menu-text">{contextMenuState.conversation.isMuted ? 'Unmute' : 'Mute'}</span>
-            </div>
-            <div className="context-menu-item" onClick={() => handleMarkAsRead(contextMenuState.conversation.id)}>
-              <span className="menu-icon">✅</span>
-              <span className="menu-text">Mark as Read</span>
-            </div>
-            <div className="context-menu-divider"></div>
-            <div className="context-menu-item" onClick={() => handleArchiveConversation(contextMenuState.conversation.id)}>
-              <span className="menu-icon">{contextMenuState.conversation.isArchived ? '📥' : '📦'}</span>
-              <span className="menu-text">{contextMenuState.conversation.isArchived ? 'Unarchive' : 'Archive'}</span>
-            </div>
-            <div className="context-menu-item danger" onClick={() => handleDeleteConversation(contextMenuState.conversation.id)}>
-              <span className="menu-icon">🗑️</span>
-              <span className="menu-text">Delete</span>
-            </div>
-          </div>
-        )}
 
-
-        {/* Sidebar Footer */}
-        <div className="sidebar-footer">
-          {!sidebarCollapsed && (
-            <div className="footer-stats">
-              <div className="stat-item">
-                <span className="stat-label">Active</span>
-                <span className="stat-value">12</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Total</span>
-                <span className="stat-value">156</span>
-              </div>
-            </div>
-          )}
+        {/* Simplified Sidebar Footer */}
+        <div className="sidebar-footer simplified">
           <div className="footer-actions">
             <button 
               className="footer-btn" 
-              title={darkMode ? 'Light Mode' : 'Dark Mode'}
-              onClick={onToggleDarkMode}
-              data-mobile-action="theme"
+              title="Contacts"
+              onClick={handleOpenContactManager}
+              data-mobile-action="contacts"
             >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-            <button 
-              className="footer-btn" 
-              title="Profile" 
-              onClick={() => handleViewUserProfile(user?.id, user?.name)}
-              data-mobile-action="profile"
-            >
-              👤
+              👥
             </button>
             <button 
               className="footer-btn" 
@@ -2941,12 +3110,6 @@ const ProChat = ({
             >
               ⚙️
             </button>
-            {!sidebarCollapsed && (
-              <button className="footer-btn" title="Help" onClick={() => setHelpModal(true)}>❓</button>
-            )}
-            {!sidebarCollapsed && (
-              <button className="footer-btn" title="Feedback" onClick={() => setFeedbackModal(true)}>💬</button>
-            )}
           </div>
         </div>
       </div>
@@ -2957,6 +3120,7 @@ const ProChat = ({
           className="pro-sidebar-overlay" 
           onClick={handleOverlayClick}
           aria-hidden="true"
+          style={{ pointerEvents: 'auto', zIndex: 1000 }}
         />
       )}
 
@@ -2965,7 +3129,7 @@ const ProChat = ({
         {/* Enhanced Header */}
         <div className="pro-header enhanced-chat-header">
           <div className="header-left">
-            {/* Mobile Hamburger Menu Button */}
+            {/* Mobile Hamburger Menu Button - hidden on desktop via CSS */}
             <button 
               className="mobile-menu-btn" 
               onClick={toggleSidebar}
@@ -2975,7 +3139,12 @@ const ProChat = ({
               ☰
             </button>
             
-            <div className="conversation-avatar">
+            <div 
+              className="conversation-avatar"
+              onClick={() => setContactProfilePopup(true)}
+              style={{ cursor: 'pointer' }}
+              title="View profile"
+            >
               <img 
                 src={currentSelectedConversation?.avatar || currentConversation?.avatar || `https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=40&h=40&fit=crop&crop=face`}
                 alt={currentSelectedConversation?.name || currentConversation?.name || 'Chat'}
@@ -2983,21 +3152,30 @@ const ProChat = ({
               <div className={`online-indicator ${isConnected ? 'online' : 'offline'}`}></div>
             </div>
             <div className="conversation-info">
-              <h3 className="conversation-title">
-                {currentSelectedConversation?.name || currentConversation?.name || (selectedConversation ? 'Loading conversation...' : 'Select a conversation')}
-              </h3>
               <div className="conversation-status">
-                <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-                  {isConnected ? '● Online' : '● Disconnected'}
-                </span>
+                {typingUser ? (
+                  <span className="typing-indicator">
+                    <span className="typing-dots"><span /><span /><span /></span>
+                    {typingUser} is typing...
+                  </span>
+                ) : (
+                  <span className={`connection-status ${(currentSelectedConversation?.isOnline || currentConversation?.isOnline) ? 'connected' : isConnected ? 'connected' : 'disconnected'}`}>
+                    {(currentSelectedConversation?.isOnline || currentConversation?.isOnline) ? '\u25cf Online' : isConnected ? '\u25cf Away' : '\u25cf Offline'}
+                  </span>
+                )}
                 <span className="participant-count">
                   {currentSelectedConversation?.participants || currentConversation?.participants || (currentSelectedConversation ? 2 : 0)} participants
                 </span>
               </div>
             </div>
-            
-            {/* Navigation Actions - Moved to left side */}
-            <div className="header-actions">
+          </div>
+          
+          {/* Navigation Actions */}
+          <div className="header-actions">
+              <NotificationButton
+                onClick={handleShowNotificationCenter}
+                className="notification-btn"
+              />
               <button 
                 className="action-btn invite-user-btn" 
                 title="👥 Invite Users - Search and invite people to chat"
@@ -3064,284 +3242,15 @@ const ProChat = ({
                 </button>
               </div>
               
-              {/* More Options Modal - Moved outside header-menu to avoid stacking context issues */}
-              {showMoreMenu && (
-                <>
-                  {/* Backdrop overlay for mobile */}
-                  <div
-                    onClick={() => setShowMoreMenu(false)}
-                    style={{
-                      position: 'fixed',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                      zIndex: 2147483646,
-                      WebkitTapHighlightColor: 'transparent',
-                      WebkitUserSelect: 'none',
-                      userSelect: 'none'
-                    }}
-                  />
-                  {/* Dropdown menu */}
-                  <div 
-                    className="more-options-dropdown"
-                    style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                      backdropFilter: 'blur(20px)',
-                      WebkitBackdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(226, 232, 240, 0.8)',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
-                      zIndex: 2147483647,
-                      pointerEvents: 'auto',
-                      touchAction: 'manipulation'
-                    }}
-                  >
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px 16px',
-                    borderBottom: '1px solid rgba(226, 232, 240, 0.5)',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    color: '#374151',
-                    backgroundColor: 'rgba(249, 250, 251, 0.8)'
-                  }}>
-                    <span>More Options</span>
-                    <button 
-                      onClick={() => setShowMoreMenu(false)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        fontSize: '18px',
-                        color: '#6b7280',
-                        cursor: 'pointer',
-                        padding: '0',
-                        width: '20px',
-                        height: '20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '4px'
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                  
-                  <button className="dropdown-item" onClick={handleSearchInChat} 
-                    onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(59, 130, 246, 0.08)'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s ease'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>🔍</span>
-                    Search in Chat
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handleOpenContactManager}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(59, 130, 246, 0.08)'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s ease',
-                    minHeight: '44px'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>👥</span>
-                    Contacts
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handleExportChat} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>📥</span>
-                    Export Chat
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handlePrintChat} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>🖨️</span>
-                    Print Chat
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handleMuteNotifications} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>
-                      {localStorage.getItem('notificationsMuted') === 'true' ? '�' : '🔕'}
-                    </span>
-                    {localStorage.getItem('notificationsMuted') === 'true' ? 'Unmute' : 'Mute'} Notifications
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handleClearChat} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>🗑️</span>
-                    Clear Chat
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={() => setHelpModal(true)} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>❓</span>
-                    Help & Support
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={() => setFeedbackModal(true)} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>�</span>
-                    Send Feedback
-                  </button>
-                  
-                  <hr style={{ height: '1px', background: 'rgba(226, 232, 240, 0.8)', border: 'none', margin: '4px 0' }} />
-                  
-                  <button className="dropdown-item" onClick={() => setNotificationSettingsModal(true)} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>🔔</span>
-                    Notifications
-                  </button>
-                  
-                  <button className="dropdown-item" onClick={handleQuickSettings} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#374151',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>⚙️</span>
-                    Settings
-                  </button>
-                  
-                  <hr style={{ height: '1px', background: 'rgba(226, 232, 240, 0.8)', border: 'none', margin: '4px 0' }} />
-                  
-                  <button onClick={onLogout} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: 'none',
-                    background: 'none',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                    color: '#dc2626',
-                    cursor: 'pointer'
-                  }}>
-                    <span style={{ fontSize: '16px', width: '20px' }}>🚪</span>
-                    Logout
-                  </button>
-                  </div>
-                </>
-              )}
-            </div>
+              {/* More Options rendered via portal - see bottom of component */}
             </div>
           </div>
         </div>
-
-        {/* Messages */}
-        <div className="pro-message-list mobile-optimized pull-to-refresh" ref={messagesContainerRef}>
+                  
+        {/* Content Area - Contains messages and input */}
+        <div className="pro-content">
+          {/* Messages */}
+          <div className="pro-message-list mobile-optimized pull-to-refresh" ref={messagesContainerRef}>
           {messagesLoading && (
             <div className="message-loading-indicator">
               <div className="loading-spinner"></div>
@@ -3629,6 +3538,11 @@ const ProChat = ({
               <div className="message-timestamp-with-reactions">
                 <div className="message-timestamp">
                   {new Date(message.timestamp).toLocaleTimeString()}
+                  {String(message.user?.id) === String(user?.id) && (
+                    <span className={`message-delivery-status ${message.pending ? 'pending' : 'sent'}`} title={message.pending ? 'Sending…' : 'Sent'}>
+                      {message.pending ? '○' : '✓'}
+                    </span>
+                  )}
                 </div>
                 {message.reactions && message.reactions.length > 0 && (
                   <div className="message-reactions-inline">
@@ -3864,10 +3778,33 @@ const ProChat = ({
                   {/* Text Input */}
                   <textarea
                     value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
+                    onChange={(e) => {
+                      setInputText(e.target.value);
+                      const now = Date.now();
+                      if (now - typingThrottleRef.current > 2000) {
+                        typingThrottleRef.current = now;
+                        const conversationParticipants = currentSelectedConversation?.participants || [];
+                        const recipientId = conversationParticipants.find(p => String(p) !== String(user?.id)) || null;
+                        realtimeService.sendTyping({ conversationId: selectedConversation, recipientId });
+                      }
+                    }}
                     onKeyPress={handleKeyPress}
+                    onFocus={() => {
+                      // Force close any overlays when input is focused
+                      setShowEmojiPicker(false);
+                      setShowReactionPicker(false);
+                    }}
+                    onClick={(e) => {
+                      // Stop event propagation to prevent interference
+                      e.stopPropagation();
+                      // Ensure input gets focus and close overlays
+                      setShowEmojiPicker(false);
+                      setShowReactionPicker(false);
+                      // Force focus
+                      e.target.focus();
+                    }}
                     placeholder="Type your message..."
-                    className="message-input enhanced mobile-message-input touch-target"
+                    className="message-input enhanced mobile-message-input touch-target clickable-input"
                     rows="1"
                     autoComplete="off"
                     autoCorrect="on"
@@ -3957,9 +3894,11 @@ const ProChat = ({
               </div>
             )}
           </div>
-  
-          {/* Smart Replies Panel */}
-          <div className="pro-chat-input-container">
+        </div>
+
+        {/* Smart Replies Panel */}
+        {(showSmartReplies && smartReplies.length > 0) || showAIEnhancement ? (
+          <div className="pro-smart-panel-container">
             {showSmartReplies && smartReplies.length > 0 && (
               <SmartRepliesPanel
                 replies={smartReplies}
@@ -3978,6 +3917,207 @@ const ProChat = ({
               />
             )}
           </div>
+        ) : null}
+
+      {/* Contact Profile Popup */}
+      {contactProfilePopup && (currentSelectedConversation || currentConversation) && (
+        <>
+          <div
+            onClick={() => setContactProfilePopup(false)}
+            style={{
+              position: 'fixed', inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              zIndex: 2147483640,
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)'
+            }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '70px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'min(340px, 92vw)',
+            backgroundColor: 'var(--pro-surface, #fff)',
+            borderRadius: '20px',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.2)',
+            zIndex: 2147483641,
+            overflow: 'hidden',
+            fontFamily: 'inherit'
+          }}>
+            {/* Close button */}
+            <button
+              onClick={() => setContactProfilePopup(false)}
+              style={{
+                position: 'absolute', top: '10px', right: '10px',
+                zIndex: 1, width: '32px', height: '32px',
+                borderRadius: '50%', border: 'none',
+                background: 'rgba(0,0,0,0.35)', color: '#fff',
+                fontSize: '18px', lineHeight: 1, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backdropFilter: 'blur(4px)'
+              }}
+              aria-label="Close"
+            >×</button>
+            {/* Cover banner */}
+            <div style={{
+              height: '80px',
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)'
+            }} />
+            {/* Avatar */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '-40px', padding: '0 20px 20px' }}>
+              <div style={{ position: 'relative' }}>
+                <img
+                  src={currentSelectedConversation?.avatar || currentConversation?.avatar}
+                  alt={currentSelectedConversation?.name || currentConversation?.name}
+                  style={{
+                    width: '80px', height: '80px', borderRadius: '50%',
+                    border: '4px solid #fff',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                    objectFit: 'cover'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div style={{
+                  display: 'none',
+                  width: '80px', height: '80px', borderRadius: '50%',
+                  border: '4px solid #fff',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  alignItems: 'center', justifyContent: 'center',
+                  fontSize: '28px', color: '#fff', fontWeight: '700'
+                }}>
+                  {(currentSelectedConversation?.name || currentConversation?.name || '?')[0].toUpperCase()}
+                </div>
+                <span style={{
+                  position: 'absolute', bottom: '4px', right: '4px',
+                  width: '16px', height: '16px', borderRadius: '50%',
+                  backgroundColor: isConnected ? '#22c55e' : '#94a3b8',
+                  border: '2px solid #fff'
+                }} />
+              </div>
+              {/* Name & status */}
+              <h3 style={{ margin: '10px 0 2px', fontSize: '18px', fontWeight: '700', color: 'var(--pro-text, #1e293b)' }}>
+                {currentSelectedConversation?.name || currentConversation?.name}
+              </h3>
+              <p style={{ margin: '0 0 16px', fontSize: '13px', color: isConnected ? '#22c55e' : '#94a3b8', fontWeight: '500' }}>
+                {isConnected ? '● Online' : '● Offline'}
+              </p>
+              {/* Action row */}
+              <div style={{ display: 'flex', gap: '10px', width: '100%', marginBottom: '16px' }}>
+                {[
+                  { icon: '💬', label: 'Message', action: () => setContactProfilePopup(false) },
+                  { icon: '📞', label: 'Call', action: () => { setContactProfilePopup(false); handleUnifiedCall(); } },
+                  { icon: '🎥', label: 'Video', action: () => { setContactProfilePopup(false); handleVideoCall(); } }
+                ].map(({ icon, label, action }) => (
+                  <button key={label} onClick={action} style={{
+                    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    gap: '4px', padding: '10px 4px',
+                    background: 'rgba(99,102,241,0.08)', border: 'none', borderRadius: '12px',
+                    cursor: 'pointer', color: '#6366f1', fontSize: '12px', fontWeight: '600',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(99,102,241,0.16)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(99,102,241,0.08)'}
+                  >
+                    <span style={{ fontSize: '20px' }}>{icon}</span>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {/* Info rows */}
+              <div style={{ width: '100%', borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {[
+                  { icon: '🔍', label: 'Search in conversation', action: () => { setContactProfilePopup(false); handleSearchInChat(); } },
+                  { icon: '🔔', label: 'Mute notifications', action: () => { setContactProfilePopup(false); handleMuteNotifications(); } },
+                  { icon: '👤', label: 'View full profile', action: () => { setContactProfilePopup(false); handleViewUserProfile(currentSelectedConversation?.id || currentConversation?.id, currentSelectedConversation?.name || currentConversation?.name); } },
+                  { icon: '🗑️', label: 'Clear chat', action: () => { setContactProfilePopup(false); handleClearChat(); }, danger: true }
+                ].map(({ icon, label, action, danger }) => (
+                  <button key={label} onClick={action} style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    width: '100%', padding: '10px 4px', border: 'none',
+                    background: 'none', textAlign: 'left', fontSize: '14px',
+                    color: danger ? '#ef4444' : 'var(--pro-text, #374151)',
+                    cursor: 'pointer', borderRadius: '8px', transition: 'background 0.15s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = danger ? 'rgba(239,68,68,0.07)' : 'rgba(0,0,0,0.04)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                  >
+                    <span style={{ fontSize: '16px', width: '22px', textAlign: 'center' }}>{icon}</span>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* More Options Dropdown - rendered via portal to escape any stacking context */}
+      {showMoreMenu && ReactDOM.createPortal(
+        <>
+          <div
+            onClick={() => setShowMoreMenu(false)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              zIndex: 2147483646,
+              WebkitTapHighlightColor: 'transparent'
+            }}
+          />
+          <div className="more-options-dropdown">
+            {/* Drag handle (visible on mobile) */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.15)' }} />
+            </div>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '8px 16px 12px', borderBottom: '1px solid rgba(226,232,240,0.6)',
+              fontWeight: '600', fontSize: '15px', color: '#374151',
+            }}>
+              <span>More Options</span>
+              <button onClick={() => setShowMoreMenu(false)} style={{
+                background: 'none', border: 'none', fontSize: '20px', color: '#6b7280',
+                cursor: 'pointer', width: '32px', height: '32px', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', borderRadius: '6px',
+                padding: 0
+              }}>×</button>
+            </div>
+            {[
+              { icon: '🔍', label: 'Search in Chat', action: handleSearchInChat },
+              { icon: '👥', label: 'Contacts', action: handleOpenContactManager },
+              { icon: '📥', label: 'Export Chat', action: handleExportChat },
+              { icon: '🖨️', label: 'Print Chat', action: handlePrintChat },
+              { icon: localStorage.getItem('notificationsMuted') === 'true' ? '🔔' : '🔕', label: (localStorage.getItem('notificationsMuted') === 'true' ? 'Unmute' : 'Mute') + ' Notifications', action: handleMuteNotifications },
+              { icon: '🗑️', label: 'Clear Chat', action: handleClearChat },
+              { icon: '❓', label: 'Help & Support', action: () => setHelpModal(true) },
+              { icon: '📢', label: 'Send Feedback', action: () => setFeedbackModal(true) },
+            ].map(({ icon, label, action }) => (
+              <button key={label} className="dropdown-item" onClick={() => { action(); setShowMoreMenu(false); }}>
+                <span className="dropdown-icon">{icon}</span>{label}
+              </button>
+            ))}
+            <hr className="dropdown-divider" />
+            {[
+              { icon: '🔔', label: 'Notifications', action: () => setNotificationSettingsModal(true) },
+              { icon: '📰', label: 'News Feed', action: () => setNewsFeedModal(true) },
+              { icon: '⚙️', label: 'Settings', action: handleQuickSettings },
+              { icon: darkMode ? '☀️' : '🌙', label: darkMode ? 'Light Mode' : 'Dark Mode', action: onToggleDarkMode },
+            ].map(({ icon, label, action }) => (
+              <button key={label} className="dropdown-item" onClick={() => { action(); setShowMoreMenu(false); }}>
+                <span className="dropdown-icon">{icon}</span>{label}
+              </button>
+            ))}
+            <hr className="dropdown-divider" />
+            <button className="dropdown-item logout-item" onClick={() => { onLogout(); setShowMoreMenu(false); }}>
+              <span className="dropdown-icon">🚪</span>Logout
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* Profile Modal */}
       {profileModal.open && (
@@ -4014,6 +4154,52 @@ const ProChat = ({
           onClose={() => setNotificationSettingsModal(false)}
           user={user}
         />
+      )}
+
+      {/* News Feed Modal */}
+      {newsFeedModal && (
+        <div className="modal-overlay" onClick={() => setNewsFeedModal(false)}>
+          <div className="modal-content news-feed-modal" onClick={(e) => e.stopPropagation()} style={{
+            maxWidth: '900px',
+            width: '90%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            background: '#fff',
+            borderRadius: '12px',
+            position: 'relative'
+          }}>
+            <div className="modal-header" style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '20px',
+              borderBottom: '1px solid #e2e8f0'
+            }}>
+              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>📰 News Feed</h2>
+              <button 
+                onClick={() => setNewsFeedModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  padding: '0',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '0' }}>
+              <NewsFeed user={user} />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Lightbox Modal */}
@@ -4298,7 +4484,7 @@ const ProChat = ({
       {showContactManager && (
         <ContactManager
           isOpen={showContactManager}
-          onClose={() => setShowContactManager(false)}
+          onClose={() => { setShowContactManager(false); document.body.classList.remove('contact-manager-open'); }}
           onStartChat={handleContactToChat}
           onStartCall={handleContactCall}
           currentUser={user}
@@ -4455,6 +4641,27 @@ const ProChat = ({
           }}
         />
       )}
+      {/* Notification Center */}
+      {showNotificationCenter && (
+        <NotificationCenter
+          isOpen={showNotificationCenter}
+          onClose={handleCloseNotificationCenter}
+          onNotificationClick={handleNotificationClick}
+        />
+      )}
+      
+      {/* Notification Permission Prompt */}
+      <NotificationPermissionPrompt
+        onPermissionGranted={() => {
+          console.log('✅ User granted notification permission');
+          // Optionally show a success message
+        }}
+        onPermissionDenied={() => {
+          console.log('❌ User denied notification permission');
+          // Optionally show info about enabling in settings
+        }}
+      />
+      
     </div>
   );
 };

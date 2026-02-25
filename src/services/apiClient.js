@@ -44,15 +44,24 @@ class ApiClient {
       const response = await fetch(url, config);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to read error body for a better message
+        let errorBody = '';
+        try { errorBody = await response.text(); } catch (_) {}
+        let parsed = null;
+        try { parsed = JSON.parse(errorBody); } catch (_) {}
+        const msg = parsed?.error || parsed?.message || `HTTP error! status: ${response.status}`;
+        throw new Error(msg);
       }
 
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
+      // Always read as text first, then try JSON parsing regardless of content-type.
+      // This handles servers that send JSON with wrong/missing content-type headers.
+      const text = await response.text();
+      if (!text) return null;
+      const trimmed = text.trimStart();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try { return JSON.parse(text); } catch (_) {}
       }
-      
-      return await response.text();
+      return text;
     } catch (error) {
       console.error('API request failed:', error);
       throw error;
@@ -87,14 +96,31 @@ const apiClient = new ApiClient();
 
 // Auth service methods
 export const authService = {
-  async login(email, password) {
+  async login(username, password) {
     try {
       // Check if backend is available
       const isBackendAvailable = await checkApiConnection();
       
       if (isBackendAvailable) {
         // Try backend login if available
-        const response = await apiClient.post('/auth/login', { email, password });
+        const response = await apiClient.post('/auth/login', { username, password });
+        console.log('Login response from backend:', JSON.stringify(response));
+
+        // Validate the response shape before using it
+        if (!response) {
+          throw new Error('Server returned an empty response. Please try again.');
+        }
+        if (typeof response === 'string') {
+          console.error('Login - unexpected text response:', response.slice(0, 200));
+          throw new Error('Server returned an unexpected response. Please try again.');
+        }
+        if (response.success === false) {
+          throw new Error(response.error || response.message || 'Login failed');
+        }
+        if (!response.user) {
+          throw new Error(response.error || 'Server returned an incomplete response. Please try again.');
+        }
+
         if (response.token) {
           apiClient.setToken(response.token);
         }
@@ -104,7 +130,7 @@ export const authService = {
         console.log('🔄 Backend unavailable - using offline mode login');
         
         // Simple validation for demo purposes
-        if (!email || !password) {
+        if (!username || !password) {
           throw new Error('Please enter both username and password');
         }
         
@@ -115,10 +141,10 @@ export const authService = {
         // Create a demo user object
         const demoUser = {
           id: Date.now().toString(),
-          username: email,
-          email: email,
-          name: email.charAt(0).toUpperCase() + email.slice(1),
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=6366f1&color=fff&size=40`,
+          username: username,
+          email: username.includes('@') ? username : `${username}@quibish.com`,
+          name: username.charAt(0).toUpperCase() + username.slice(1),
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6366f1&color=fff&size=40`,
           theme: 'light',
           language: 'en',
           isDemo: true,
@@ -126,9 +152,9 @@ export const authService = {
         };
         
         // Generate a demo token
-        const demoToken = btoa(JSON.stringify({ userId: demoUser.id, username: email, timestamp: Date.now() }));
+        const demoToken = btoa(JSON.stringify({ userId: demoUser.id, username: username, timestamp: Date.now() }));
         
-        console.log('✅ Offline login successful for demo user:', email);
+        console.log('✅ Offline login successful for demo user:', username);
         
         return {
           success: true,
@@ -138,22 +164,23 @@ export const authService = {
         };
       }
     } catch (error) {
-      // If it's a network error and we haven't tried offline mode, try it
-      if (error.message.includes('fetch') || error.message.includes('network') || error.message.includes('Failed to fetch')) {
+      // If it's a network error or an HTTP error, and we haven't tried offline mode, try it
+      if (error.message.includes('fetch') || error.message.includes('network') || 
+          error.message.includes('Failed to fetch') || error.message.includes('HTTP error')) {
         console.log('🔄 Network error detected - falling back to offline mode');
         
         // Simple validation for demo purposes
-        if (!email || !password) {
+        if (!username || !password) {
           throw new Error('Please enter both username and password');
         }
         
         // Create a demo user object
         const demoUser = {
           id: Date.now().toString(),
-          username: email,
-          email: email,
-          name: email.charAt(0).toUpperCase() + email.slice(1),
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=6366f1&color=fff&size=40`,
+          username: username,
+          email: username.includes('@') ? username : `${username}@quibish.com`,
+          name: username.charAt(0).toUpperCase() + username.slice(1),
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6366f1&color=fff&size=40`,
           theme: 'light',
           language: 'en',
           isDemo: true,
@@ -161,7 +188,7 @@ export const authService = {
         };
         
         // Generate a demo token
-        const demoToken = btoa(JSON.stringify({ userId: demoUser.id, username: email, timestamp: Date.now() }));
+        const demoToken = btoa(JSON.stringify({ userId: demoUser.id, username: username, timestamp: Date.now() }));
         
         return {
           success: true,

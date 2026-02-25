@@ -287,7 +287,7 @@
     <meta name="x-frame-options" content="SAMEORIGIN">
     
     <!-- Nuclear CSP - Block everything except our app -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: localhost:*; script-src 'self' 'unsafe-inline' 'unsafe-eval' localhost:* 'nonce-quibish-safe'; style-src 'self' 'unsafe-inline' localhost:*; img-src 'self' data: blob: https: localhost:*; connect-src 'self' localhost:* ws://localhost:* wss://localhost:*; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: localhost:* 0.0.0.0:*; script-src 'self' 'unsafe-inline' 'unsafe-eval' localhost:* 0.0.0.0:* 'nonce-quibish-safe'; style-src 'self' 'unsafe-inline' localhost:* 0.0.0.0:*; img-src 'self' data: blob: https: localhost:* 0.0.0.0:*; connect-src 'self' localhost:* 0.0.0.0:* ws://localhost:* wss://localhost:* ws://0.0.0.0:* wss://0.0.0.0:*; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests;">
     
     <!-- Extension Blocker Meta -->
     <meta name="extension-blocker" content="active">
@@ -566,20 +566,24 @@
         // Activate protection immediately
         QUIBISH_PROTECTION.initialize();
         
-        // Service Worker Registration - Temporarily disabled for debugging
-        /*
+        // Service Worker Registration - Fixed for proper messaging
         if ('serviceWorker' in navigator) {
           window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
+            // Use relative path to work with subdirectories (./sw.js works in both / and /quibish/)
+            navigator.serviceWorker.register('./sw.js', { scope: './' })
               .then((registration) => {
-                console.log('✅ QUIBISH: Service Worker registered');
+                console.log('✅ QUIBISH: Service Worker registered at:', registration.scope);
+                
+                // Set up message listener for service worker responses
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                  console.log('📨 SW Response:', event.data);
+                });
               })
               .catch((error) => {
                 console.log('❌ QUIBISH: Service Worker registration failed:', error);
               });
           });
         }
-        */
         
       })();
     </script>

@@ -117,6 +117,13 @@ async function testGetUserMedia() {
     
     return true;
   } catch (error) {
+    // Only log detailed errors for permission and support issues
+    // NotFoundError is expected when no microphone is connected
+    if (error.name === 'NotFoundError') {
+      console.log('ℹ️ No microphone device found (this is expected if no mic is connected)');
+      return false;
+    }
+    
     console.error('❌ getUserMedia failed:', error);
     console.error('❌ Error name:', error.name);
     console.error('❌ Error message:', error.message);
@@ -125,9 +132,6 @@ async function testGetUserMedia() {
     switch (error.name) {
       case 'NotAllowedError':
         console.log('💡 User denied microphone permission or feature policy blocks it');
-        break;
-      case 'NotFoundError':
-        console.log('💡 No microphone device found');
         break;
       case 'NotSupportedError':
         console.log('💡 Audio constraints not supported');
@@ -245,10 +249,14 @@ async function runDiagnostics() {
 // Export for use in browser console
 window.runVoiceRecorderDiagnostics = runDiagnostics;
 
-// Auto-run if in development
-if (process.env.NODE_ENV === 'development') {
+// Auto-run if in development - DISABLED BY DEFAULT
+// To enable, set REACT_APP_AUTO_DIAGNOSTICS=true in .env
+// Or run manually in console: window.runVoiceRecorderDiagnostics()
+if (process.env.NODE_ENV === 'development' && process.env.REACT_APP_AUTO_DIAGNOSTICS === 'true') {
   console.log('🔧 Auto-running diagnostics in development mode...');
   setTimeout(runDiagnostics, 1000);
+} else if (process.env.NODE_ENV === 'development') {
+  console.log('ℹ️ Voice recorder diagnostics available. Run window.runVoiceRecorderDiagnostics() to test.');
 }
 
 export { runDiagnostics };

@@ -1,5 +1,11 @@
 /* App.css - Main application styles */
 
+/* ============================================
+   CRITICAL: Safe Area Support (MUST BE FIRST)
+   Prevents header overlap on notched devices
+   ============================================ */
+@import './styles/safe-area-fix.css';
+
 /* Import remaining responsive styles */
 @import './styles/mobile-first-responsive.css';
 @import './styles/input-container-responsive-fix.css';
@@ -7,6 +13,31 @@
 @import './styles/mobile-animation-fix.css';
 @import './styles/image-display-fix.css';
 @import './styles/flagship-device-optimizations.css';
+@import './styles/iphone-optimizations.css';
+
+/* Import mobile layout improvements - CRITICAL FIX */
+@import './styles/mobile-layout-improvements.css';
+
+/* Import mobile overlap fix - PREVENTS OVERLAPPING ELEMENTS */
+@import './styles/mobile-overlap-fix.css';
+
+/* ============================================
+   MODERN UI DESIGN SYSTEM 2026
+   Import the new modern design system
+   ============================================ */
+@import './styles/modern-ui-2026.css';
+@import './styles/modern-ui-integration.css';
+@import './styles/modern-design-system.css';
+@import './styles/modern-components.css';
+@import './styles/modern-animations.css';
+@import './styles/modern-mobile.css';
+
+/* ============================================
+   MODERN MESSAGING APP LAYOUT 2026
+   WhatsApp/Telegram/iMessage inspired design
+   MUST BE LAST - Overrides all previous layouts
+   ============================================ */
+@import './styles/messaging-app-layout.css';
 
 /* CSS Variables for theming */
 :root {

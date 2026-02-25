@@ -1,0 +1,286 @@
+/**
+ * MOBILE FINAL OVERRIDE
+ * This file must be loaded LAST to fix all mobile overlapping issues
+ * Clean, simple flexbox layout for mobile devices
+ */
+
+@media screen and (max-width: 768px) {
+  /* ===================================
+     VIEWPORT & HTML/BODY SETUP
+     =================================== */
+  
+  html,
+  html body {
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+  
+  /* ===================================
+     APP CONTAINER - Full viewport
+     =================================== */
+  
+  html body .App,
+  html body #root {
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+  
+  /* ===================================
+     PRO LAYOUT - Flex column structure
+     =================================== */
+  
+  html body .pro-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    position: relative !important;
+    /* Override grid layout */
+    grid-template-columns: unset !important;
+    grid-template-areas: unset !important;
+    grid-template-rows: unset !important;
+  }
+  
+  /* ===================================
+     HEADER - Fixed at top with safe area
+     =================================== */
+  
+  html body .pro-header,
+  html body .enhanced-chat-header {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-height: 52px !important;
+    max-height: none !important;
+    padding: 3px 12px !important;
+    margin-bottom: 0 !important;
+    background: var(--pro-surface, #ffffff) !important;
+    border-bottom: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
+    border-radius: 0 !important;
+    z-index: 100 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    box-shadow: none !important;
+    order: -1 !important;
+  }
+  
+  /* ===================================
+     MAIN CONTENT - Fills remaining space
+     =================================== */
+  
+  html body .pro-main,
+  html body .pro-content {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    position: relative !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    grid-column: unset !important;
+    grid-row: unset !important;
+  }
+
+  /* Strip desktop decorative effects from .pro-content on mobile */
+  html body .pro-content {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  
+  /* ===================================
+     MESSAGE LIST - Scrollable content area
+     =================================== */
+  
+  html body .pro-message-list,
+  html body .pro-message-area,
+  html body .messages-container,
+  html body .pro-content > .pro-message-list {
+    flex: 1 1 0% !important;
+    width: 100% !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    position: relative !important;
+    padding: 0 12px 20px 12px !important;
+    margin: 0 !important;
+    background: #f5f5f5 !important;
+    order: 1 !important;
+    z-index: 1 !important;
+  }
+  
+  /* ===================================
+     INPUT CONTAINER - Fixed at bottom
+     =================================== */
+  
+  html body .pro-chat-input-container,
+  html body .message-input-container,
+  html body .input-container,
+  html body .pro-content > .pro-chat-input-container {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 52px !important;
+    max-height: 130px !important;
+    padding: 6px 10px !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+    margin: 0 !important;
+    background: var(--pro-surface, #ffffff) !important;
+    border-top: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05) !important;
+    z-index: 90 !important;
+    order: 2 !important;
+    /* Critical: Remove any absolute/fixed positioning */
+    bottom: unset !important;
+    top: unset !important;
+    left: unset !important;
+    right: unset !important;
+    transform: none !important;
+  }
+  
+  /* ===================================
+     SMART PANEL CONTAINER - Conditional panels
+     =================================== */
+  
+  html body .pro-smart-panel-container {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    background: var(--pro-surface, #ffffff) !important;
+    border-top: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
+    padding: 8px !important;
+    z-index: 85 !important;
+    order: 3 !important;
+  }
+  
+  /* ===================================
+     SIDEBAR - Overlay mode on mobile
+     =================================== */
+  
+  html body .pro-sidebar,
+  html body .enhanced-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    background: var(--pro-surface, #ffffff) !important;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.15) !important;
+    z-index: 1000 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  html body .pro-sidebar:not(.collapsed),
+  html body .enhanced-sidebar:not(.collapsed),
+  html body .pro-sidebar.active,
+  html body .enhanced-sidebar.active {
+    transform: translateX(0) !important;
+  }
+  
+  /* Sidebar backdrop */
+  html body .pro-sidebar-overlay,
+  html body .sidebar-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(2px) !important;
+    z-index: 999 !important;
+    display: block !important;
+  }
+  
+  html body .pro-sidebar.collapsed ~ .pro-sidebar-overlay,
+  html body .enhanced-sidebar.collapsed ~ .sidebar-overlay {
+    display: none !important;
+  }
+  
+  /* ===================================
+     WELCOME SCREEN ADJUSTMENTS
+     =================================== */
+  
+  html body .pro-welcome-container {
+    padding: 20px !important;
+    overflow-y: auto !important;
+  }
+  
+  /* ===================================
+     DROPDOWNS & MODALS - Proper z-index
+     =================================== */
+  
+  html body .dropdown,
+  html body .dropdown-menu,
+  html body .more-options-menu {
+    position: fixed !important;
+    z-index: 2000 !important;
+  }
+  
+  html body .modal,
+  html body .pro-modal {
+    position: fixed !important;
+    z-index: 3000 !important;
+  }
+  
+  /* ===================================
+     DISABLE PROBLEMATIC ANIMATIONS
+     =================================== */
+  
+  * {
+    scroll-behavior: smooth !important;
+  }
+}
+
+/* ===================================
+   LANDSCAPE MODE
+   =================================== */
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  html body .pro-header,
+  html body .enhanced-chat-header {
+    min-height: 48px !important;
+    padding: 6px 12px !important;
+  }
+  
+  html body .pro-message-list,
+  html body .pro-message-area {
+    padding-bottom: 100px !important;
+  }
+}

@@ -16,17 +16,28 @@ export const buildApiUrl = (endpoint) => {
 export const apiFetch = async (endpoint, options = {}) => {
   const url = buildApiUrl(endpoint);
   
+  // Create AbortController for timeout support
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+  
+  // Get auth token from localStorage
+  const token = localStorage.getItem('token');
+  
   const config = {
-    timeout: API_CONFIG.TIMEOUT,
     ...options,
+    signal: controller.signal,
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
   };
 
   try {
     const response = await fetch(url, config);
+    
+    // Clear timeout on successful response
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -35,11 +46,20 @@ export const apiFetch = async (endpoint, options = {}) => {
     // Check if response has content
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
-      return await response.json();
+      const data = await response.json();
+      return data;
     }
     
-    return await response.text();
+    const text = await response.text();
+    return text;
   } catch (error) {
+    clearTimeout(timeoutId);
+    
+    if (error.name === 'AbortError') {
+      console.error(`API request timed out for ${url}`);
+      throw new Error(`Request timeout after ${API_CONFIG.TIMEOUT}ms`);
+    }
+    
     console.error(`API request failed for ${url}:`, error);
     throw error;
   }

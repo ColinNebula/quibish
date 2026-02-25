@@ -1,0 +1,131 @@
+/* Message Input Click Fix */
+
+/* Ensure message input is always clickable */
+.message-input.clickable-input {
+  position: relative !important;
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+  cursor: text !important;
+  touch-action: manipulation !important;
+}
+
+/* Force clickable state on mobile */
+.mobile-message-input {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  touch-action: manipulation !important;
+}
+
+/* Message input row positioning */
+.message-input-row {
+  position: relative;
+  z-index: 1001;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: white;
+}
+
+/* Ensure no overlays interfere with input area */
+.pro-main .message-input-row {
+  background: var(--background-color, white);
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+/* Touch target optimization */
+.touch-target.message-input {
+  min-height: 44px; /* Apple's recommended touch target size */
+  min-width: 44px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 24px;
+  background: var(--input-background, #f8f9fa);
+  font-size: 16px; /* Prevent zoom on iOS */
+  line-height: 1.4;
+  resize: none;
+  overflow-y: auto;
+  max-height: 120px;
+}
+
+/* Focus state enhancement */
+.message-input:focus {
+  outline: none !important;
+  border-color: var(--primary-color, #007bff) !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
+  background: white !important;
+}
+
+/* Prevent any potential overlay interference */
+.dynamic-background,
+.floating-particles,
+.gradient-orb {
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+/* Sidebar overlay fix */
+.pro-sidebar-overlay {
+  pointer-events: auto;
+  z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Ensure main content is above overlay when sidebar is open */
+.pro-main {
+  position: relative;
+  z-index: 1001;
+}
+
+/* Mobile specific fixes */
+@media (max-width: 768px) {
+  .message-input-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 10001;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .message-input.clickable-input {
+    font-size: 16px !important; /* Prevent iOS zoom */
+    transform: translateZ(0); /* Force hardware acceleration */
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .message-input-row {
+    background: #2a2a2a;
+    border-top-color: #444;
+  }
+  
+  .touch-target.message-input {
+    background: #333;
+    color: #e0e0e0;
+    border-color: #555;
+  }
+  
+  .message-input:focus {
+    background: #2a2a2a !important;
+    border-color: #0066cc !important;
+    color: #e0e0e0 !important;
+    -webkit-text-fill-color: #e0e0e0 !important;
+    caret-color: #81b4ff !important;
+  }
+  
+  .message-input {
+    color: #e0e0e0 !important;
+    -webkit-text-fill-color: #e0e0e0 !important;
+    caret-color: #81b4ff !important;
+  }
+}

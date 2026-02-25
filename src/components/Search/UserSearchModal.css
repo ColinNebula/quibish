@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 99999;
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -29,7 +29,7 @@
 
 .user-search-header {
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid var(--border-color, #e0e0e0);

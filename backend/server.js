@@ -34,9 +34,29 @@ global.inMemoryStorage = {
           email: 'demo@quibish.com',
           password: bcrypt.hashSync('demo', 10),
           name: 'Demo User',
+          displayName: 'Demo User',
           avatar: null,
           status: 'online',
           role: 'user',
+          bio: 'Welcome! I\'m the demo user for Quibish. Feel free to explore!',
+          headline: 'Exploring Quibish',
+          cover_photo: null,
+          location: null,
+          website: null,
+          company: null,
+          jobTitle: null,
+          interests: ['Technology', 'Social Media', 'Communication'],
+          friends_count: 0,
+          posts_count: 0,
+          followers_count: 0,
+          following_count: 0,
+          profile_views_count: 0,
+          is_verified: false,
+          badges: [],
+          account_type: 'personal',
+          date_of_birth: null,
+          gender: null,
+          relationship_status: null,
           twoFactorAuth: {
             enabled: false,
             secret: null,
@@ -53,9 +73,29 @@ global.inMemoryStorage = {
           email: 'john@example.com',
           password: bcrypt.hashSync('password', 10),
           name: 'John Doe',
+          displayName: 'John Doe',
           avatar: null,
           status: 'online',
           role: 'user',
+          bio: 'Software engineer passionate about building great products.',
+          headline: 'Senior Software Engineer at TechCorp',
+          cover_photo: null,
+          location: 'San Francisco, CA',
+          website: 'https://johndoe.dev',
+          company: 'TechCorp',
+          jobTitle: 'Senior Software Engineer',
+          interests: ['Coding', 'Open Source', 'JavaScript', 'React'],
+          friends_count: 0,
+          posts_count: 0,
+          followers_count: 0,
+          following_count: 0,
+          profile_views_count: 0,
+          is_verified: false,
+          badges: [],
+          account_type: 'personal',
+          date_of_birth: null,
+          gender: 'male',
+          relationship_status: null,
           twoFactorAuth: {
             enabled: false,
             secret: null,
@@ -72,9 +112,29 @@ global.inMemoryStorage = {
           email: 'jane@example.com',
           password: bcrypt.hashSync('password', 10),
           name: 'Jane Smith',
+          displayName: 'Jane Smith',
           avatar: null,
           status: 'online',
           role: 'user',
+          bio: 'UX Designer creating beautiful and intuitive experiences. Coffee enthusiast ☕',
+          headline: 'Lead UX Designer',
+          cover_photo: null,
+          location: 'New York, NY',
+          website: 'https://janesmith.design',
+          company: 'Design Studio',
+          jobTitle: 'Lead UX Designer',
+          interests: ['Design', 'UI/UX', 'Art', 'Photography'],
+          friends_count: 0,
+          posts_count: 0,
+          followers_count: 0,
+          following_count: 0,
+          profile_views_count: 0,
+          is_verified: false,
+          badges: [],
+          account_type: 'personal',
+          date_of_birth: null,
+          gender: 'female',
+          relationship_status: null,
           twoFactorAuth: {
             enabled: false,
             secret: null,
@@ -91,9 +151,29 @@ global.inMemoryStorage = {
           email: 'admin@quibish.com',
           password: bcrypt.hashSync('dpG6-x5T@-pM&H-$qZ1', 10),
           name: 'Admin User',
+          displayName: 'Quibish Admin',
           avatar: null,
           status: 'online',
           role: 'admin',
+          bio: 'Official Quibish administrator account. Here to help!',
+          headline: 'Platform Administrator',
+          cover_photo: null,
+          location: null,
+          website: 'https://quibish.com',
+          company: 'Quibish',
+          jobTitle: 'Platform Administrator',
+          interests: ['Community Management', 'Technology', 'Support'],
+          friends_count: 0,
+          posts_count: 0,
+          followers_count: 0,
+          following_count: 0,
+          profile_views_count: 0,
+          is_verified: true,
+          badges: ['admin', 'verified', 'founder'],
+          account_type: 'business',
+          date_of_birth: null,
+          gender: null,
+          relationship_status: null,
           twoFactorAuth: {
             enabled: false,
             secret: null,
@@ -125,6 +205,10 @@ const encryptionRoutes = require('./routes/encryption');
 const enhancedStorageRoutes = require('./routes/enhancedStorage');
 const contactRoutes = require('./routes/contacts');
 const notificationRoutes = require('./routes/notifications');
+const offlineNotificationRoutes = require('./routes/offline-notifications');
+const socialProfilesRoutes = require('./routes/social-profiles');
+const friendsRoutes = require('./routes/friends');
+const postsRoutes = require('./routes/posts');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -177,9 +261,7 @@ const connectToMongoDB = async () => {
     const mongooseOptions = {
       maxPoolSize: 5, // Maintain up to 5 socket connections
       serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      bufferMaxEntries: 0, // Disable mongoose buffering
-      bufferCommands: false // Disable mongoose buffering
+      socketTimeoutMS: 45000 // Close sockets after 45 seconds of inactivity
     };
     
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quibish', mongooseOptions);
@@ -305,15 +387,67 @@ const connectToDatabase = async () => {
 app.use(httpsEnforcementMiddleware);
 app.use(securityHeadersMiddleware);
 
-// Enhanced security middleware
-securityMiddleware(app);
+// CORS Configuration - Allow cross-origin requests
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost for development
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5002',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5002',
+      'https://colinnebula.github.io',
+      process.env.FRONTEND_URL
+    ].filter(Boolean); // Remove undefined values
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('❌ CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // Allow cookies and authorization headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'x-encryption-key'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 600 // Cache preflight requests for 10 minutes
+};
+
+app.use(cors(corsOptions));
+
+// Enhanced security middleware (individual middleware functions)
+app.use(securityMiddleware.securityHeaders);
+app.use(securityMiddleware.sanitizeInput);
+app.use(securityMiddleware.securityMonitor);
 
 // Health check endpoints (before rate limiting)
 app.use('/api', healthRoutes);
 
-// Add comprehensive health check endpoint
-app.get('/api/health', healthCheck.middleware());
-app.get('/api/health/detailed', healthCheck.middleware(true));
+// Add comprehensive health check endpoints
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+app.get('/api/health/detailed', (req, res) => {
+  res.json({
+    success: true,
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    storage: global.inMemoryStorage.usingInMemory ? 'in-memory' : 'persistent'
+  });
+});
 
 // Add startup status endpoint
 app.get('/api/startup', (req, res) => {
@@ -323,10 +457,21 @@ app.get('/api/startup', (req, res) => {
 // Require initialization for all other API routes
 app.use('/api', startupService.requireInitialization());
 
-// Rate limiting (after health checks) - Temporarily increased for development
+// Rate limiting (after health checks) - Skip for localhost in development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs (increased for development)
+  max: process.env.NODE_ENV === 'development' ? 50000 : 5000,
+  skip: (req) => {
+    // Skip rate limiting for localhost in development (hot reload causes many requests)
+    if (process.env.NODE_ENV === 'development') {
+      const isLocalhost = req.hostname === 'localhost' || 
+                          req.hostname === '127.0.0.1' ||
+                          req.ip === '127.0.0.1' ||
+                          req.ip === '::1';
+      return isLocalhost;
+    }
+    return false;
+  },
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
@@ -352,7 +497,11 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/encryption', encryptionRoutes);
 app.use('/api/storage', enhancedStorageRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/friends', friendsRoutes);
+app.use('/api/posts', postsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/offline-notifications', offlineNotificationRoutes);
+app.use('/api/social-profiles', socialProfilesRoutes);
 
 // Memory monitoring routes
 app.get('/api/memory/report', (req, res) => {

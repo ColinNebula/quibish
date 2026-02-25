@@ -1,0 +1,528 @@
+/* Mobile Layout Fixes - Comprehensive Mobile Responsiveness */
+
+/* ======================
+   MOBILE LAYOUT FIXES
+   ====================== */
+
+/* Hide hamburger on desktop */
+@media screen and (min-width: 769px) {
+  .mobile-menu-btn,
+  button.mobile-menu-btn,
+  .pro-header .mobile-menu-btn,
+  .enhanced-chat-header .mobile-menu-btn {
+    display: none !important;
+  }
+}
+
+/* CRITICAL: Force mobile layout rules with high specificity */
+@media screen and (max-width: 768px) {
+  /* Ensure full viewport usage */
+  html,
+  body,
+  #root {
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Main app container */
+  .App {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Pro Layout - Full screen with overlay sidebar */
+  .pro-layout {
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  /* Main content area - full width */
+  .pro-main {
+    width: 100% !important;
+    height: 100% !important;
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  /* Header - fixed at top */
+  /* DISABLED - Controlled by mobile-final-override.css */
+  /* .pro-header,
+  .enhanced-chat-header {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 56px !important;
+    padding: 10px 12px !important;
+    background: var(--pro-surface, #ffffff) !important;
+    border-bottom: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
+    z-index: 10000 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  } */
+
+  /* Mobile hamburger button - FORCE VISIBILITY - ULTRA SPECIFIC */
+  body .pro-header .mobile-menu-btn,
+  body .enhanced-chat-header .mobile-menu-btn,
+  body .header-left .mobile-menu-btn,
+  body button.mobile-menu-btn,
+  .mobile-menu-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    margin-right: 12px !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: 3px solid white !important;
+    border-radius: 12px !important;
+    color: white !important;
+    font-size: 28px !important;
+    font-weight: bold !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    flex-shrink: 0 !important;
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.3) !important;
+    z-index: 10001 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    order: -1 !important; /* Ensure it's first in flex order */
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5) !important;
+  }
+
+  .mobile-menu-btn:hover,
+  body .mobile-menu-btn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    border-color: white !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6) !important;
+  }
+
+  .mobile-menu-btn:active,
+  body .mobile-menu-btn:active {
+    background: linear-gradient(135deg, #5a3a82 0%, #5666ca 100%) !important;
+    transform: scale(0.95) !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4) !important;
+  }
+
+  /* Header layout - ensure proper flex display */
+  .pro-header .header-left,
+  .enhanced-chat-header .header-left,
+  .header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: visible !important; /* Changed from hidden to visible */
+    position: relative !important;
+    z-index: 10 !important;
+  }
+
+  .conversation-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .conversation-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .conversation-title {
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin: 0 !important;
+  }
+
+  .conversation-status {
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Header actions - compact */
+  .header-actions {
+    display: flex !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .header-actions .action-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 8px !important;
+    font-size: 18px !important;
+  }
+
+  /* Hide extra header actions on small screens */
+  .header-actions .action-btn:nth-child(n+5) {
+    display: none !important;
+  }
+
+  /* Message area - scrollable middle section */
+  /* DISABLED - Controlled by mobile-final-override.css */
+  /* .pro-message-list,
+  .pro-message-area,
+  .pro-content {
+    flex: 1 !important;
+    width: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 16px !important;
+    padding-bottom: 100px !important;
+    -webkit-overflow-scrolling: touch !important;
+  } */
+
+  /* Welcome screen */
+  .pro-welcome-screen {
+    padding: 32px 20px !important;
+    text-align: center !important;
+  }
+
+  .welcome-title {
+    font-size: 28px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .welcome-subtitle {
+    font-size: 16px !important;
+    margin-bottom: 24px !important;
+  }
+
+  .welcome-features {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  /* Input container - fixed at bottom */
+  .pro-chat-input-container,
+  .message-input-container {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    padding: 12px !important;
+    background: var(--pro-surface, #ffffff) !important;
+    border-top: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08) !important;
+    z-index: 95 !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Message input */
+  .message-input-wrapper {
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .pro-input,
+  .message-input {
+    flex: 1 !important;
+    min-height: 42px !important;
+    max-height: 120px !important;
+    padding: 12px 14px !important;
+    font-size: 15px !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
+    background: var(--pro-bg, #f8fafc) !important;
+    resize: none !important;
+    outline: none !important;
+    font-family: inherit !important;
+  }
+
+  .pro-input:focus,
+  .message-input:focus {
+    border-color: var(--pro-primary, #4f46e5) !important;
+    background: #ffffff !important;
+  }
+
+  /* Input action buttons */
+  .input-actions {
+    display: flex !important;
+    gap: 6px !important;
+    align-items: flex-end !important;
+    flex-shrink: 0 !important;
+  }
+
+  .input-action-btn,
+  .send-button {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 20px !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .send-button {
+    background: var(--pro-primary, #4f46e5) !important;
+    color: white !important;
+  }
+
+  .send-button:active {
+    transform: scale(0.9) !important;
+  }
+
+  .input-action-btn {
+    background: transparent !important;
+    color: var(--pro-text-secondary, #64748b) !important;
+  }
+
+  .input-action-btn:active {
+    background: var(--pro-border, rgba(0, 0, 0, 0.05)) !important;
+  }
+
+  /* Message bubbles */
+  .message-bubble,
+  .message {
+    max-width: 85% !important;
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+    padding: 12px 16px !important;
+    margin: 6px 0 !important;
+  }
+
+  /* Sidebar - overlay on mobile - FORCE THESE STYLES */
+  body .pro-layout .pro-sidebar,
+  body .pro-layout .enhanced-sidebar,
+  body .pro-sidebar.enhanced-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    min-width: 280px !important;
+    background: var(--pro-surface, #ffffff) !important;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.2) !important;
+    z-index: 9999 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Show sidebar when not collapsed - FORCE */
+  body .pro-layout .pro-sidebar:not(.collapsed),
+  body .pro-layout .enhanced-sidebar:not(.collapsed),
+  body .pro-sidebar.enhanced-sidebar:not(.collapsed) {
+    transform: translateX(0) !important;
+  }
+
+  /* Hide sidebar when collapsed - FORCE */
+  body .pro-layout .pro-sidebar.collapsed,
+  body .pro-layout .enhanced-sidebar.collapsed,
+  body .pro-sidebar.enhanced-sidebar.collapsed {
+    transform: translateX(-100%) !important;
+  }
+
+  /* Sidebar overlay backdrop - FORCE */
+  body .pro-sidebar-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(4px) !important;
+    z-index: 9998 !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    -webkit-tap-highlight-color: transparent !important;
+    pointer-events: auto !important;
+  }
+
+  /* Conversation items in sidebar */
+  .conversation-item {
+    padding: 14px 16px !important;
+    min-height: 72px !important;
+  }
+
+  .conversation-item .conversation-avatar {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  /* Safe area insets for notched devices */
+  @supports (padding: max(0px)) {
+    .pro-header,
+    .enhanced-chat-header {
+      padding-top: max(10px, env(safe-area-inset-top)) !important;
+      padding-left: max(12px, env(safe-area-inset-left)) !important;
+      padding-right: max(12px, env(safe-area-inset-right)) !important;
+    }
+
+    .pro-chat-input-container,
+    .message-input-container {
+      padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+      padding-left: max(12px, env(safe-area-inset-left)) !important;
+      padding-right: max(12px, env(safe-area-inset-right)) !important;
+    }
+
+    .pro-sidebar,
+    .enhanced-sidebar {
+      padding-top: max(0px, env(safe-area-inset-top)) !important;
+      padding-bottom: max(0px, env(safe-area-inset-bottom)) !important;
+    }
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 380px) {
+  .pro-header,
+  .enhanced-chat-header {
+    min-height: 52px !important;
+    padding: 8px !important;
+  }
+
+  .conversation-title {
+    font-size: 14px !important;
+  }
+
+  .conversation-status {
+    font-size: 11px !important;
+  }
+
+  .header-actions .action-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    font-size: 16px !important;
+  }
+
+  .mobile-menu-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    font-size: 22px !important;
+  }
+
+  .pro-sidebar,
+  .enhanced-sidebar {
+    width: 90vw !important;
+  }
+}
+
+/* Landscape mode on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .pro-header,
+  .enhanced-chat-header {
+    min-height: 48px !important;
+    padding: 6px 12px !important;
+  }
+
+  .pro-chat-input-container,
+  .message-input-container {
+    padding: 8px !important;
+  }
+
+  .pro-message-list,
+  .pro-message-area {
+    padding: 12px !important;
+    padding-bottom: 80px !important;
+  }
+
+  .welcome-title {
+    font-size: 24px !important;
+  }
+
+  .welcome-subtitle {
+    font-size: 14px !important;
+  }
+}
+
+/* High contrast mode improvements */
+@media (prefers-contrast: high) {
+  @media (max-width: 768px) {
+    .pro-header,
+    .enhanced-chat-header {
+      border-bottom-width: 2px !important;
+    }
+
+    .pro-chat-input-container,
+    .message-input-container {
+      border-top-width: 2px !important;
+    }
+
+    .pro-input,
+    .message-input {
+      border-width: 2px !important;
+    }
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  @media (max-width: 768px) {
+    .pro-sidebar,
+    .enhanced-sidebar {
+      transition: none !important;
+    }
+
+    .mobile-menu-btn,
+    .input-action-btn,
+    .send-button {
+      transition: none !important;
+    }
+  }
+}

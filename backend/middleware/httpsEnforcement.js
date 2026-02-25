@@ -11,10 +11,12 @@ const httpsEnforcementMiddleware = (req, res, next) => {
       // Redirect to HTTPS
       return res.redirect(301, `https://${req.get('host')}${req.url}`);
     }
+    
+    // Add strict security headers ONLY in production
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   }
 
-  // Add security headers for all environments
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  // Add basic security headers for all environments (but not HSTS in dev)
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -31,7 +33,7 @@ const securityHeadersMiddleware = (req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
   // Content Security Policy
-  const csp = [
+  const cspPolicies = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // TODO: Remove unsafe-* in production
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -42,10 +44,15 @@ const securityHeadersMiddleware = (req, res, next) => {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
-    "upgrade-insecure-requests"
-  ].join('; ');
+    "frame-ancestors 'none'"
+  ];
   
+  // Only upgrade insecure requests in production
+  if (process.env.NODE_ENV === 'production') {
+    cspPolicies.push("upgrade-insecure-requests");
+  }
+  
+  const csp = cspPolicies.join('; ');
   res.setHeader('Content-Security-Policy', csp);
   
   next();

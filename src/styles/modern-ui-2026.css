@@ -1,0 +1,952 @@
+/* ============================================
+   MODERN UI 2026 - CLEAN & CONTEMPORARY
+   Complete UI Restructure for Quibish
+   ============================================ */
+
+/* ============================================
+   1. DESIGN TOKENS & VARIABLES
+   ============================================ */
+
+:root {
+  /* === PRIMARY COLORS === */
+  --color-primary: #6366f1;
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+  
+  /* === NEUTRAL GRAYS === */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  /* === SEMANTIC COLORS === */
+  --color-success: #10b981;
+  --color-success-light: #d1fae5;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-error: #ef4444;
+  --color-error-light: #fee2e2;
+  --color-info: #3b82f6;
+  --color-info-light: #dbeafe;
+  
+  /* === SURFACES === */
+  --surface-base: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(255, 255, 255, 0.98);
+  --surface-sunken: #f9fafb;
+  
+  /* === BORDERS === */
+  --border-subtle: #f3f4f6;
+  --border-default: #e5e7eb;
+  --border-strong: #d1d5db;
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 20px;
+  --border-radius-full: 9999px;
+  
+  /* === SHADOWS === */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.15);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  
+  /* === TYPOGRAPHY === */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* === SPACING === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  
+  /* === TRANSITIONS === */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slowest: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* === Z-INDEX SCALE === */
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-fixed: 1200;
+  --z-modal-backdrop: 1300;
+  --z-modal: 1400;
+  --z-popover: 1500;
+  --z-tooltip: 1600;
+  --z-toast: 1700;
+}
+
+/* === DARK THEME === */
+[data-theme="dark"] {
+  --color-primary: #818cf8;
+  --color-primary-50: #312e81;
+  --color-primary-100: #3730a3;
+  --color-primary-900: #eef2ff;
+  
+  --surface-base: #0f172a;
+  --surface-elevated: #1e293b;
+  --surface-overlay: rgba(30, 41, 59, 0.98);
+  --surface-sunken: #020617;
+  
+  --border-subtle: #1e293b;
+  --border-default: #334155;
+  --border-strong: #475569;
+  
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   2. BASE STYLES & RESET
+   ============================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-gray-900);
+  background: var(--surface-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+[data-theme="dark"] body {
+  color: var(--color-gray-100);
+}
+
+/* ============================================
+   3. MODERN LAYOUT SYSTEM
+   ============================================ */
+
+.app {
+  min-height: 100vh;
+  background: var(--surface-base);
+  transition: background var(--transition-base);
+}
+
+.modern-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.modern-grid {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.modern-flex {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.modern-flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modern-flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ============================================
+   4. MODERN CARDS & SURFACES
+   ============================================ */
+
+.modern-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.modern-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.modern-card-flat {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-4);
+}
+
+.modern-glass {
+  background: var(--surface-overlay);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================
+   5. MODERN BUTTONS
+   ============================================ */
+
+.modern-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  border: none;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.modern-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.modern-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Button Variants */
+.modern-btn-primary {
+  background: var(--color-primary-600);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.modern-btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-700);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.modern-btn-primary:active:not(:disabled) {
+  background: var(--color-primary-800);
+  transform: translateY(0);
+}
+
+.modern-btn-secondary {
+  background: var(--surface-elevated);
+  color: var(--color-gray-700);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-xs);
+}
+
+[data-theme="dark"] .modern-btn-secondary {
+  color: var(--color-gray-200);
+}
+
+.modern-btn-secondary:hover:not(:disabled) {
+  background: var(--color-gray-50);
+  border-color: var(--border-strong);
+}
+
+[data-theme="dark"] .modern-btn-secondary:hover:not(:disabled) {
+  background: var(--color-gray-700);
+}
+
+.modern-btn-ghost {
+  background: transparent;
+  color: var(--color-gray-600);
+}
+
+[data-theme="dark"] .modern-btn-ghost {
+  color: var(--color-gray-300);
+}
+
+.modern-btn-ghost:hover:not(:disabled) {
+  background: var(--color-gray-100);
+  color: var(--color-gray-900);
+}
+
+[data-theme="dark"] .modern-btn-ghost:hover:not(:disabled) {
+  background: var(--color-gray-800);
+  color: var(--color-gray-100);
+}
+
+.modern-btn-danger {
+  background: var(--color-error);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.modern-btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+  box-shadow: var(--shadow-md);
+}
+
+/* Button Sizes */
+.modern-btn-sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-xs);
+}
+
+.modern-btn-lg {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--font-size-base);
+}
+
+/* Icon Button */
+.modern-btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--border-radius-full);
+}
+
+.modern-btn-icon-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.modern-btn-icon-lg {
+  width: 48px;
+  height: 48px;
+}
+
+/* ============================================
+   6. MODERN INPUTS
+   ============================================ */
+
+.modern-input,
+.modern-textarea,
+.modern-select {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  color: var(--color-gray-900);
+  background: var(--surface-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+[data-theme="dark"] .modern-input,
+[data-theme="dark"] .modern-textarea,
+[data-theme="dark"] .modern-select {
+  color: var(--color-gray-100);
+  background: var(--surface-elevated);
+}
+
+.modern-input::placeholder,
+.modern-textarea::placeholder {
+  color: var(--color-gray-400);
+}
+
+.modern-input:hover,
+.modern-textarea:hover,
+.modern-select:hover {
+  border-color: var(--border-strong);
+}
+
+.modern-input:focus,
+.modern-textarea:focus,
+.modern-select:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+}
+
+[data-theme="dark"] .modern-input:focus,
+[data-theme="dark"] .modern-textarea:focus,
+[data-theme="dark"] .modern-select:focus {
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+.modern-input:disabled,
+.modern-textarea:disabled,
+.modern-select:disabled {
+  background: var(--color-gray-50);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.modern-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Input with Icon */
+.modern-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.modern-input-icon {
+  position: absolute;
+  left: var(--space-4);
+  color: var(--color-gray-400);
+  pointer-events: none;
+}
+
+.modern-input-group .modern-input {
+  padding-left: calc(var(--space-4) + 24px);
+}
+
+/* ============================================
+   7. MODERN NAVIGATION
+   ============================================ */
+
+.modern-nav {
+  background: var(--surface-elevated);
+  border-bottom: 1px solid var(--border-default);
+  padding: var(--space-4) var(--space-6);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.modern-nav-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modern-nav-brand {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-600);
+  text-decoration: none;
+}
+
+.modern-nav-menu {
+  display: flex;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.modern-nav-item {
+  display: inline-flex;
+}
+
+.modern-nav-link {
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-gray-600);
+  text-decoration: none;
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .modern-nav-link {
+  color: var(--color-gray-300);
+}
+
+.modern-nav-link:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-900);
+}
+
+[data-theme="dark"] .modern-nav-link:hover {
+  background: var(--color-gray-800);
+  color: var(--color-gray-100);
+}
+
+.modern-nav-link.active {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+
+[data-theme="dark"] .modern-nav-link.active {
+  background: var(--color-primary-900);
+  color: var(--color-primary-200);
+}
+
+/* ============================================
+   8. MODERN SIDEBAR
+   ============================================ */
+
+.modern-sidebar {
+  width: 280px;
+  height: 100vh;
+  background: var(--surface-elevated);
+  border-right: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: var(--z-fixed);
+  transition: transform var(--transition-base);
+}
+
+.modern-sidebar-header {
+  padding: var(--space-6) var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.modern-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.modern-sidebar-footer {
+  padding: var(--space-4);
+  border-top: 1px solid var(--border-default);
+}
+
+.modern-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-gray-700);
+  text-decoration: none;
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  margin-bottom: var(--space-1);
+}
+
+[data-theme="dark"] .modern-sidebar-item {
+  color: var(--color-gray-200);
+}
+
+.modern-sidebar-item:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-900);
+}
+
+[data-theme="dark"] .modern-sidebar-item:hover {
+  background: var(--color-gray-800);
+}
+
+.modern-sidebar-item.active {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+
+[data-theme="dark"] .modern-sidebar-item.active {
+  background: var(--color-primary-900);
+  color: var(--color-primary-200);
+}
+
+/* ============================================
+   9. MODERN CHAT INTERFACE
+   ============================================ */
+
+.modern-chat-container {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100vh;
+  background: var(--surface-base);
+}
+
+.modern-chat-sidebar {
+  background: var(--surface-elevated);
+  border-right: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modern-chat-sidebar-header {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface-elevated);
+}
+
+.modern-chat-sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.modern-chat-main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modern-chat-header {
+  padding: var(--space-4) var(--space-6);
+  background: var(--surface-elevated);
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modern-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6);
+  background: var(--surface-sunken);
+}
+
+.modern-chat-input-container {
+  padding: var(--space-4) var(--space-6);
+  background: var(--surface-elevated);
+  border-top: 1px solid var(--border-default);
+}
+
+/* Message Bubble */
+.modern-message {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  max-width: 70%;
+}
+
+.modern-message.sent {
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
+
+.modern-message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--border-radius-full);
+  flex-shrink: 0;
+}
+
+.modern-message-content {
+  flex: 1;
+}
+
+.modern-message-bubble {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--border-radius-lg);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-default);
+  word-wrap: break-word;
+}
+
+.modern-message.sent .modern-message-bubble {
+  background: var(--color-primary-600);
+  color: white;
+  border-color: var(--color-primary-600);
+}
+
+.modern-message-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-400);
+  margin-top: var(--space-1);
+}
+
+/* Conversation List Item */
+.modern-conversation-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-1);
+}
+
+.modern-conversation-item:hover {
+  background: var(--color-gray-50);
+}
+
+[data-theme="dark"] .modern-conversation-item:hover {
+  background: var(--color-gray-800);
+}
+
+.modern-conversation-item.active {
+  background: var(--color-primary-50);
+}
+
+[data-theme="dark"] .modern-conversation-item.active {
+  background: var(--color-primary-900);
+}
+
+.modern-conversation-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--border-radius-full);
+  flex-shrink: 0;
+}
+
+.modern-conversation-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.modern-conversation-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-1);
+}
+
+[data-theme="dark"] .modern-conversation-name {
+  color: var(--color-gray-100);
+}
+
+.modern-conversation-preview {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modern-conversation-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--space-2);
+  background: var(--color-primary-600);
+  color: white;
+  border-radius: var(--border-radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   10. MODERN UTILITIES
+   ============================================ */
+
+.modern-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--border-radius-md);
+  white-space: nowrap;
+}
+
+.modern-badge-primary {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+
+.modern-badge-success {
+  background: var(--color-success-light);
+  color: #047857;
+}
+
+.modern-badge-warning {
+  background: var(--color-warning-light);
+  color: #92400e;
+}
+
+.modern-badge-error {
+  background: var(--color-error-light);
+  color: #991b1b;
+}
+
+.modern-badge-gray {
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+}
+
+.modern-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-full);
+  object-fit: cover;
+  background: var(--color-gray-200);
+}
+
+.modern-avatar-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.modern-avatar-lg {
+  width: 56px;
+  height: 56px;
+}
+
+.modern-avatar-xl {
+  width: 80px;
+  height: 80px;
+}
+
+.modern-divider {
+  height: 1px;
+  background: var(--border-default);
+  margin: var(--space-4) 0;
+}
+
+.modern-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-gray-200) 25%,
+    var(--color-gray-100) 50%,
+    var(--color-gray-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: var(--border-radius-md);
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================
+   11. RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .modern-chat-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .modern-chat-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 85%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    z-index: var(--z-modal);
+    box-shadow: var(--shadow-2xl);
+  }
+  
+  .modern-chat-sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .modern-message {
+    max-width: 85%;
+  }
+  
+  .modern-sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .modern-sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .modern-container {
+    padding: 0 var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --space-6: 1rem;
+    --space-8: 1.5rem;
+  }
+  
+  .modern-chat-header {
+    padding: var(--space-3) var(--space-4);
+  }
+  
+  .modern-chat-messages {
+    padding: var(--space-4);
+  }
+  
+  .modern-chat-input-container {
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
+/* ============================================
+   12. ACCESSIBILITY
+   ============================================ */
+
+.modern-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.modern-focus-visible:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

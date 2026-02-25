@@ -191,10 +191,11 @@
 
 /* Professional layout - main container */
 .pro-layout {
-  /* Use a two-column grid: sidebar + content. Collapsing the sidebar adjusts the first column. */
+  /* Use a two-column grid: sidebar (LEFT) + content (RIGHT). Collapsing the sidebar adjusts the first column. */
   display: grid;
   grid-template-columns: var(--pro-sidebar-width) 1fr;
   grid-template-rows: 1fr;
+  grid-template-areas: "sidebar main";
   width: 100%;
   height: calc(var(--vh, 1vh) * 100);
   background-color: transparent;
@@ -207,13 +208,25 @@
   backdrop-filter: blur(1px);
 }
 
+/* Pro-main base styles */
+.pro-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
 /* Content area grid layout */
 .pro-content {
-  display: grid;
-  grid-template-rows: 1fr auto;
-  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   flex: 1;
-  height: calc(100vh - 88px);
+  height: auto;
+  min-height: 0;
 }
 
 /* When sidebar is collapsed, adjust grid template */
@@ -236,10 +249,10 @@
   }
 }
 
-/* Professional content area */
+/* Professional content area - RIGHT side with messages above and input below */
 .pro-content {
-  display: grid;
-  grid-template-rows: 1fr auto;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(135deg, var(--pro-surface) 0%, var(--pro-gray-50) 100%);
   backdrop-filter: blur(20px);
   border-radius: 24px 0 0 0;
@@ -252,7 +265,8 @@
   min-height: 0;
   padding: 0;
   grid-column: 2;
-  height: 100%;
+  grid-area: main;
+  height: auto;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-bottom: none;
   position: relative;
@@ -260,19 +274,27 @@
   z-index: 1;
 }
 
-/* Messages area takes available space */
+/* Messages area takes available space (flex-grow) */
 .pro-content > .pro-message-container,
-.pro-content > .pro-chat-messages {
-  grid-row: 1;
-  overflow: hidden;
+.pro-content > .pro-chat-messages,
+.pro-content > .pro-message-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  padding: 16px 20px;
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
-/* Input bar at bottom */
+/* Input bar at bottom (flex-shrink: 0 keeps it at bottom) */
 .pro-content > .enhanced-input-container,
-.pro-content > .enhanced-input-bar {
-  grid-row: 2;
+.pro-content > .enhanced-input-bar,
+.pro-content > .pro-chat-input-container {
+  flex: 0 0 auto;
   z-index: 2;
 }
 
@@ -311,20 +333,14 @@
 /* Note: Detailed sidebar styles are in ProSidebar.css */
 /* Layout-specific sidebar positioning only */
 .pro-layout .pro-sidebar {
-  /* Grid positioning handled by layout */
+  /* Grid positioning handled by layout - ALWAYS ON LEFT */
   grid-column: 1;
+  grid-area: sidebar;
 }
 
 .pro-layout .pro-sidebar.collapsed {
   /* Layout responds to collapsed class */
   width: var(--pro-sidebar-collapsed-width);
-}
-
-/* Make header respect the header height token */
-.pro-header {
-  height: var(--pro-header-height);
-  padding: 12px 20px;
-  align-items: center;
 }
 
 /* Responsive styles handled in ProResponsive.css */
@@ -363,8 +379,9 @@
   }
 }
 
-/* Professional header */
+/* Professional header - single authoritative rule for ProLayout */
 .pro-header {
+  height: var(--pro-header-height);
   background: linear-gradient(90deg, rgba(var(--pro-accent-rgb, 14,165,233),0.03), rgba(var(--pro-primary-rgb,79,70,229),0.02));
   padding: 12px 20px;
   display: flex;
@@ -563,7 +580,7 @@
   display: block;
 }
 
-/* Professional main content container */
+/* Professional main content container - RIGHT side */
 .pro-main {
   display: flex;
   flex-direction: column;
@@ -572,6 +589,10 @@
   position: relative;
   z-index: 1;
   flex: 1;
+  min-width: 0; /* Prevent flex item from overflowing */
+  width: 100%;
+  grid-column: 2;
+  grid-area: main;
 }
 
 /* Ensure header is always visible */
@@ -916,6 +937,75 @@
   pointer-events: auto;
 }
 
+/* Mobile hamburger menu button */
+.mobile-menu-btn {
+  display: none;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--pro-text);
+  font-size: 24px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-right: 12px;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--pro-border, rgba(0, 0, 0, 0.05));
+}
+
+.mobile-menu-btn:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+  
+  /* Override grid layout on mobile */
+  .pro-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: unset !important;
+    grid-template-areas: unset !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .pro-main,
+  .pro-content {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Remove desktop card styling on mobile — prevents visual gap under header */
+  .pro-content {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #f5f5f5 !important;
+  }
+}
+
 /* Professional input area */
 .pro-input-area {
   padding: 16px 20px;
@@ -1120,61 +1210,106 @@
 }
 
 /* Responsive Layout Overrides */
-/* Mobile: Maintain grid with compressed sidebar */
-@media (max-width: 768px) {
+/* Mobile: Full-width main content with overlay sidebar */
+@media screen and (max-width: 768px) {
   .pro-layout {
-    display: grid !important;
-    grid-template-columns: 60px 1fr !important;
-    grid-template-rows: 1fr !important;
-    height: 100vh;
-    height: 100dvh; /* Dynamic viewport height */
-    overflow: hidden;
-    gap: 0;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    height: 100dvh !important; /* Dynamic viewport height */
+    overflow: hidden !important;
+    gap: 0 !important;
+    position: relative !important;
   }
 
-  .pro-sidebar {
-    grid-column: 1;
-    width: 60px !important;
-    min-width: 60px !important;
-    overflow-x: hidden;
+  /* Sidebar - hidden by default on mobile, shows as overlay when toggled */
+  .pro-layout .pro-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    min-width: 280px !important;
+    max-width: 85vw !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+    z-index: 9999 !important;
+    background: var(--pro-surface, #ffffff) !important;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
   }
 
+  /* Show sidebar when not collapsed */
+  .pro-layout .pro-sidebar:not(.collapsed) {
+    transform: translateX(0) !important;
+  }
+
+  /* Main content takes full width */
   .pro-main {
-    grid-column: 2 !important;
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    flex-direction: column;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   .pro-content {
-    height: 100%;
-    grid-template-rows: 1fr auto;
-    overflow: hidden;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    grid-template-rows: unset !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 }
 
 @media (max-width: 480px) {
   .pro-content {
-    height: calc(100vh - 70px);
-    height: calc(100dvh - 70px);
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  .pro-layout .pro-sidebar {
+    width: 85vw !important;
+    max-width: 320px !important;
   }
 }
 
-/* Tablet and Desktop: Always maintain grid layout with sidebar left, content right */
-@media (min-width: 769px) {
+/* Specific fix for 430px width devices */
+@media (max-width: 430px) {
+  .pro-layout .pro-sidebar {
+    width: 90vw !important;
+    max-width: 340px !important;
+    position: fixed !important;
+    z-index: 9999 !important;
+  }
+  
+  /* Ensure sidebar visibility states work correctly */
+  .pro-layout .pro-sidebar.collapsed {
+    transform: translateX(-100%) !important;
+  }
+  
+  .pro-layout .pro-sidebar:not(.collapsed) {
+    transform: translateX(0) !important;
+  }
+}
+
+/* Tablet and Desktop: Always maintain grid layout with sidebar LEFT, content RIGHT */
+@media screen and (min-width: 769px) {
   .pro-layout {
     display: grid !important;
     grid-template-columns: var(--pro-sidebar-width) 1fr !important;
-    grid-template-rows: 1fr;
-    flex-direction: unset;
-    height: 100vh;
-    overflow: hidden;
+    grid-template-rows: 1fr !important;
+    grid-template-areas: "sidebar main" !important;
+    flex-direction: unset !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    gap: 0 !important;
   }
 
   .pro-layout:has(.pro-sidebar.collapsed) {
@@ -1185,24 +1320,123 @@
     grid-template-columns: var(--pro-sidebar-collapsed-width) 1fr !important;
   }
 
-  /* Ensure sidebar stays visible and in left column */
+  /* Ensure sidebar stays visible and in LEFT column */
   .pro-sidebar {
-    grid-column: 1;
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    overflow-y: auto;
+    grid-column: 1 !important;
+    grid-area: sidebar !important;
+    position: relative !important;
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    transform: translateX(0) !important;
+    left: 0 !important;
+    top: 0 !important;
   }
 
-  /* Ensure main content stays in right column */
+  /* Ensure main content stays in RIGHT column with flexbox layout */
   .pro-main {
-    grid-column: 2;
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    grid-column: 2 !important;
+    grid-area: main !important;
+    position: relative !important;
+    width: 100% !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  /* Header at top (if present) */
+  .pro-main > .pro-header,
+  .pro-main > .enhanced-chat-header {
+    flex: 0 0 auto !important;
+    order: 1;
+  }
+  
+  /* Messages in middle - takes remaining space */
+  .pro-main > .pro-message-list {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    min-height: 0 !important;
+    order: 2;
+  }
+  
+  /* Input container at BOTTOM - fixed size */
+  .pro-main > .pro-chat-input-container,
+  .pro-main > .message-input-container {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    position: relative !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1000 !important;
+    bottom: 0 !important;
+    order: 3;
+  }
+  
+  /* CRITICAL: Force sidebar visibility on desktop - override mobile rules */
+  .pro-layout .pro-sidebar,
+  .pro-sidebar {
+    position: relative !important;
+    transform: translateX(0) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: auto !important;
+    height: 100vh !important;
+    z-index: 1 !important;
+    box-shadow: none !important;
+    background: var(--pro-surface, white) !important;
+    grid-column: 1 !important;
+    grid-area: sidebar !important;
+  }
+  
+  /* Override collapsed state on desktop */
+  .pro-layout .pro-sidebar.collapsed {
+    transform: translateX(0) !important;
+    width: var(--pro-sidebar-collapsed-width) !important;
+    min-width: var(--pro-sidebar-collapsed-width) !important;
+  }
+  
+  /* Update grid when sidebar is collapsed */
+  .pro-layout:has(.pro-sidebar.collapsed),
+  .pro-layout.sidebar-collapsed {
+    grid-template-columns: var(--pro-sidebar-collapsed-width) 1fr !important;
+  }
+  
+  /* Force input container visibility on desktop - additional specificity */
+  .pro-chat-input-container,
+  .message-input-container,
+  .pro-main .pro-chat-input-container,
+  .pro-main .message-input-container {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    transform: none !important;
+    z-index: 100 !important;
+  }
+  
+  /* Hide mobile hamburger menu on desktop */
+  .mobile-menu-btn,
+  button.mobile-menu-btn,
+  .header-left .mobile-menu-btn {
+    display: none !important;
+    visibility: hidden !important;
   }
 }
 
@@ -1216,10 +1450,19 @@
   }
 
   .pro-layout {
-    grid-template-columns: var(--pro-sidebar-width) 1fr;
+    grid-template-columns: var(--pro-sidebar-width) 1fr !important;
+    grid-template-areas: "sidebar main" !important;
+  }
+  
+  .pro-sidebar {
+    grid-column: 1 !important;
+    grid-area: sidebar !important;
+    width: var(--pro-sidebar-width) !important;
   }
 
   .pro-main {
+    grid-column: 2 !important;
+    grid-area: main !important;
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 24px;
@@ -1275,12 +1518,21 @@
   }
 
   .pro-layout {
-    grid-template-columns: var(--pro-sidebar-width) 1fr;
+    grid-template-columns: var(--pro-sidebar-width) 1fr !important;
+    grid-template-areas: \"sidebar main\" !important;
     max-width: 2400px;
     margin: 0 auto;
   }
+  
+  .pro-sidebar {
+    grid-column: 1 !important;
+    grid-area: sidebar !important;
+    width: var(--pro-sidebar-width) !important;
+  }
 
   .pro-main {
+    grid-column: 2 !important;
+    grid-area: main !important;
     max-width: 1800px;
     padding: 0 40px;
   }
@@ -1702,3 +1954,41 @@
     max-width: 100%;
   }
 }
+
+/* Additional fixes for wider screens */
+@media (min-width: 1440px) {
+  .pro-layout {
+    display: grid !important;
+    grid-template-columns: var(--pro-sidebar-width) 1fr !important;
+    grid-template-areas: "sidebar main" !important;
+  }
+  
+  .pro-sidebar {
+    grid-column: 1 !important;
+    grid-area: sidebar !important;
+  }
+  
+  .pro-main {
+    grid-column: 2 !important;
+    grid-area: main !important;
+  }
+}
+
+@media (min-width: 1920px) {
+  .pro-layout {
+    display: grid !important;
+    grid-template-columns: var(--pro-sidebar-width) 1fr !important;
+    grid-template-areas: "sidebar main" !important;
+  }
+  
+  .pro-sidebar {
+    grid-column: 1 !important;
+    grid-area: sidebar !important;
+  }
+  
+  .pro-main {
+    grid-column: 2 !important;
+    grid-area: main !important;
+  }
+}
+

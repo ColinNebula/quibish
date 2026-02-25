@@ -211,6 +211,7 @@ router.post('/login', sanitizeInput, validateAuthInput, async (req, res) => {
     }
     
     console.log('Login successful for:', username);
+    console.log('Returning user object:', JSON.stringify({ hasUser: !!userObject, hasToken: !!token }));
     
     res.json({
       success: true,

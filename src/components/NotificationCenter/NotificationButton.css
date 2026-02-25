@@ -1,0 +1,218 @@
+/* Notification Button Styles */
+
+.notification-button {
+  position: relative;
+  background: transparent;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--text-color, #333);
+}
+
+.notification-button:hover {
+  background: var(--hover-bg, #f5f5f5);
+  border-color: var(--primary-color, #007bff);
+  transform: translateY(-1px);
+}
+
+.notification-button:active {
+  transform: translateY(0);
+}
+
+.notification-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.notification-icon {
+  position: relative;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #dc3545;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  animation: notificationBadgeAppear 0.3s ease-out;
+}
+
+@keyframes notificationBadgeAppear {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.notification-pulse {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #007bff;
+  animation: notificationPulse 2s infinite;
+  pointer-events: none;
+}
+
+@keyframes notificationPulse {
+  0% {
+    opacity: 1;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+.notification-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid var(--primary-color, #007bff);
+  border-radius: 50%;
+  animation: notificationLoading 1s linear infinite;
+}
+
+@keyframes notificationLoading {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* New notification animation */
+.notification-button.has-new {
+  animation: notificationButtonBounce 0.6s ease-out;
+}
+
+@keyframes notificationButtonBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-4px);
+  }
+  60% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Unread state */
+.notification-button.has-unread {
+  border-color: var(--primary-color, #007bff);
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.notification-button.has-unread:hover {
+  background: rgba(0, 123, 255, 0.2);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .notification-button {
+    border-color: #555;
+    color: #e0e0e0;
+  }
+  
+  .notification-button:hover {
+    background: #333;
+    border-color: #0066cc;
+  }
+  
+  .notification-button.has-unread {
+    border-color: #0066cc;
+    background: rgba(0, 102, 204, 0.2);
+  }
+  
+  .notification-button.has-unread:hover {
+    background: rgba(0, 102, 204, 0.3);
+  }
+  
+  .notification-badge {
+    border-color: #2a2a2a;
+  }
+  
+  .notification-loading {
+    border-color: #555;
+    border-top-color: #0066cc;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .notification-button {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .notification-icon {
+    font-size: 16px;
+  }
+  
+  .notification-badge {
+    top: -6px;
+    right: -6px;
+    font-size: 9px;
+    min-width: 14px;
+    height: 14px;
+    padding: 1px 4px;
+  }
+}
+
+/* Accessibility */
+.notification-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-button,
+  .notification-badge,
+  .notification-pulse {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .notification-button {
+    border-width: 2px;
+  }
+  
+  .notification-badge {
+    border-width: 3px;
+  }
+}

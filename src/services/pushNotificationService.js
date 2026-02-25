@@ -43,7 +43,7 @@ class PushNotificationService {
   // Register service worker for push notifications
   async registerServiceWorker() {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      const registration = await navigator.serviceWorker.register(`${process.env.PUBLIC_URL}/sw.js`, { scope: `${process.env.PUBLIC_URL}/` });
       console.log('✅ Service Worker registered for notifications');
       return registration;
     } catch (error) {

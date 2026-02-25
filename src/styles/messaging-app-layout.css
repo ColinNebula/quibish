@@ -1,0 +1,382 @@
+/* ============================================
+   MODERN MESSAGING APP LAYOUT (2026)
+   WhatsApp/Telegram/iMessage Inspired Design
+   ============================================ */
+
+/* Research-Based Layout Principles:
+   - Header: Compact (56-60px) sticky header
+   - Messages: Fills available space, smooth scrolling
+   - Input: Sticky footer (60-70px), always accessible
+   - No wasted space, clean transitions
+   ========================================== */
+
+/* ==========================================
+   MOBILE LAYOUT (≤768px)
+   ========================================== */
+@media (max-width: 768px) {
+  /* Main container - full viewport height */
+  .pro-main {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    position: relative !important;
+  }
+
+  /* Content area fills remaining space after header - NOT full viewport */
+  .pro-content {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    position: relative !important;
+  }
+  
+  /* Header - Compact header (WhatsApp-style) - CRITICAL FOR NOTCHED DEVICES */
+  .pro-header,
+  .enhanced-chat-header {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important;
+    max-height: none !important;
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 16px 8px 16px !important;
+    position: relative !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Message Area - Fills remaining space (Telegram-style) */
+  .pro-message-list,
+  .messages-container,
+  .pro-message-area {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 16px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+    background: #f5f5f5 !important;
+    position: relative !important;
+    
+    /* Smooth scrolling like modern apps */
+    scroll-behavior: smooth !important;
+    scroll-padding-bottom: 20px !important;
+  }
+  
+  /* Input Container - Sticky footer (iMessage-style) */
+  .pro-chat-input-container,
+  .message-input-container,
+  .input-container {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 64px !important;
+    max-height: 120px !important;
+    padding: 12px 16px !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 90 !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04) !important;
+    margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    order: 999 !important; /* Force to bottom */
+  }
+  
+  /* Message Bubbles - WhatsApp/iMessage style */
+  .pro-message-blurb,
+  .message-bubble {
+    max-width: 75% !important;
+    width: fit-content !important;
+    margin: 4px 0 !important;
+    padding: 10px 14px !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+  
+  /* Sent messages (right-aligned like WhatsApp) */
+  .pro-message-container.self .pro-message-blurb,
+  .message-bubble.sent {
+    align-self: flex-end !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    margin-left: auto !important;
+  }
+  
+  /* Received messages (left-aligned) */
+  .pro-message-container:not(.self) .pro-message-blurb,
+  .message-bubble:not(.sent) {
+    align-self: flex-start !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #000 !important;
+    margin-right: auto !important;
+  }
+  
+  /* Input wrapper - centered like Telegram */
+  .input-wrapper,
+  .message-input-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Message input field - rounded like iMessage */
+  .message-input,
+  .pro-input,
+  textarea.message-input {
+    flex: 1 !important;
+    min-height: 40px !important;
+    max-height: 96px !important;
+    padding: 10px 16px !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    border-radius: 20px !important;
+    background: rgba(245, 245, 245, 0.9) !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    resize: none !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .message-input:focus,
+  .pro-input:focus {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-color: #667eea !important;
+  }
+  
+  /* Send button - circular like WhatsApp */
+  .send-button,
+  .pro-send-button,
+  button[type="submit"] {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: transform 0.2s ease !important;
+  }
+  
+  .send-button:active,
+  .pro-send-button:active {
+    transform: scale(0.95) !important;
+  }
+  
+  /* Attachment buttons */
+  .attach-btn,
+  .action-btn,
+  .input-action-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    border: none !important;
+    color: #667eea !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+  }
+}
+
+/* ==========================================
+   IPHONE 14 PRO MAX SPECIFIC
+   ========================================== */
+@media only screen and (max-width: 430px) and (min-height: 800px) {
+  /* Optimize for notched devices */
+  .pro-header,
+  .enhanced-chat-header {
+    min-height: calc(56px + env(safe-area-inset-top, 44px)) !important;
+    padding-top: calc(8px + env(safe-area-inset-top, 44px)) !important;
+  }
+  
+  .pro-message-list,
+  .messages-container {
+    /* Extra padding at bottom to ensure last message is visible */
+    padding-bottom: 140px !important; /* Increased from 24px to prevent input overlap */
+  }
+  
+  .pro-chat-input-container,
+  .message-input-container {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 34px)) !important;
+  }
+}
+
+/* ==========================================
+   LANDSCAPE ORIENTATION
+   ========================================== */
+@media (max-width: 768px) and (orientation: landscape) {
+  /* More compact in landscape */
+  .pro-header,
+  .enhanced-chat-header {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 6px 12px !important;
+  }
+  
+  .pro-message-list {
+    padding: 12px !important;
+  }
+  
+  .pro-chat-input-container,
+  .message-input-container {
+    min-height: 56px !important;
+    padding: 8px 12px !important;
+  }
+}
+
+/* ==========================================
+   TABLET (769px - 1024px)
+   ========================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .pro-message-list {
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    padding: 24px !important;
+  }
+  
+  .pro-chat-input-container,
+  .message-input-container {
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    padding: 16px 24px !important;
+  }
+  
+  .pro-message-blurb,
+  .message-bubble {
+    max-width: 65% !important;
+  }
+}
+
+/* ==========================================
+   DESKTOP (>1024px)
+   ========================================== */
+@media (min-width: 1025px) {
+  .pro-message-list {
+    max-width: 900px !important;
+    margin: 0 auto !important;
+    padding: 32px !important;
+  }
+  
+  .pro-chat-input-container,
+  .message-input-container {
+    max-width: 900px !important;
+    margin: 0 auto !important;
+    padding: 20px 32px !important;
+  }
+  
+  .pro-message-blurb,
+  .message-bubble {
+    max-width: 55% !important;
+    padding: 12px 16px !important;
+  }
+}
+
+/* ==========================================
+   SMOOTH SCROLLING & PERFORMANCE
+   ========================================== */
+.pro-message-list {
+  /* Hardware acceleration */
+  transform: translateZ(0) !important;
+  will-change: scroll-position !important;
+  
+  /* Hide scrollbar on mobile for cleaner look */
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+.pro-message-list::-webkit-scrollbar {
+  display: none !important; /* Chrome/Safari */
+}
+
+/* Desktop: Show minimal scrollbar */
+@media (min-width: 769px) {
+  .pro-message-list::-webkit-scrollbar {
+    display: block !important;
+    width: 6px !important;
+  }
+  
+  .pro-message-list::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+  
+  .pro-message-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 3px !important;
+  }
+  
+  .pro-message-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3) !important;
+  }
+}
+
+/* ==========================================
+   TYPING INDICATOR (WhatsApp-style)
+   ========================================== */
+.typing-indicator {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-radius: 16px !important;
+  width: fit-content !important;
+  max-width: 75% !important;
+  margin: 4px 0 !important;
+}
+
+/* ==========================================
+   MESSAGE TIMESTAMPS
+   ========================================== */
+.message-timestamp,
+.pro-message-time {
+  font-size: 11px !important;
+  color: rgba(0, 0, 0, 0.5) !important;
+  margin-top: 4px !important;
+  align-self: flex-end !important;
+}
+
+.pro-message-container.self .message-timestamp,
+.pro-message-container.self .pro-message-time {
+  color: rgba(255, 255, 255, 0.7) !important;
+}

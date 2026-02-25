@@ -25,12 +25,15 @@ img {
 .pro-message-list .attachment-image,
 .pro-message-blurb .attached-image,
 .pro-message-blurb .attachment-image {
-  max-width: 300px !important;
-  max-height: 200px !important;
+  max-width: min(460px, calc(100vw - 80px)) !important;
+  max-height: 380px !important;
+  width: auto !important;
+  height: auto !important;
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s ease;
   object-fit: contain;
+  display: block;
 }
 
 .pro-message-list .attached-image:hover,
@@ -41,8 +44,11 @@ img {
 /* GIF specific styles - ONLY in messages area */
 .pro-message-list .gif-image,
 .pro-message-blurb .gif-image {
-  max-width: 350px !important;
-  max-height: 250px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 500px !important;
+  object-fit: contain !important;
 }
 
 /* Image attachment container - ONLY in messages area */
@@ -101,7 +107,7 @@ img {
 .pro-message-list .message-bubble,
 .pro-message-list .pro-message-container,
 .pro-message-blurb .message-content {
-  overflow: hidden;
+  overflow: visible;
   word-wrap: break-word;
 }
 
@@ -113,14 +119,20 @@ img {
   .pro-message-list .message-attachment img,
   .pro-message-blurb .attachment-image,
   .pro-message-blurb .attached-image {
-    max-width: calc(100vw - 120px) !important;
-    max-height: 200px !important;
+    max-width: calc(100vw - 80px) !important;
+    max-height: 360px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
   }
   
   .pro-message-list .gif-image,
   .pro-message-blurb .gif-image {
-    max-width: calc(100vw - 100px) !important;
-    max-height: 180px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 320px !important;
+    object-fit: contain !important;
   }
   
   .user-avatar img {
@@ -143,14 +155,20 @@ img {
   .pro-message-list .message-attachment img,
   .pro-message-blurb .attachment-image,
   .pro-message-blurb .attached-image {
-    max-width: calc(100vw - 100px) !important;
-    max-height: 180px !important;
+    max-width: calc(100vw - 60px) !important;
+    max-height: 320px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
   }
   
   .pro-message-list .gif-image,
   .pro-message-blurb .gif-image {
-    max-width: calc(100vw - 80px) !important;
-    max-height: 160px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 300px !important;
+    object-fit: contain !important;
   }
   
   .user-avatar img {
@@ -256,20 +274,10 @@ img {
 .pro-message-list .emoji-gif img,
 .pro-message-blurb .gif-image,
 .pro-message-blurb .emoji-gif img {
-  max-width: 200px !important;
-  max-height: 200px !important;
-  width: auto;
-  height: auto;
-  object-fit: contain;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 500px !important;
+  object-fit: contain !important;
   border-radius: 8px;
-}
-
-@media screen and (max-width: 480px) {
-  .pro-message-list .gif-image,
-  .pro-message-list .emoji-gif img,
-  .pro-message-blurb .gif-image,
-  .pro-message-blurb .emoji-gif img {
-    max-width: 150px !important;
-    max-height: 150px !important;
-  }
 }

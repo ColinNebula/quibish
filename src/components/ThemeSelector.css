@@ -2,8 +2,9 @@
 
 .theme-toggle {
   position: fixed;
-  top: 20px;
+  bottom: 80px;
   right: 20px;
+  top: auto;
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -26,6 +27,14 @@ body.file-share-open .theme-toggle {
   opacity: 0;
   pointer-events: none;
   transform: translateX(100px);
+}
+
+/* Hide theme toggle when any modal overlay is open */
+body.modal-open .theme-toggle,
+body.contact-manager-open .theme-toggle {
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .theme-toggle:hover {
@@ -53,8 +62,9 @@ body.file-share-open .theme-toggle {
 /* Theme Panel */
 .theme-panel {
   position: fixed;
-  top: 80px;
+  bottom: 140px;
   right: 20px;
+  top: auto;
   width: 320px;
   max-height: 600px;
   background: rgba(255, 255, 255, 0.95);
@@ -424,19 +434,11 @@ body.file-share-open .theme-toggle {
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .theme-toggle {
-    top: 15px;
-    right: 15px;
-    width: 45px;
-    height: 45px;
-    font-size: 18px;
+    display: none;
   }
 
   .theme-panel {
-    top: 70px;
-    right: 15px;
-    left: 15px;
-    width: auto;
-    max-height: 500px;
+    display: none;
   }
 
   .theme-panel-content {
@@ -456,10 +458,11 @@ body.file-share-open .theme-toggle {
 
 @media (max-width: 480px) {
   .theme-panel {
-    top: 70px;
-    right: 10px;
-    left: 10px;
-    max-height: 400px;
+    display: none;
+  }
+
+  .theme-panel-overlay {
+    display: none;
   }
 
   .theme-grid {

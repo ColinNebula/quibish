@@ -1,0 +1,361 @@
+/* Friend Suggestions Styles */
+.friend-suggestions-container {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.suggestions-header {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.suggestions-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.suggestions-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.tab-btn.active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #4CAF50;
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+.search-section {
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.search-container {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 50px 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.search-input:focus {
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.search-spinner {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: #4CAF50;
+  animation: spin 1s linear infinite;
+}
+
+.suggestions-content {
+  padding: 20px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  color: #666;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #4CAF50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.empty-state h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.empty-state p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.suggestion-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.suggestion-card:hover {
+  background: #f1f3f4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.suggestion-avatar {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 15px;
+}
+
+.suggestion-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid #e0e0e0;
+  background: #f0f0f0;
+}
+
+.suggestion-info {
+  margin-bottom: 15px;
+  flex: 1;
+}
+
+.suggestion-name {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.suggestion-username {
+  margin: 0 0 10px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.mutual-friends {
+  margin: 0 0 8px 0;
+  color: #1976d2;
+  font-size: 12px;
+  background: #e3f2fd;
+  padding: 4px 8px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.suggestion-reason {
+  margin: 0;
+  color: #666;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.suggestion-actions {
+  width: 100%;
+}
+
+.add-friend-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.add-friend-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  transform: translateY(-1px);
+}
+
+.add-friend-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-spinner {
+  animation: spin 1s linear infinite;
+  font-size: 16px;
+}
+
+.suggestions-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  text-align: center;
+}
+
+.refresh-btn {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  background: #eeeeee;
+  color: #333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .suggestions-header {
+    padding: 15px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .suggestions-tabs {
+    justify-content: center;
+  }
+  
+  .search-section {
+    padding: 15px;
+  }
+  
+  .suggestions-content {
+    padding: 15px;
+  }
+  
+  .suggestions-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .suggestion-card {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .suggestions-header h3 {
+    font-size: 18px;
+  }
+  
+  .tab-btn {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .search-section {
+    padding: 10px;
+  }
+  
+  .suggestions-content {
+    padding: 10px;
+  }
+  
+  .suggestion-card {
+    padding: 12px;
+  }
+  
+  .suggestion-avatar {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .friend-suggestions-container {
+    border: 2px solid #000;
+  }
+  
+  .suggestion-card {
+    border: 1px solid #000;
+  }
+  
+  .add-friend-btn {
+    background: #008000;
+    border: 1px solid #000;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .spinner, .search-spinner, .btn-spinner {
+    animation: none;
+  }
+  
+  .suggestion-card, .add-friend-btn, .tab-btn, .refresh-btn {
+    transition: none;
+  }
+}

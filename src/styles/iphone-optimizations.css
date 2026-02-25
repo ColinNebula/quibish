@@ -1,0 +1,479 @@
+/* iPhone and Small Device Enhancements */
+
+/* ====================================
+   iPhone-Specific Optimizations
+   ==================================== */
+
+/* iPhone Safe Area Support */
+@supports (padding: max(0px)) {
+  :root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0);
+    --safe-area-inset-right: env(safe-area-inset-right, 0);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0);
+    --safe-area-inset-left: env(safe-area-inset-left, 0);
+  }
+
+  /* Apply safe area to main app container */
+  .app-container,
+  .pro-chat-container {
+    padding-top: max(var(--safe-area-inset-top), 0px) !important;
+    padding-bottom: max(var(--safe-area-inset-bottom), 0px) !important;
+    padding-left: max(var(--safe-area-inset-left), 0px) !important;
+    padding-right: max(var(--safe-area-inset-right), 0px) !important;
+  }
+
+  /* Header safe area - push content below notch using padding-top */
+  .enhanced-chat-header,
+  .header {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important;
+  }
+
+  /* Input container safe area */
+  .input-container,
+  .message-input-container {
+    padding-bottom: max(var(--safe-area-inset-bottom), 16px) !important;
+  }
+}
+
+/* ====================================
+   iPhone Screen Sizes
+   ==================================== */
+
+/* iPhone SE (375px) */
+@media (max-width: 375px) {
+  .enhanced-chat-header {
+    height: 52px !important;
+    padding: 0 6px !important;
+  }
+
+  .conversation-title {
+    font-size: 14px !important;
+    max-width: 150px !important;
+  }
+
+  .conversation-status {
+    font-size: 11px !important;
+  }
+
+  .action-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+    padding: 4px !important;
+  }
+
+  .header-actions {
+    gap: 2px !important;
+  }
+
+  /* Message bubbles */
+  .message-bubble {
+    max-width: 85% !important;
+    font-size: 14px !important;
+  }
+
+  /* Input area */
+  .message-input {
+    font-size: 14px !important;
+    min-height: 36px !important;
+  }
+
+  .input-actions button {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 16px !important;
+  }
+}
+
+/* iPhone 12/13/14 Pro (393px) */
+@media (min-width: 376px) and (max-width: 430px) {
+  .enhanced-chat-header {
+    height: 56px !important;
+  }
+
+  .message-bubble {
+    max-width: 80% !important;
+  }
+}
+
+/* ====================================
+   Touch-Friendly Interactions
+   ==================================== */
+
+/* Larger tap targets for touch */
+@media (hover: none) and (pointer: coarse) {
+  /* Minimum 44px tap targets (Apple HIG) */
+  button,
+  .action-btn,
+  .emoji-btn,
+  .send-btn,
+  a {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  /* Better spacing for touch */
+  .header-actions {
+    gap: 8px !important;
+  }
+
+  .input-actions {
+    gap: 8px !important;
+  }
+
+  /* Prevent touch callouts on long press */
+  * {
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Allow text selection in messages */
+  .message-content,
+  .message-text {
+    -webkit-touch-callout: text;
+    user-select: text;
+  }
+}
+
+/* ====================================
+   iOS-Specific Fixes
+   ==================================== */
+
+/* Fix iOS input zoom on focus */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+  font-size: 16px !important; /* Prevents iOS zoom */
+}
+
+/* Fix iOS sticky hover states */
+@media (hover: none) {
+  .action-btn:hover,
+  button:hover {
+    background: transparent !important;
+  }
+
+  .action-btn:active,
+  button:active {
+    background: var(--hover-bg) !important;
+    transform: scale(0.95);
+  }
+}
+
+/* Fix iOS overflow scrolling */
+.messages-container,
+.chat-messages,
+.message-list {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Prevent iOS bounce scroll on body */
+body {
+  overscroll-behavior-y: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+.app-container {
+  overflow: auto;
+  height: 100%;
+}
+
+/* ====================================
+   Improved Mobile Layout
+   ==================================== */
+
+/* Full-screen mobile layout */
+@media (max-width: 768px) {
+  .pro-chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height */
+    max-height: -webkit-fill-available;
+  }
+
+  /* Hide sidebar on mobile by default */
+  .pro-sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 280px;
+    height: 100%;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .pro-sidebar.open {
+    left: 0;
+  }
+
+  /* Sidebar overlay */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .sidebar-overlay.visible {
+    display: block;
+  }
+
+  /* Full-width chat area */
+  .chat-area {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Messages take available space */
+  .messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 8px;
+  }
+
+  /* Fixed input at bottom */
+  .input-container {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 8px;
+    z-index: 10;
+  }
+}
+
+/* ====================================
+   Compact Mobile UI
+   ==================================== */
+
+@media (max-width: 480px) {
+  /* Smaller header */
+  .enhanced-chat-header {
+    padding: 8px !important;
+  }
+
+  /* Compact message bubbles */
+  .message-bubble {
+    padding: 8px 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .message-timestamp {
+    font-size: 10px !important;
+  }
+
+  /* Single row input actions */
+  .input-actions {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+  }
+
+  /* Hide less important buttons */
+  .action-btn[title*="More"],
+  .action-btn[title*="Settings"] {
+    display: none !important;
+  }
+
+  /* Dropdown menus full width on small screens */
+  .dropdown-menu {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* ====================================
+   Landscape Mode Optimizations
+   ==================================== */
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .enhanced-chat-header {
+    height: 48px !important;
+    padding: 4px 8px !important;
+  }
+
+  .messages-container {
+    padding: 8px !important;
+  }
+
+  .input-container {
+    padding: 6px !important;
+  }
+
+  .message-input {
+    max-height: 60px !important;
+  }
+}
+
+/* ====================================
+   PWA Enhancements
+   ==================================== */
+
+/* PWA standalone mode */
+@media (display-mode: standalone) {
+  body {
+    background: var(--bg-color);
+  }
+
+  /* Remove browser chrome spacing */
+  .app-container {
+    padding-top: 0;
+  }
+
+  /* Status bar appearance */
+  html {
+    background: var(--header-bg);
+  }
+}
+
+/* PWA installed indicator */
+.pwa-badge {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  background: var(--primary-color);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  z-index: 9999;
+  opacity: 0;
+  animation: fadeInOut 3s ease;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
+}
+
+/* ====================================
+   Performance Optimizations
+   ==================================== */
+
+/* Reduce animations on low-end devices */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* GPU acceleration for smooth scrolling */
+.messages-container,
+.chat-messages {
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+/* ====================================
+   Dark Mode Mobile Adjustments
+   ==================================== */
+
+@media (max-width: 768px) {
+  body.dark-theme .pro-sidebar {
+    background: var(--card-bg);
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.5);
+  }
+
+  body.dark-theme .sidebar-overlay {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  body.dark-theme .dropdown-menu {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+  }
+}
+
+/* ====================================
+   Accessibility for Mobile
+   ==================================== */
+
+/* Ensure readable text */
+@media (max-width: 768px) {
+  .message-content,
+  .message-text,
+  p,
+  span {
+    font-size: 15px !important; /* Better readability on small screens */
+    line-height: 1.5 !important;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .message-bubble {
+      border: 2px solid var(--border-color) !important;
+    }
+
+    .action-btn {
+      border: 1px solid var(--border-color) !important;
+    }
+  }
+}
+
+/* ====================================
+   Loading States
+   ==================================== */
+
+@media (max-width: 768px) {
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+  }
+
+  .skeleton-loader {
+    height: 60px;
+    margin: 8px;
+  }
+}
+
+/* ====================================
+   Gesture Support Hints
+   ==================================== */
+
+@media (max-width: 768px) {
+  /* Swipe indicator for sidebar */
+  .swipe-indicator {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 60px;
+    background: linear-gradient(90deg, var(--primary-color), transparent);
+    border-radius: 0 30px 30px 0;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 998;
+    animation: swipeHint 2s infinite;
+  }
+
+  @keyframes swipeHint {
+    0%, 100% { left: 0; opacity: 0.3; }
+    50% { left: 10px; opacity: 0.6; }
+  }
+}

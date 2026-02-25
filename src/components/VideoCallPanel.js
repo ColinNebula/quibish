@@ -142,7 +142,14 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
 
   const initializeCall = async () => {
     try {
-      await enhancedVideoCallService.initialize();
+      const initialized = await enhancedVideoCallService.initialize();
+      
+      if (!initialized) {
+        console.warn('⚠️ Video call service could not be fully initialized');
+        // Still allow the UI to load
+        setFilters(videoFiltersService.getFilters());
+        return;
+      }
       
       const result = await enhancedVideoCallService.startCall({
         callId,
@@ -167,11 +174,16 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
           }
         }
       } else {
+        console.warn('⚠️ Call start failed:', result.error);
         // Still initialize filters state even if call fails
         setFilters(videoFiltersService.getFilters());
       }
     } catch (error) {
-      console.error('Failed to initialize call:', error);
+      console.error('❌ Failed to initialize call:', error.message || error);
+      // Show user-friendly error for missing devices
+      if (error.message && error.message.includes('No camera or microphone')) {
+        console.info('ℹ️ Tip: Connect a camera or microphone to use video calling features');
+      }
       // Initialize filters state even on error
       setFilters(videoFiltersService.getFilters());
     }

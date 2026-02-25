@@ -1,5 +1,6 @@
 // Encrypted Message Service - Complete Implementation
 import CryptoJS from 'crypto-js';
+import { buildApiUrl } from '../config/api';
 
 class EncryptedMessageService {
   constructor() {
@@ -96,7 +97,7 @@ class EncryptedMessageService {
       processedMessage.encryptionStatus = this.getEncryptionStatus();
       
       // Try to send to API
-      const response = await fetch('/api/messages/encrypted', {
+      const response = await fetch(buildApiUrl('messages/encrypted'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,9 +128,13 @@ class EncryptedMessageService {
   // Get encrypted messages
   async getMessages(options = {}) {
     const { limit = 50, conversationId } = options;
+
+    if (!conversationId) {
+      return [];
+    }
     
     try {
-      const response = await fetch(`/api/messages/encrypted?limit=${limit}&conversationId=${conversationId}`, {
+      const response = await fetch(buildApiUrl(`messages/encrypted?limit=${limit}&conversationId=${conversationId}`), {
         headers: {
           'X-Encryption-Key': this.encryptionKey || ''
         }

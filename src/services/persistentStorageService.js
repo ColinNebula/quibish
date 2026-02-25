@@ -123,7 +123,19 @@ class PersistentStorageService {
       
       if (!value) return null;
       
-      return parse ? JSON.parse(value) : value;
+      // Don't parse if explicitly disabled or if it's an auth token
+      if (!parse || key === this.STORAGE_KEYS.AUTH_TOKEN) {
+        return value;
+      }
+      
+      // Try to parse as JSON, but return raw value if parsing fails
+      try {
+        return JSON.parse(value);
+      } catch (parseError) {
+        // If parsing fails, return the raw value (e.g., for tokens)
+        console.warn(`⚠️ Could not parse ${key} as JSON, returning raw value`);
+        return value;
+      }
     } catch (error) {
       console.error(`❌ Failed to retrieve ${key}:`, error);
       return null;
