@@ -102,13 +102,24 @@ const ProChat = ({
     const offDisconnect = realtimeService.on('disconnect', () => setIsConnected(false));
 
     // Incoming message from another user
-    const offMessage = realtimeService.on('message', (msg) => {
+    const offMessage = realtimeService.on('message', async (msg) => {
+      // Decrypt if the sender marked the message as E2E encrypted
+      let displayText = msg.text;
+      if (msg.encrypted && msg.senderId) {
+        try {
+          displayText = await encryptedMessageService.decryptFrom(msg.text, String(msg.senderId));
+        } catch (err) {
+          console.warn('[E2E] Decryption failed for message from', msg.senderId, '—', err.message);
+          displayText = '🔒 [Encrypted message — could not decrypt]';
+        }
+      }
+
       setChatMessages(prev => {
         // Deduplicate by id
         if (prev.some(m => m.id === msg.id)) return prev;
         return [...prev, {
           id: msg.id,
-          text: msg.text,
+          text: displayText,
           user: { id: msg.senderId, name: msg.senderName },
           timestamp: msg.timestamp,
           reactions: [],
@@ -2083,11 +2094,25 @@ const ProChat = ({
       const conversationParticipants = currentSelectedConversation?.participants || [];
       const recipientId = conversationParticipants.find(p => String(p) !== String(user?.id)) || null;
 
-      // ── 1. Broadcast over WebSocket for real-time delivery ──
+      // ── 1. Encrypt if E2E is ready and we have a known recipient ──
+      let textToSend  = inputText.trim();
+      let isEncrypted = false;
+      if (encryptionEnabled && recipientId) {
+        try {
+          textToSend  = await encryptedMessageService.encryptFor(inputText.trim(), String(recipientId));
+          isEncrypted = true;
+        } catch (err) {
+          // Graceful degradation: peer may not have loaded the app yet
+          console.warn('[E2E] Could not encrypt — sending plaintext. Reason:', err.message);
+        }
+      }
+
+      // ── 2. Broadcast over WebSocket for real-time delivery ──
       realtimeService.sendMessage({
-        text: inputText.trim(),
+        text: textToSend,
         conversationId: selectedConversation,
-        recipientId
+        recipientId,
+        encrypted: isEncrypted
       });
 
       // ── 2. Persist via REST (best-effort, fallback to local) ──

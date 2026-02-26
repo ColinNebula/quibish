@@ -190,6 +190,7 @@ app.use((req, res, next) => {
 
 // Import route modules
 const notificationsRoutes = require('./routes/notifications');
+const encryptionRoutes    = require('./routes/encryption');
 
 // Enhanced health check with network diagnostics
 app.get('/api/health', (req, res) => {
@@ -220,6 +221,7 @@ app.get('/api/health', (req, res) => {
 
 // Register API routes
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/encryption',    encryptionRoutes);
 
 // Social Profiles routes
 const socialProfilesRoutes = require('./routes/social-profiles');
@@ -487,6 +489,7 @@ wss.on('connection', (ws) => {
           type: 'message',
           id: Date.now().toString(),
           text: data.text,
+          encrypted: data.encrypted === true, // pass flag so recipient knows to decrypt
           senderId: ws.userId,
           senderName: ws.username,
           conversationId: data.conversationId || null,
@@ -512,7 +515,10 @@ wss.on('connection', (ws) => {
               id: `notif_msg_${msg.id}`,
               type: 'message',
               title: `New message from ${ws.username}`,
-              message: data.text ? (data.text.length > 80 ? data.text.slice(0, 77) + '...' : data.text) : '📎 Attachment',
+              // Never include ciphertext in notification previews
+              message: data.encrypted
+                ? '🔒 Encrypted message'
+                : (data.text ? (data.text.length > 80 ? data.text.slice(0, 77) + '...' : data.text) : '📎 Attachment'),
               read: false,
               createdAt: msg.timestamp,
               data: {

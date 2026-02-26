@@ -103,9 +103,9 @@ class RealtimeService {
   // ── Public helpers ───────────────────────────────────
 
   /** Send a chat message. Returns a clientId you can match against 'message-sent'. */
-  sendMessage({ text, conversationId, recipientId }) {
+  sendMessage({ text, conversationId, recipientId, encrypted = false }) {
     const clientId = Date.now().toString();
-    const payload = { type: 'message', text, conversationId, recipientId, clientId };
+    const payload = { type: 'message', text, conversationId, recipientId, encrypted, clientId };
     if (!this._send(payload)) {
       this.pendingMessages.push(payload); // queue for when connected
     }

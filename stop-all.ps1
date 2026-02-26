@@ -1,40 +1,31 @@
-# Quibish Application Shutdown Script
-# This script stops all running services
+﻿# Quibish Application Shutdown Script
+# Stops processes listening on port 5001 (backend) and 3000 (frontend)
 
-Write-Host "`n🛑 Stopping Quibish Application...`n" -ForegroundColor Cyan
+Write-Host "Stopping Quibish Application..." -ForegroundColor Cyan
 
-# Function to stop processes on a specific port
 function Stop-ProcessOnPort {
     param([int]$Port, [string]$ServiceName)
-    
-    Write-Host "🔍 Checking $ServiceName (Port $Port)..." -ForegroundColor Yellow
-    
+    Write-Host "Checking $ServiceName (Port $Port)..." -ForegroundColor Yellow
     $connections = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue
-    
     if ($connections) {
-        $processIds = $connections | Select-Object -ExpandProperty OwningProcess -Unique
-        
-        foreach ($pid in $processIds) {
+        $pids = $connections | Select-Object -ExpandProperty OwningProcess -Unique
+        foreach ($p in $pids) {
             try {
-                $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
-                if ($process) {
-                    Write-Host "   ⏹️  Stopping process $($process.ProcessName) (PID: $pid)" -ForegroundColor Yellow
-                    Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-                    Write-Host "   ✅ Stopped $ServiceName" -ForegroundColor Green
+                $proc = Get-Process -Id $p -ErrorAction SilentlyContinue
+                if ($proc) {
+                    Stop-Process -Id $p -Force -ErrorAction SilentlyContinue
+                    Write-Host "  Stopped $ServiceName (PID $p - $($proc.ProcessName))" -ForegroundColor Green
                 }
             } catch {
-                Write-Host "   ⚠️  Could not stop process $pid" -ForegroundColor Yellow
+                Write-Host "  Could not stop PID $p" -ForegroundColor Yellow
             }
         }
     } else {
-        Write-Host "   ℹ️  $ServiceName is not running" -ForegroundColor Gray
+        Write-Host "  $ServiceName is not running on port $Port" -ForegroundColor Gray
     }
 }
 
-# Stop Backend Server (Port 5001)
 Stop-ProcessOnPort -Port 5001 -ServiceName "Backend Server"
+Stop-ProcessOnPort -Port 3000 -ServiceName "Frontend Dev Server"
 
-# Stop Frontend Server (Port 3000)
-Stop-ProcessOnPort -Port 3000 -ServiceName "Frontend Server"
-
-Write-Host "`n✅ All services stopped successfully!`n" -ForegroundColor Green
+Write-Host "Done." -ForegroundColor Green

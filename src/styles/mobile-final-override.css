@@ -69,9 +69,13 @@
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    min-height: 52px !important;
+    min-height: calc(env(safe-area-inset-top, 0px) + 52px) !important;
     max-height: none !important;
-    padding: 3px 12px !important;
+    /* Push content below notch/Dynamic Island */
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-right: 12px !important;
+    padding-bottom: 8px !important;
+    padding-left: 12px !important;
     margin-bottom: 0 !important;
     background: var(--pro-surface, #ffffff) !important;
     border-bottom: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
@@ -276,7 +280,11 @@
   html body .pro-header,
   html body .enhanced-chat-header {
     min-height: 48px !important;
-    padding: 6px 12px !important;
+    /* In landscape the notch is on the side, not top — keep a small top pad */
+    padding-top: 6px !important;
+    padding-right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
+    padding-bottom: 6px !important;
+    padding-left: calc(env(safe-area-inset-left, 0px) + 12px) !important;
   }
   
   html body .pro-message-list,
