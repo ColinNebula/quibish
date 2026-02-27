@@ -43,12 +43,19 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  z-index: 1000; /* Increased from 100 to ensure visibility on mobile */
+  z-index: 1000;
   overflow: visible;
   width: 100%;
   box-sizing: border-box;
   left: 0;
   right: 0;
+  /* Force a GPU compositing layer so the header always renders above
+     the message list's scroll layer (fixes iOS Safari z-index over
+     -webkit-overflow-scrolling:touch elements). */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  isolation: isolate;
+  flex-shrink: 0;
 }
 .enhanced-chat-header::before {
   content: '';
@@ -13145,6 +13152,32 @@ html body .pro-message-blurb .msg-delete-btn:hover {
   }
 }
 
+/* ============================================================
+   HEADER ALWAYS-ON-TOP — CSS fallback (non-mobile)
+   On desktop the header is a flex-shrink:0 item so it cannot
+   be covered.  The definitive mobile grid override lives in the
+   runtime-injected <style id="quibish-layout-fix"> in ProChat.js
+   which loads after ALL webpack CSS and therefore wins the cascade.
+   ============================================================ */
+html body .pro-main > .pro-header,
+html body .pro-main > .enhanced-chat-header {
+  z-index: 1000 !important;
+  transform: translateZ(0) !important;
+  -webkit-transform: translateZ(0) !important;
+  isolation: isolate !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+}
+
+/* Kill the fade-in animation on .pro-content — it starts at opacity:0 which
+   creates a blank gap below the header until the 0.6s animation completes. */
+html body .pro-main .pro-content {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
 /* High Refresh Rate Display Optimizations (120Hz+) */
 @media (min-width: 1920px) {
   /* Smoother animations for high refresh rate displays */
@@ -13501,15 +13534,9 @@ html body .pro-message-blurb .msg-delete-btn:hover {
 
 /* ============================================
    CRITICAL FINAL OVERRIDE - SAFE AREA FIX
-   Removed sticky positioning — handled by JS injection (quibish-layout-fix)
+   Layout positioning is controlled by JS injection (quibish-layout-fix).
    ============================================ */
 @media (max-width: 768px) {
-  /* Header z-index only — position controlled by JS injection */
-  html body .pro-header,
-  html body .enhanced-chat-header {
-    z-index: 10000 !important;
-  }
-  
   /* Message list padding */
   html body .pro-message-list,
   html body .pro-message-area,
@@ -13596,4 +13623,48 @@ html body .pro-message-blurb .msg-delete-btn:hover {
     grid-template-columns: 28px 1fr !important;
     column-gap: 6px !important;
   }
+}
+
+/* =====================================================================
+   PULL-TO-REFRESH INDICATOR
+   ===================================================================== */
+.ptr-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg, #fff);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #667eea;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ptr-spinner {
+  font-size: 16px;
+  line-height: 1;
+  display: inline-block;
+}
+
+.ptr-spinning {
+  animation: ptr-spin 0.7s linear infinite;
+}
+
+@keyframes ptr-spin {
+  to { rotate: 360deg; }
+}
+
+/* The list must be relative so the indicator can be absolutely positioned */
+.pro-message-list {
+  position: relative;
 }

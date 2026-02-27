@@ -293,6 +293,7 @@ const ProChat = ({
   const messagesEndRef = useRef(null);
   const sidebarRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const ptrStateRef = useRef({ startY: 0, pulling: false, triggered: false });
 
   // Inject definitive mobile layout fix at runtime — sits after ALL webpack CSS so it unconditionally wins the cascade
   useLayoutEffect(() => {
@@ -305,16 +306,22 @@ const ProChat = ({
     }
     el.textContent = [
       '@media screen and (max-width: 768px) {',
-      '  html, body { overflow: hidden !important; overscroll-behavior: none !important; height: 100% !important; max-height: 100% !important; }',
-      '  html body .app { height: 100vh !important; height: 100dvh !important; max-height: 100vh !important; max-height: 100dvh !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; position: relative !important; }',
+      // ── Root chain: each level is a strict flex column filling available space ──
+      '  html, body { overflow: hidden !important; overscroll-behavior: none !important; height: 100% !important; }',
+      '  html body .app { height: 100dvh !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }',
       '  html body .app-content { flex: 1 1 0% !important; min-height: 0 !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }',
-      '  html body .pro-layout { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; gap: 0 !important; -webkit-transform: translateZ(0) !important; transform: translateZ(0) !important; }',
-      '  html body .pro-main { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; gap: 0 !important; -webkit-transform: translateZ(0) !important; transform: translateZ(0) !important; }',
-      // Use sticky so the header locks to the top of its scroll context regardless of any overflow that slips through.
-      '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { flex: 0 0 auto !important; position: -webkit-sticky !important; position: sticky !important; top: 0 !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important; max-height: none !important; padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: #ffffff !important; z-index: 100 !important; }',
-      '  html body .pro-main .pro-content { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; background: #f5f5f5 !important; gap: 0 !important; }',
+      // backdrop-filter on .pro-layout traps position:fixed — clear it on mobile.
+      '  html body .pro-layout { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; gap: 0 !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transform: none !important; filter: none !important; }',
+      '  html body .pro-main { display: grid !important; grid-template-rows: auto 1fr auto !important; grid-template-columns: 100% !important; height: 100dvh !important; max-height: 100dvh !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; gap: 0 !important; transform: none !important; }',
+      // Header: grid row 1 — physically cannot overlap row 2 content regardless of z-index or compositing.
+      // padding-top uses env(safe-area-inset-top) so the Dynamic Island / notch is cleared on notched iPhones.
+      '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { grid-row: 1 !important; grid-column: 1 !important; align-self: start !important; width: 100% !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 52px) !important; padding-top: env(safe-area-inset-top, 0px) !important; padding-bottom: 8px !important; padding-left: 12px !important; padding-right: 12px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important; background: #ffffff !important; z-index: 1000 !important; transform: translateZ(0) !important; -webkit-transform: translateZ(0) !important; isolation: isolate !important; flex: unset !important; box-sizing: border-box !important; }',
+      // Content: grid row 2 — fills all remaining vertical space between header and input.
+      // animation/transition cleared so content is immediately visible (no 0.6s opacity-0 fade-in blank).
+      '  html body .pro-main .pro-content { grid-row: 2 !important; grid-column: 1 !important; min-height: 0 !important; height: 100% !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: #f5f5f5 !important; gap: 0 !important; flex: unset !important; animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }',
       '  html body .pro-main .pro-message-list { flex: 1 1 0% !important; min-height: 0 !important; max-height: none !important; overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
-      '  html body .pro-main .pro-chat-input-container { flex: 0 0 auto !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }',
+      // Input: grid row 3 — always visible below the message list, never overflows.
+      '  html body .pro-main .pro-chat-input-container { grid-row: 3 !important; grid-column: 1 !important; flex: unset !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; align-self: end !important; }',
       '}'
     ].join('\n');
   }, []);
@@ -327,18 +334,49 @@ const ProChat = ({
     const applyHeight = () => {
       const list = messagesContainerRef.current;
       if (!list) return;
-      const header = list.closest('.pro-main')?.querySelector('.pro-header, .enhanced-chat-header');
-      const input  = list.closest('.pro-main')?.querySelector('.pro-chat-input-container');
-      // Use visualViewport when available (accounts for iOS keyboard and browser chrome)
-      const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
-      const hh = header ? header.getBoundingClientRect().height : 56;
-      const ih = input  ? input.getBoundingClientRect().height  : 60;
-      const listH = vh - hh - ih;
-      if (listH > 50) {
-        list.style.height    = `${listH}px`;
-        list.style.maxHeight = `${listH}px`;
-        list.style.flex      = 'none';
+      const proMainEl = list.closest('.pro-main');
+      const header = proMainEl?.querySelector('.pro-header, .enhanced-chat-header');
+      const input  = proMainEl?.querySelector('.pro-chat-input-container');
+
+      // Use visualViewport when available (accounts for iOS keyboard / browser chrome)
+      const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+
+      // ── 1. Pin .pro-main to the exact visual viewport height using CSS Grid rows.
+      //    Row 1 = auto (header's natural height), Row 2 = 1fr (everything else).
+      //    With explicit grid rows, the header CANNOT be covered regardless of z-index.
+      if (proMainEl) {
+        proMainEl.style.height              = `${vh}px`;
+        proMainEl.style.maxHeight           = `${vh}px`;
+        proMainEl.style.overflow            = 'hidden';
+        proMainEl.style.display             = 'grid';
+        proMainEl.style.gridTemplateRows    = 'auto 1fr auto';
+        proMainEl.style.gridTemplateColumns = '100%';
       }
+
+      // ── 2. Ensure the header sits in grid row 1.
+      if (header) {
+        header.style.gridRow    = '1';
+        header.style.gridColumn = '1';
+        header.style.alignSelf  = 'start';
+        header.style.zIndex     = '1000';
+        header.style.transform  = 'translateZ(0)';
+        header.style.webkitTransform = 'translateZ(0)';
+        header.style.isolation  = 'isolate';
+      }
+
+      // ── 2b. Ensure the input sits in grid row 3 (never overflows).
+      if (input) {
+        input.style.gridRow    = '3';
+        input.style.gridColumn = '1';
+        input.style.alignSelf  = 'end';
+      }
+
+      // ── 3. The message list fills grid row 2 (1fr) via flex inside pro-content.
+      //    No need for pixel-perfect height enforcement — grid auto rows handle it.
+      //    Remove any stale inline height so CSS flex can take over.
+      list.style.height    = '';
+      list.style.maxHeight = '';
+      list.style.flex      = '1 1 0%';
     };
 
     applyHeight();
@@ -349,7 +387,14 @@ const ProChat = ({
 
     const ro = new ResizeObserver(applyHeight);
     const proMain = messagesContainerRef.current?.closest('.pro-main');
-    if (proMain) ro.observe(proMain);
+    if (proMain) {
+      ro.observe(proMain);
+      // Also observe header + input so we re-compute if they change height
+      const hdrEl = proMain.querySelector('.pro-header, .enhanced-chat-header');
+      const inpEl = proMain.querySelector('.pro-chat-input-container');
+      if (hdrEl) ro.observe(hdrEl);
+      if (inpEl) ro.observe(inpEl);
+    }
 
     return () => {
       vvp?.removeEventListener('resize', applyHeight);
@@ -362,6 +407,8 @@ const ProChat = ({
   const [chatMessages, setChatMessages] = useState([]);
   const [messagesLoading, setMessagesLoading] = useState(true);
   const [messagesError, setMessagesError] = useState(null);
+  const [ptrOffset, setPtrOffset] = useState(0);   // pull distance (px), drives indicator
+  const [ptrRefreshing, setPtrRefreshing] = useState(false);
   
   // Reaction system state - moved here to be available for functions
   const [selectedMessageId, setSelectedMessageId] = useState(null);
@@ -374,55 +421,28 @@ const ProChat = ({
   
   // Load messages from database on component mount
   useEffect(() => {
-    const loadMessages = async () => {
+    const initEncryption = async () => {
+      // Only initialize encryption — do NOT call setChatMessages here.
+      // Per-conversation messages are loaded from localStorage by the mount effect
+      // below and by handleConversationSelect. Calling setChatMessages here would
+      // race against those effects and wipe the restored messages.
       try {
-        setMessagesLoading(true);
-        setMessagesError(null);
-        
-        // Initialize encryption service first
-        try {
-          const encryptionInit = await encryptedMessageService.initializeEncryption(user.id);
-          setEncryptionEnabled(encryptionInit);
-          
-          if (encryptionInit) {
-            const status = encryptedMessageService.getEncryptionStatus();
-            setEncryptionStatus(status);
-            console.log('🔒 Encryption initialized for ProChat');
-          }
-        } catch (encryptError) {
-          console.warn('⚠️ Encryption initialization failed:', encryptError);
-          setEncryptionEnabled(false);
+        const encryptionInit = await encryptedMessageService.initializeEncryption(user.id);
+        setEncryptionEnabled(encryptionInit);
+        if (encryptionInit) {
+          const status = encryptedMessageService.getEncryptionStatus();
+          setEncryptionStatus(status);
+          console.log('🔒 Encryption initialized for ProChat');
         }
-        
-        // Load messages using encrypted service
-        const messages = await encryptedMessageService.getMessages({ limit: 50 });
-        
-        if (Array.isArray(messages)) {
-          setChatMessages(messages);
-        } else {
-          console.warn('Invalid messages format received:', messages);
-          setChatMessages([]);
-        }
-      } catch (error) {
-        console.error('Failed to load messages:', error);
-        setMessagesError('Failed to load messages');
-        
-        // Try to load from persistent storage as fallback
-        try {
-          const cachedMessages = persistentStorageService.getMessages();
-          if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
-            setChatMessages(cachedMessages);
-            console.log('📱 Loaded messages from persistent storage');
-          }
-        } catch (storageError) {
-          console.error('❌ Failed to load from persistent storage:', storageError);
-        }
+      } catch (encryptError) {
+        console.warn('⚠️ Encryption initialization failed:', encryptError);
+        setEncryptionEnabled(false);
       } finally {
         setMessagesLoading(false);
       }
     };
 
-    loadMessages();
+    initEncryption();
   }, [user.id]);
 
   // Auto-scroll to bottom function
@@ -444,6 +464,52 @@ const ProChat = ({
       document.body.scrollTop = 0;
     }
   }, [chatMessages, scrollToBottom]);
+
+  // ── Pull-to-refresh handlers ──────────────────────────────────────────────
+  const PTR_THRESHOLD = 70; // px of pull needed to trigger refresh
+
+  const handlePtrTouchStart = useCallback((e) => {
+    const el = messagesContainerRef.current;
+    if (!el || el.scrollTop > 0) return; // only activate at top
+    ptrStateRef.current = { startY: e.touches[0].clientY, pulling: true, triggered: false };
+  }, []);
+
+  const handlePtrTouchMove = useCallback((e) => {
+    const state = ptrStateRef.current;
+    if (!state.pulling) return;
+    const el = messagesContainerRef.current;
+    if (!el || el.scrollTop > 0) { state.pulling = false; setPtrOffset(0); return; }
+    const dy = e.touches[0].clientY - state.startY;
+    if (dy <= 0) { setPtrOffset(0); return; }
+    // resist the pull with a rubber-band feel (square-root damping)
+    const offset = Math.min(Math.sqrt(dy) * 6, PTR_THRESHOLD + 20);
+    setPtrOffset(offset);
+    if (offset >= PTR_THRESHOLD) state.triggered = true;
+    // Prevent native scroll bounce from interfering
+    if (dy > 2) e.preventDefault();
+  }, []);
+
+  const handlePtrTouchEnd = useCallback(() => {
+    const state = ptrStateRef.current;
+    if (!state.pulling) return;
+    state.pulling = false;
+    setPtrOffset(0);
+    if (!state.triggered) return;
+    state.triggered = false;
+    // Trigger refresh: reload messages for current conversation from localStorage
+    setPtrRefreshing(true);
+    setTimeout(() => {
+      try {
+        const stored = localStorage.getItem(`quibish_conv_messages_${selectedConversation}`);
+        if (stored) {
+          const msgs = JSON.parse(stored);
+          if (Array.isArray(msgs) && msgs.length > 0) setChatMessages(msgs);
+        }
+      } catch (_) {}
+      setPtrRefreshing(false);
+    }, 800);
+  }, [selectedConversation]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   // On mount: restore messages for whichever conversation is auto-selected.
   // This handles the case where selectedConversation is initialised from
@@ -1292,30 +1358,25 @@ const ProChat = ({
   }, [handleFileChange]);
 
   const handleGifSelect = useCallback((gif) => {
-    // Create a message with the selected GIF
     const newMessage = {
       id: Date.now() + Math.random(),
-      text: `🎭 ${gif.name}`,
+      text: '',   // GIF messages need no text label — the image speaks for itself
       user: user,
       timestamp: new Date().toISOString(),
       reactions: [],
       file: {
-        name: gif.name || 'selected.gif',
+        name: gif.name || 'GIF',
         size: gif.size || 0,
         type: 'image/gif',
         url: gif.url,
-        isGif: true
+        isGif: true,
+        width: gif.width || 480,
+        height: gif.height || 270,
       }
     };
-    
-    // Add the GIF message to chat
     setChatMessages(prev => [...prev, newMessage]);
     setShowGifPicker(false);
-    
-    // Auto-scroll to the new message
-    setTimeout(() => {
-      scrollToBottom();
-    }, 100);
+    setTimeout(() => scrollToBottom(), 100);
   }, [user, setChatMessages, scrollToBottom]);
 
   const handleCloseGifPicker = useCallback(() => {
@@ -3317,11 +3378,26 @@ const ProChat = ({
               className="conversation-avatar"
               onClick={() => setContactProfilePopup(true)}
               style={{ cursor: 'pointer' }}
-              title="View profile"
+              title={`${user?.name || 'My profile'}`}
             >
               <img 
-                src={currentSelectedConversation?.avatar || currentConversation?.avatar || `https://images.unsplash.com/photo-1516726817505-f5ed825624d8?w=40&h=40&fit=crop&crop=face`}
-                alt={currentSelectedConversation?.name || currentConversation?.name || 'Chat'}
+                src={
+                  avatarError
+                    ? '/default-avatar.png'
+                    : user?.avatar ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&size=80&bold=true&format=png`
+                }
+                alt={user?.name || 'Me'}
+                onError={(e) => {
+                  if (!avatarError) {
+                    handleAvatarError();
+                    if (!e.target.src.includes('ui-avatars.com')) {
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&size=80&bold=true&format=png`;
+                    } else {
+                      e.target.src = '/default-avatar.png';
+                    }
+                  }
+                }}
               />
               <div className={`online-indicator ${isConnected ? 'online' : 'offline'}`}></div>
             </div>
@@ -3424,7 +3500,27 @@ const ProChat = ({
         {/* Content Area - Contains messages and input */}
         <div className="pro-content">
           {/* Messages */}
-          <div className="pro-message-list mobile-optimized pull-to-refresh" ref={messagesContainerRef}>
+          <div
+            className="pro-message-list mobile-optimized pull-to-refresh"
+            ref={messagesContainerRef}
+            onTouchStart={handlePtrTouchStart}
+            onTouchMove={handlePtrTouchMove}
+            onTouchEnd={handlePtrTouchEnd}
+          >
+            {/* Pull-to-refresh indicator */}
+            <div
+              className="ptr-indicator"
+              style={{
+                transform: `translateY(${ptrOffset > 0 ? ptrOffset - 40 : ptrRefreshing ? 0 : -40}px)`,
+                opacity: ptrRefreshing ? 1 : Math.min(ptrOffset / PTR_THRESHOLD, 1),
+                transition: ptrStateRef.current?.pulling ? 'none' : 'transform 0.3s ease, opacity 0.3s ease',
+              }}
+            >
+              <div className={`ptr-spinner${ptrRefreshing ? ' ptr-spinning' : ''}`}>
+                {ptrRefreshing ? '↻' : ptrOffset >= PTR_THRESHOLD ? '↻' : '↓'}
+              </div>
+              <span>{ptrRefreshing ? 'Refreshing…' : ptrOffset >= PTR_THRESHOLD ? 'Release to refresh' : 'Pull to refresh'}</span>
+            </div>
           {messagesLoading && (
             <div className="message-loading-indicator">
               <div className="loading-spinner"></div>
@@ -3553,26 +3649,23 @@ const ProChat = ({
                     {message.file.type.startsWith('image/') ? (
                       <div className={`image-attachment ${message.file.isGif ? 'gif-attachment' : ''}`}>
                         {message.file.isGif && (
-                          <div className="gif-badge">
-                            <span className="gif-label">GIF</span>
-                          </div>
+                          <div className="gif-badge"><span className="gif-label">GIF</span></div>
                         )}
-                        <img 
-                          src={message.file.url} 
+                        <img
+                          src={message.file.url}
                           alt={message.file.name}
                           className={`attached-image ${message.file.isGif ? 'gif-image' : ''}`}
-                          onClick={() => {
-                            // Open image in lightbox/modal
-                            handleOpenLightbox(message.file.url, message.file.name);
-                          }}
+                          style={message.file.isGif && message.file.width ? {
+                            aspectRatio: `${message.file.width}/${message.file.height || message.file.width}`,
+                            maxWidth: '280px'
+                          } : undefined}
+                          onClick={() => handleOpenLightbox(message.file.url, message.file.name)}
                         />
-                        <div className={`image-caption ${message.file.isGif ? 'gif-caption' : ''}`}>
-                          {message.file.isGif && '🎭 '}
-                          {message.file.name} ({(message.file.size / 1024).toFixed(1)} KB)
-                          {message.file.isGif && (
-                            <span className="gif-info"> • Animated GIF</span>
-                          )}
-                        </div>
+                        {!message.file.isGif && (
+                          <div className="image-caption">
+                            {message.file.name} ({(message.file.size / 1024).toFixed(1)} KB)
+                          </div>
+                        )}
                       </div>
                     ) : message.file.type.startsWith('video/') ? (
                       <div className="video-attachment">
@@ -4138,9 +4231,9 @@ const ProChat = ({
           </div>
         ) : null}
 
-      {/* Contact Profile Popup */}
-      {contactProfilePopup && (currentSelectedConversation || currentConversation) && (
-        <>
+      {/* Contact Profile Popup - rendered via portal to escape pro-main stacking context */}
+      {contactProfilePopup && ReactDOM.createPortal(
+        (<>
           <div
             onClick={() => setContactProfilePopup(false)}
             style={{
@@ -4187,8 +4280,13 @@ const ProChat = ({
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '-40px', padding: '0 20px 20px' }}>
               <div style={{ position: 'relative' }}>
                 <img
-                  src={currentSelectedConversation?.avatar || currentConversation?.avatar}
-                  alt={currentSelectedConversation?.name || currentConversation?.name}
+                  src={
+                    avatarError
+                      ? null
+                      : user?.avatar ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&size=160&bold=true&format=png`
+                  }
+                  alt={user?.name || 'Me'}
                   style={{
                     width: '80px', height: '80px', borderRadius: '50%',
                     border: '4px solid #fff',
@@ -4208,28 +4306,28 @@ const ProChat = ({
                   alignItems: 'center', justifyContent: 'center',
                   fontSize: '28px', color: '#fff', fontWeight: '700'
                 }}>
-                  {(currentSelectedConversation?.name || currentConversation?.name || '?')[0].toUpperCase()}
+                  {(user?.name || '?')[0].toUpperCase()}
                 </div>
                 <span style={{
                   position: 'absolute', bottom: '4px', right: '4px',
                   width: '16px', height: '16px', borderRadius: '50%',
-                  backgroundColor: isConnected ? '#22c55e' : '#94a3b8',
+                  backgroundColor: '#22c55e',
                   border: '2px solid #fff'
                 }} />
               </div>
               {/* Name & status */}
               <h3 style={{ margin: '10px 0 2px', fontSize: '18px', fontWeight: '700', color: 'var(--pro-text, #1e293b)' }}>
-                {currentSelectedConversation?.name || currentConversation?.name}
+                {user?.name || 'Me'}
               </h3>
-              <p style={{ margin: '0 0 16px', fontSize: '13px', color: isConnected ? '#22c55e' : '#94a3b8', fontWeight: '500' }}>
-                {isConnected ? '● Online' : '● Offline'}
+              <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#22c55e', fontWeight: '500' }}>
+                ● Online
               </p>
               {/* Action row */}
               <div style={{ display: 'flex', gap: '10px', width: '100%', marginBottom: '16px' }}>
                 {[
-                  { icon: '💬', label: 'Message', action: () => setContactProfilePopup(false) },
-                  { icon: '📞', label: 'Call', action: () => { setContactProfilePopup(false); handleUnifiedCall(); } },
-                  { icon: '🎥', label: 'Video', action: () => { setContactProfilePopup(false); handleVideoCall(); } }
+                  { icon: '✏️', label: 'Edit Profile', action: () => { setContactProfilePopup(false); setSettingsModal({ open: true, section: 'profile' }); } },
+                  { icon: '⚙️', label: 'Settings', action: () => { setContactProfilePopup(false); setSettingsModal({ open: true, section: 'general' }); } },
+                  { icon: '🚪', label: 'Sign Out', action: () => { setContactProfilePopup(false); onLogout(); } }
                 ].map(({ icon, label, action }) => (
                   <button key={label} onClick={action} style={{
                     flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -4249,10 +4347,8 @@ const ProChat = ({
               {/* Info rows */}
               <div style={{ width: '100%', borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {[
-                  { icon: '🔍', label: 'Search in conversation', action: () => { setContactProfilePopup(false); handleSearchInChat(); } },
-                  { icon: '🔔', label: 'Mute notifications', action: () => { setContactProfilePopup(false); handleMuteNotifications(); } },
-                  { icon: '👤', label: 'View full profile', action: () => { setContactProfilePopup(false); handleViewUserProfile(currentSelectedConversation?.id || currentConversation?.id, currentSelectedConversation?.name || currentConversation?.name); } },
-                  { icon: '🗑️', label: 'Clear chat', action: () => { setContactProfilePopup(false); handleClearChat(); }, danger: true }
+                  { icon: '👤', label: 'View full profile', action: () => { setContactProfilePopup(false); handleViewUserProfile(user?.id, user?.name); } },
+                  { icon: '🔔', label: 'Notification settings', action: () => { setContactProfilePopup(false); setNotificationSettingsModal(true); } }
                 ].map(({ icon, label, action, danger }) => (
                   <button key={label} onClick={action} style={{
                     display: 'flex', alignItems: 'center', gap: '12px',
@@ -4271,7 +4367,8 @@ const ProChat = ({
               </div>
             </div>
           </div>
-        </>
+        </>),
+        document.body
       )}
 
       {/* More Options Dropdown - rendered via portal to escape any stacking context */}

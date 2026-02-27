@@ -4,8 +4,25 @@ import PostComposer from './PostComposer';
 import PostCard from './PostCard';
 import postsService from '../../services/postsService';
 
+const POSTS_CACHE_KEY = 'quibish_posts_feed';
+
+const savePosts = (posts) => {
+  try {
+    localStorage.setItem(POSTS_CACHE_KEY, JSON.stringify(posts.slice(0, 50)));
+  } catch (_) {}
+};
+
+const loadCachedPosts = () => {
+  try {
+    const raw = localStorage.getItem(POSTS_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) { return []; }
+};
+
 const NewsFeed = ({ user, className = '' }) => {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState(() => loadCachedPosts());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
@@ -69,9 +86,14 @@ const NewsFeed = ({ user, className = '' }) => {
       if (result.success) {
         if (reset) {
           setPosts(result.posts);
+          savePosts(result.posts);
           setPage(2);
         } else {
-          setPosts(prev => [...prev, ...result.posts]);
+          setPosts(prev => {
+            const merged = [...prev, ...result.posts];
+            savePosts(merged);
+            return merged;
+          });
           setPage(prev => prev + 1);
         }
         setHasMore(result.pagination.hasMore);
@@ -79,7 +101,14 @@ const NewsFeed = ({ user, className = '' }) => {
         setError(result.error || 'Failed to load feed');
       }
     } catch (err) {
-      setError(err.message || 'Failed to load feed');
+      // Fall back to cached posts so the feed isn't blank after a refresh
+      const cached = loadCachedPosts();
+      if (cached.length > 0 && reset) {
+        setPosts(cached);
+        setHasMore(false);
+      } else {
+        setError(err.message || 'Failed to load feed');
+      }
     } finally {
       setLoading(false);
     }
@@ -92,17 +121,29 @@ const NewsFeed = ({ user, className = '' }) => {
   }, [loading, hasMore, page]);
 
   const handlePostCreated = (newPost) => {
-    setPosts([newPost, ...posts]);
+    setPosts(prev => {
+      const updated = [newPost, ...prev];
+      savePosts(updated);
+      return updated;
+    });
   };
 
   const handlePostDeleted = (postId) => {
-    setPosts(posts.filter(post => post.id !== postId));
+    setPosts(prev => {
+      const updated = prev.filter(post => post.id !== postId);
+      savePosts(updated);
+      return updated;
+    });
   };
 
   const handlePostUpdated = (updatedPost) => {
-    setPosts(posts.map(post => 
-      post.id === updatedPost.id ? updatedPost : post
-    ));
+    setPosts(prev => {
+      const updated = prev.map(post =>
+        post.id === updatedPost.id ? updatedPost : post
+      );
+      savePosts(updated);
+      return updated;
+    });
   };
 
   const handleRefresh = () => {
