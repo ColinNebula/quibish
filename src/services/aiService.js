@@ -109,6 +109,86 @@ class AIService {
           "That's wonderful news!",
           "Incredible! 😄"
         ]
+      },
+      urgent: {
+        patterns: [/\b(urgent|asap|immediately|emergency|critical|important)\b/i],
+        replies: [
+          "On it right away! 🚀",
+          "I'll prioritize this immediately.",
+          "Got it — handling it now!",
+          "I'm on it! ETA soon.",
+          "Understood, moving on this ASAP."
+        ]
+      },
+      sharing: {
+        patterns: [/\b(check this|look at|have you seen|found this|sharing|sent you)\b/i],
+        replies: [
+          "Thanks for sharing! 👀",
+          "Interesting! I'll take a look.",
+          "Checking it out now!",
+          "Wow, that's really cool! 🔥",
+          "Got it, will review shortly."
+        ]
+      },
+      opinion: {
+        patterns: [/\b(what do you think|your opinion|thoughts on|how does that sound|do you agree)\b/i],
+        replies: [
+          "Sounds great to me! ✅",
+          "I think that's a solid idea.",
+          "Honestly, I really like it!",
+          "Let me think about it 🤔",
+          "Good point — I agree!"
+        ]
+      },
+      workTask: {
+        patterns: [/\b(task|project|assignment|deadline|deliverable|milestone)\b/i],
+        replies: [
+          "I'll get that done! 💪",
+          "On my list — I'll update you soon.",
+          "What's the deadline for this?",
+          "Noted! I'll track this.",
+          "Can you share more details? 📋"
+        ]
+      },
+      congrats: {
+        patterns: [/\b(congratulations|congrats|well done|great job|proud of you|achievement)\b/i],
+        replies: [
+          "Thank you so much! 🙏",
+          "Really appreciate that! 😊",
+          "That means a lot, thank you!",
+          "Couldn't have done it without the team!",
+          "Thanks! 🎉"
+        ]
+      },
+      waiting: {
+        patterns: [/\b(waiting|still there|any update|heard back|response|following up)\b/i],
+        replies: [
+          "Still working on it! Almost there.",
+          "I'll have an update for you shortly.",
+          "Sorry for the delay — on it now.",
+          "Just need a bit more time. 🙏",
+          "Following up now!"
+        ]
+      },
+      lateNight: {
+        patterns: [/\b(late|night|tired|exhausted|long day)\b/i],
+        replies: [
+          "Rest up! Talk tomorrow 😴",
+          "Take care of yourself! 🌙",
+          "Get some sleep — chat later!",
+          "It's been a long one, huh? 💙",
+          "We'll catch up when you're fresh!"
+        ]
+      },
+      plans: {
+        patterns: [/\b(weekend|plans|going to|trip|vacation|holiday|travel)\b/i],
+        replies: [
+          "Sounds like fun! 🎉",
+          "Have a great time! 🌟",
+          "That's exciting — enjoy!",
+          "Nice! What are you planning?",
+          "Jealous! Sounds amazing 😄"
+        ]
       }
     };
 
@@ -328,29 +408,37 @@ class AIService {
     }
   }
 
-  // Translate message
+  // Translate message using real MyMemory API (free, no key required)
   async translateMessage(text, targetLanguage = 'en', sourceLanguage = 'auto') {
     try {
       const cacheKey = `${text}-${sourceLanguage}-${targetLanguage}`;
-      
-      // Check cache
+
       if (this.translationCache.has(cacheKey)) {
         return this.translationCache.get(cacheKey);
       }
 
-      // Try to use browser's translation API if available
-      // For now, use a simple mock/pattern-based translation
+      const detectedSource = sourceLanguage === 'auto'
+        ? this.detectLanguage(text)
+        : sourceLanguage;
+
+      // Same language — skip API call
+      if (detectedSource === targetLanguage) {
+        const result = { text, sourceLanguage: detectedSource, targetLanguage, confidence: 1.0, translatedText: text };
+        this.translationCache.set(cacheKey, result);
+        return result;
+      }
+
+      const translatedText = await this.callTranslationAPI(text, detectedSource, targetLanguage);
+
       const translation = {
-        text: text, // Original text (would be translated in production)
-        sourceLanguage: sourceLanguage === 'auto' ? this.detectLanguage(text) : sourceLanguage,
+        text,
+        sourceLanguage: detectedSource,
         targetLanguage,
-        confidence: 0.85,
-        translatedText: await this.mockTranslate(text, targetLanguage)
+        confidence: 0.92,
+        translatedText
       };
 
-      // Cache the result
       this.translationCache.set(cacheKey, translation);
-
       return translation;
     } catch (error) {
       console.error('Translation failed:', error);
@@ -365,34 +453,26 @@ class AIService {
     }
   }
 
-  // Mock translation (replace with real API in production)
-  async mockTranslate(text, targetLang) {
-    // This is a placeholder. In production, use:
-    // - Google Translate API
-    // - Microsoft Translator
-    // - DeepL API
-    // - Or browser's built-in translation
-    
-    const greetings = {
-      es: { hello: 'hola', goodbye: 'adiós', thanks: 'gracias' },
-      fr: { hello: 'bonjour', goodbye: 'au revoir', thanks: 'merci' },
-      de: { hello: 'hallo', goodbye: 'auf wiedersehen', thanks: 'danke' },
-      it: { hello: 'ciao', goodbye: 'arrivederci', thanks: 'grazie' },
-      pt: { hello: 'olá', goodbye: 'tchau', thanks: 'obrigado' },
-      ja: { hello: 'こんにちは', goodbye: 'さようなら', thanks: 'ありがとう' },
-      zh: { hello: '你好', goodbye: '再见', thanks: '谢谢' }
-    };
+  // Call MyMemory free translation API (https://mymemory.translated.net)
+  async callTranslationAPI(text, sourceLang, targetLang) {
+    const langPair = `${sourceLang}|${targetLang}`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(langPair)}`;
 
-    const lower = text.toLowerCase();
-    const langMap = greetings[targetLang];
-    
-    if (langMap) {
-      if (lower.includes('hello') || lower.includes('hi')) return langMap.hello;
-      if (lower.includes('bye') || lower.includes('goodbye')) return langMap.goodbye;
-      if (lower.includes('thank')) return langMap.thanks;
+    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!response.ok) throw new Error(`Translation API error: ${response.status}`);
+
+    const data = await response.json();
+
+    if (data.responseStatus === 200 && data.responseData?.translatedText) {
+      return data.responseData.translatedText;
     }
 
-    return `[${targetLang}] ${text}`; // Mock translation
+    // Fallback to first match
+    if (Array.isArray(data.matches) && data.matches.length > 0) {
+      return data.matches[0].translation;
+    }
+
+    throw new Error('No translation returned from API');
   }
 
   // Detect language
@@ -408,10 +488,11 @@ class AIService {
     return 'en';
   }
 
-  // Enhance message (grammar, tone, etc.)
+  // Enhance message (grammar, tone, shorten, expand, rephrase, etc.)
   async enhanceMessage(text, options = {}) {
     const {
-      tone = 'neutral', // casual, professional, friendly, formal
+      tone = 'neutral',
+      mode = 'tone', // 'tone' | 'shorten' | 'expand' | 'rephrase'
       fixGrammar = true,
       addEmoji = false
     } = options;
@@ -419,36 +500,88 @@ class AIService {
     try {
       let enhanced = text;
 
-      // Fix common grammar issues
-      if (fixGrammar) {
-        enhanced = this.fixCommonGrammar(enhanced);
-      }
-
-      // Adjust tone
-      enhanced = this.adjustTone(enhanced, tone);
-
-      // Add emoji if requested
-      if (addEmoji) {
-        const emoji = this.getSuggestedEmojiForTone(tone);
-        if (emoji) enhanced += ` ${emoji}`;
+      if (mode === 'shorten') {
+        enhanced = this.shortenMessage(enhanced);
+      } else if (mode === 'expand') {
+        enhanced = this.expandMessage(enhanced, tone);
+      } else if (mode === 'rephrase') {
+        enhanced = this.rephraseMessage(enhanced);
+      } else {
+        // Default tone mode
+        if (fixGrammar) enhanced = this.fixCommonGrammar(enhanced);
+        enhanced = this.adjustTone(enhanced, tone);
+        if (addEmoji) {
+          const emoji = this.getSuggestedEmojiForTone(tone);
+          if (emoji) enhanced += ` ${emoji}`;
+        }
       }
 
       return {
         original: text,
         enhanced,
         changes: this.getChanges(text, enhanced),
-        tone
+        tone,
+        mode
       };
     } catch (error) {
       console.error('Failed to enhance message:', error);
-      return {
-        original: text,
-        enhanced: text,
-        changes: [],
-        tone,
-        error: error.message
-      };
+      return { original: text, enhanced: text, changes: [], tone, mode, error: error.message };
     }
+  }
+
+  // Shorten a message to key point
+  shortenMessage(text) {
+    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+    if (sentences.length <= 1) {
+      // Single sentence — trim filler words
+      return text
+        .replace(/\b(basically|actually|just|really|very|quite|rather|somewhat|kind of|sort of)\b\s*/gi, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    }
+    // Multiple sentences — keep first two
+    return sentences.slice(0, Math.max(1, Math.ceil(sentences.length / 2))).join(' ').trim();
+  }
+
+  // Expand a message with more context/detail
+  expandMessage(text, tone = 'neutral') {
+    const closings = {
+      professional: ' Please let me know if you need any further information or clarification.',
+      casual: " Just let me know what you think!",
+      friendly: " I'd love to hear your thoughts on this! 😊",
+      formal: ' I would appreciate your prompt response at your earliest convenience.',
+      neutral: ' Feel free to reach out if you have any questions.'
+    };
+    const openers = {
+      professional: 'I wanted to share the following with you: ',
+      casual: 'Hey! So, ',
+      friendly: 'Hi there! I wanted to mention — ',
+      formal: 'I am writing to inform you that ',
+      neutral: ''
+    };
+    const opener = openers[tone] || '';
+    const closing = closings[tone] || closings.neutral;
+    const body = text.charAt(0).toLowerCase() + text.slice(1).replace(/[.!?]$/, '');
+    return `${opener}${body}${closing}`;
+  }
+
+  // Rephrase a message while keeping the same meaning
+  rephraseMessage(text) {
+    return text
+      .replace(/\b(can't)\b/gi, 'cannot')
+      .replace(/\b(won't)\b/gi, 'will not')
+      .replace(/\b(don't)\b/gi, 'do not')
+      .replace(/\b(i'm)\b/gi, 'I am')
+      .replace(/\b(it's)\b/gi, 'it is')
+      .replace(/\b(that's)\b/gi, 'that is')
+      .replace(/\b(they're)\b/gi, 'they are')
+      .replace(/\b(we're)\b/gi, 'we are')
+      .replace(/\b(need to)\b/gi, 'should')
+      .replace(/\b(want to)\b/gi, 'would like to')
+      .replace(/\b(get)\b/gi, 'receive')
+      .replace(/\b(make sure)\b/gi, 'ensure')
+      .replace(/\b(find out)\b/gi, 'determine')
+      .replace(/\b(look into)\b/gi, 'investigate');
   }
 
   // Fix common grammar issues
@@ -458,15 +591,23 @@ class AIService {
     // Capitalize first letter
     fixed = fixed.charAt(0).toUpperCase() + fixed.slice(1);
 
+    // Capitalize 'I'
+    fixed = fixed.replace(/\bi\b/g, 'I');
+
     // Fix common typos
     const typos = {
-      'teh': 'the',
-      'recieve': 'receive',
-      'definately': 'definitely',
-      'seperate': 'separate',
-      'occured': 'occurred',
-      'untill': 'until',
-      'wierd': 'weird'
+      'teh': 'the', 'hte': 'the', 'adn': 'and', 'nad': 'and',
+      'recieve': 'receive', 'recieved': 'received',
+      'definately': 'definitely', 'definitly': 'definitely',
+      'seperate': 'separate', 'seperately': 'separately',
+      'occured': 'occurred', 'occurance': 'occurrence',
+      'untill': 'until', 'wierd': 'weird', 'freind': 'friend',
+      'beleive': 'believe', 'accomodate': 'accommodate',
+      'embarass': 'embarrass', 'occassion': 'occasion',
+      'tommorow': 'tomorrow', 'tommorrow': 'tomorrow',
+      'becuase': 'because', 'becasue': 'because',
+      'wich': 'which', 'wihch': 'which',
+      'u ': 'you ', 'r ': 'are ', 'ur ': 'your '
     };
 
     Object.entries(typos).forEach(([wrong, right]) => {
@@ -474,7 +615,10 @@ class AIService {
       fixed = fixed.replace(regex, right);
     });
 
-    // Ensure period at end (if not question or exclamation)
+    // Fix double spaces
+    fixed = fixed.replace(/  +/g, ' ').trim();
+
+    // Ensure sentence ends with punctuation
     if (!/[.!?]$/.test(fixed)) {
       fixed += '.';
     }

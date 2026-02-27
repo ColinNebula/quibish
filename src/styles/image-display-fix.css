@@ -25,8 +25,8 @@ img {
 .pro-message-list .attachment-image,
 .pro-message-blurb .attached-image,
 .pro-message-blurb .attachment-image {
-  max-width: min(460px, calc(100vw - 80px)) !important;
-  max-height: 380px !important;
+  max-width: min(600px, calc(100vw - 80px)) !important;
+  max-height: 600px !important;
   width: auto !important;
   height: auto !important;
   border-radius: 8px;
@@ -55,7 +55,8 @@ img {
 .pro-message-list .image-attachment,
 .pro-message-blurb .image-attachment {
   position: relative;
-  display: inline-block;
+  display: block;       /* fill the bubble width instead of inline-block */
+  width: 100%;
   max-width: 100%;
   overflow: hidden;
   border-radius: 12px;
@@ -83,8 +84,8 @@ img {
 /* Message attachment fixes - ONLY in messages area */
 .pro-message-list .message-attachment img,
 .pro-message-blurb .message-attachment img {
-  max-width: 280px;
-  max-height: 240px;
+  max-width: min(600px, calc(100vw - 80px));
+  max-height: 600px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -120,7 +121,7 @@ img {
   .pro-message-blurb .attachment-image,
   .pro-message-blurb .attached-image {
     max-width: calc(100vw - 80px) !important;
-    max-height: 360px !important;
+    max-height: 500px !important;
     width: auto !important;
     height: auto !important;
     object-fit: contain !important;

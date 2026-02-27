@@ -14,7 +14,7 @@ const healthCheck = require('./middleware/healthCheck');
 const securityMiddleware = require('./middleware/security');
 const { httpsEnforcementMiddleware, securityHeadersMiddleware } = require('./middleware/httpsEnforcement');
 const { router: signalingRouter, signalingServer } = require('./routes/signaling');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Memory monitor is auto-initialized from config
 // const memoryMonitor = new MemoryMonitor(); // Now using exported instance

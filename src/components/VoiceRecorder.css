@@ -177,91 +177,6 @@
   background: rgba(245, 158, 11, 0.1);
 }
 
-/* Volume Visualization */
-.volume-visualization {
-  margin: 16px 0;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.volume-meter {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.volume-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  min-width: 50px;
-}
-
-.volume-bar-container {
-  flex: 1;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-}
-
-.volume-bar {
-  height: 100%;
-  background: #22c55e;
-  border-radius: 4px;
-  transition: all 0.1s ease-out;
-  position: relative;
-  width: 0%;
-}
-
-.volume-bar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 4px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 0 4px 4px 0;
-  animation: volume-shine 0.5s ease-in-out infinite alternate;
-}
-
-@keyframes volume-shine {
-  0% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-.volume-value {
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151;
-  min-width: 35px;
-  text-align: right;
-}
-
-/* Waveform Visualization */
-.waveform-container {
-  background: #000;
-  border-radius: 8px;
-  padding: 8px;
-  overflow: hidden;
-}
-
-.waveform-canvas {
-  width: 100%;
-  height: 60px;
-  background: transparent;
-  border-radius: 4px;
-}
-
 /* Recording Progress */
 .recording-progress {
   margin: 16px 0;
@@ -879,118 +794,188 @@
   font-weight: 600;
 }
 
-/* Voice Message Player */
-.voice-message-player {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  margin: 8px 0;
-  transition: all 0.2s ease;
-}
-
-.voice-message-player:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.voice-message-player.compact {
-  padding: 8px 12px;
-  border-radius: 8px;
-}
-
-.play-pause-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
+/* ═══════════════════════════════════════════════
+   LIVE WAVEFORM (during recording)
+═══════════════════════════════════════════════ */
+.live-waveform {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 3px;
+  height: 56px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.live-bar {
+  flex: 1;
+  max-width: 5px;
+  border-radius: 3px;
+  background: #d1d5db;
+  transition: height 0.08s ease-out;
+  min-height: 4px;
+}
+
+.live-bar.active {
+  background: linear-gradient(to top, #ef4444, #f97316);
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.4);
+}
+
+.live-bar.paused {
+  background: #f59e0b;
+  animation: paused-shimmer 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes paused-shimmer {
+  from { opacity: 0.5; }
+  to   { opacity: 1; }
+}
+
+
+/* ═══════════════════════════════════════════════
+   VOICE MESSAGE PLAYER  (in chat bubbles)
+═══════════════════════════════════════════════ */
+.voice-message-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  min-width: 220px;
+  max-width: 320px;
+  user-select: none;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.voice-message-player.received {
+  background: #f0f4ff;
+  border-color: rgba(99,102,241,0.15);
+}
+
+.voice-message-player.sent {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.25);
+}
+
+/* Play button */
+.vmp-play-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  color: white;
 }
 
-.play-pause-btn:hover {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  transform: scale(1.05);
+.voice-message-player.received .vmp-play-btn {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  box-shadow: 0 3px 10px rgba(99,102,241,0.4);
 }
 
-.play-pause-btn:active {
-  transform: scale(0.95);
+.voice-message-player.sent .vmp-play-btn {
+  background: rgba(255,255,255,0.9);
+  color: #4f46e5;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
 }
 
-.voice-message-player.compact .play-pause-btn {
-  width: 28px;
-  height: 28px;
-  font-size: 12px;
-}
+.vmp-play-btn:hover { transform: scale(1.08); }
+.vmp-play-btn:active { transform: scale(0.95); }
 
-.playback-info {
+/* Body */
+.vmp-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
 }
 
-.progress-container {
+/* Waveform bars scrubber */
+.vmp-waveform {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
   cursor: pointer;
   padding: 4px 0;
 }
 
-.progress-track {
-  height: 4px;
-  background: rgba(0, 0, 0, 0.1);
+.vmp-bar {
+  flex: 1;
   border-radius: 2px;
-  overflow: hidden;
-  position: relative;
+  min-height: 4px;
+  background: rgba(0,0,0,0.15);
+  transition: background 0.1s ease;
+  pointer-events: none;
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
-  border-radius: 2px;
-  transition: width 0.1s ease-out;
-  position: relative;
-}
+.voice-message-player.received .vmp-bar { background: #c7d2fe; }
+.voice-message-player.received .vmp-bar.played { background: #6366f1; }
 
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 8px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
-  transform: translateX(50%);
-}
+.voice-message-player.sent .vmp-bar { background: rgba(255,255,255,0.35); }
+.voice-message-player.sent .vmp-bar.played { background: rgba(255,255,255,0.9); }
 
-.time-display {
+/* Times */
+.vmp-times {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: #6b7280;
-  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  font-family: 'SF Mono', 'Courier New', monospace;
+  letter-spacing: 0.02em;
 }
 
-.current-time {
-  font-weight: 600;
-  color: #374151;
-}
+.voice-message-player.received .vmp-times { color: #6366f1; }
+.voice-message-player.sent .vmp-times { color: rgba(255,255,255,0.85); }
 
-.duration {
+.vmp-current { font-weight: 700; }
+.vmp-total   { opacity: 0.65; }
+
+/* Speed button */
+.vmp-speed-btn {
+  background: none;
+  border: 1.5px solid currentColor;
+  border-radius: 6px;
+  padding: 2px 5px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
   opacity: 0.7;
+  line-height: 1.4;
 }
+
+.voice-message-player.received .vmp-speed-btn { color: #6366f1; }
+.voice-message-player.sent .vmp-speed-btn { color: rgba(255,255,255,0.9); }
+.vmp-speed-btn:hover { opacity: 1; }
+
+/* Compact variant */
+.voice-message-player.compact {
+  padding: 8px 10px;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.voice-message-player.compact .vmp-play-btn {
+  width: 30px;
+  height: 30px;
+}
+
+.voice-message-player.compact .vmp-waveform {
+  height: 24px;
+}
+
+
 
 /* Dark theme support */
 [data-theme="dark"] .voice-recorder {
@@ -1012,28 +997,13 @@
   color: #f9fafb;
 }
 
-[data-theme="dark"] .volume-visualization {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .volume-label,
-[data-theme="dark"] .volume-value {
-  color: #d1d5db;
-}
-
 [data-theme="dark"] .voice-message-player {
   background: rgba(31, 41, 55, 0.9);
   border-color: rgba(255, 255, 255, 0.1);
-  color: #f9fafb;
 }
 
-[data-theme="dark"] .time-display {
-  color: #9ca3af;
-}
-
-[data-theme="dark"] .current-time {
-  color: #f9fafb;
+[data-theme="dark"] .voice-message-player.received {
+  background: rgba(99, 102, 241, 0.15);
 }
 
 /* Responsive adjustments */

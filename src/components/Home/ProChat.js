@@ -305,14 +305,57 @@ const ProChat = ({
     }
     el.textContent = [
       '@media screen and (max-width: 768px) {',
-      '  html body .pro-layout { height: 100vh !important; height: 100dvh !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; gap: 0 !important; }',
-      '  html body .pro-main { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; gap: 0 !important; }',
-      '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { flex: 0 0 auto !important; position: relative !important; top: auto !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important; max-height: none !important; padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: #ffffff !important; }',
+      '  html, body { overflow: hidden !important; overscroll-behavior: none !important; height: 100% !important; max-height: 100% !important; }',
+      '  html body .app { height: 100vh !important; height: 100dvh !important; max-height: 100vh !important; max-height: 100dvh !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; position: relative !important; }',
+      '  html body .app-content { flex: 1 1 0% !important; min-height: 0 !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }',
+      '  html body .pro-layout { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; gap: 0 !important; -webkit-transform: translateZ(0) !important; transform: translateZ(0) !important; }',
+      '  html body .pro-main { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; gap: 0 !important; -webkit-transform: translateZ(0) !important; transform: translateZ(0) !important; }',
+      // Use sticky so the header locks to the top of its scroll context regardless of any overflow that slips through.
+      '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { flex: 0 0 auto !important; position: -webkit-sticky !important; position: sticky !important; top: 0 !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important; max-height: none !important; padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: #ffffff !important; z-index: 100 !important; }',
       '  html body .pro-main .pro-content { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; background: #f5f5f5 !important; gap: 0 !important; }',
-      '  html body .pro-main .pro-message-list { flex: 1 1 0% !important; min-height: 0 !important; height: 0 !important; max-height: none !important; overflow-y: auto !important; overflow-x: hidden !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
+      '  html body .pro-main .pro-message-list { flex: 1 1 0% !important; min-height: 0 !important; max-height: none !important; overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
       '  html body .pro-main .pro-chat-input-container { flex: 0 0 auto !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }',
       '}'
     ].join('\n');
+  }, []);
+
+  // Direct pixel-height enforcement for the message list on mobile.
+  // This bypasses the entire CSS cascade and works even when iOS Safari miscomputes flex heights.
+  useLayoutEffect(() => {
+    if (window.innerWidth > 768) return;
+
+    const applyHeight = () => {
+      const list = messagesContainerRef.current;
+      if (!list) return;
+      const header = list.closest('.pro-main')?.querySelector('.pro-header, .enhanced-chat-header');
+      const input  = list.closest('.pro-main')?.querySelector('.pro-chat-input-container');
+      // Use visualViewport when available (accounts for iOS keyboard and browser chrome)
+      const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+      const hh = header ? header.getBoundingClientRect().height : 56;
+      const ih = input  ? input.getBoundingClientRect().height  : 60;
+      const listH = vh - hh - ih;
+      if (listH > 50) {
+        list.style.height    = `${listH}px`;
+        list.style.maxHeight = `${listH}px`;
+        list.style.flex      = 'none';
+      }
+    };
+
+    applyHeight();
+
+    const vvp = window.visualViewport;
+    vvp?.addEventListener('resize', applyHeight);
+    window.addEventListener('resize', applyHeight);
+
+    const ro = new ResizeObserver(applyHeight);
+    const proMain = messagesContainerRef.current?.closest('.pro-main');
+    if (proMain) ro.observe(proMain);
+
+    return () => {
+      vvp?.removeEventListener('resize', applyHeight);
+      window.removeEventListener('resize', applyHeight);
+      ro.disconnect();
+    };
   }, []);
 
   // Chat messages state - loaded from database
@@ -383,19 +426,36 @@ const ProChat = ({
   }, [user.id]);
 
   // Auto-scroll to bottom function
+  // Using direct scrollTop on the container avoids scrollIntoView picking the wrong
+  // scrollable ancestor (e.g. body/pro-layout) which would push the header off-screen.
   const scrollToBottom = useCallback(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'end'
-      });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   }, []);
 
-  // Auto-scroll when messages change
+  // Auto-scroll when messages change, and ensure no residual body/window scroll accumulates
   useEffect(() => {
     scrollToBottom();
+    // Belt-and-suspenders: reset any accidental document scroll on mobile
+    if (window.innerWidth <= 768) {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
   }, [chatMessages, scrollToBottom]);
+
+  // Persist text messages to localStorage whenever they change for the active conversation.
+  // File/media messages (data URLs) are skipped to avoid quota exhaustion.
+  useEffect(() => {
+    if (!selectedConversation || chatMessages.length === 0) return;
+    try {
+      const toStore = chatMessages.filter(m => !m.file?.url?.startsWith('data:'));
+      localStorage.setItem(`quibish_conv_messages_${selectedConversation}`, JSON.stringify(toStore));
+    } catch (e) {
+      console.warn('Failed to persist messages:', e);
+    }
+  }, [chatMessages, selectedConversation]);
 
   // Initialize connection monitoring
   useEffect(() => {
@@ -743,48 +803,28 @@ const ProChat = ({
       setMessagesLoading(true);
       setMessagesError(null);
       
-      console.log('Loading messages for conversation:', conversation.name, conversationId);
+      // Load from per-conversation localStorage key (fast, works offline, survives refresh)
+      const CONV_KEY = `quibish_conv_messages_${conversationId}`;
+      let localMessages = [];
+      try {
+        const stored = localStorage.getItem(CONV_KEY);
+        localMessages = stored ? JSON.parse(stored) : [];
+      } catch (_) {}
       
-      // Load messages from the message service for this conversation
-      const conversationMessages = await messageService.getMessages({ 
-        conversationId: conversationId,
-        limit: 50 
-      });
-      
-      if (Array.isArray(conversationMessages)) {
-        setChatMessages(conversationMessages);
-        console.log('Loaded conversation messages:', conversationMessages.length);
-        
-        // Mark conversation as read if it had unread messages
-        if (conversation.unreadCount > 0) {
-          console.log('Marked conversation as read:', conversation.name);
-        }
-        
-        // Scroll to bottom after loading messages
-        setTimeout(() => {
-          scrollToBottom();
-        }, 100);
+      if (Array.isArray(localMessages) && localMessages.length > 0) {
+        setChatMessages(localMessages);
+        console.log('Loaded', localMessages.length, 'messages from localStorage for', conversation.name);
       } else {
-        console.warn('Invalid conversation messages format received:', conversationMessages);
         setChatMessages([]);
       }
+      
+      // Scroll to bottom after loading
+      setTimeout(() => scrollToBottom(), 100);
+      
     } catch (error) {
       console.error('Failed to load conversation messages:', error);
-      setMessagesError('Failed to load conversation messages');
-      
-      // Try to load from localStorage as fallback
-      try {
-        const cachedMessages = messageService.loadMessagesFromStorage(conversationId);
-        if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
-          setChatMessages(cachedMessages);
-          console.log('Loaded conversation messages from cache');
-        } else {
-          setChatMessages([]);
-        }
-      } catch (storageError) {
-        console.error('Error loading conversation messages from storage:', storageError);
-        setChatMessages([]);
-      }
+      setMessagesError('Failed to load messages');
+      setChatMessages([]);
     } finally {
       setMessagesLoading(false);
       
@@ -2196,6 +2236,95 @@ const ProChat = ({
     }
   }, [handleSendMessage]);
 
+  // Delete a single message from state and localStorage
+  const handleDeleteMessage = useCallback((messageId) => {
+    if (!window.confirm('Delete this message?')) return;
+    setChatMessages(prev => prev.filter(m => String(m.id) !== String(messageId)));
+    // localStorage is updated by the persistence useEffect above
+  }, []);
+
+  // Archive a message (marks it hidden; keeps in storage)
+  const handleArchiveMessage = useCallback((messageId) => {
+    setChatMessages(prev => prev.map(m =>
+      String(m.id) === String(messageId) ? { ...m, archived: true } : m
+    ).filter(m => !m.archived));
+  }, []);
+
+  // Per-message swipe tracking — stored in a ref Map to avoid re-renders on every touchmove
+  const swipeStateRef = useRef(new Map()); // messageId → { startX, startY, deltaX, isHoriz }
+
+  const handleMsgSwipeStart = useCallback((e, messageId) => {
+    if (window.innerWidth > 768) return;
+    const t = e.touches[0];
+    swipeStateRef.current.set(messageId, { startX: t.clientX, startY: t.clientY, deltaX: 0, isHoriz: null });
+  }, []);
+
+  const handleMsgSwipeMove = useCallback((e, messageId) => {
+    if (window.innerWidth > 768) return;
+    const state = swipeStateRef.current.get(messageId);
+    if (!state) return;
+    const t = e.touches[0];
+    const dx = t.clientX - state.startX;
+    const dy = t.clientY - state.startY;
+    // Determine direction on first significant movement
+    if (state.isHoriz === null && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      state.isHoriz = Math.abs(dx) > Math.abs(dy);
+    }
+    if (!state.isHoriz) return; // vertical scroll — let browser handle it
+    e.preventDefault(); // block page scroll during horizontal swipe
+    state.deltaX = Math.max(-120, Math.min(120, dx));
+    const el = document.getElementById(`message-${messageId}`);
+    if (el) {
+      // Drive transform via inline style — no CSS custom property so no constant
+      // transform/will-change is ever applied to resting bubbles.
+      el.style.transform = `translateX(${state.deltaX}px)`;
+      el.style.willChange = 'transform';
+      el.classList.toggle('swiping-left',  state.deltaX < -20);
+      el.classList.toggle('swiping-right', state.deltaX > 20);
+    }
+  }, []);
+
+  const handleMsgSwipeEnd = useCallback((e, messageId) => {
+    if (window.innerWidth > 768) return;
+    const state = swipeStateRef.current.get(messageId);
+    if (!state) return;
+    swipeStateRef.current.delete(messageId);
+    const el = document.getElementById(`message-${messageId}`);
+    const THRESHOLD = 70;
+    if (state.isHoriz && Math.abs(state.deltaX) >= THRESHOLD) {
+      // Animate out then act
+      if (el) {
+        const dir = state.deltaX < 0 ? '-110%' : '110%';
+        el.style.transition = 'transform 0.2s ease-out';
+        el.style.transform = `translateX(${dir})`;
+      }
+      setTimeout(() => {
+        if (state.deltaX < 0) {
+          // Swiped left → delete (no confirm on swipe for fluidity)
+          setChatMessages(prev => prev.filter(m => String(m.id) !== String(messageId)));
+        } else {
+          // Swiped right → archive
+          handleArchiveMessage(messageId);
+        }
+      }, 200);
+    } else {
+      // Snap back
+      if (el) {
+        el.style.transition = 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)';
+        el.style.transform = 'translateX(0px)';
+        el.classList.remove('swiping-left', 'swiping-right');
+        // Clear inline styles after snap so resting bubbles have zero overhead
+        setTimeout(() => {
+          if (el) {
+            el.style.transition = '';
+            el.style.transform = '';
+            el.style.willChange = '';
+          }
+        }, 260);
+      }
+    }
+  }, [handleArchiveMessage, setChatMessages]);
+
   // AI Feature Handlers
   const handleSmartReplySelect = useCallback((reply) => {
     setInputText(reply);
@@ -2209,8 +2338,12 @@ const ProChat = ({
     }
   }, [inputText]);
 
-  const handleAIEnhance = useCallback((enhancedText) => {
-    setInputText(enhancedText);
+  const handleAIEnhance = useCallback((result) => {
+    // result is the full enhancement object; insertion is handled via onUseInChat
+  }, []);
+
+  const handleAIUseInChat = useCallback((text) => {
+    setInputText(text);
     setShowAIEnhancement(false);
   }, []);
 
@@ -3317,7 +3450,19 @@ const ProChat = ({
               id={`message-${message.id}`}
               className={`pro-message-blurb ${highlightedMessageId === message.id ? 'search-highlighted' : ''}`}
               data-message-id={message.id}
+              onTouchStart={(e) => handleMsgSwipeStart(e, message.id)}
+              onTouchMove={(e) => handleMsgSwipeMove(e, message.id)}
+              onTouchEnd={(e) => handleMsgSwipeEnd(e, message.id)}
             >
+              {/* Delete button — visible on hover / tap-hold */}
+              <button
+                className="msg-delete-btn"
+                onClick={(e) => { e.stopPropagation(); handleDeleteMessage(message.id); }}
+                title="Delete message"
+                aria-label="Delete message"
+              >
+                ×
+              </button>
               <div className="message-avatar">
                 <img 
                   src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
@@ -3325,7 +3470,17 @@ const ProChat = ({
                   onClick={() => handleViewUserProfile(message.user.id, message.user.name)}
                 />
               </div>
-              <div className="message-content" onClick={() => handleMessageClick(message.id)}>
+              <div
+                className="message-content"
+                onClick={() => handleMessageClick(message.id)}
+                style={{
+                  minWidth: 0,
+                  width: '100%',
+                  overflow: 'visible',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
                 <div className="message-header">
                   <span className="user-name">{message.user.name}</span>
                   {/* Encryption Status Indicator */}
@@ -3350,8 +3505,28 @@ const ProChat = ({
                   data-has-links={getAdvancedMessageCategory(message).hasLinks}
                   data-has-mentions={getAdvancedMessageCategory(message).hasMentions}
                   data-sentiment={getAdvancedMessageCategory(message).sentiment}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: 'none',
+                    minWidth: 0,
+                    overflow: 'visible',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    boxSizing: 'border-box',
+                  }}
                 >
-                  <span className="message-smart-text">
+                  <span
+                    className="message-smart-text"
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                    }}
+                  >
                     {message.text}
                   </span>
                 </div>
@@ -3478,7 +3653,8 @@ const ProChat = ({
                       <VoiceMessagePlayer
                         audioUrl={message.audioUrl}
                         duration={message.duration}
-                        compact={true}
+                        compact={false}
+                        isSent={String(message.user?.id) === String(user?.id)}
                         className="chat-voice-player"
                       />
                     ) : (
@@ -3938,7 +4114,9 @@ const ProChat = ({
               <AIEnhancementPanel
                 message={currentMessageForAI}
                 onEnhance={handleAIEnhance}
+                onUseInChat={handleAIUseInChat}
                 onClose={() => setShowAIEnhancement(false)}
+                isVisible={true}
               />
             )}
           </div>

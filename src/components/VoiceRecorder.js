@@ -2,6 +2,53 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import enhancedVoiceRecorderService from '../services/enhancedVoiceRecorderService';
 import './VoiceRecorder.css';
 
+// Animated live waveform bars driven by volume
+function LiveWaveform({ volume, isRecording, isPaused, barCount = 32 }) {
+  const [bars, setBars] = useState(() => Array(barCount).fill(5));
+  const animFrameRef = useRef(null);
+  const heightsRef = useRef(Array(barCount).fill(5));
+
+  useEffect(() => {
+    if (!isRecording || isPaused) {
+      // Decay all bars to rest
+      const decay = () => {
+        let changed = false;
+        heightsRef.current = heightsRef.current.map(h => {
+          if (h > 5) { changed = true; return Math.max(5, h - 3); }
+          return h;
+        });
+        setBars([...heightsRef.current]);
+        if (changed) animFrameRef.current = requestAnimationFrame(decay);
+      };
+      animFrameRef.current = requestAnimationFrame(decay);
+      return () => cancelAnimationFrame(animFrameRef.current);
+    }
+
+    const animate = () => {
+      // Shift bars left, push a new one based on current volume + noise
+      const noise = (Math.random() * 0.4 + 0.8);
+      const newH = Math.max(8, Math.min(95, (volume * noise) + (Math.random() * 15)));
+      heightsRef.current = [...heightsRef.current.slice(1), newH];
+      setBars([...heightsRef.current]);
+    };
+
+    const id = setInterval(animate, 60);
+    return () => clearInterval(id);
+  }, [isRecording, isPaused, volume, barCount]);
+
+  return (
+    <div className="live-waveform">
+      {bars.map((h, i) => (
+        <div
+          key={i}
+          className={`live-bar ${isPaused ? 'paused' : isRecording ? 'active' : ''}`}
+          style={{ height: `${h}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
 const VoiceRecorder = ({ 
   onRecordingComplete,
   onRecordingCancel,
@@ -472,28 +519,11 @@ const VoiceRecorder = ({
 
       {/* Volume Visualization */}
       {isRecording && !compact && (
-        <div className="volume-visualization">
-          <div className="volume-meter">
-            <div className="volume-label">Volume</div>
-            <div className="volume-bar-container">
-              <div 
-                ref={volumeBarRef}
-                className="volume-bar"
-                style={{ backgroundColor: getVolumeColor() }}
-              ></div>
-            </div>
-            <div className="volume-value">{volume}%</div>
-          </div>
-
-          <div className="waveform-container">
-            <canvas 
-              ref={waveformCanvasRef}
-              className="waveform-canvas"
-              width="200"
-              height="60"
-            ></canvas>
-          </div>
-        </div>
+        <LiveWaveform
+          volume={volume}
+          isRecording={isRecording}
+          isPaused={isPaused}
+        />
       )}
 
       {/* Progress Bar */}
@@ -652,112 +682,137 @@ const VoiceRecorder = ({
   );
 };
 
+// Generate a deterministic-looking waveform from the audio URL string
+function generateWaveformBars(seed = '', count = 30) {
+  const bars = [];
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+  for (let i = 0; i < count; i++) {
+    h = (Math.imul(1664525, h) + 1013904223) | 0;
+    const raw = ((h >>> 0) % 80) + 15; // 15–95%
+    bars.push(raw);
+  }
+  return bars;
+}
+
 // Audio Playback Component for recorded messages
 export const VoiceMessagePlayer = ({ 
   audioUrl, 
   duration, 
   className = '',
-  compact = false 
+  compact = false,
+  isSent = false
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(duration || 0);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
   const audioRef = useRef(null);
+  const progressRef = useRef(null);
+  const waveformBars = useState(() => generateWaveformBars(audioUrl || '', 36))[0];
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime * 1000);
-    };
-
-    const handleDurationChange = () => {
-      setTotalDuration(audio.duration * 1000);
-    };
-
-    const handleEnded = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-    };
+    const handleTimeUpdate = () => { if (!isDragging) setCurrentTime(audio.currentTime * 1000); };
+    const handleDurationChange = () => { setTotalDuration(audio.duration * 1000); };
+    const handleEnded = () => { setIsPlaying(false); setCurrentTime(0); };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('ended', handleEnded);
-
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('durationchange', handleDurationChange);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, []);
+  }, [isDragging]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+  }, [playbackRate]);
 
   const togglePlayback = () => {
     const audio = audioRef.current;
     if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      audio.play();
-      setIsPlaying(true);
-    }
+    if (isPlaying) { audio.pause(); setIsPlaying(false); }
+    else { audio.play(); setIsPlaying(true); }
   };
 
-  const handleSeek = (e) => {
+  const seekTo = useCallback((e) => {
     const audio = audioRef.current;
-    if (!audio) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pos = (e.clientX - rect.left) / rect.width;
+    const track = progressRef.current;
+    if (!audio || !track) return;
+    const rect = track.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const newTime = pos * (totalDuration / 1000);
-    
     audio.currentTime = newTime;
     setCurrentTime(newTime * 1000);
-  };
+  }, [totalDuration]);
 
   const formatTime = (ms) => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    const s = Math.floor(ms / 1000);
+    return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   };
 
-  const getProgress = () => {
-    return totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
+  const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
+  const playedBarCount = Math.round((progress / 100) * waveformBars.length);
+  const speeds = [1, 1.5, 2, 0.5];
+
+  const cycleSpeed = () => {
+    const next = speeds[(speeds.indexOf(playbackRate) + 1) % speeds.length];
+    setPlaybackRate(next);
   };
 
   return (
-    <div className={`voice-message-player ${compact ? 'compact' : ''} ${className}`}>
+    <div className={`voice-message-player ${compact ? 'compact' : ''} ${isSent ? 'sent' : 'received'} ${className}`}>
       <audio ref={audioRef} src={audioUrl} preload="metadata" />
-      
-      <button 
-        className="play-pause-btn"
-        onClick={togglePlayback}
-        title={isPlaying ? 'Pause' : 'Play'}
-      >
-        <span className="btn-icon">{isPlaying ? '⏸️' : '▶️'}</span>
+
+      {/* Play/Pause */}
+      <button className="vmp-play-btn" onClick={togglePlayback} title={isPlaying ? 'Pause' : 'Play'}>
+        {isPlaying
+          ? <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          : <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg>
+        }
       </button>
 
-      <div className="playback-info">
-        <div 
-          className="progress-container"
-          onClick={handleSeek}
+      {/* Waveform + time */}
+      <div className="vmp-body">
+        {/* Waveform scrubber */}
+        <div
+          ref={progressRef}
+          className="vmp-waveform"
+          onMouseDown={(e) => { setIsDragging(true); seekTo(e); }}
+          onMouseMove={(e) => { if (isDragging) seekTo(e); }}
+          onMouseUp={() => setIsDragging(false)}
+          onMouseLeave={() => setIsDragging(false)}
+          onTouchStart={(e) => { setIsDragging(true); seekTo(e); }}
+          onTouchMove={(e) => { if (isDragging) seekTo(e); }}
+          onTouchEnd={() => setIsDragging(false)}
         >
-          <div className="progress-track">
-            <div 
-              className="progress-fill"
-              style={{ width: `${getProgress()}%` }}
-            ></div>
-          </div>
+          {waveformBars.map((h, i) => (
+            <div
+              key={i}
+              className={`vmp-bar ${i < playedBarCount ? 'played' : ''}`}
+              style={{ height: `${h}%` }}
+            />
+          ))}
         </div>
 
-        <div className="time-display">
-          <span className="current-time">{formatTime(currentTime)}</span>
-          <span className="duration">{formatTime(totalDuration)}</span>
+        {/* Time row */}
+        <div className="vmp-times">
+          <span className="vmp-current">{formatTime(currentTime)}</span>
+          <span className="vmp-total">{formatTime(totalDuration)}</span>
         </div>
       </div>
+
+      {/* Speed button */}
+      <button className="vmp-speed-btn" onClick={cycleSpeed} title="Change playback speed">
+        {playbackRate}×
+      </button>
     </div>
   );
 };

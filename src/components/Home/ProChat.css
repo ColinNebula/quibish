@@ -2619,7 +2619,7 @@
   /* Ensure messages conform to content on desktop */
   .pro-message-blurb {
     max-width: 85%;
-    width: fit-content;
+    width: 100%;
     padding: 12px 16px;
     margin: 8px 0;
     display: flex;
@@ -2632,20 +2632,14 @@
     overflow-wrap: break-word;
   }
   
-  .message-text[data-length="short"] {
-    max-width: 350px;
-  }
-  
+  .message-text[data-length="short"],
   .message-text[data-length="medium"] {
-    max-width: 300px; /* Smaller max for mobile */
+    max-width: 100%; /* let the bubble control width, not the text */
   }
   
-  .message-text[data-length="long"] {
-    max-width: calc(100vw - 80px); /* Full mobile width */
-  }
-  
+  .message-text[data-length="long"],
   .message-text[data-length="very-long"] {
-    max-width: calc(100vw - 80px); /* Full mobile width */
+    max-width: 100%;
   }
   
   /* Mobile header improvements */
@@ -2860,15 +2854,13 @@
     padding: 6px 10px;
     margin: 4px 0;
     max-width: calc(100% - 16px) !important;
-    width: fit-content;
+    width: 100%;
     display: flex;
     align-self: flex-start !important;
   }
   
   .message-text {
     font-size: 13px;
-    padding: 8px 12px;
-    max-width: calc(100vw - 60px); /* Account for smaller screens */
     text-align: left;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -2876,22 +2868,18 @@
   
   .message-text[data-length="short"] {
     padding: 4px 6px;
-    max-width: 180px; /* Even smaller for tiny screens */
   }
   
   .message-text[data-length="medium"] {
     padding: 6px 10px;
-    max-width: 240px; /* Smaller max for tiny screens */
   }
   
   .message-text[data-length="long"] {
     padding: 10px 14px;
-    max-width: calc(100vw - 60px); /* Full tiny screen width */
   }
   
   .message-text[data-length="very-long"] {
     padding: 12px 16px;
-    max-width: calc(100vw - 60px); /* Full tiny screen width */
   }
   
   /* Enhanced input area centering */
@@ -2911,15 +2899,15 @@
     font-size: 16px;
   }
 }
-/* Mobile-specific content-conforming overrides */
+/* Mobile layout overrides */
 @media (max-width: 768px) {
   .pro-message-blurb {
-    width: fit-content !important;
+    width: 100% !important;
     max-width: calc(100% - 20px) !important;
   }
   .pro-message-blurb:has(.message-text[data-length="short"]) {
     max-width: 250px !important;
-    width: fit-content !important;
+    width: 100% !important;
   }
   /* GIF messages must override the short-text cap */
   .pro-message-blurb:has(.message-text[data-length="short"]):has(.gif-attachment),
@@ -2929,22 +2917,22 @@
   }
   .pro-message-blurb:has(.message-text[data-length="medium"]) {
     max-width: 350px !important;
-    width: fit-content !important;
+    width: 100% !important;
   }
   .pro-message-blurb:has(.message-text[data-length="long"]),
   .pro-message-blurb:has(.message-text[data-length="very-long"]) {
     max-width: calc(100vw - 120px) !important;
-    width: fit-content !important;
+    width: 100% !important;
   }
 }
 @media (max-width: 480px) {
   .pro-message-blurb {
-    width: fit-content !important;
+    width: 100% !important;
     max-width: calc(100% - 16px) !important;
   }
   .pro-message-blurb:has(.message-text[data-length="short"]) {
     max-width: 200px !important;
-    width: fit-content !important;
+    width: 100% !important;
   }
   /* GIF messages must override the short-text cap */
   .pro-message-blurb:has(.message-text[data-length="short"]):has(.gif-attachment),
@@ -2954,12 +2942,12 @@
   }
   .pro-message-blurb:has(.message-text[data-length="medium"]) {
     max-width: 280px !important;
-    width: fit-content !important;
+    width: 100% !important;
   }
   .pro-message-blurb:has(.message-text[data-length="long"]),
   .pro-message-blurb:has(.message-text[data-length="very-long"]) {
     max-width: calc(100vw - 100px) !important;
-    width: fit-content !important;
+    width: 100% !important;
   }
 }
 .dark-mode .pro-chat-input-container,
@@ -3427,7 +3415,7 @@
   
   .attached-image {
     max-width: calc(100vw - 80px) !important;
-    max-height: 360px !important;
+    max-height: 500px !important;
     width: auto !important;
     height: auto !important;
     object-fit: contain !important;
@@ -3440,20 +3428,25 @@
     max-height: 320px !important;
   }
   
-  /* Two-row layout styles for mobile */
+  /* Input actions row – single scrollable row, no wrapping */
   .input-actions-row {
     display: flex !important;
     flex-direction: row !important;
+    flex-wrap: nowrap !important;
     gap: 6px !important;
     justify-content: flex-start !important;
     align-items: center !important;
-    flex-wrap: nowrap !important;
     width: 100% !important;
     padding: 8px 0 !important;
     border-bottom: 1px solid rgba(226, 232, 240, 0.3) !important;
     margin-bottom: 4px !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .input-actions-row::-webkit-scrollbar {
+    display: none !important;
   }
 
   .message-input-row {
@@ -3518,12 +3511,18 @@
     box-sizing: border-box !important;
   }
   
-  /* Enhanced small screen layout */
+  /* Enhanced small screen layout – single scrollable icon row */
   .input-actions-row {
-    gap: 3px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
     padding: 6px 0 !important;
-    flex-wrap: wrap !important;
-    justify-content: flex-start !important;
+    scrollbar-width: none !important;
+  }
+
+  .input-actions-row::-webkit-scrollbar {
+    display: none !important;
   }
 
   .message-input-row {
@@ -3531,12 +3530,12 @@
   }
   
   .input-btn {
-    width: 44px !important;
-    height: 44px !important;
-    font-size: 20px !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 18px !important;
     flex-shrink: 0 !important;
-    border-radius: 12px !important;
-    min-width: 44px !important;
+    border-radius: 10px !important;
+    min-width: 40px !important;
     padding: 0 !important;
     margin: 0 !important;
   }
@@ -3562,14 +3561,10 @@
 
   /* Enhanced mobile action button styling */
   .mobile-action-button {
-    min-width: 44px !important;
-    min-height: 44px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-  }
-
-  .input-actions-row {
-    gap: 12px !important;
   }
 }
 /* Message Attachments Styling */
@@ -3595,10 +3590,10 @@
 }
 .attached-image {
   display: block;
-  width: 100%;
+  width: auto;
   height: auto;
   max-width: 100%;
-  max-height: 300px;
+  max-height: 600px;
   object-fit: contain;
   border-radius: 12px 12px 0 0;
   transition: all 0.3s ease;
@@ -4427,27 +4422,27 @@
   }
 }
 .pro-message-blurb {
-  width: fit-content !important; /* Force content-conforming width */
+  width: 100% !important; /* Fill available width up to max-width */
   max-width: 85% !important; /* Ensure reasonable maximum */
   align-self: flex-start !important; /* Align to container start */
-  min-width: auto !important; /* Allow natural minimum width */
-  flex-shrink: 0 !important; /* Prevent shrinking */
+  min-width: 0 !important; /* Allow shrinking for text wrapping */
+  flex-shrink: 1 !important; /* Allow natural shrink */
 }
-/* Ensure message content adapts naturally */
+/* Ensure message content fills the bubble */
 .pro-message-blurb .message-content {
-  width: auto !important; /* Natural width */
-  flex: 1 1 auto !important; /* Flexible but natural sizing */
+  width: 100% !important; /* Fill bubble width */
+  flex: 1 1 auto !important; /* Flexible sizing */
   min-width: 0 !important; /* Allow shrinking for text wrapping */
 }
-/* Ensure text elements conform to content */
+/* Ensure text fills content area and wraps naturally */
 .pro-message-blurb .message-text {
-  width: fit-content !important; /* Content-based sizing */
-  min-width: auto !important; /* Natural minimum */
+  width: 100% !important;
+  min-width: 0 !important;
 }
-/* Container-specific overrides for different message lengths */
+/* Max-width caps per message length — bubbles still fill up to these caps */
 .pro-message-blurb:has(.message-text[data-length="short"]) {
   max-width: min(350px, 90%) !important;
-  width: fit-content !important;
+  width: 100% !important;
 }
 /* GIF messages override text-length constraints */
 .pro-message-blurb:has(.gif-attachment) {
@@ -4456,15 +4451,20 @@
 }
 .pro-message-blurb:has(.message-text[data-length="medium"]) {
   max-width: min(550px, 90%) !important;
-  width: fit-content !important;
+  width: 100% !important;
 }
 .pro-message-blurb:has(.message-text[data-length="long"]) {
   max-width: min(700px, 90%) !important;
-  width: fit-content !important;
+  width: 100% !important;
 }
 .pro-message-blurb:has(.message-text[data-length="very-long"]) {
   max-width: 90% !important;
-  width: fit-content !important;
+  width: 100% !important;
+}
+/* Image attachment bubbles */
+.pro-message-blurb:has(.image-attachment) {
+  max-width: min(640px, 92%) !important;
+  width: 100% !important;
 }
 /* ================================
    ENHANCED MESSAGE ANIMATIONS
@@ -9508,7 +9508,7 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   max-width: 85%; /* Limit maximum width but allow natural sizing */
-  width: fit-content; /* Conform to content size */
+  width: 100%; /* Fill up to max-width */
   align-self: flex-start; /* Align to start of container */
   overflow: visible; /* Prevent cutoff */
 }
@@ -9752,7 +9752,7 @@
 /* Container scaling based on content - Adaptive sizing */
 .pro-message-blurb:has(.message-text[data-length="short"]) {
   max-width: min(350px, 90%); /* Compact for short messages */
-  width: fit-content; /* Size to content */
+  width: 100%; /* Fill up to max-width */
   padding: 8px 12px;
 }
 /* GIF messages should be wider regardless of text length */
@@ -9763,17 +9763,17 @@
 /* Override the !important block version too */
 .pro-message-blurb:has(.message-text[data-length="medium"]) {
   max-width: min(550px, 90%); /* Medium width for medium messages */
-  width: fit-content; /* Size to content */
+  width: 100%; /* Fill up to max-width */
   padding: 10px 14px;
 }
 .pro-message-blurb:has(.message-text[data-length="long"]) {
   max-width: min(700px, 90%); /* Larger width for long messages */
-  width: fit-content; /* Size to content */
+  width: 100%; /* Fill up to max-width */
   padding: 12px 16px;
 }
 .pro-message-blurb:has(.message-text[data-length="very-long"]) {
   max-width: 90%; /* Use most of available width */
-  width: fit-content; /* Size to content */
+  width: 100%; /* Fill up to max-width */
   padding: 14px 18px;
 }
 .pro-message-blurb:has(.message-text[data-length="long"]) {
@@ -9961,6 +9961,7 @@
   width: 100%;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .message-text .smart-text-content {
@@ -11734,6 +11735,38 @@ body.dark-theme .call-option-info p {
     border-bottom-left-radius: 6px;
   }
 
+  /* Pro Max Portrait Mode - Input Actions Row (no icon overlapping) */
+  .input-actions-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 8px !important;
+    padding: 6px 0 !important;
+    scrollbar-width: none !important;
+    align-items: center !important;
+    width: 100% !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.3) !important;
+    margin-bottom: 4px !important;
+  }
+
+  .input-actions-row::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .input-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    flex-shrink: 0 !important;
+    font-size: 18px !important;
+    border-radius: 10px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
   /* Pro Max Portrait Mode - Input Area */
   .pro-chat-input-container {
     position: relative !important;
@@ -12754,6 +12787,294 @@ body.dark-theme .call-option-info p {
     border-radius: 18px;
   }
 
+
+/* ================================================================
+   DEFINITIVE MESSAGE LAYOUT — Discord/Slack/Telegram-Inspired
+   Uses CSS Grid so the text column always has a concrete pixel width.
+   grid-template-columns: 40px 1fr means the content column gets
+   exactly (container − 40px − gap) pixels — NO circular references,
+   NO fit-content/percentage ambiguity of any kind.
+   These rules use html body prefix for maximum specificity and
+   are placed at the very end of the file so source-order wins ties.
+   ================================================================ */
+
+/* Message list: let items control their own width */
+html body .pro-message-list,
+html body .pro-message-area {
+  align-items: stretch !important; /* let children use their own max-width */
+  gap: 2px !important;
+}
+
+/* ── Message row: CSS Grid ── */
+html body .pro-message-blurb {
+  display: grid !important;
+  grid-template-columns: 40px 1fr !important;
+  grid-template-rows: auto !important;
+  column-gap: 12px !important;
+  row-gap: 0 !important;
+  align-items: start !important;
+  /* Width: fill the list, capped by max-width */
+  width: 100% !important;
+  max-width: 85% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  padding: 6px 16px !important;
+  margin: 1px 0 !important;
+  align-self: auto !important; /* let the list's align-items: stretch work */
+}
+
+/* ── Avatar: pinned to column 1 ── */
+html body .pro-message-blurb .message-avatar {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  align-self: start !important;
+  margin-top: 2px !important;
+  flex-shrink: unset !important;
+}
+
+html body .pro-message-blurb .message-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+
+/* ── Content: occupies 1fr — always has a definite pixel width ── */
+html body .pro-message-blurb .message-content {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  min-width: 0 !important;  /* critical: lets block children shrink below content */
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+/* ── Header row: username + timestamp ── */
+html body .pro-message-blurb .message-header {
+  display: flex !important;
+  align-items: baseline !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin-bottom: 1px !important;
+}
+
+html body .pro-message-blurb .user-name {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 200px !important;
+}
+
+html body .pro-message-blurb .timestamp {
+  font-size: 11px !important;
+  opacity: 0.6 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Message text: block in a definite-width container ──
+   display:block fills the 1fr column naturally.
+   No explicit width needed, but we set it for belt-and-suspenders. ── */
+html body .pro-message-blurb .message-text {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;  /* override any pixel caps from old rules */
+  min-width: 0 !important;
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: pre-wrap !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* ── Smart text span: block so it fills the parent width ── */
+html body .pro-message-blurb .message-smart-text {
+  display: block !important;
+  width: 100% !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* ── Hover state: Discord-style subtle highlight ── */
+html body .pro-message-blurb:hover {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ── Mobile: reduce avatar and padding ── */
+@media (max-width: 768px) {
+  html body .pro-message-blurb {
+    grid-template-columns: 32px 1fr !important;
+    column-gap: 8px !important;
+    padding: 4px 12px !important;
+    max-width: 100% !important;
+  }
+  html body .pro-message-blurb .message-avatar {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  html body .pro-message-blurb .message-text {
+    font-size: 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  html body .pro-message-blurb {
+    grid-template-columns: 28px 1fr !important;
+    column-gap: 6px !important;
+    padding: 3px 8px !important;
+  }
+  html body .pro-message-blurb .message-avatar {
+    width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+/* ── Override per-length bubble max-width caps ──
+   Old rules like .pro-message-blurb:has(.message-text[data-length="short"])
+   have specificity (0,3,0) which beats the grid block's (0,1,2).
+   Prefixing with "html body" gives (0,3,2) which wins on all screens.
+   This ensures short messages aren't squashed into a 200-350px bubble. ── */
+html body .pro-message-blurb:has(.message-text[data-length="short"]) {
+  max-width: 85% !important;
+  width: 100% !important;
+}
+html body .pro-message-blurb:has(.message-text[data-length="medium"]) {
+  max-width: 88% !important;
+  width: 100% !important;
+}
+html body .pro-message-blurb:has(.message-text[data-length="long"]) {
+  max-width: 90% !important;
+  width: 100% !important;
+}
+html body .pro-message-blurb:has(.message-text[data-length="very-long"]) {
+  max-width: 92% !important;
+  width: 100% !important;
+}
+/* On mobile every length variant gets full width */
+@media (max-width: 768px) {
+  html body .pro-message-blurb:has(.message-text[data-length="short"]),
+  html body .pro-message-blurb:has(.message-text[data-length="medium"]),
+  html body .pro-message-blurb:has(.message-text[data-length="long"]),
+  html body .pro-message-blurb:has(.message-text[data-length="very-long"]) {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+@media (max-width: 480px) {
+  html body .pro-message-blurb:has(.message-text[data-length="short"]),
+  html body .pro-message-blurb:has(.message-text[data-length="medium"]),
+  html body .pro-message-blurb:has(.message-text[data-length="long"]),
+  html body .pro-message-blurb:has(.message-text[data-length="very-long"]) {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* ── Message delete button — appears on hover ── */
+html body .pro-message-blurb {
+  position: relative !important;
+}
+
+/* ── Swipe-to-action: reveal tinted background and icon during swipe.
+   Only activates when JS adds .swiping-left / .swiping-right class.
+   No base ::before override here — the existing hover-glow ::before
+   continues to work normally when not swiping. ── */
+/* Left-swipe reveal (delete = red) */
+html body .pro-message-blurb.swiping-left::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  pointer-events: none !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.22) 100%) !important;
+  opacity: 1 !important;
+  z-index: 0 !important;
+}
+/* Right-swipe reveal (archive = amber) */
+html body .pro-message-blurb.swiping-right::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  pointer-events: none !important;
+  background: linear-gradient(270deg, transparent 0%, rgba(245,158,11,0.22) 100%) !important;
+  opacity: 1 !important;
+  z-index: 0 !important;
+}
+/* Action icon — only shown during active swipe */
+html body .pro-message-blurb.swiping-left::after {
+  content: '🗑️' !important;
+  position: absolute !important;
+  top: 50% !important;
+  right: 14px !important;
+  transform: translateY(-50%) !important;
+  font-size: 20px !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+html body .pro-message-blurb.swiping-right::after {
+  content: '📁' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 14px !important;
+  transform: translateY(-50%) !important;
+  font-size: 20px !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+html body .pro-message-blurb .msg-delete-btn {
+  position: absolute !important;
+  top: 6px !important;
+  right: 8px !important;
+  display: none !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background 0.15s, transform 0.1s !important;
+  z-index: 20 !important;
+}
+html body .pro-message-blurb:hover .msg-delete-btn {
+  display: flex !important;
+}
+html body .pro-message-blurb .msg-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.28) !important;
+  transform: scale(1.1) !important;
+}
+/* On touch devices always show a smaller indicator instead of hover-only */
+@media (hover: none) {
+  html body .pro-message-blurb .msg-delete-btn {
+    display: flex !important;
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 13px !important;
+    opacity: 0.45 !important;
+  }
+}
+
   /* Enhanced buttons */
   .send-btn,
   .attach-btn {
@@ -13054,7 +13375,7 @@ body.dark-theme .call-option-info p {
   opacity: 1 !important;
   position: relative !important;
   z-index: 1 !important;
-  width: auto !important;
+  width: 100% !important;
   max-width: 85% !important;
   margin-bottom: 12px !important;
   padding: 12px 16px !important;
@@ -13098,7 +13419,7 @@ body.dark-theme .call-option-info p {
   flex-direction: column !important;
   visibility: visible !important;
   opacity: 1 !important;
-  flex: 1 !important;
+  flex: 1 1 auto !important;
   min-width: 0 !important;
   width: 100% !important;
   gap: 4px !important;
@@ -13198,5 +13519,81 @@ body.dark-theme .call-option-info p {
   .pro-message-area,
   .messages-container {
     padding-bottom: 20px !important;
+  }
+}
+
+/* =====================================================================
+   NUCLEAR OVERRIDE — #root gives (1,x,y) specificity which beats
+   every class/element selector, including all !important class rules.
+   This is the final word on message layout: grid + full-width text.
+   These rules must stay ABSOLUTELY LAST in this file.
+   ===================================================================== */
+
+/* Row layout: always grid so the text column gets a concrete pixel width */
+#root .pro-message-blurb {
+  display: grid !important;
+  grid-template-columns: 40px 1fr !important;
+  column-gap: 12px !important;
+  row-gap: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  align-items: start !important;
+  box-sizing: border-box !important;
+}
+
+/* Avatar: column 1 */
+#root .pro-message-blurb .message-avatar {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  flex-shrink: 0 !important;
+  align-self: start !important;
+}
+
+/* Content: column 2 — 1fr always has a concrete pixel width */
+#root .pro-message-blurb .message-content {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+/* Text div: block, no max-width cap */
+#root .pro-message-blurb .message-text {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
+}
+
+/* Smart text span: block so it fills the parent width */
+#root .pro-message-blurb .message-smart-text {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  #root .pro-message-blurb {
+    grid-template-columns: 32px 1fr !important;
+    column-gap: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #root .pro-message-blurb {
+    grid-template-columns: 28px 1fr !important;
+    column-gap: 6px !important;
   }
 }

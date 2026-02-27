@@ -422,3 +422,140 @@
     font-size: 10px;
   }
 }
+
+/* ── Mode selector (Shorten / Expand / Rephrase / Tone) ── */
+.mode-selector {
+  margin-bottom: 16px;
+}
+
+.mode-selector label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.mode-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.mode-btn:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.mode-btn.active {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  color: #667eea;
+  font-weight: 600;
+}
+
+.mode-icon {
+  font-size: 18px;
+}
+
+.mode-label {
+  font-size: 11px;
+  text-align: center;
+}
+
+.mode-description {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  border-left: 3px solid #667eea;
+}
+
+/* ── Spinner inside buttons ── */
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Result actions row (Copy + Use in Chat) ── */
+.result-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.use-btn {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.use-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* ── Error state ── */
+.result-section.result-error {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #fca5a5;
+}
+
+.result-err-msg {
+  font-size: 14px;
+  color: #991b1b;
+  text-align: center;
+  padding: 8px 0;
+}
+
+/* ── Footer link ── */
+.ai-notice a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.ai-notice a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .mode-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

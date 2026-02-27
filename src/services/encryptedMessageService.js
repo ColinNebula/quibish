@@ -20,6 +20,7 @@ const PUB_KEY_LS  = uid => `e2e_pubkey_${uid}`;
 
 // Retrieve auth token from any key the app may use
 const getAuthToken = () =>
+  localStorage.getItem('authToken') ||
   localStorage.getItem('quibish_auth_token') ||
   localStorage.getItem('auth_token') ||
   null;

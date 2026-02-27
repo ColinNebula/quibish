@@ -300,6 +300,13 @@ class ContactService {
   // Get all contacts
   async getContacts(options = {}) {
     const { search, group, limit = 100, offset = 0 } = options;
+
+    // Lazy-initialize: load from storage on first call so contacts survive page refresh
+    if (!this._storageLoaded) {
+      await this.loadContactsFromStorage();
+      await this.loadGroupsFromStorage();
+      this._storageLoaded = true;
+    }
     
     try {
       // Try to fetch from API first
@@ -312,9 +319,14 @@ class ContactService {
       if (response.ok) {
         const apiData = await response.json();
         if (apiData.success) {
-          this.contacts = apiData.contacts;
-          this.saveContactsToStorage();
-          return this.contacts;
+          // Only replace local contacts with API data if the API actually has contacts,
+          // or if local storage is also empty. This prevents wiping locally-added contacts
+          // when the server has no record of them (offline-first adds, no sync yet).
+          if (apiData.contacts.length > 0 || this.contacts.length === 0) {
+            this.contacts = apiData.contacts;
+            this.saveContactsToStorage();
+          }
+          return this.filterContacts(this.contacts, { search, group });
         }
       }
     } catch (error) {
@@ -466,13 +478,9 @@ class ContactService {
               contact: apiData.contact
             };
           }
-        } else {
-          const errorData = await response.json();
-          return {
-            success: false,
-            errors: errorData.errors || [errorData.error || 'Unknown error']
-          };
         }
+        // Non-OK response: fall through to local update
+        console.warn('API update failed, saving locally');
       } catch (apiError) {
         console.warn('API unavailable, updating locally:', apiError);
       }
@@ -523,13 +531,9 @@ class ContactService {
             
             return { success: true };
           }
-        } else {
-          const errorData = await response.json();
-          return {
-            success: false,
-            error: errorData.error || 'Unknown error'
-          };
         }
+        // Non-OK response: fall through to local deletion
+        console.warn('API delete failed, deleting locally');
       } catch (apiError) {
         console.warn('API unavailable, deleting locally:', apiError);
       }

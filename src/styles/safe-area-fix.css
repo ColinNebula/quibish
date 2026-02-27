@@ -1,7 +1,18 @@
 /* ============================================
    CRITICAL: Safe Area Inset Support for Notched Devices
    Ensures content doesn't overlap with status bar/notch
+
+   notchDetector.js sets --sat/--sar/--sab/--sal custom properties
+   and adds .has-notch / .has-home-indicator classes to <html>.
    ============================================ */
+
+/* Fallback CSS variables (replaced at runtime by notchDetector.js) */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
 
 /* Force viewport constraints to respect safe areas */
 html {
@@ -50,35 +61,26 @@ body {
     height: 100dvh !important;
   }
   
-  /* CRITICAL: Headers on mobile MUST have safe area padding */
+  /* CRITICAL: Headers on mobile MUST have safe area padding.
+     var(--sat) is set by notchDetector.js to the measured inset;
+     the :root fallback keeps this working even before JS runs. */
   .pro-header,
   .enhanced-chat-header,
   .chat-header {
-    /* Height grows to fit content + notch padding */
     height: auto !important;
-    min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important;
+    min-height: calc(var(--sat) + 56px) !important;
     max-height: none !important;
-    
-    /* Push content below the notch/status bar using padding-top.
-       top: 0 so the header background fills the notch area visually. */
-    padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-top: calc(var(--sat) + 8px) !important;
     padding-bottom: 8px !important;
     padding-left: 16px !important;
     padding-right: 16px !important;
-    
-    /* No rounded corners on mobile */
     border-radius: 0 !important;
-    
-    /* position:sticky with top:0 works here (even with overflow:hidden parents,
-       the header simply stays at its natural top position which is correct) */
     position: relative !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    
-    /* Ensure it stays on top */
     z-index: 100 !important;
   }
   
@@ -86,26 +88,35 @@ body {
   .pro-chat-input-container,
   .message-input-container,
   .input-container {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(12px + var(--sab)) !important;
   }
 }
 
-/* iPhone X and newer specific (notched devices) */
-@media only screen and (max-width: 430px) and (min-height: 750px) {
-  .pro-header,
-  .enhanced-chat-header {
-    padding-top: calc(env(safe-area-inset-top, 44px) + 8px) !important;
-    min-height: calc(env(safe-area-inset-top, 44px) + 56px) !important;
+/* ── JS-detected notch (has-notch class set by notchDetector.js) ──────────
+   These rules fire whenever notchDetector.js confirms a real top inset.
+   They apply at any screen size (PWA on iPad Pro with notch, etc.).
+   ----------------------------------------------------------------------- */
+html.has-notch .pro-header,
+html.has-notch .enhanced-chat-header,
+html.has-notch .chat-header {
+  padding-top: calc(var(--sat) + 8px) !important;
+  min-height: calc(var(--sat) + 56px) !important;
+}
+
+/* Landscape: notch is on the side – add side padding too */
+@media (orientation: landscape) {
+  html.has-notch .pro-header,
+  html.has-notch .enhanced-chat-header {
+    padding-left: calc(var(--sal) + 12px) !important;
+    padding-right: calc(var(--sar) + 12px) !important;
   }
 }
 
-/* iPhone 14 Pro Max specific (with Dynamic Island) */
-@media only screen and (max-width: 430px) and (min-height: 900px) {
-  .pro-header,
-  .enhanced-chat-header {
-    padding-top: calc(env(safe-area-inset-top, 59px) + 8px) !important;
-    min-height: calc(env(safe-area-inset-top, 59px) + 56px) !important;
-  }
+/* Home-indicator bar at the bottom */
+html.has-home-indicator .pro-chat-input-container,
+html.has-home-indicator .message-input-container,
+html.has-home-indicator .input-container {
+  padding-bottom: calc(var(--sab) + 8px) !important;
 }
 
 /* Landscape orientation on mobile */

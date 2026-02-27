@@ -203,7 +203,7 @@ const ContactManager = ({ isOpen, onClose, onStartChat, onStartCall, darkMode })
     e?.stopPropagation();
     const result = await contactService.toggleFavorite(contact.id);
     if (result.success) {
-      const updated = { ...contact, favorite: !contact.favorite };
+      const updated = result.contact || { ...contact, favorite: !contact.favorite };
       setContacts(prev => prev.map(c => c.id === contact.id ? updated : c));
       if (profileContact?.id === contact.id) setProfileContact(updated);
     }

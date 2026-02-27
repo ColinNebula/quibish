@@ -69,10 +69,10 @@
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    min-height: calc(env(safe-area-inset-top, 0px) + 52px) !important;
+    min-height: calc(var(--sat) + 52px) !important;
     max-height: none !important;
     /* Push content below notch/Dynamic Island */
-    padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-top: calc(var(--sat) + 8px) !important;
     padding-right: 12px !important;
     padding-bottom: 8px !important;
     padding-left: 12px !important;

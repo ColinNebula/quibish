@@ -115,7 +115,7 @@
   .pro-message-blurb,
   .message-bubble {
     max-width: 75% !important;
-    width: fit-content !important;
+    width: 100% !important;
     margin: 4px 0 !important;
     padding: 10px 14px !important;
     border-radius: 16px !important;
