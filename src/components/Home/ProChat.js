@@ -445,6 +445,22 @@ const ProChat = ({
     }
   }, [chatMessages, scrollToBottom]);
 
+  // On mount: restore messages for whichever conversation is auto-selected.
+  // This handles the case where selectedConversation is initialised from
+  // conversations[0]?.id so the user never explicitly clicks it.
+  useEffect(() => {
+    if (!selectedConversation) return;
+    try {
+      const stored = localStorage.getItem(`quibish_conv_messages_${selectedConversation}`);
+      if (stored) {
+        const msgs = JSON.parse(stored);
+        if (Array.isArray(msgs) && msgs.length > 0) {
+          setChatMessages(msgs);
+        }
+      }
+    } catch (_) {}
+  }, []); // intentionally empty — run once on mount only
+
   // Persist text messages to localStorage whenever they change for the active conversation.
   // File/media messages (data URLs) are skipped to avoid quota exhaustion.
   useEffect(() => {

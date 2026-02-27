@@ -13038,16 +13038,16 @@ html body .pro-message-blurb.swiping-right::after {
 }
 html body .pro-message-blurb .msg-delete-btn {
   position: absolute !important;
-  top: 6px !important;
-  right: 8px !important;
+  top: 4px !important;
+  right: 6px !important;
   display: none !important;
-  width: 22px !important;
-  height: 22px !important;
+  width: 14px !important;
+  height: 14px !important;
   border-radius: 50% !important;
   border: none !important;
   background: rgba(239, 68, 68, 0.12) !important;
   color: #ef4444 !important;
-  font-size: 16px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
   line-height: 1 !important;
   cursor: pointer !important;
@@ -13068,9 +13068,9 @@ html body .pro-message-blurb .msg-delete-btn:hover {
 @media (hover: none) {
   html body .pro-message-blurb .msg-delete-btn {
     display: flex !important;
-    width: 18px !important;
-    height: 18px !important;
-    font-size: 13px !important;
+    width: 13px !important;
+    height: 13px !important;
+    font-size: 10px !important;
     opacity: 0.45 !important;
   }
 }
