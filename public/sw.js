@@ -1,19 +1,17 @@
-const CACHE_NAME = 'quibish-v1.2.0';
-const STATIC_CACHE = 'quibish-static-v1.2.0';
-const DYNAMIC_CACHE = 'quibish-dynamic-v1.2.0';
+const CACHE_NAME = 'quibish-v2.0.0';
+const STATIC_CACHE = 'quibish-static-v2.0.0';
+const DYNAMIC_CACHE = 'quibish-dynamic-v2.0.0';
 
-// Files to cache immediately (critical resources) - Updated with actual build files
+// Stable files that always exist at these exact paths.
+// Avoid hardcoding content-hashed filenames here — they change every build
+// and will cause install() to fail with a 404.
 const STATIC_ASSETS = [
-  '/',
   '/quibish/',
-  '/static/js/main.ed0a2083.js',
-  '/static/css/main.6d538ff6.css',
-  '/static/js/902.78b0a647.chunk.js',
-  '/static/css/902.cee236d7.chunk.css',
-  '/manifest.json',
-  '/favicon.ico',
-  '/logo192.png',
-  '/logo512.png'
+  '/quibish/index.html',
+  '/quibish/manifest.json',
+  '/quibish/favicon.ico',
+  '/quibish/logo192.png',
+  '/quibish/logo512.png',
 ];
 
 // Runtime caching strategies
@@ -56,13 +54,17 @@ self.addEventListener('install', (event) => {
   
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('🔧 Service Worker: Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
+      .then(async (cache) => {
+        console.log('\uD83D\uDD27 Service Worker: Caching app shell');
+        // Cache each URL individually — one 404 won't abort the whole install
+        await Promise.allSettled(
+          STATIC_ASSETS.map(url =>
+            cache.add(url).catch(err => console.warn(`[SW] Pre-cache skipped: ${url}`, err))
+          )
+        );
       })
       .then(() => {
-        console.log('✅ Service Worker: Installation complete');
-        // Force activation of new service worker
+        console.log('\u2705 Service Worker: Installation complete');
         return self.skipWaiting();
       })
       .catch((error) => {
@@ -92,8 +94,15 @@ self.addEventListener('activate', (event) => {
       })
       .then(() => {
         console.log('✅ Service Worker: Activation complete');
-        // Take control of all pages immediately
         return self.clients.claim();
+      })
+      .then(() => {
+        // Notify all open tabs that a new SW version is active
+        return self.clients.matchAll({ includeUncontrolled: true }).then(allClients => {
+          allClients.forEach(client =>
+            client.postMessage({ type: 'SW_UPDATED', version: CACHE_NAME })
+          );
+        });
       })
   );
 });

@@ -1,117 +1,267 @@
-.install-prompt {
+/* InstallPrompt — modern bottom-sheet design */
+
+.ipr-overlay {
   position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  max-width: 400px;
-  width: calc(100% - 40px);
-  animation: slideUp 0.3s ease-out;
-}
-
-.install-prompt-content {
+  inset: 0;
+  z-index: 99998;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
-  padding: 16px 20px;
-  gap: 12px;
+  align-items: flex-end;
+  animation: ipr-fade-in 0.2s ease both;
 }
 
-.install-icon {
-  font-size: 24px;
-  flex-shrink: 0;
+@keyframes ipr-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.install-text {
-  flex: 1;
+.ipr-sheet {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  padding: 12px 24px 36px;
+  position: relative;
+  animation: ipr-slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
-.install-text h3 {
-  margin: 0 0 4px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
+@keyframes ipr-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
 
-.install-text p {
-  margin: 0;
-  font-size: 14px;
-  color: #666;
-  line-height: 1.3;
+/* Drag indicator */
+.ipr-handle {
+  width: 36px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  margin: 0 auto 16px;
 }
 
-.install-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.install-btn {
-  background: #667eea;
-  color: white;
+.ipr-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: #f1f5f9;
   border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.install-btn:hover {
-  background: #5a6fd8;
-}
-
-.dismiss-btn {
-  background: none;
-  border: none;
-  color: #999;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 4px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease;
+  transition: background 0.15s;
 }
 
-.dismiss-btn:hover {
-  background: #f5f5f5;
-  color: #666;
+.ipr-close:hover {
+  background: #e2e8f0;
+  color: #334155;
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateX(-50%) translateY(100%);
-    opacity: 0;
+/* Hero row */
+.ipr-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.ipr-app-icon img {
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+}
+
+.ipr-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ipr-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Features grid */
+.ipr-features {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.ipr-feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  background: #f8fafc;
+  border-radius: 14px;
+  text-align: center;
+}
+
+.ipr-feature-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.ipr-feature-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+/* Install button */
+.ipr-btn-install {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  transition: opacity 0.15s, transform 0.1s;
+  margin-bottom: 10px;
+}
+
+.ipr-btn-install:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.ipr-btn-install:disabled {
+  opacity: 0.65;
+  cursor: default;
+  transform: none;
+}
+
+/* Later / snooze button */
+.ipr-btn-later {
+  width: 100%;
+  padding: 13px;
+  background: transparent;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ipr-btn-later:hover {
+  background: #f8fafc;
+}
+
+/* iOS step-by-step instructions */
+.ipr-ios-steps {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.ipr-ios-intro {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.ipr-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.ipr-step:last-child {
+  margin-bottom: 0;
+}
+
+.ipr-step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.ipr-share-badge {
+  font-style: normal;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .ipr-sheet {
+    background: #1e293b;
   }
-  to {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
+  .ipr-handle {
+    background: #334155;
+  }
+  .ipr-close {
+    background: #334155;
+    color: #94a3b8;
+  }
+  .ipr-close:hover {
+    background: #475569;
+    color: #e2e8f0;
+  }
+  .ipr-title {
+    color: #f1f5f9;
+  }
+  .ipr-subtitle {
+    color: #94a3b8;
+  }
+  .ipr-feature-card {
+    background: #0f172a;
+  }
+  .ipr-feature-label {
+    color: #94a3b8;
+  }
+  .ipr-btn-later {
+    border-color: #334155;
+    color: #94a3b8;
+  }
+  .ipr-btn-later:hover {
+    background: #0f172a;
+  }
+  .ipr-ios-steps {
+    background: #0f172a;
+  }
+  .ipr-ios-intro {
+    color: #e2e8f0;
+  }
+  .ipr-step {
+    color: #94a3b8;
   }
 }
 
-@media (max-width: 480px) {
-  .install-prompt {
-    bottom: 10px;
-    width: calc(100% - 20px);
-  }
-  
-  .install-prompt-content {
-    padding: 12px 16px;
-  }
-  
-  .install-text h3 {
-    font-size: 15px;
-  }
-  
-  .install-text p {
-    font-size: 13px;
+@media (max-width: 360px) {
+  .ipr-features {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
