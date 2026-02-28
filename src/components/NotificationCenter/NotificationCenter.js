@@ -198,7 +198,8 @@ const NotificationCenter = ({ isOpen, onClose, onNotificationClick }) => {
       voice_call: '📞',
       file_shared: '📎',
       group_invite: '👥',
-      system: '⚙️'
+      system: '⚙️',
+      post_like: '❤️'
     };
     return icons[type] || '🔔';
   }, []);

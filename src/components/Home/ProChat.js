@@ -409,6 +409,8 @@ const ProChat = ({
   const [messagesError, setMessagesError] = useState(null);
   const [ptrOffset, setPtrOffset] = useState(0);   // pull distance (px), drives indicator
   const [ptrRefreshing, setPtrRefreshing] = useState(false);
+  // undo toast shown after swipe-delete — { message, timeoutId } | null
+  const [undoToast, setUndoToast] = useState(null);
   
   // Reaction system state - moved here to be available for functions
   const [selectedMessageId, setSelectedMessageId] = useState(null);
@@ -2328,12 +2330,15 @@ const ProChat = ({
   }, []);
 
   // Per-message swipe tracking — stored in a ref Map to avoid re-renders on every touchmove
-  const swipeStateRef = useRef(new Map()); // messageId → { startX, startY, deltaX, isHoriz }
+  const swipeStateRef = useRef(new Map()); // messageId → { startX, startY, deltaX, isHoriz, thresholdCrossed }
+  // Latest messages ref — lets swipe handlers read current messages without stale closure
+  const chatMessagesRef = useRef([]);
+  useEffect(() => { chatMessagesRef.current = chatMessages; }, [chatMessages]);
 
   const handleMsgSwipeStart = useCallback((e, messageId) => {
     if (window.innerWidth > 768) return;
     const t = e.touches[0];
-    swipeStateRef.current.set(messageId, { startX: t.clientX, startY: t.clientY, deltaX: 0, isHoriz: null });
+    swipeStateRef.current.set(messageId, { startX: t.clientX, startY: t.clientY, deltaX: 0, isHoriz: null, thresholdCrossed: false });
   }, []);
 
   const handleMsgSwipeMove = useCallback((e, messageId) => {
@@ -2356,8 +2361,17 @@ const ProChat = ({
       // transform/will-change is ever applied to resting bubbles.
       el.style.transform = `translateX(${state.deltaX}px)`;
       el.style.willChange = 'transform';
-      el.classList.toggle('swiping-left',  state.deltaX < -20);
-      el.classList.toggle('swiping-right', state.deltaX > 20);
+      const row = el.parentElement;
+      row?.classList.toggle('swiping-left',  state.deltaX < -20);
+      row?.classList.toggle('swiping-right', state.deltaX > 20);
+      // Threshold crossing: fire haptic once + toggle confirmed class for visual intensity
+      const SWIPE_THRESHOLD = 70;
+      const confirmed = Math.abs(state.deltaX) >= SWIPE_THRESHOLD;
+      if (confirmed !== state.thresholdCrossed) {
+        state.thresholdCrossed = confirmed;
+        if (confirmed && typeof navigator.vibrate === 'function') navigator.vibrate(10);
+        row?.classList.toggle('swipe-confirmed', confirmed);
+      }
     }
   }, []);
 
@@ -2367,6 +2381,7 @@ const ProChat = ({
     if (!state) return;
     swipeStateRef.current.delete(messageId);
     const el = document.getElementById(`message-${messageId}`);
+    const row = el?.parentElement;
     const THRESHOLD = 70;
     if (state.isHoriz && Math.abs(state.deltaX) >= THRESHOLD) {
       // Animate out then act
@@ -2377,19 +2392,25 @@ const ProChat = ({
       }
       setTimeout(() => {
         if (state.deltaX < 0) {
-          // Swiped left → delete (no confirm on swipe for fluidity)
+          // Swiped left → delete with undo option
+          const deletedMsg = chatMessagesRef.current.find(m => String(m.id) === String(messageId));
           setChatMessages(prev => prev.filter(m => String(m.id) !== String(messageId)));
+          if (deletedMsg) {
+            const timeoutId = setTimeout(() => setUndoToast(null), 3500);
+            setUndoToast({ message: deletedMsg, timeoutId });
+          }
         } else {
           // Swiped right → archive
           handleArchiveMessage(messageId);
         }
+        row?.classList.remove('swiping-left', 'swiping-right', 'swipe-confirmed');
       }, 200);
     } else {
       // Snap back
       if (el) {
         el.style.transition = 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)';
         el.style.transform = 'translateX(0px)';
-        el.classList.remove('swiping-left', 'swiping-right');
+        row?.classList.remove('swiping-left', 'swiping-right', 'swipe-confirmed');
         // Clear inline styles after snap so resting bubbles have zero overhead
         setTimeout(() => {
           if (el) {
@@ -2400,7 +2421,32 @@ const ProChat = ({
         }, 260);
       }
     }
-  }, [handleArchiveMessage, setChatMessages]);
+  }, [handleArchiveMessage, setChatMessages, setUndoToast]);
+
+  const handleMsgSwipeCancel = useCallback((e, messageId) => {
+    if (window.innerWidth > 768) return;
+    swipeStateRef.current.delete(messageId);
+    const el = document.getElementById(`message-${messageId}`);
+    if (el) {
+      el.style.transition = 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)';
+      el.style.transform = 'translateX(0px)';
+      el.parentElement?.classList.remove('swiping-left', 'swiping-right', 'swipe-confirmed');
+      setTimeout(() => {
+        if (el) { el.style.transition = ''; el.style.transform = ''; el.style.willChange = ''; }
+      }, 260);
+    }
+  }, []);
+
+  const handleUndoDelete = useCallback(() => {
+    if (!undoToast) return;
+    clearTimeout(undoToast.timeoutId);
+    setChatMessages(prev => {
+      const msgs = [...prev, undoToast.message];
+      msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      return msgs;
+    });
+    setUndoToast(null);
+  }, [undoToast, setChatMessages]);
 
   // AI Feature Handlers
   const handleSmartReplySelect = useCallback((reply) => {
@@ -3557,15 +3603,24 @@ const ProChat = ({
           )}
           
           {chatMessages.map(message => (
-            <div 
-              key={message.id} 
-              id={`message-${message.id}`}
-              className={`pro-message-blurb ${highlightedMessageId === message.id ? 'search-highlighted' : ''}`}
-              data-message-id={message.id}
-              onTouchStart={(e) => handleMsgSwipeStart(e, message.id)}
-              onTouchMove={(e) => handleMsgSwipeMove(e, message.id)}
-              onTouchEnd={(e) => handleMsgSwipeEnd(e, message.id)}
-            >
+            <div key={message.id} className="msg-swipe-row">
+              <div className="msg-action-panel msg-action-delete">
+                <span>🗑️</span>
+                <small>Delete</small>
+              </div>
+              <div className="msg-action-panel msg-action-archive">
+                <span>📁</span>
+                <small>Archive</small>
+              </div>
+              <div 
+                id={`message-${message.id}`}
+                className={`pro-message-blurb ${highlightedMessageId === message.id ? 'search-highlighted' : ''}`}
+                data-message-id={message.id}
+                onTouchStart={(e) => handleMsgSwipeStart(e, message.id)}
+                onTouchMove={(e) => handleMsgSwipeMove(e, message.id)}
+                onTouchEnd={(e) => handleMsgSwipeEnd(e, message.id)}
+                onTouchCancel={(e) => handleMsgSwipeCancel(e, message.id)}
+              >
               {/* Delete button — visible on hover / tap-hold */}
               <button
                 className="msg-delete-btn"
@@ -3903,10 +3958,19 @@ const ProChat = ({
               {/* Context-Aware Message Actions - Placeholder for future implementation */}
               {/* <MessageActions component will be implemented later /> */}
             </div>
+            </div>
           ))}
           {/* Auto-scroll anchor element */}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Undo toast — appears 3.5s after a swipe-delete */}
+        {undoToast && (
+          <div className="swipe-undo-toast" role="status" aria-live="polite">
+            <span>Message deleted</span>
+            <button onClick={handleUndoDelete}>Undo</button>
+          </div>
+        )}
 
         {/* Enhanced Input Area with Voice and File Upload */}
         <div className="pro-chat-input-container enhanced mobile-input-bar keyboard-avoiding">

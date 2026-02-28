@@ -18,7 +18,8 @@ const NOTIFICATION_TYPES = {
   VOICE_CALL: 'voice_call',
   FILE_SHARED: 'file_shared',
   GROUP_INVITE: 'group_invite',
-  SYSTEM: 'system'
+  SYSTEM: 'system',
+  POST_LIKE: 'post_like'
 };
 
 // Mock database for notifications
@@ -79,9 +80,9 @@ async function createNotification(userId, type, title, message, data = {}) {
   notifications.push(notification);
   await saveNotifications(notifications);
   
-  // Emit real-time notification if WebSocket is available
-  if (global.io) {
-    global.io.to(userId).emit('notification', notification);
+  // Emit real-time notification via WebSocket if available
+  if (global.sendToUser) {
+    global.sendToUser(userId, { type: 'notification', notification });
   }
   
   return notification;

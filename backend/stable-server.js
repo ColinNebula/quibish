@@ -456,6 +456,7 @@ function sendToUser(targetUserId, payload) {
   }
   return false;
 }
+global.sendToUser = sendToUser;
 
 wss.on('connection', (ws) => {
   ws.isAlive = true;

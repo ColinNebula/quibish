@@ -4,6 +4,7 @@ const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const Like = require('../models/Like');
 const User = require('../models/User');
+const { createNotification } = require('./notifications');
 
 // In-memory storage for posts (will fall back to MySQL if available)
 const posts = new Map();
@@ -510,6 +511,21 @@ router.post('/:targetType/:targetId/like', async (req, res) => {
         likesCount: target.likesCount,
         message: 'Like added'
       });
+
+      // Notify the post/comment owner (don't await — fire and forget)
+      if (targetType === 'post' && target.userId && String(target.userId) !== String(userId)) {
+        const liker = getUser(userId) || {};
+        const likerName = liker.displayName || liker.username || 'Someone';
+        const reactionEmoji = { like: '\uD83D\uDC4D', love: '\u2764\uFE0F', haha: '\uD83D\uDE02', wow: '\uD83D\uDE2E', sad: '\uD83D\uDE22', angry: '\uD83D\uDE20' }[reactionType] || '\uD83D\uDC4D';
+        const snippet = target.content ? target.content.slice(0, 60) + (target.content.length > 60 ? '\u2026' : '') : 'your post';
+        createNotification(
+          String(target.userId),
+          'post_like',
+          `${likerName} liked your post`,
+          `${reactionEmoji} "${snippet}"`,
+          { likerId: userId, likerName, likerAvatar: liker.avatar || null, postId: targetId, reactionType }
+        ).catch(err => console.error('Failed to create like notification:', err));
+      }
     }
   } catch (error) {
     console.error('Error toggling like:', error);

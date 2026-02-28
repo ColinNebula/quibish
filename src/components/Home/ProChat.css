@@ -12996,65 +12996,135 @@ html body .pro-message-blurb {
   position: relative !important;
 }
 
-/* ── Swipe-to-action: reveal tinted background and icon during swipe.
-   Only activates when JS adds .swiping-left / .swiping-right class.
-   No base ::before override here — the existing hover-glow ::before
-   continues to work normally when not swiping. ── */
-/* Left-swipe reveal (delete = red) */
-html body .pro-message-blurb.swiping-left::before {
-  content: '' !important;
-  position: absolute !important;
-  inset: 0 !important;
-  border-radius: inherit !important;
-  pointer-events: none !important;
-  background: linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.22) 100%) !important;
-  opacity: 1 !important;
-  z-index: 0 !important;
+/* ── Swipe-to-action: sliding action panels revealed behind message bubbles ── */
+
+/* Row wrapper — clips the sliding bubble so it never escapes visible bounds */
+.msg-swipe-row {
+  position: relative;
+  overflow: hidden;
 }
-/* Right-swipe reveal (archive = amber) */
-html body .pro-message-blurb.swiping-right::before {
-  content: '' !important;
-  position: absolute !important;
-  inset: 0 !important;
-  border-radius: inherit !important;
-  pointer-events: none !important;
-  background: linear-gradient(270deg, transparent 0%, rgba(245,158,11,0.22) 100%) !important;
-  opacity: 1 !important;
-  z-index: 0 !important;
+
+/* Action panels — hidden initially, slide in as the bubble moves */
+.msg-action-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 0 14px;
+  gap: 3px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.12s ease, transform 0.12s ease;
 }
-/* Action icon — only shown during active swipe */
-html body .pro-message-blurb.swiping-left::after {
-  content: '🗑️' !important;
-  position: absolute !important;
-  top: 50% !important;
-  right: 14px !important;
-  transform: translateY(-50%) !important;
-  font-size: 20px !important;
-  pointer-events: none !important;
-  z-index: 1 !important;
+
+/* Delete panel — revealed on left-swipe (right side of row) */
+.msg-action-delete {
+  right: 0;
+  background: linear-gradient(160deg, #ef4444 0%, #dc2626 100%);
+  color: #fff;
+  transform: translateX(14px);
 }
-html body .pro-message-blurb.swiping-right::after {
-  content: '📁' !important;
-  position: absolute !important;
-  top: 50% !important;
-  left: 14px !important;
-  transform: translateY(-50%) !important;
-  font-size: 20px !important;
-  pointer-events: none !important;
-  z-index: 1 !important;
+
+/* Archive panel — revealed on right-swipe (left side of row) */
+.msg-action-archive {
+  left: 0;
+  background: linear-gradient(160deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  transform: translateX(-14px);
+}
+
+.msg-action-panel span {
+  font-size: 22px;
+  display: block;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.msg-action-panel small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+/* Show the matching panel as the user swipes */
+.msg-swipe-row.swiping-left .msg-action-delete {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.msg-swipe-row.swiping-right .msg-action-archive {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Confirmed state (past threshold): deepen colour + scale up icon */
+.msg-swipe-row.swipe-confirmed .msg-action-delete {
+  background: linear-gradient(160deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.msg-swipe-row.swipe-confirmed .msg-action-archive {
+  background: linear-gradient(160deg, #d97706 0%, #b45309 100%);
+}
+
+.msg-swipe-row.swipe-confirmed .msg-action-panel span {
+  transform: scale(1.35);
+}
+
+/* ── Undo toast — fixed overlay after swipe-delete ── */
+.swipe-undo-toast {
+  position: fixed;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 10px 18px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.32);
+  font-size: 14px;
+  white-space: nowrap;
+  animation: toastSlideUp 0.22s ease-out;
+  pointer-events: auto;
+}
+
+@keyframes toastSlideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.swipe-undo-toast button {
+  background: none;
+  border: none;
+  color: #818cf8;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 html body .pro-message-blurb .msg-delete-btn {
   position: absolute !important;
-  top: 4px !important;
-  right: 6px !important;
+  top: 3px !important;
+  right: 5px !important;
   display: none !important;
-  width: 14px !important;
-  height: 14px !important;
+  width: 10px !important;
+  height: 10px !important;
   border-radius: 50% !important;
   border: none !important;
   background: rgba(239, 68, 68, 0.12) !important;
   color: #ef4444 !important;
-  font-size: 11px !important;
+  font-size: 8px !important;
   font-weight: 600 !important;
   line-height: 1 !important;
   cursor: pointer !important;
@@ -13075,9 +13145,9 @@ html body .pro-message-blurb .msg-delete-btn:hover {
 @media (hover: none) {
   html body .pro-message-blurb .msg-delete-btn {
     display: flex !important;
-    width: 13px !important;
-    height: 13px !important;
-    font-size: 10px !important;
+    width: 10px !important;
+    height: 10px !important;
+    font-size: 8px !important;
     opacity: 0.45 !important;
   }
 }
