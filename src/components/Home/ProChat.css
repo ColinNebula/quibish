@@ -13004,7 +13004,19 @@ html body .pro-message-blurb {
   overflow: hidden;
 }
 
-/* Action panels — hidden initially, slide in as the bubble moves */
+/*
+ * The bubble must sit ABOVE the panels in the stacking order.
+ * Panels are position:absolute with z-index:0. Without position on the bubble,
+ * CSS paints positioned elements (z-index:0) on top of non-positioned flow elements,
+ * causing the panels to bleed over the bubble edges even at rest.
+ * z-index:1 on the bubble fixes this and also correctly scopes msg-delete-btn.
+ */
+.msg-swipe-row .pro-message-blurb {
+  position: relative;
+  z-index: 1;
+}
+
+/* Action panels — hidden by default, behind the bubble (z-index:0 < bubble z-index:1) */
 .msg-action-panel {
   position: absolute;
   top: 0;
@@ -13013,29 +13025,31 @@ html body .pro-message-blurb {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 72px;
-  padding: 0 14px;
-  gap: 3px;
+  min-width: 80px;
+  padding: 0 16px;
+  gap: 4px;
   opacity: 0;
   pointer-events: none;
   z-index: 0;
-  transition: opacity 0.12s ease, transform 0.12s ease;
+  transition: opacity 0.14s ease, transform 0.14s ease;
 }
 
-/* Delete panel — revealed on left-swipe (right side of row) */
+/* Delete panel — swipe LEFT reveals this from the right edge */
 .msg-action-delete {
   right: 0;
   background: linear-gradient(160deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
-  transform: translateX(14px);
+  transform: translateX(20px); /* starts off-screen right; slides in */
+  border-radius: 0 8px 8px 0;
 }
 
-/* Archive panel — revealed on right-swipe (left side of row) */
+/* Archive panel — swipe RIGHT reveals this from the left edge */
 .msg-action-archive {
   left: 0;
   background: linear-gradient(160deg, #f59e0b 0%, #d97706 100%);
   color: #fff;
-  transform: translateX(-14px);
+  transform: translateX(-20px); /* starts off-screen left; slides in */
+  border-radius: 8px 0 0 8px;
 }
 
 .msg-action-panel span {
