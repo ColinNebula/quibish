@@ -1,7 +1,8 @@
 {
+  "id": "/quibish/",
   "short_name": "Quibish",
-  "name": "Quibish - Enhanced Chat Application",
-  "description": "A modern chat application with video calls, file sharing, and GIF support",
+  "name": "Quibish — Chat, Calls & More",
+  "description": "A modern messaging app with video calls, file sharing, GIF support, and offline-ready PWA features.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -12,29 +13,52 @@
       "src": "logo192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
-  "start_url": "/quibish/",
+  "start_url": "/quibish/?source=pwa",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "theme_color": "#6366f1",
   "background_color": "#ffffff",
   "scope": "/quibish/",
   "lang": "en",
+  "dir": "ltr",
   "categories": ["social", "communication"],
   "prefer_related_applications": false,
   "screenshots": [
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "form_factor": "narrow",
+      "label": "Quibish chat on mobile"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "form_factor": "wide",
+      "label": "Quibish chat on desktop"
     }
   ],
   "shortcuts": [
@@ -42,14 +66,21 @@
       "name": "New Chat",
       "short_name": "Chat",
       "description": "Start a new conversation",
-      "url": "/quibish/?action=new-chat",
+      "url": "/quibish/?action=new-chat&source=shortcut",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     },
     {
       "name": "Video Call",
       "short_name": "Call",
       "description": "Start a video call",
-      "url": "/quibish/?action=video-call",
+      "url": "/quibish/?action=video-call&source=shortcut",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Contacts",
+      "short_name": "Contacts",
+      "description": "View your contacts",
+      "url": "/quibish/?action=contacts&source=shortcut",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     }
   ],
@@ -68,5 +99,11 @@
         }
       ]
     }
-  }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+quibish",
+      "url": "/quibish/?protocol=%s"
+    }
+  ]
 }
