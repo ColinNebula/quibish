@@ -312,16 +312,17 @@ const ProChat = ({
       '  html body .app-content { flex: 1 1 0% !important; min-height: 0 !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }',
       // backdrop-filter on .pro-layout traps position:fixed — clear it on mobile.
       '  html body .pro-layout { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; gap: 0 !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transform: none !important; filter: none !important; }',
-      '  html body .pro-main { display: grid !important; grid-template-rows: auto 1fr auto !important; grid-template-columns: 100% !important; height: 100dvh !important; max-height: 100dvh !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; gap: 0 !important; transform: none !important; }',
-      // Header: grid row 1 — physically cannot overlap row 2 content regardless of z-index or compositing.
-      // padding-top uses env(safe-area-inset-top) so the Dynamic Island / notch is cleared on notched iPhones.
-      '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { grid-row: 1 !important; grid-column: 1 !important; align-self: start !important; width: 100% !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 52px) !important; padding-top: env(safe-area-inset-top, 0px) !important; padding-bottom: 8px !important; padding-left: 12px !important; padding-right: 12px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important; background: #ffffff !important; z-index: 1000 !important; transform: translateZ(0) !important; -webkit-transform: translateZ(0) !important; isolation: isolate !important; flex: unset !important; box-sizing: border-box !important; }',
-      // Content: grid row 2 — fills all remaining vertical space between header and input.
+      // pro-main: flex column. Height is set as an inline style by applyHeight() so it tracks visualViewport.
+      '  html body .pro-main { display: flex !important; flex-direction: column !important; max-height: 100dvh !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; gap: 0 !important; transform: none !important; }',
+      // Header: flex item fixed at top. padding-top uses safe-area-inset-top for Dynamic Island / notch.
+      '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { flex: 0 0 auto !important; width: 100% !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 44px) !important; padding-top: env(safe-area-inset-top, 0px) !important; padding-bottom: 4px !important; padding-left: 12px !important; padding-right: 12px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important; background: #ffffff !important; z-index: 1000 !important; transform: translateZ(0) !important; -webkit-transform: translateZ(0) !important; isolation: isolate !important; box-sizing: border-box !important; }',
+      // pro-content: fills remaining space between header and keyboard edge — flex column so list + input stack.
       // animation/transition cleared so content is immediately visible (no 0.6s opacity-0 fade-in blank).
-      '  html body .pro-main .pro-content { grid-row: 2 !important; grid-column: 1 !important; min-height: 0 !important; height: 100% !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: #f5f5f5 !important; gap: 0 !important; flex: unset !important; animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }',
-      '  html body .pro-main .pro-message-list { flex: 1 1 0% !important; min-height: 0 !important; max-height: none !important; overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
-      // Input: grid row 3 — always visible below the message list, never overflows.
-      '  html body .pro-main .pro-chat-input-container { grid-row: 3 !important; grid-column: 1 !important; flex: unset !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; align-self: end !important; }',
+      '  html body .pro-main .pro-content { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: #f5f5f5 !important; gap: 0 !important; animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }',
+      // Message list: height and flex are set as inline styles by applyHeight() — no !important here so JS wins.
+      '  html body .pro-main .pro-message-list { min-height: 0 !important; overflow-x: hidden !important; overscroll-behavior: contain !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
+      // Input: flex item fixed at bottom.
+      '  html body .pro-main .pro-chat-input-container { flex: 0 0 auto !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }',
       '}'
     ].join('\n');
   }, []);
@@ -334,49 +335,74 @@ const ProChat = ({
     const applyHeight = () => {
       const list = messagesContainerRef.current;
       if (!list) return;
-      const proMainEl = list.closest('.pro-main');
-      const header = proMainEl?.querySelector('.pro-header, .enhanced-chat-header');
-      const input  = proMainEl?.querySelector('.pro-chat-input-container');
+      const proMainEl   = list.closest('.pro-main');
+      const proContent  = list.closest('.pro-content');
+      const header      = proMainEl?.querySelector('.pro-header, .enhanced-chat-header');
+      const input       = proMainEl?.querySelector('.pro-chat-input-container');
 
-      // Use visualViewport when available (accounts for iOS keyboard / browser chrome)
+      // Use visualViewport — accounts for iOS keyboard and collapsing browser chrome.
       const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 
-      // ── 1. Pin .pro-main to the exact visual viewport height using CSS Grid rows.
-      //    Row 1 = auto (header's natural height), Row 2 = 1fr (everything else).
-      //    With explicit grid rows, the header CANNOT be covered regardless of z-index.
+      // ── 1. pro-main: plain flex column filling the visual viewport.
       if (proMainEl) {
         proMainEl.style.height              = `${vh}px`;
         proMainEl.style.maxHeight           = `${vh}px`;
         proMainEl.style.overflow            = 'hidden';
-        proMainEl.style.display             = 'grid';
-        proMainEl.style.gridTemplateRows    = 'auto 1fr auto';
-        proMainEl.style.gridTemplateColumns = '100%';
+        proMainEl.style.display             = 'flex';
+        proMainEl.style.flexDirection       = 'column';
+        proMainEl.style.gridTemplateRows    = '';
+        proMainEl.style.gridTemplateColumns = '';
       }
 
-      // ── 2. Ensure the header sits in grid row 1.
+      // ── 2. Header: fixed at top, does not grow.
       if (header) {
-        header.style.gridRow    = '1';
-        header.style.gridColumn = '1';
-        header.style.alignSelf  = 'start';
-        header.style.zIndex     = '1000';
-        header.style.transform  = 'translateZ(0)';
+        header.style.flex      = '0 0 auto';
+        header.style.zIndex    = '1000';
+        header.style.transform = 'translateZ(0)';
         header.style.webkitTransform = 'translateZ(0)';
-        header.style.isolation  = 'isolate';
+        header.style.isolation = 'isolate';
+        // Remove leftover grid properties
+        header.style.gridRow    = '';
+        header.style.gridColumn = '';
+        header.style.alignSelf  = '';
       }
 
-      // ── 2b. Ensure the input sits in grid row 3 (never overflows).
+      // ── 3. pro-content: fills remaining space, flex column so list + input stack.
+      if (proContent) {
+        proContent.style.flex          = '1 1 0%';
+        proContent.style.minHeight     = '0';
+        proContent.style.display       = 'flex';
+        proContent.style.flexDirection = 'column';
+        proContent.style.overflow      = 'hidden';
+        // Remove leftover grid properties
+        proContent.style.gridRow    = '';
+        proContent.style.gridColumn = '';
+        proContent.style.height     = '';
+      }
+
+      // ── 4. Input: fixed at bottom.
       if (input) {
-        input.style.gridRow    = '3';
-        input.style.gridColumn = '1';
-        input.style.alignSelf  = 'end';
+        input.style.flex       = '0 0 auto';
+        input.style.position   = 'relative';
+        input.style.alignSelf  = '';
+        input.style.gridRow    = '';
+        input.style.gridColumn = '';
       }
 
-      // ── 3. The message list fills grid row 2 (1fr) via flex inside pro-content.
-      //    No need for pixel-perfect height enforcement — grid auto rows handle it.
-      //    Remove any stale inline height so CSS flex can take over.
-      list.style.height    = '';
-      list.style.maxHeight = '';
-      list.style.flex      = '1 1 0%';
+      // ── 5. Message list: directly sized to remaining pixel height.
+      //    Directly computing and setting a pixel height is the most reliable approach
+      //    on iOS Safari where flex/grid percentage chains can silently mis-size.
+      const headerH = header ? header.getBoundingClientRect().height : 0;
+      const inputH  = input  ? input.getBoundingClientRect().height  : 0;
+      const listH   = Math.max(100, vh - headerH - inputH);
+
+      list.style.height    = `${listH}px`;
+      list.style.maxHeight = `${listH}px`;
+      list.style.flex      = 'none';
+      list.style.minHeight = '0';
+      list.style.overflowY = 'auto';
+      list.style.overflowX = 'hidden';
+      list.style.willChange = '';
     };
 
     applyHeight();
@@ -411,6 +437,35 @@ const ProChat = ({
   const [ptrRefreshing, setPtrRefreshing] = useState(false);
   // undo toast shown after swipe-delete — { message, timeoutId } | null
   const [undoToast, setUndoToast] = useState(null);
+
+  // Multi-select mode
+  const [selectMode, setSelectMode]       = useState(false);
+  const [selectedIds, setSelectedIds]     = useState(new Set());
+
+  const enterSelectMode = useCallback(() => {
+    setSelectMode(true);
+    setSelectedIds(new Set());
+  }, []);
+
+  const exitSelectMode = useCallback(() => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  const toggleMessageSelect = useCallback((messageId) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(String(messageId))) next.delete(String(messageId));
+      else next.add(String(messageId));
+      return next;
+    });
+  }, []);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    setChatMessages(prev => prev.filter(m => !selectedIds.has(String(m.id))));
+    exitSelectMode();
+  }, [selectedIds, exitSelectMode]);
   
   // Reaction system state - moved here to be available for functions
   const [selectedMessageId, setSelectedMessageId] = useState(null);
@@ -3468,6 +3523,15 @@ const ProChat = ({
           
           {/* Navigation Actions */}
           <div className="header-actions">
+              {!selectMode && (
+                <button
+                  className="action-btn select-mode-btn"
+                  title="Select messages"
+                  onClick={enterSelectMode}
+                >
+                  ☑️
+                </button>
+              )}
               <NotificationButton
                 onClick={handleShowNotificationCenter}
                 className="notification-btn"
@@ -3602,34 +3666,47 @@ const ProChat = ({
             </div>
           )}
           
-          {chatMessages.map(message => (
-            <div key={message.id} className="msg-swipe-row">
-              <div className="msg-action-panel msg-action-delete">
-                <span>🗑️</span>
-                <small>Delete</small>
-              </div>
-              <div className="msg-action-panel msg-action-archive">
-                <span>📁</span>
-                <small>Archive</small>
-              </div>
+          {/* Multi-select toolbar */}
+          {selectMode && (
+            <div className="msg-select-bar">
+              <button className="msg-select-cancel" onClick={exitSelectMode}>Cancel</button>
+              <span className="msg-select-count">
+                {selectedIds.size === 0 ? 'Tap messages to select' : `${selectedIds.size} selected`}
+              </span>
+              <button
+                className="msg-select-delete"
+                onClick={handleDeleteSelected}
+                disabled={selectedIds.size === 0}
+              >
+                🗑️ Delete
+              </button>
+            </div>
+          )}
+
+          {chatMessages.map(message => {
+            const isSelected = selectedIds.has(String(message.id));
+            return (
+            <div
+              key={message.id}
+              className={`msg-swipe-row${selectMode ? ' select-mode' : ''}${isSelected ? ' msg-selected' : ''}`}
+              onClick={selectMode ? () => toggleMessageSelect(message.id) : undefined}
+            >
+              {selectMode && (
+                <div className="msg-checkbox" aria-hidden="true">
+                  <div className={`msg-checkbox-circle${isSelected ? ' checked' : ''}`}>
+                    {isSelected && <span>✓</span>}
+                  </div>
+                </div>
+              )}
               <div 
                 id={`message-${message.id}`}
                 className={`pro-message-blurb ${highlightedMessageId === message.id ? 'search-highlighted' : ''}`}
                 data-message-id={message.id}
-                onTouchStart={(e) => handleMsgSwipeStart(e, message.id)}
-                onTouchMove={(e) => handleMsgSwipeMove(e, message.id)}
-                onTouchEnd={(e) => handleMsgSwipeEnd(e, message.id)}
-                onTouchCancel={(e) => handleMsgSwipeCancel(e, message.id)}
+                onTouchStart={!selectMode ? (e) => handleMsgSwipeStart(e, message.id) : undefined}
+                onTouchMove={!selectMode ? (e) => handleMsgSwipeMove(e, message.id) : undefined}
+                onTouchEnd={!selectMode ? (e) => handleMsgSwipeEnd(e, message.id) : undefined}
+                onTouchCancel={!selectMode ? (e) => handleMsgSwipeCancel(e, message.id) : undefined}
               >
-              {/* Delete button — visible on hover / tap-hold */}
-              <button
-                className="msg-delete-btn"
-                onClick={(e) => { e.stopPropagation(); handleDeleteMessage(message.id); }}
-                title="Delete message"
-                aria-label="Delete message"
-              >
-                ×
-              </button>
               <div className="message-avatar">
                 <img 
                   src={message.user.avatar || `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face`}
@@ -3959,7 +4036,7 @@ const ProChat = ({
               {/* <MessageActions component will be implemented later /> */}
             </div>
             </div>
-          ))}
+          );})}
           {/* Auto-scroll anchor element */}
           <div ref={messagesEndRef} />
         </div>
