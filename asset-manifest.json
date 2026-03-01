@@ -1,12 +1,12 @@
 {
   "files": {
-    "main.css": "/quibish/static/css/main.ad1309da.css",
-    "main.js": "/quibish/static/js/main.1f1cb2f9.js",
+    "main.css": "/quibish/static/css/main.93920d70.css",
+    "main.js": "/quibish/static/js/main.44da9ace.js",
     "static/js/37.e7c141c4.chunk.js": "/quibish/static/js/37.e7c141c4.chunk.js",
     "index.html": "/quibish/index.html"
   },
   "entrypoints": [
-    "static/css/main.ad1309da.css",
-    "static/js/main.1f1cb2f9.js"
+    "static/css/main.93920d70.css",
+    "static/js/main.44da9ace.js"
   ]
 }
