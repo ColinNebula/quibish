@@ -10,11 +10,21 @@ body {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   
-  /* Dynamic Island Safe Areas */
+  /* Dynamic Island Safe Areas — only applied on non-app pages.
+     The chat app handles safe areas within its own header component. */
   padding-top: env(safe-area-inset-top);
   padding-right: env(safe-area-inset-right);
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
+}
+
+/* When the full-screen chat app is active, strip body safe-area padding.
+   The ProChat header handles env(safe-area-inset-top) itself so body padding
+   would double-shift the entire layout below y=0 of the viewport. */
+@media screen and (max-width: 768px) {
+  body {
+    padding: 0 !important;
+  }
 }
 
 code {

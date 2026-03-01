@@ -2709,26 +2709,25 @@
     opacity: 1 !important;
   }
   
-  /* Mobile input container improvements */
+  /* Mobile input container: relative positioning so it stays in the flex flow */
   .pro-chat-input-container,
   .message-input-container {
-    position: sticky !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
     width: 100% !important;
     background: var(--pro-surface, #ffffff) !important;
     padding: 12px !important;
     border-top: 1px solid var(--pro-border, rgba(0, 0, 0, 0.1)) !important;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05) !important;
-    z-index: 99999 !important;
     pointer-events: auto !important;
   }
   
-  /* Message list with proper spacing for input */
+  /* Message list: do NOT use flex:1 !important here — applyHeight() sets inline height
+     and the injected CSS overrides this with a higher-specificity rule. */
   .pro-message-list,
   .pro-message-area {
-    flex: 1 1 0% !important;
     overflow-y: auto !important;
   }
   
@@ -12999,7 +12998,7 @@ html body .pro-message-blurb {
 
 /* ── Multi-select mode ── */
 
-/* Sticky toolbar at top of message list */
+/* Toolbar always at top of message list */
 .msg-select-bar {
   position: sticky;
   top: 0;
@@ -13007,12 +13006,19 @@ html body .pro-message-blurb {
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 8px 14px;
+  padding: 6px 14px;
+  /* idle state: transparent — only the entry button is visible */
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+/* Active select mode: indigo banner */
+.msg-select-bar:has(.msg-select-cancel) {
   background: rgba(79, 70, 229, 0.97);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  color: #fff;
-  font-size: 14px;
   border-bottom: 1px solid rgba(255,255,255,0.12);
   animation: sel-bar-in 0.18s ease both;
 }
@@ -13020,6 +13026,36 @@ html body .pro-message-blurb {
 @keyframes sel-bar-in {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Idle entry button */
+.msg-select-enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.30);
+  color: #4f46e5;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 4px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255,255,255,0.6);
+  transition: background 0.18s, box-shadow 0.18s, transform 0.12s, border-color 0.18s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.msg-select-enter:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.20) 0%, rgba(139, 92, 246, 0.20) 100%);
+  border-color: rgba(99, 102, 241, 0.50);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.22), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+.msg-select-enter:active {
+  transform: scale(0.95);
+  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.18);
 }
 
 .msg-select-cancel {

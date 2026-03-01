@@ -307,20 +307,23 @@ const ProChat = ({
     el.textContent = [
       '@media screen and (max-width: 768px) {',
       // ── Root chain: each level is a strict flex column filling available space ──
-      '  html, body { overflow: hidden !important; overscroll-behavior: none !important; height: 100% !important; }',
+      // body padding-top in index.css adds env(safe-area-inset-top) but the app header handles this itself.
+      // Stripping it here prevents double-shifting that makes pro-main start below y=0 of the viewport.
+      '  html, body { overflow: hidden !important; overscroll-behavior: none !important; height: 100% !important; padding: 0 !important; margin: 0 !important; }',
       '  html body .app { height: 100dvh !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }',
       '  html body .app-content { flex: 1 1 0% !important; min-height: 0 !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }',
       // backdrop-filter on .pro-layout traps position:fixed — clear it on mobile.
       '  html body .pro-layout { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; gap: 0 !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transform: none !important; filter: none !important; }',
-      // pro-main: flex column. Height is set as an inline style by applyHeight() so it tracks visualViewport.
-      '  html body .pro-main { display: flex !important; flex-direction: column !important; max-height: 100dvh !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; gap: 0 !important; transform: none !important; }',
-      // Header: flex item fixed at top. padding-top uses safe-area-inset-top for Dynamic Island / notch.
-      '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { flex: 0 0 auto !important; width: 100% !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 44px) !important; padding-top: env(safe-area-inset-top, 0px) !important; padding-bottom: 4px !important; padding-left: 12px !important; padding-right: 12px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important; background: #ffffff !important; z-index: 1000 !important; transform: translateZ(0) !important; -webkit-transform: translateZ(0) !important; isolation: isolate !important; box-sizing: border-box !important; }',
-      // pro-content: fills remaining space between header and keyboard edge — flex column so list + input stack.
-      // animation/transition cleared so content is immediately visible (no 0.6s opacity-0 fade-in blank).
-      '  html body .pro-main .pro-content { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: #f5f5f5 !important; gap: 0 !important; animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }',
-      // Message list: height and flex are set as inline styles by applyHeight() — no !important here so JS wins.
-      '  html body .pro-main .pro-message-list { min-height: 0 !important; overflow-x: hidden !important; overscroll-behavior: contain !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
+      // pro-main: flex column, height set by JS applyHeight() to match visualViewport.
+      '  html body .pro-main { display: flex !important; flex-direction: column !important; height: 100dvh !important; max-height: 100dvh !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; gap: 0 !important; }',
+      // Header: first flex child, never shrinks. Safe-area handled by padding-top.
+      '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { flex: 0 0 auto !important; position: relative !important; width: 100% !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 44px) !important; padding-top: env(safe-area-inset-top, 0px) !important; padding-bottom: 4px !important; padding-left: 12px !important; padding-right: 12px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important; background: #ffffff !important; z-index: 10 !important; box-sizing: border-box !important; }',
+      // pro-content: second flex child, fills all remaining vertical space.
+      '  html body .pro-main .pro-content { flex: 1 1 0% !important; min-height: 0 !important; height: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: #f5f5f5 !important; gap: 0 !important; animation: none !important; transition: none !important; opacity: 1 !important; position: relative !important; z-index: 1 !important; }',
+      // Message list: height set by JS inline style. CSS must not block it with !important.
+      '  html body .pro-main .pro-content .pro-message-list { flex: none !important; min-height: 0 !important; overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
+      // Input: last flex child in pro-content, never shrinks.
+      '  html body .pro-main .pro-chat-input-container { flex: 0 0 auto !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }',
       // Input: flex item fixed at bottom.
       '  html body .pro-main .pro-chat-input-container { flex: 0 0 auto !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }',
       '}'
@@ -335,63 +338,65 @@ const ProChat = ({
     const applyHeight = () => {
       const list = messagesContainerRef.current;
       if (!list) return;
-      const proMainEl   = list.closest('.pro-main');
-      const proContent  = list.closest('.pro-content');
-      const header      = proMainEl?.querySelector('.pro-header, .enhanced-chat-header');
-      const input       = proMainEl?.querySelector('.pro-chat-input-container');
+      const proMainEl  = list.closest('.pro-main');
+      const proContent = list.closest('.pro-content');
+      const header     = proMainEl?.querySelector('.pro-header, .enhanced-chat-header');
+      const input      = proMainEl?.querySelector('.pro-chat-input-container');
+      if (!proMainEl) return;
 
-      // Use visualViewport — accounts for iOS keyboard and collapsing browser chrome.
+      // visualViewport accounts for iOS keyboard and collapsing Safari chrome.
       const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 
-      // ── 1. pro-main: plain flex column filling the visual viewport.
-      if (proMainEl) {
-        proMainEl.style.height              = `${vh}px`;
-        proMainEl.style.maxHeight           = `${vh}px`;
-        proMainEl.style.overflow            = 'hidden';
-        proMainEl.style.display             = 'flex';
-        proMainEl.style.flexDirection       = 'column';
-        proMainEl.style.gridTemplateRows    = '';
-        proMainEl.style.gridTemplateColumns = '';
-      }
+      // ── 1. pro-main: flex column exactly as tall as the visual viewport.
+      proMainEl.style.height          = `${vh}px`;
+      proMainEl.style.maxHeight       = `${vh}px`;
+      proMainEl.style.overflow        = 'hidden';
+      proMainEl.style.display         = 'flex';
+      proMainEl.style.flexDirection   = 'column';
+      proMainEl.style.position        = 'relative';
+      // Clear any stale absolute/grid properties from previous attempts.
+      proMainEl.style.gridTemplateRows    = '';
+      proMainEl.style.gridTemplateColumns = '';
 
-      // ── 2. Header: fixed at top, does not grow.
+      // ── 2. Header: first flex child, never shrinks.
       if (header) {
-        header.style.flex      = '0 0 auto';
-        header.style.zIndex    = '1000';
-        header.style.transform = 'translateZ(0)';
-        header.style.webkitTransform = 'translateZ(0)';
-        header.style.isolation = 'isolate';
-        // Remove leftover grid properties
+        header.style.flex       = '0 0 auto';
+        header.style.position   = 'relative';
+        header.style.zIndex     = '10';
+        header.style.top        = '';
+        header.style.left       = '';
+        header.style.right      = '';
         header.style.gridRow    = '';
         header.style.gridColumn = '';
         header.style.alignSelf  = '';
       }
 
-      // ── 3. pro-content: fills remaining space, flex column so list + input stack.
+      // ── 3. pro-content: second flex child, fills remaining space.
       if (proContent) {
         proContent.style.flex          = '1 1 0%';
         proContent.style.minHeight     = '0';
+        proContent.style.height        = '0'; // needed for flex 1 1 0% to work in Safari
         proContent.style.display       = 'flex';
         proContent.style.flexDirection = 'column';
         proContent.style.overflow      = 'hidden';
-        // Remove leftover grid properties
-        proContent.style.gridRow    = '';
-        proContent.style.gridColumn = '';
-        proContent.style.height     = '';
+        proContent.style.position      = 'relative';
+        proContent.style.top           = '';
+        proContent.style.bottom        = '';
+        proContent.style.gridRow       = '';
+        proContent.style.gridColumn    = '';
       }
 
-      // ── 4. Input: fixed at bottom.
+      // ── 4. Input: last flex child in pro-content.
       if (input) {
-        input.style.flex       = '0 0 auto';
-        input.style.position   = 'relative';
-        input.style.alignSelf  = '';
-        input.style.gridRow    = '';
+        input.style.flex     = '0 0 auto';
+        input.style.position = 'relative';
+        input.style.bottom   = '';
+        input.style.gridRow  = '';
         input.style.gridColumn = '';
       }
 
-      // ── 5. Message list: directly sized to remaining pixel height.
-      //    Directly computing and setting a pixel height is the most reliable approach
-      //    on iOS Safari where flex/grid percentage chains can silently mis-size.
+      // ── 5. Message list: pixel height = viewport - header - input.
+      //    getBoundingClientRect() is accurate synchronously inside useLayoutEffect.
       const headerH = header ? header.getBoundingClientRect().height : 0;
       const inputH  = input  ? input.getBoundingClientRect().height  : 0;
       const listH   = Math.max(100, vh - headerH - inputH);
@@ -3523,15 +3528,6 @@ const ProChat = ({
           
           {/* Navigation Actions */}
           <div className="header-actions">
-              {!selectMode && (
-                <button
-                  className="action-btn select-mode-btn"
-                  title="Select messages"
-                  onClick={enterSelectMode}
-                >
-                  ☑️
-                </button>
-              )}
               <NotificationButton
                 onClick={handleShowNotificationCenter}
                 className="notification-btn"
@@ -3666,22 +3662,26 @@ const ProChat = ({
             </div>
           )}
           
-          {/* Multi-select toolbar */}
-          {selectMode && (
-            <div className="msg-select-bar">
-              <button className="msg-select-cancel" onClick={exitSelectMode}>Cancel</button>
-              <span className="msg-select-count">
-                {selectedIds.size === 0 ? 'Tap messages to select' : `${selectedIds.size} selected`}
-              </span>
-              <button
-                className="msg-select-delete"
-                onClick={handleDeleteSelected}
-                disabled={selectedIds.size === 0}
-              >
-                🗑️ Delete
-              </button>
-            </div>
-          )}
+          {/* Select / multi-select toolbar — always at top of message list */}
+          <div className="msg-select-bar">
+            {!selectMode ? (
+              <button className="msg-select-enter" onClick={enterSelectMode} title="Select messages">☑️</button>
+            ) : (
+              <>
+                <button className="msg-select-cancel" onClick={exitSelectMode}>Cancel</button>
+                <span className="msg-select-count">
+                  {selectedIds.size === 0 ? 'Tap messages to select' : `${selectedIds.size} selected`}
+                </span>
+                <button
+                  className="msg-select-delete"
+                  onClick={handleDeleteSelected}
+                  disabled={selectedIds.size === 0}
+                >
+                  🗑️ Delete
+                </button>
+              </>
+            )}
+          </div>
 
           {chatMessages.map(message => {
             const isSelected = selectedIds.has(String(message.id));
