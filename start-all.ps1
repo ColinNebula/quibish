@@ -41,7 +41,7 @@ Write-Host "Checking Backend Server (Port 5001)..." -ForegroundColor Yellow
 if (Test-Port -Port 5001) {
     Write-Host "Backend already running on port 5001" -ForegroundColor Green
 } else {
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot\backend'; node stable-server.js" -WindowStyle Normal
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot\backend'; node server.js" -WindowStyle Normal
     Write-Host "Waiting for backend..." -ForegroundColor Yellow
     if (Wait-ForPort -Port 5001 -TimeoutSeconds 30) {
         Write-Host "Backend started on port 5001" -ForegroundColor Green

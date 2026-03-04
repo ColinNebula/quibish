@@ -14,15 +14,30 @@ if (process.env.REACT_APP_ENABLE_DIAGNOSTICS === 'true') {
 
 // Global error handler for browser extension errors
 window.addEventListener('error', (event) => {
-  // Ignore errors from browser extensions (contentScript.js, etc.)
+  // Ignore errors from browser extensions (contentScript.js, inpage.js, etc.)
   if (event.filename && (
     event.filename.includes('contentScript.js') ||
     event.filename.includes('chrome-extension://') ||
     event.filename.includes('moz-extension://')
   )) {
     console.warn('🔌 Browser extension error (ignored):', event.message);
-    event.preventDefault(); // Prevent error from showing in console
+    event.preventDefault();
     return true;
+  }
+});
+
+// Suppress unhandled Promise rejections from browser extensions (e.g. MetaMask inpage.js)
+window.addEventListener('unhandledrejection', (event) => {
+  const stack = event.reason?.stack || '';
+  const message = event.reason?.message || '';
+  if (
+    stack.includes('chrome-extension://') ||
+    stack.includes('moz-extension://') ||
+    message.includes('MetaMask') ||
+    message.includes('Failed to connect to MetaMask')
+  ) {
+    console.warn('🔌 Browser extension promise rejection (ignored):', message);
+    event.preventDefault();
   }
 });
 

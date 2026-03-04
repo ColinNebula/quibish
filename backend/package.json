@@ -4,7 +4,7 @@
   "description": "Backend server for Quibish messaging app",
   "main": "server.js",
   "scripts": {
-    "start": "node stable-server.js",
+    "start": "node server.js",
     "start:stable": "node stable-server.js",
     "start:optimized": "node optimized-server.js",
     "start:simple": "node simple-server.js",

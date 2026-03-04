@@ -12088,37 +12088,37 @@ body.dark-theme .call-option-info p {
 
   /* Header adjustment for Pro */
   .enhanced-chat-header {
-    height: 70px;
-    padding: 0 20px;
+    height: auto;
+    min-height: calc(env(safe-area-inset-top, 0px) + 44px);
+    padding: calc(env(safe-area-inset-top, 0px) + 4px) 20px 4px;
   }
 }
 
 /* iPhone Modern Devices - Universal Fix for 14/15 Series */
 @media screen and (max-width: 430px) and (min-height: 800px) and (-webkit-min-device-pixel-ratio: 3) {
-  /* Ensure input is never cut off on any modern iPhone */
+  /* Ensure input stays in flex flow on modern iPhones */
   .pro-chat-input-container,
   .message-input-container {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
-    padding: 16px 20px !important;
-    padding-bottom: max(20px, env(safe-area-inset-bottom, 34px)) !important;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 12px 16px !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
     background: rgba(255, 255, 255, 0.95) !important;
     border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
     box-sizing: border-box !important;
-    z-index: 1001 !important;
+    z-index: 2 !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
   }
 
-  /* Messages container spacing - increased to prevent overlap */
+  /* Messages container — reasonable bottom padding only */
   .pro-message-list,
   .messages-container {
-    padding-bottom: calc(140px + max(20px, env(safe-area-inset-bottom, 34px))) !important;
-    margin-bottom: 0 !important;
+    padding-bottom: 16px !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
   }
@@ -12127,12 +12127,7 @@ body.dark-theme .call-option-info p {
   @supports not (padding: max(0px, env(safe-area-inset-bottom))) {
     .pro-chat-input-container,
     .message-input-container {
-      padding-bottom: 34px !important; /* Standard iPhone home indicator height */
-    }
-    
-    .pro-message-list,
-    .messages-container {
-      padding-bottom: 134px !important; /* 100px input + 34px safe area */
+      padding-bottom: 34px !important;
     }
   }
 }

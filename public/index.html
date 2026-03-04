@@ -2,7 +2,51 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    
+
+    <!-- Suppress browser extension errors (e.g. MetaMask) before any framework code loads -->
+    <script>
+      (function() {
+        // Capture pristine string methods NOW, before the NUCLEAR_LOCKDOWN script
+        // below overrides String.prototype.indexOf / includes with broken .bind() versions
+        // (bound functions ignore .call(this, ...), so they always operate on "" instead of
+        //  the actual string — meaning every extension check below silently returns false).
+        var _indexOf = String.prototype.indexOf;
+
+        function isExtensionError(event) {
+          var reason = event.reason;
+          var error  = event.error;
+          var parts  = [
+            event.filename  || '',
+            event.message   || '',
+            (error  && error.stack)                      || '',
+            (reason && reason.stack)                     || '',
+            (reason && typeof reason === 'string' ? reason : '')
+          ].join('\n');
+
+          return _indexOf.call(parts, 'chrome-extension://') !== -1 ||
+                 _indexOf.call(parts, 'moz-extension://')    !== -1 ||
+                 _indexOf.call(parts, 'MetaMask')            !== -1;
+        }
+
+        function suppress(e) {
+          if (isExtensionError(e)) {
+            if (e.preventDefault)          e.preventDefault();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            return true;
+          }
+        }
+
+        // Capture-phase listeners fire before webpack / react-error-overlay handlers
+        window.addEventListener('error',              suppress, true);
+        window.addEventListener('unhandledrejection', suppress, true);
+
+        // Legacy fallback
+        window.onerror = function(msg, src, line, col, err) {
+          return suppress({ message: msg, filename: src, error: err }) || false;
+        };
+      })();
+    </script>
+
     <!-- Single Page Apps for GitHub Pages -->
     <script type="text/javascript">
       // GitHub Pages SPA redirect handling
@@ -37,10 +81,12 @@
         };
         
         // Store absolutely pristine copies immediately
+        // NOTE: do NOT use .bind(Prototype) here — bound functions ignore .call(this,...),
+        // so PRISTINE.indexOf.call(str, x) would always search String.prototype ("") not str.
         const PRISTINE = {
-          find: Array.prototype.find.bind(Array.prototype),
-          indexOf: String.prototype.indexOf.bind(String.prototype),
-          includes: String.prototype.includes.bind(String.prototype),
+          find: Array.prototype.find,
+          indexOf: String.prototype.indexOf,
+          includes: String.prototype.includes,
           addEventListener: EventTarget.prototype.addEventListener.bind(EventTarget.prototype),
           consoleError: console.error.bind(console),
           consoleWarn: console.warn.bind(console),

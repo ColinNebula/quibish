@@ -310,8 +310,10 @@ const ProChat = ({
       // body padding-top in index.css adds env(safe-area-inset-top) but the app header handles this itself.
       // Stripping it here prevents double-shifting that makes pro-main start below y=0 of the viewport.
       '  html, body { overflow: hidden !important; overscroll-behavior: none !important; height: 100% !important; padding: 0 !important; margin: 0 !important; }',
-      '  html body .app { height: 100dvh !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }',
+      '  html body .app { height: 100dvh !important; min-height: 0 !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }',
       '  html body .app-content { flex: 1 1 0% !important; min-height: 0 !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }',
+      // pro-layout also gets a JS height override (see applyHeight), but set a safe CSS fallback.
+
       // backdrop-filter on .pro-layout traps position:fixed — clear it on mobile.
       '  html body .pro-layout { flex: 1 1 0% !important; min-height: 0 !important; height: auto !important; max-height: none !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; gap: 0 !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transform: none !important; filter: none !important; }',
       // pro-main: flex column, height set by JS applyHeight() to match visualViewport.
@@ -320,12 +322,10 @@ const ProChat = ({
       '  html body .pro-main .enhanced-chat-header, html body .pro-main .pro-header { flex: 0 0 auto !important; position: relative !important; width: 100% !important; height: auto !important; min-height: calc(env(safe-area-inset-top, 0px) + 44px) !important; padding-top: env(safe-area-inset-top, 0px) !important; padding-bottom: 4px !important; padding-left: 12px !important; padding-right: 12px !important; margin: 0 !important; border-radius: 0 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important; background: #ffffff !important; z-index: 10 !important; box-sizing: border-box !important; }',
       // pro-content: second flex child, fills all remaining vertical space.
       '  html body .pro-main .pro-content { flex: 1 1 0% !important; min-height: 0 !important; height: 0 !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: #f5f5f5 !important; gap: 0 !important; animation: none !important; transition: none !important; opacity: 1 !important; position: relative !important; z-index: 1 !important; }',
-      // Message list: height set by JS inline style. CSS must not block it with !important.
-      '  html body .pro-main .pro-content .pro-message-list { flex: none !important; min-height: 0 !important; overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
+      // Message list: flex-fills remaining pro-content space after the input.
+      '  html body .pro-main .pro-content .pro-message-list { flex: 1 1 0% !important; min-height: 0 !important; overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain !important; padding: 12px 16px 20px !important; box-sizing: border-box !important; margin: 0 !important; border-radius: 0 !important; background: #f5f5f5 !important; }',
       // Input: last flex child in pro-content, never shrinks.
-      '  html body .pro-main .pro-chat-input-container { flex: 0 0 auto !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }',
-      // Input: flex item fixed at bottom.
-      '  html body .pro-main .pro-chat-input-container { flex: 0 0 auto !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }',
+      '  html body .pro-main .pro-chat-input-container { flex: 0 0 auto !important; position: relative !important; bottom: auto !important; left: auto !important; right: auto !important; width: 100% !important; margin: 0 !important; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }',
       '}'
     ].join('\n');
   }, []);
@@ -346,6 +346,13 @@ const ProChat = ({
 
       // visualViewport accounts for iOS keyboard and collapsing Safari chrome.
       const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+
+      // ── 0. pro-layout and app-content: clamp the entire chain to vh so no
+      //    CSS-height leftover creates a blank strip below pro-main.
+      const proLayoutEl   = proMainEl.closest('.pro-layout');
+      const appContentEl  = proMainEl.closest('.app-content');
+      if (proLayoutEl)  { proLayoutEl.style.height  = `${vh}px`; proLayoutEl.style.maxHeight  = `${vh}px`; }
+      if (appContentEl) { appContentEl.style.height = `${vh}px`; appContentEl.style.maxHeight = `${vh}px`; }
 
       // ── 1. pro-main: flex column exactly as tall as the visual viewport.
       proMainEl.style.height          = `${vh}px`;
@@ -395,15 +402,12 @@ const ProChat = ({
         input.style.gridColumn = '';
       }
 
-      // ── 5. Message list: pixel height = viewport - header - input.
-      //    getBoundingClientRect() is accurate synchronously inside useLayoutEffect.
-      const headerH = header ? header.getBoundingClientRect().height : 0;
-      const inputH  = input  ? input.getBoundingClientRect().height  : 0;
-      const listH   = Math.max(100, vh - headerH - inputH);
-
-      list.style.height    = `${listH}px`;
-      list.style.maxHeight = `${listH}px`;
-      list.style.flex      = 'none';
+      // ── 5. Message list: flex-fill the remaining space in pro-content.
+      //    pro-content is a flex column with input as flex:0 auto at the bottom,
+      //    so flex:1 1 0% gives the list exactly the right height without arithmetic.
+      list.style.height    = '';
+      list.style.maxHeight = '';
+      list.style.flex      = '1 1 0%';
       list.style.minHeight = '0';
       list.style.overflowY = 'auto';
       list.style.overflowX = 'hidden';
@@ -418,14 +422,7 @@ const ProChat = ({
 
     const ro = new ResizeObserver(applyHeight);
     const proMain = messagesContainerRef.current?.closest('.pro-main');
-    if (proMain) {
-      ro.observe(proMain);
-      // Also observe header + input so we re-compute if they change height
-      const hdrEl = proMain.querySelector('.pro-header, .enhanced-chat-header');
-      const inpEl = proMain.querySelector('.pro-chat-input-container');
-      if (hdrEl) ro.observe(hdrEl);
-      if (inpEl) ro.observe(inpEl);
-    }
+    if (proMain) ro.observe(proMain);
 
     return () => {
       vvp?.removeEventListener('resize', applyHeight);
@@ -4466,7 +4463,7 @@ const ProChat = ({
               {/* Action row */}
               <div style={{ display: 'flex', gap: '10px', width: '100%', marginBottom: '16px' }}>
                 {[
-                  { icon: '✏️', label: 'Edit Profile', action: () => { setContactProfilePopup(false); setSettingsModal({ open: true, section: 'profile' }); } },
+                  { icon: '✏️', label: 'Edit Profile', action: () => { setContactProfilePopup(false); handleViewUserProfile(user?.id, user?.name); } },
                   { icon: '⚙️', label: 'Settings', action: () => { setContactProfilePopup(false); setSettingsModal({ open: true, section: 'general' }); } },
                   { icon: '🚪', label: 'Sign Out', action: () => { setContactProfilePopup(false); onLogout(); } }
                 ].map(({ icon, label, action }) => (

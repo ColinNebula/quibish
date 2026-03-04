@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import pushNotificationService from '../../services/pushNotificationService';
 import './NotificationSettings.css';
 
@@ -40,7 +41,7 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
   const loadNotificationSettings = async () => {
     try {
       // Load user's notification preferences from backend
-      const response = await fetch('/api/users/notification-preferences', {
+      const response = await fetch('http://localhost:5001/api/users/notification-preferences', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -61,7 +62,7 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/users/notification-preferences', {
+      const response = await fetch('http://localhost:5001/api/users/notification-preferences', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -157,7 +158,7 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
 
   if (!isOpen) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <div className="notification-settings-overlay">
       <div className="notification-settings-modal">
         <div className="notification-settings-header">
@@ -453,7 +454,8 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

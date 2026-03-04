@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import './UserProfileModal.css';
-import imageProcessor from '../../services/imageProcessorService';
 
 const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
   console.log('🚀 UserProfileModal rendered with props:', { isOpen, user, hasOnClose: !!onClose, hasOnUpdateProfile: !!onUpdateProfile });
-  
+
+  const { updateUser } = useAuth();
+
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -45,63 +47,89 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  // Handle avatar upload with WebAssembly optimization
+  // Handle avatar upload — compress via canvas then POST to the dedicated avatar endpoint
   const handleAvatarChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Enhanced file validation
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       alert('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
       return;
     }
-
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      alert('File size must be less than 5MB');
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB');
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
-      // Use WebAssembly for ultra-fast image optimization
-      // Converts to 512x512 square avatar with 90% quality
-      const optimizedBlob = await imageProcessor.optimizeAvatar(file);
-      
-      // Show size reduction
-      const reduction = ((1 - optimizedBlob.size / file.size) * 100).toFixed(1);
-      console.log(`🎨 Avatar optimized: ${(file.size / 1024).toFixed(0)}KB → ${(optimizedBlob.size / 1024).toFixed(0)}KB (${reduction}% smaller)`);
-      
-      // Convert optimized blob to data URL for preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target.result;
-        setAvatarPreview(result);
-        setProfile(prev => ({ ...prev, avatar: result }));
-        setLoading(false);
-      };
-      reader.onerror = () => {
-        alert('Error reading optimized image');
-        setLoading(false);
-      };
-      reader.readAsDataURL(optimizedBlob);
-      
+      // ── 1. Client-side canvas compress to ≤512×512 JPEG ──────────────────
+      const compressedBlob = await new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          const MAX = 512;
+          let { width, height } = img;
+          // Crop to square from center, then scale down
+          const size = Math.min(width, height);
+          const sx = (width  - size) / 2;
+          const sy = (height - size) / 2;
+          const canvas = document.createElement('canvas');
+          canvas.width  = Math.min(size, MAX);
+          canvas.height = Math.min(size, MAX);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, sx, sy, size, size, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(
+            (blob) => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')),
+            'image/jpeg',
+            0.88
+          );
+        };
+        img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Could not load image')); };
+        img.src = objectUrl;
+      });
+
+      // Show preview immediately from the compressed blob
+      const previewUrl = URL.createObjectURL(compressedBlob);
+      setAvatarPreview(previewUrl);
+
+      // ── 2. Upload to the dedicated avatar endpoint ────────────────────────
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('avatar', compressedBlob, 'avatar.jpg');
+
+      const uploadResponse = await fetch('http://localhost:5001/api/users/avatar', {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (uploadResponse.ok) {
+        const { avatarUrl } = await uploadResponse.json();
+        // Store the server URL — no base64 blob in profile state
+        setProfile(prev => ({ ...prev, avatar: `http://localhost:5001${avatarUrl}` }));
+      } else {
+        // Server unavailable — store the compressed data URL as fallback
+        const reader = new FileReader();
+        reader.onload = (e) => setProfile(prev => ({ ...prev, avatar: e.target.result }));
+        reader.readAsDataURL(compressedBlob);
+      }
     } catch (error) {
-      console.error('Error optimizing image:', error);
-      // Fallback to original processing if optimization fails
+      console.error('Avatar change error:', error);
+      // Last-resort: read original file as data URL
       const reader = new FileReader();
       reader.onload = (e) => {
-        const result = e.target.result;
-        setAvatarPreview(result);
-        setProfile(prev => ({ ...prev, avatar: result }));
-        setLoading(false);
-      };
-      reader.onerror = () => {
-        alert('Error reading file');
-        setLoading(false);
+        setAvatarPreview(e.target.result);
+        setProfile(prev => ({ ...prev, avatar: e.target.result }));
       };
       reader.readAsDataURL(file);
+    } finally {
+      setLoading(false);
+      // Reset file input so picking the same file again fires onChange
+      event.target.value = '';
     }
   };
 
@@ -133,7 +161,7 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       const errorMessage = Object.values(validationErrors).join('\n');
@@ -143,38 +171,53 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
 
     setLoading(true);
     try {
-      // Simulate API call with better error handling
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Simulate random API failures for testing
-          if (Math.random() < 0.1) {
-            reject(new Error('Network error'));
-          } else {
-            resolve();
-          }
-        }, 1000);
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+      // Call the real profile update API
+      const response = await fetch('http://localhost:5001/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(profile)
       });
-      
-      if (onUpdateProfile) {
-        onUpdateProfile(profile);
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `Server error ${response.status}`);
       }
-      
+
+      // Update user in AuthContext so all components reflect the change immediately
+      updateUser(profile);
+
       // Update local storage for persistence
       const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
       const updatedUser = { ...currentUser, ...profile };
-      
       if (localStorage.getItem('user')) {
         localStorage.setItem('user', JSON.stringify(updatedUser));
       }
       if (sessionStorage.getItem('user')) {
         sessionStorage.setItem('user', JSON.stringify(updatedUser));
       }
-      
+
+      if (onUpdateProfile) {
+        onUpdateProfile(profile);
+      }
+
       setIsEditing(false);
       alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert(`Failed to update profile: ${error.message}. Please try again.`);
+      // If API is unavailable, fall back to local-only update
+      updateUser(profile);
+      const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+      const updatedUser = { ...currentUser, ...profile };
+      if (localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify(updatedUser));
+      if (sessionStorage.getItem('user')) sessionStorage.setItem('user', JSON.stringify(updatedUser));
+      if (onUpdateProfile) onUpdateProfile(profile);
+      setIsEditing(false);
+      alert('Profile saved locally (server unavailable).');
     } finally {
       setLoading(false);
     }
