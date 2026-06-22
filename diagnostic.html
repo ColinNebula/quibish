@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quibish Layout Diagnostic</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            color: #333;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 30px;
+            font-size: 32px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .pass {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        .fail {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 10px 10px 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status.good {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.bad {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .spinner {
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Quibish Layout Diagnostic</h1>
+        
+        <div class="card">
+            <h2>Quick Actions</h2>
+            <button onclick="runFullDiagnostic()">🔍 Run Full Diagnostic</button>
+            <button class="btn-danger" onclick="clearAllCaches()">🗑️ Clear All Caches</button>
+            <button class="btn-success" onclick="window.location.href='/'">🏠 Go to Chat</button>
+            <button class="btn-secondary" onclick="window.location.href='/?nocache=' + Date.now()">🔄 Force Reload Chat</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function runFullDiagnostic() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="card"><h2>Running Diagnostic... <span class="spinner"></span></h2></div>';
+            
+            let html = '';
+            
+            // 1. Check Service Workers
+            html += '<div class="card"><h2>🔧 Service Workers</h2>';
+            const sws = await navigator.serviceWorker.getRegistrations();
+            html += `<div class="test-result ${sws.length === 0 ? 'pass' : 'info'}">`;
+            html += `Found: ${sws.length} service worker(s)`;
+            if (sws.length > 0) {
+                html += '<br>⚠️ Service workers can cache old files - consider clearing';
+            }
+            html += '</div></div>';
+            
+            // 2. Check Caches
+            html += '<div class="card"><h2>💾 Cache Storage</h2>';
+            const cacheNames = await caches.keys();
+            html += `<div class="test-result ${cacheNames.length === 0 ? 'pass' : 'info'}">`;
+            html += `Found: ${cacheNames.length} cache(s)`;
+            if (cacheNames.length > 0) {
+                html += '<pre>' + cacheNames.join('\n') + '</pre>';
+            }
+            html += '</div></div>';
+            
+            // 3. Check LocalStorage
+            html += '<div class="card"><h2>📦 Storage</h2>';
+            const lsSize = Object.keys(localStorage).length;
+            const ssSize = Object.keys(sessionStorage).length;
+            html += `<div class="test-result info">`;
+            html += `LocalStorage: ${lsSize} keys<br>`;
+            html += `SessionStorage: ${ssSize} keys`;
+            html += '</div></div>';
+            
+            // 4. Check if on actual chat page
+            html += '<div class="card"><h2>📄 Current Page</h2>';
+            const onChatPage = window.location.pathname === '/' || window.location.pathname.includes('chat');
+            html += `<div class="test-result ${onChatPage ? 'info' : 'fail'}">`;
+            html += `Path: ${window.location.pathname}`;
+            if (!onChatPage) {
+                html += '<br>⚠️ Not on chat page - go to chat to test layout';
+            }
+            html += '</div></div>';
+            
+            // 5. THE CRITICAL TEST - Check actual CSS on page
+            html += '<div class="card"><h2>🎨 Layout CSS Test</h2>';
+            const messageList = document.querySelector('.pro-message-list');
+            
+            if (!messageList) {
+                html += '<div class="test-result fail">❌ .pro-message-list element not found<br>';
+                html += 'You need to be on the chat page with an active conversation</div>';
+                html += '<button class="btn-success" onclick="window.location.href=\'/\'">Go to Chat Now</button>';
+            } else {
+                const computed = getComputedStyle(messageList);
+                const tests = [
+                    {
+                        name: 'flex',
+                        expected: '1 1 auto',
+                        actual: computed.flex,
+                        critical: true
+                    },
+                    {
+                        name: 'justify-content',
+                        expected: 'flex-start',
+                        actual: computed.justifyContent,
+                        critical: true
+                    },
+                    {
+                        name: 'display',
+                        expected: 'flex',
+                        actual: computed.display,
+                        critical: true
+                    },
+                    {
+                        name: 'flex-direction',
+                        expected: 'column',
+                        actual: computed.flexDirection,
+                        critical: true
+                    }
+                ];
+                
+                let allPassed = true;
+                let testHtml = '';
+                
+                tests.forEach(test => {
+                    const passed = test.actual === test.expected;
+                    allPassed = allPassed && passed;
+                    testHtml += `<div class="test-result ${passed ? 'pass' : 'fail'}">`;
+                    testHtml += `${passed ? '✅' : '❌'} <strong>${test.name}</strong>: ${test.actual}`;
+                    if (!passed) {
+                        testHtml += `<br>Expected: ${test.expected}`;
+                    }
+                    testHtml += '</div>';
+                });
+                
+                html += testHtml;
+                
+                if (allPassed) {
+                    html += '<div class="test-result pass" style="font-size: 16px; font-weight: bold;">';
+                    html += '🎉 ALL TESTS PASSED! Layout fix is active!';
+                    html += '</div>';
+                } else {
+                    html += '<div class="test-result fail" style="font-size: 16px; font-weight: bold;">';
+                    html += '❌ TESTS FAILED! Old CSS is still loaded!';
+                    html += '<br><br><strong>ACTION REQUIRED:</strong>';
+                    html += '<br>1. Click "Clear All Caches" button above';
+                    html += '<br>2. Hard refresh: Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac)';
+                    html += '<br>3. Run diagnostic again';
+                    html += '</div>';
+                }
+            }
+            html += '</div>';
+            
+            // 6. Network Info
+            html += '<div class="card"><h2>🌐 Network</h2>';
+            html += '<div class="test-result info">';
+            html += `Online: ${navigator.onLine ? 'Yes' : 'No'}<br>`;
+            html += `User Agent: ${navigator.userAgent}`;
+            html += '</div></div>';
+            
+            results.innerHTML = html;
+        }
+        
+        async function clearAllCaches() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="card"><h2>Clearing caches... <span class="spinner"></span></h2></div>';
+            
+            try {
+                // Unregister service workers
+                const sws = await navigator.serviceWorker.getRegistrations();
+                for (let sw of sws) {
+                    await sw.unregister();
+                }
+                
+                // Clear caches
+                const cacheNames = await caches.keys();
+                for (let name of cacheNames) {
+                    await caches.delete(name);
+                }
+                
+                // Clear storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                results.innerHTML = `
+                    <div class="card">
+                        <h2>✅ All Caches Cleared!</h2>
+                        <div class="test-result pass">
+                            <strong>Cleared:</strong><br>
+                            • ${sws.length} service worker(s)<br>
+                            • ${cacheNames.length} cache(s)<br>
+                            • LocalStorage<br>
+                            • SessionStorage
+                        </div>
+                        <div class="test-result info">
+                            <strong>Reloading in 3 seconds...</strong><br>
+                            The page will reload automatically with fresh files.
+                        </div>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    window.location.href = '/?nocache=' + Date.now();
+                }, 3000);
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="card">
+                        <h2>❌ Error</h2>
+                        <div class="test-result fail">
+                            ${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(runFullDiagnostic, 500);
+        });
+    </script>
+</body>
+</html>

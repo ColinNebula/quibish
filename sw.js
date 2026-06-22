@@ -1,6 +1,9 @@
-const CACHE_NAME = 'quibish-v2.0.0';
-const STATIC_CACHE = 'quibish-static-v2.0.0';
-const DYNAMIC_CACHE = 'quibish-dynamic-v2.0.0';
+const VERSION = '2.1.0';
+const CACHE_NAME = `quibish-v${VERSION}`;
+const STATIC_CACHE = `quibish-static-v${VERSION}`;
+const DYNAMIC_CACHE = `quibish-dynamic-v${VERSION}`;
+const OFFLINE_CACHE = `quibish-offline-v${VERSION}`;
+const IMAGE_CACHE = `quibish-images-v${VERSION}`;
 
 // Stable files that always exist at these exact paths.
 // Avoid hardcoding content-hashed filenames here — they change every build
@@ -12,7 +15,18 @@ const STATIC_ASSETS = [
   '/quibish/favicon.ico',
   '/quibish/logo192.png',
   '/quibish/logo512.png',
+  '/quibish/offline.html',
 ];
+
+// Queue for offline messages/actions
+const OFFLINE_QUEUE = 'offline-queue';
+const MESSAGE_SYNC_TAG = 'sync-messages';
+const PERIODIC_SYNC_TAG = 'periodic-sync';
+
+// IndexedDB for offline storage
+let db = null;
+const DB_NAME = 'QuibishPWA';
+const DB_VERSION = 1;
 
 // Runtime caching strategies
 const CACHE_STRATEGIES = {
@@ -48,28 +62,65 @@ const NOTIFICATION_CONFIG = {
   ]
 };
 
+// Initialize IndexedDB
+async function initDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      db = request.result;
+      resolve(db);
+    };
+    
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      
+      // Store for offline messages
+      if (!db.objectStoreNames.contains('messages')) {
+        const messageStore = db.createObjectStore('messages', { keyPath: 'id', autoIncrement: true });
+        messageStore.createIndex('timestamp', 'timestamp', { unique: false });
+        messageStore.createIndex('synced', 'synced', { unique: false });
+      }
+      
+      // Store for offline actions
+      if (!db.objectStoreNames.contains('actions')) {
+        const actionStore = db.createObjectStore('actions', { keyPath: 'id', autoIncrement: true });
+        actionStore.createIndex('timestamp', 'timestamp', { unique: false });
+        actionStore.createIndex('type', 'type', { unique: false });
+      }
+      
+      // Store for cached user data
+      if (!db.objectStoreNames.contains('users')) {
+        db.createObjectStore('users', { keyPath: 'id' });
+      }
+    };
+  });
+}
+
 // Install event - cache critical resources
 self.addEventListener('install', (event) => {
   console.log('🔧 Service Worker: Installing...');
   
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then(async (cache) => {
-        console.log('\uD83D\uDD27 Service Worker: Caching app shell');
-        // Cache each URL individually — one 404 won't abort the whole install
+    Promise.all([
+      caches.open(STATIC_CACHE).then(async (cache) => {
+        console.log('🔧 Service Worker: Caching app shell');
         await Promise.allSettled(
           STATIC_ASSETS.map(url =>
             cache.add(url).catch(err => console.warn(`[SW] Pre-cache skipped: ${url}`, err))
           )
         );
-      })
-      .then(() => {
-        console.log('\u2705 Service Worker: Installation complete');
-        return self.skipWaiting();
-      })
-      .catch((error) => {
-        console.error('❌ Service Worker: Installation failed', error);
-      })
+      }),
+      initDB().catch(err => console.warn('IndexedDB init failed:', err))
+    ])
+    .then(() => {
+      console.log('✅ Service Worker: Installation complete');
+      return self.skipWaiting();
+    })
+    .catch((error) => {
+      console.error('❌ Service Worker: Installation failed', error);
+    })
   );
 });
 
@@ -78,32 +129,39 @@ self.addEventListener('activate', (event) => {
   console.log('🚀 Service Worker: Activating...');
   
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            // Delete old cache versions
             if (cacheName !== STATIC_CACHE && 
                 cacheName !== DYNAMIC_CACHE && 
+                cacheName !== OFFLINE_CACHE &&
+                cacheName !== IMAGE_CACHE &&
                 cacheName !== CACHE_NAME) {
               console.log('🗑️ Service Worker: Deleting old cache', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
-      })
-      .then(() => {
-        console.log('✅ Service Worker: Activation complete');
-        return self.clients.claim();
-      })
-      .then(() => {
-        // Notify all open tabs that a new SW version is active
-        return self.clients.matchAll({ includeUncontrolled: true }).then(allClients => {
-          allClients.forEach(client =>
-            client.postMessage({ type: 'SW_UPDATED', version: CACHE_NAME })
-          );
-        });
-      })
+      }),
+      // Take control of all pages
+      self.clients.claim()
+    ])
+    .then(() => {
+      console.log('✅ Service Worker: Activation complete');
+      // Notify all open tabs
+      return self.clients.matchAll({ includeUncontrolled: true });
+    })
+    .then(allClients => {
+      allClients.forEach(client =>
+        client.postMessage({ 
+          type: 'SW_UPDATED', 
+          version: VERSION,
+          features: ['offline', 'background-sync', 'push-notifications', 'periodic-sync']
+        })
+      );
+    })
   );
 });
 
