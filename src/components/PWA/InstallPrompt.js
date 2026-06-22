@@ -44,7 +44,6 @@ const InstallPrompt = () => {
     }
 
     const handleBip = (e) => {
-      e.preventDefault();
       setDeferredPrompt(e);
       const t = setTimeout(() => setVisible(true), 4000);
       return () => clearTimeout(t);

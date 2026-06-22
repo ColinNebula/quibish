@@ -51,7 +51,7 @@
     height: auto !important;
     min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important;
     max-height: none !important;
-    padding: calc(env(safe-area-inset-top, 0px) + 8px) 16px 8px 16px !important;
+    padding: calc(env(safe-area-inset-top, 0px) + 4px) 16px 4px 16px !important;
     position: relative !important;
     top: 0 !important;
     z-index: 100 !important;
@@ -70,10 +70,13 @@
   .messages-container,
   .pro-message-area {
     flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
-    padding: 16px !important;
+    padding: 8px 12px !important;
     margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -226,14 +229,14 @@
   /* Optimize for notched devices */
   .pro-header,
   .enhanced-chat-header {
-    min-height: calc(56px + env(safe-area-inset-top, 44px)) !important;
-    padding-top: calc(8px + env(safe-area-inset-top, 44px)) !important;
+    min-height: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    padding-top: calc(4px + env(safe-area-inset-top, 0px)) !important;
   }
   
   .pro-message-list,
   .messages-container {
     /* Extra padding at bottom to ensure last message is visible */
-    padding-bottom: 140px !important; /* Increased from 24px to prevent input overlap */
+    padding-bottom: 80px !important; /* Reduced from 140px - input overlap fixed */
   }
   
   .pro-chat-input-container,

@@ -1,5 +1,5 @@
 // Service Worker for offline notifications and background sync
-const CACHE_NAME = 'quibish-v1';
+const CACHE_NAME = 'quibish-v2.2-layout-fix';
 const API_URL = 'http://localhost:5001/api';
 
 // Install event
@@ -10,8 +10,18 @@ self.addEventListener('install', (event) => {
 
 // Activate event
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activated');
-  event.waitUntil(clients.claim());
+  console.log('Service Worker activated - clearing old caches');
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.filter(cacheName => cacheName !== CACHE_NAME)
+          .map(cacheName => {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+      );
+    }).then(() => clients.claim())
+  );
 });
 
 // Push notification event

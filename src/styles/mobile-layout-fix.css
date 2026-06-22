@@ -405,7 +405,7 @@
   @supports (padding: max(0px)) {
     .pro-header,
     .enhanced-chat-header {
-      padding-top: max(10px, env(safe-area-inset-top)) !important;
+      padding-top: max(4px, env(safe-area-inset-top)) !important;
       padding-left: max(12px, env(safe-area-inset-left)) !important;
       padding-right: max(12px, env(safe-area-inset-right)) !important;
     }

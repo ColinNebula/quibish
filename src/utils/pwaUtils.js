@@ -18,9 +18,6 @@ class PWAUtils {
     
     // Initialize shortcuts
     this.initializeShortcuts();
-    
-    // Handle app install
-    this.handleAppInstall();
   }
 
   async registerServiceWorker() {
@@ -71,7 +68,6 @@ class PWAUtils {
 
     window.addEventListener('beforeinstallprompt', (event) => {
       console.log('PWA: Install prompt available');
-      event.preventDefault();
       deferredPrompt = event;
       
       // Show custom install button if needed

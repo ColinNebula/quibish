@@ -1,0 +1,61 @@
+/* PWA Padding Fix - Critical for installed apps on small devices */
+
+/* Apply these fixes specifically for PWA mode on small screens */
+@media (display-mode: standalone) and (max-width: 480px) {
+  /* Ensure consistent header height in PWA */
+  html body .pro-header,
+  html body .enhanced-chat-header,
+  html body .chat-header {
+    min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 4px) !important;
+    padding-bottom: 4px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Ensure messages container fills available space */
+  html body .pro-message-list,
+  html body .pro-message-area,
+  html body .messages-container {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Input container at bottom */
+  html body .pro-chat-input-container,
+  html body .message-input-container {
+    flex: 0 0 auto !important;
+    padding: 6px 12px !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Extra small devices in PWA mode */
+@media (display-mode: standalone) and (max-width: 375px) {
+  html body .pro-header,
+  html body .enhanced-chat-header {
+    min-height: calc(env(safe-area-inset-top, 0px) + 56px) !important;
+    padding: calc(env(safe-area-inset-top, 0px) + 4px) 8px 4px 8px !important;
+  }
+}
+
+/* Browser mode (non-PWA) small devices */
+@media (display-mode: browser) and (max-width: 480px) {
+  html body .pro-header,
+  html body .enhanced-chat-header {
+    min-height: 56px !important;
+    padding: 4px 12px !important;
+  }
+}
+
+/* Fix for notched devices in landscape PWA mode */
+@media (display-mode: standalone) and (orientation: landscape) and (max-height: 480px) {
+  html body .pro-header,
+  html body .enhanced-chat-header {
+    min-height: 48px !important;
+    padding: 4px 12px !important;
+    padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+  }
+}

@@ -5,7 +5,6 @@ import './styles/mobile-first-responsive.css';
 import './styles/input-container-responsive-fix.css';
 import './styles/mobile-content-fix.css';
 import './styles/mobile-animation-fix.css';
-import './styles/mobile-layout-fix.css';
 import './styles/image-display-fix.css';
 import './styles/advanced-animations.css';
 import './styles/enhanced-components.css';
@@ -25,10 +24,12 @@ import DynamicSplashScreen from './components/UI/DynamicSplashScreen';
 import ErrorBoundary from './components/ErrorHandling/ErrorBoundary';
 import PWAStatus from './components/ServiceWorker/PWAStatus';
 import InstallPrompt from './components/PWA/InstallPrompt';
+import PWAUpdateManager from './components/PWA/PWAUpdateManager';
 import ThemeSelector from './components/ThemeSelector';
 import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 import pwaUtils from './utils/pwaUtils';
+import enhancedPWAUtils from './utils/enhancedPWAUtils';
 import pwaShortcutService from './services/pwaShortcutService';
 import dataMigrationManager from './services/dataMigrationManager';
 import persistentStorageService from './services/persistentStorageService';
@@ -48,6 +49,28 @@ const App = () => {
   });
   const [appInitialized, setAppInitialized] = useState(false);
   const [initializationError, setInitializationError] = useState(null);
+
+  // Initialize PWA on mount
+  useEffect(() => {
+    // Log PWA status
+    enhancedPWAUtils.logStatus();
+
+    // Request persistent storage
+    enhancedPWAUtils.requestPersistentStorage().then(result => {
+      if (result.granted) {
+        console.log('✅ PWA: Persistent storage granted');
+      } else {
+        console.warn('⚠️ PWA: Persistent storage not granted');
+      }
+    });
+
+    // Check storage quota
+    enhancedPWAUtils.checkStorageQuota().then(quota => {
+      if (quota.supported) {
+        console.log(`📊 PWA: Storage - ${(quota.usage / 1024 / 1024).toFixed(2)} MB used of ${(quota.quota / 1024 / 1024).toFixed(2)} MB (${quota.percentage}%)`);
+      }
+    });
+  }, []);
 
   // Mock conversations data - moved up before useEffect that uses it
   const [conversations] = useState([
@@ -367,6 +390,9 @@ const App = () => {
       
       {/* PWA Install Prompt */}
       <InstallPrompt />
+      
+      {/* PWA Update Manager */}
+      <PWAUpdateManager />
       
       {/* Theme Selector */}
       <ThemeSelector />

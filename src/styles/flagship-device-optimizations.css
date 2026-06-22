@@ -382,7 +382,7 @@
 @supports (padding-top: env(safe-area-inset-top)) {
   .fixed-header,
   .sticky-header {
-    padding-top: calc(var(--safe-area-top) + 12px);
+    padding-top: calc(var(--safe-area-top) + 4px);
   }
   
   .fixed-footer,

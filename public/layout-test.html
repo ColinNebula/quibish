@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Layout Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Simulate the fixed layout structure */
+        .test-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #f5f5f5;
+        }
+        
+        /* Header */
+        .test-header {
+            flex: 0 0 auto;
+            min-height: 56px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Content area */
+        .test-content {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            background: #e5e5e5;
+        }
+        
+        /* Message list - THIS IS THE KEY */
+        .test-messages {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* KEY: Messages start at top */
+            overflow-y: auto;
+            padding: 12px;
+            background: #f5f5f5;
+        }
+        
+        .test-messages.wrong {
+            justify-content: center; /* WRONG: Centers messages */
+        }
+        
+        /* Input */
+        .test-input {
+            flex: 0 0 auto;
+            background: white;
+            border-top: 1px solid #ddd;
+            padding: 12px;
+        }
+        
+        /* Message bubble */
+        .message {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            max-width: 80%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 9999;
+        }
+        
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #4338ca;
+        }
+        
+        .info {
+            font-size: 12px;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+        
+        .correct {
+            background: #10b981;
+        }
+        
+        .wrong-btn {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div><strong>Layout Test</strong></div>
+        <button class="correct" onclick="setCorrect()">✅ Correct Layout</button>
+        <button class="wrong-btn" onclick="setWrong()">❌ Wrong Layout</button>
+        <button onclick="addMessage()">Add Message</button>
+        <div class="info" id="info">
+            Current: flex-start<br>
+            Messages: 3
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <div class="test-header">
+            <strong>Test Chat Header</strong>
+        </div>
+        
+        <div class="test-content">
+            <div class="test-messages" id="messageList">
+                <div class="message">Message 1</div>
+                <div class="message">Message 2</div>
+                <div class="message">Message 3</div>
+            </div>
+            
+            <div class="test-input">
+                <div style="background: #f5f5f5; padding: 12px; border-radius: 20px;">
+                    Type a message...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let messageCount = 3;
+        
+        function setCorrect() {
+            const list = document.getElementById('messageList');
+            list.classList.remove('wrong');
+            list.style.justifyContent = 'flex-start';
+            updateInfo('flex-start (CORRECT)');
+        }
+        
+        function setWrong() {
+            const list = document.getElementById('messageList');
+            list.classList.add('wrong');
+            list.style.justifyContent = 'center';
+            updateInfo('center (WRONG - messages appear low)');
+        }
+        
+        function addMessage() {
+            messageCount++;
+            const list = document.getElementById('messageList');
+            const msg = document.createElement('div');
+            msg.className = 'message';
+            msg.textContent = 'Message ' + messageCount;
+            list.appendChild(msg);
+            updateInfo();
+        }
+        
+        function updateInfo(layout) {
+            const list = document.getElementById('messageList');
+            const currentLayout = layout || list.style.justifyContent || 'flex-start';
+            document.getElementById('info').innerHTML = `
+                Current: ${currentLayout}<br>
+                Messages: ${messageCount}<br><br>
+                <strong>Try both layouts to see the difference!</strong>
+            `;
+        }
+    </script>
+</body>
+</html>

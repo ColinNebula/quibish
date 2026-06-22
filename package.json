@@ -2,7 +2,7 @@
   "name": "quibish",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://colinnebula.github.io/quibish",
+  "homepage": ".",
   "dependencies": {
     "crypto-js": "^4.2.0",
     "prop-types": "^15.8.1",

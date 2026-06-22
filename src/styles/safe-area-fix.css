@@ -70,8 +70,8 @@ body {
     height: auto !important;
     min-height: calc(var(--sat) + 56px) !important;
     max-height: none !important;
-    padding-top: calc(var(--sat) + 8px) !important;
-    padding-bottom: 8px !important;
+    padding-top: calc(var(--sat) + 4px) !important;
+    padding-bottom: 4px !important;
     padding-left: 16px !important;
     padding-right: 16px !important;
     border-radius: 0 !important;
@@ -99,7 +99,7 @@ body {
 html.has-notch .pro-header,
 html.has-notch .enhanced-chat-header,
 html.has-notch .chat-header {
-  padding-top: calc(var(--sat) + 8px) !important;
+  padding-top: calc(var(--sat) + 4px) !important;
   min-height: calc(var(--sat) + 56px) !important;
 }
 

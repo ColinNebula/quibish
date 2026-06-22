@@ -1,0 +1,71 @@
+/* MOBILE DEBUG OVERLAY - Add this temporarily to see what's happening */
+
+/* Visual debugging for mobile layout */
+@media screen and (max-width: 768px) {
+  /* Outline the main containers to see structure */
+  .pro-main {
+    outline: 3px solid red !important;
+  }
+  
+  .pro-content {
+    outline: 3px solid blue !important;
+  }
+  
+  .pro-message-list {
+    outline: 3px solid green !important;
+    background: rgba(255, 255, 0, 0.1) !important; /* Light yellow tint */
+  }
+  
+  .pro-header,
+  .enhanced-chat-header {
+    outline: 3px solid orange !important;
+  }
+  
+  .pro-chat-input-container {
+    outline: 3px solid purple !important;
+  }
+  
+  /* Add a debug info overlay */
+  .pro-message-list::before {
+    content: 'MESSAGE LIST - Check: flex=' attr(data-flex) ' justify=' attr(data-justify);
+    position: sticky;
+    top: 0;
+    left: 0;
+    background: rgba(255, 0, 0, 0.9);
+    color: white;
+    padding: 8px;
+    font-size: 11px;
+    z-index: 9999;
+    display: block;
+    font-family: monospace;
+  }
+  
+  .pro-content::before {
+    content: 'PRO-CONTENT - flex=' attr(data-flex);
+    position: sticky;
+    top: 30px;
+    left: 0;
+    background: rgba(0, 0, 255, 0.9);
+    color: white;
+    padding: 8px;
+    font-size: 11px;
+    z-index: 9998;
+    display: block;
+    font-family: monospace;
+  }
+}
+
+/* Force absolute positioning to test if flexbox is the issue */
+/*
+@media screen and (max-width: 768px) {
+  .pro-message-list {
+    flex: none !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    padding: 8px 12px !important;
+  }
+}
+*/

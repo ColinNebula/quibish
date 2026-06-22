@@ -318,7 +318,7 @@
   @supports (padding: max(0px)) {
     .pro-header,
     .enhanced-chat-header {
-      padding-top: max(8px, env(safe-area-inset-top)) !important;
+      padding-top: max(4px, env(safe-area-inset-top)) !important;
       padding-left: max(12px, env(safe-area-inset-left)) !important;
       padding-right: max(12px, env(safe-area-inset-right)) !important;
     }
@@ -345,8 +345,8 @@
   @media only screen and (max-width: 768px) {
     .pro-header,
     .enhanced-chat-header {
-      min-height: 54px !important;
-      padding: 8px 12px !important;
+      min-height: 56px !important;
+      padding: 4px 12px !important;
     }
     
     .pro-message-list,
@@ -369,7 +369,7 @@
     .pro-message-list,
     .messages-container,
     .pro-message-area {
-      padding-bottom: 160px !important; /* Extra space for input container */
+      padding-bottom: 100px !important; /* Reduced space for input container */
       margin-bottom: 0 !important;
     }
     

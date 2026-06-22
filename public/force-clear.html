@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quibish - Force Cache Clear</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; margin-top: 0; }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-weight: 600;
+        }
+        button:hover { background: #4338ca; }
+        button:active { transform: scale(0.98); }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+        }
+        .success { background: #f0fdf4; border-color: #22c55e; }
+        .error { background: #fef2f2; border-color: #ef4444; }
+        pre {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 10px;
+            background: #fafafa;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔄 Force Cache Clear & Reload</h1>
+        <p>This will clear all cached files and service workers, then reload with fresh code.</p>
+        
+        <div id="status" class="status">Ready to clear cache...</div>
+        
+        <button onclick="clearEverything()">🗑️ Clear All Caches & Reload</button>
+        <button onclick="checkCurrentState()">🔍 Check Current State</button>
+        
+        <div id="details" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        async function clearEverything() {
+            const statusDiv = document.getElementById('status');
+            const detailsDiv = document.getElementById('details');
+            let report = '';
+            
+            try {
+                statusDiv.className = 'status';
+                statusDiv.innerHTML = '🔄 Clearing caches...';
+                
+                // 1. Unregister service workers
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                report += `<div class="step">✅ Found ${registrations.length} service worker(s)</div>`;
+                for (let reg of registrations) {
+                    await reg.unregister();
+                    report += `<div class="step">✅ Unregistered service worker</div>`;
+                }
+                
+                // 2. Clear cache storage
+                const cacheNames = await caches.keys();
+                report += `<div class="step">✅ Found ${cacheNames.length} cache(s)</div>`;
+                for (let name of cacheNames) {
+                    await caches.delete(name);
+                    report += `<div class="step">✅ Deleted cache: ${name}</div>`;
+                }
+                
+                // 3. Clear storage
+                localStorage.clear();
+                sessionStorage.clear();
+                report += `<div class="step">✅ Cleared localStorage and sessionStorage</div>`;
+                
+                detailsDiv.innerHTML = report;
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '✅ All caches cleared! Reloading in 2 seconds...';
+                
+                // Reload with cache bypass
+                setTimeout(() => {
+                    window.location.href = window.location.origin + '?nocache=' + Date.now();
+                }, 2000);
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ Error: ' + error.message;
+                detailsDiv.innerHTML = report + `<div class="step error">Error: ${error.stack}</div>`;
+            }
+        }
+        
+        async function checkCurrentState() {
+            const detailsDiv = document.getElementById('details');
+            let report = '<h3>Current State:</h3>';
+            
+            // Check service workers
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            report += `<pre>Service Workers: ${registrations.length} active</pre>`;
+            
+            // Check caches
+            const cacheNames = await caches.keys();
+            report += `<pre>Caches: ${cacheNames.length} found\n${cacheNames.join('\n')}</pre>`;
+            
+            // Check storage
+            const lsKeys = Object.keys(localStorage);
+            report += `<pre>LocalStorage: ${lsKeys.length} keys</pre>`;
+            
+            // Check CSS
+            report += `<h4>Checking CSS Rules:</h4>`;
+            const messageList = document.querySelector('.pro-message-list');
+            if (messageList) {
+                const computed = getComputedStyle(messageList);
+                report += `<pre>
+Message List Styles:
+  flex: ${computed.flex}
+  justify-content: ${computed.justifyContent}
+  display: ${computed.display}
+  flex-direction: ${computed.flexDirection}
+  
+Expected:
+  flex: 1 1 auto
+  justify-content: flex-start
+  display: flex
+  flex-direction: column
+</pre>`;
+            } else {
+                report += `<p>⚠️ .pro-message-list element not found (not on chat page)</p>`;
+            }
+            
+            detailsDiv.innerHTML = report;
+        }
+    </script>
+</body>
+</html>
