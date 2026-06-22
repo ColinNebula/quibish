@@ -1,12 +1,12 @@
 {
   "files": {
     "main.css": "http://localhost:3000/static/css/main.1e057ffc.css",
-    "main.js": "http://localhost:3000/static/js/main.f4a1890d.js",
+    "main.js": "http://localhost:3000/static/js/main.75171e6c.js",
     "static/js/37.e7c141c4.chunk.js": "http://localhost:3000/static/js/37.e7c141c4.chunk.js",
     "index.html": "http://localhost:3000/index.html"
   },
   "entrypoints": [
     "static/css/main.1e057ffc.css",
-    "static/js/main.f4a1890d.js"
+    "static/js/main.75171e6c.js"
   ]
 }
