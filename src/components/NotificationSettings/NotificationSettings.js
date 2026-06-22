@@ -30,6 +30,7 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPermissionHelp, setShowPermissionHelp] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -90,6 +91,22 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
     setPushStatus(status);
   };
 
+  const getPermissionChip = () => {
+    if (!pushStatus.isSupported) {
+      return { label: 'Unsupported', className: 'permission-chip permission-unsupported' };
+    }
+
+    if (pushStatus.permission === 'granted') {
+      return { label: 'Allowed', className: 'permission-chip permission-granted' };
+    }
+
+    if (pushStatus.permission === 'denied') {
+      return { label: 'Blocked', className: 'permission-chip permission-denied' };
+    }
+
+    return { label: 'Not set', className: 'permission-chip permission-default' };
+  };
+
   const handlePushToggle = async () => {
     if (!pushStatus.isSupported) {
       setError('Push notifications are not supported in this browser');
@@ -107,9 +124,13 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
         checkPushStatus();
       } else {
         // Enable push notifications
-        await pushNotificationService.requestPermission();
-        setSettings(prev => ({ ...prev, pushEnabled: true }));
+        const enabled = await pushNotificationService.requestPermission();
+        setSettings(prev => ({ ...prev, pushEnabled: !!enabled }));
         checkPushStatus();
+
+        if (!enabled) {
+          setError('Notifications are blocked in your browser. Enable them in site settings, then try again.');
+        }
       }
     } catch (error) {
       console.error('Failed to toggle push notifications:', error);
@@ -156,6 +177,48 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
     }));
   };
 
+  const getNotificationHelpSteps = () => {
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+
+    if (/Edg\//.test(ua)) {
+      return [
+        'Open browser Site settings for this page (padlock icon in address bar).',
+        'Set Notifications to Allow.',
+        'Refresh the page and turn Push Notifications on again.'
+      ];
+    }
+
+    if (/Chrome\//.test(ua) && !/Edg\//.test(ua)) {
+      return [
+        'Click the padlock icon in the address bar.',
+        'Open Site settings and set Notifications to Allow.',
+        'Refresh the page and enable Push Notifications again.'
+      ];
+    }
+
+    if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) {
+      return [
+        'Open Safari Settings/Preferences.',
+        'Go to Websites > Notifications and find this site.',
+        'Set the site to Allow, then reload this page.'
+      ];
+    }
+
+    if (/Firefox\//.test(ua)) {
+      return [
+        'Click the lock icon in the address bar.',
+        'Open Connection secure / permissions and allow Notifications for this site.',
+        'Reload the page and try enabling push again.'
+      ];
+    }
+
+    return [
+      'Open browser site permissions for this page.',
+      'Allow Notifications for this site.',
+      'Refresh this page and enable Push Notifications again.'
+    ];
+  };
+
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
@@ -182,6 +245,10 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
           {/* Push Notifications Section */}
           <div className="settings-section">
             <h3>📱 Push Notifications</h3>
+            <div className="permission-chip-row">
+              <span className="setting-description">Browser permission</span>
+              <span className={getPermissionChip().className}>{getPermissionChip().label}</span>
+            </div>
             <div className="setting-item">
               <div className="setting-info">
                 <label>Enable Push Notifications</label>
@@ -205,6 +272,26 @@ const NotificationSettings = ({ isOpen, onClose, user }) => {
             {!pushStatus.isSupported && (
               <div className="warning-message">
                 Push notifications are not supported in this browser
+              </div>
+            )}
+
+            {pushStatus.permission === 'denied' && (
+              <div className="warning-message">
+                Notifications are currently blocked for this site.
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => setShowPermissionHelp(prev => !prev)}
+                >
+                  {showPermissionHelp ? 'Hide steps' : 'How to enable'}
+                </button>
+                {showPermissionHelp && (
+                  <ol className="permission-help-list">
+                    {getNotificationHelpSteps().map((step, index) => (
+                      <li key={`permission-step-${index}`}>{step}</li>
+                    ))}
+                  </ol>
+                )}
               </div>
             )}
 

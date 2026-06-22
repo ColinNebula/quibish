@@ -77,11 +77,10 @@ class PushNotificationService {
       if (permission === 'granted') {
         await this.setupPushSubscription();
         return true;
-      } else if (permission === 'denied') {
-        throw new Error('Notification permission denied');
-      } else {
-        throw new Error('Notification permission not granted');
       }
+
+      // Denied/default are user/browser states, not runtime errors.
+      return false;
     } catch (error) {
       console.error('Failed to request notification permission:', error);
       throw error;

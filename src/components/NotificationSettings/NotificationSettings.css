@@ -311,6 +311,77 @@
   gap: 6px;
 }
 
+.permission-chip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 10px;
+}
+
+.permission-chip {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.permission-granted {
+  color: #065f46;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.permission-denied {
+  color: #991b1b;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.permission-default {
+  color: #475569;
+  background: rgba(148, 163, 184, 0.15);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.permission-unsupported {
+  color: #7c2d12;
+  background: rgba(251, 146, 60, 0.14);
+  border-color: rgba(251, 146, 60, 0.35);
+}
+
+.link-button {
+  border: none;
+  background: transparent;
+  color: #7c2d12;
+  text-decoration: underline;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.link-button:hover {
+  color: #9a3412;
+}
+
+.permission-help-list {
+  margin: 8px 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.permission-help-list li {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 /* ── Push status card ── */
 .push-status {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.06));
