@@ -1,3 +1,5 @@
+/*! https://github.com/nevware21/ts-utils v0.15.0 */
+
 /**
  * @license React
  * react-dom-client.production.js
