@@ -79,6 +79,22 @@ const ProChat = ({
   
   // Use authenticated user if available, otherwise fall back to prop user
   const user = authUser || propUser;
+  const getLocalStorageItemSafe = (key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+
+  const setLocalStorageItemSafe = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // Ignore write failures on restricted browser storage modes.
+    }
+  };
+  const notificationsMuted = getLocalStorageItemSafe('notificationsMuted') === 'true';
   const appDebugEnabled = typeof window !== 'undefined'
     && new URLSearchParams(window.location.search).has('appDebug');
   const debugLog = (...args) => {
@@ -1677,10 +1693,10 @@ const ProChat = ({
 
   // Handle mute notifications
   const handleMuteNotifications = useCallback(() => {
-    const currentlyMuted = localStorage.getItem('notificationsMuted') === 'true';
+    const currentlyMuted = getLocalStorageItemSafe('notificationsMuted') === 'true';
     const newMutedState = !currentlyMuted;
     
-    localStorage.setItem('notificationsMuted', newMutedState.toString());
+    setLocalStorageItemSafe('notificationsMuted', newMutedState.toString());
     
     setShowMoreMenu(false);
     
@@ -4676,7 +4692,7 @@ const ProChat = ({
               { icon: '👥', label: 'Contacts', action: handleOpenContactManager },
               { icon: '📥', label: 'Export Chat', action: handleExportChat },
               { icon: '🖨️', label: 'Print Chat', action: handlePrintChat },
-              { icon: localStorage.getItem('notificationsMuted') === 'true' ? '🔔' : '🔕', label: (localStorage.getItem('notificationsMuted') === 'true' ? 'Unmute' : 'Mute') + ' Notifications', action: handleMuteNotifications },
+              { icon: notificationsMuted ? '🔔' : '🔕', label: (notificationsMuted ? 'Unmute' : 'Mute') + ' Notifications', action: handleMuteNotifications },
               { icon: '🗑️', label: 'Clear Chat', action: handleClearChat },
               { icon: '❓', label: 'Help & Support', action: () => setHelpModal(true) },
               { icon: '📢', label: 'Send Feedback', action: () => setFeedbackModal(true) },

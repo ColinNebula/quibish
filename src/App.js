@@ -35,17 +35,39 @@ import dataMigrationManager from './services/dataMigrationManager';
 import persistentStorageService from './services/persistentStorageService';
 import imageProcessor from './services/imageProcessorService';
 
+const safeGetStorageItem = (storage, key) => {
+  try {
+    return storage?.getItem(key);
+  } catch (error) {
+    console.warn(`Storage read failed for ${key}:`, error?.message || error);
+    return null;
+  }
+};
+
+const safeSetStorageItem = (storage, key, value) => {
+  try {
+    storage?.setItem(key, value);
+  } catch (error) {
+    console.warn(`Storage write failed for ${key}:`, error?.message || error);
+  }
+};
+
 const App = () => {
   const { isAuthenticated, user, loading: authLoading, logout } = useAuth();
   const [view, setView] = useState('login');
   const [showSplash, setShowSplash] = useState(() => {
     // Only show splash screen once per session
-    const hasSeenSplash = sessionStorage.getItem('quibish-splash-seen');
+    const hasSeenSplash = safeGetStorageItem(sessionStorage, 'quibish-splash-seen');
     return !hasSeenSplash;
   });
   const [darkMode, setDarkMode] = useState(() => {
-    const savedMode = localStorage.getItem('quibish-dark-mode');
-    return savedMode ? JSON.parse(savedMode) : false;
+    const savedMode = safeGetStorageItem(localStorage, 'quibish-dark-mode');
+    if (!savedMode) return false;
+    try {
+      return JSON.parse(savedMode);
+    } catch {
+      return false;
+    }
   });
   const [appInitialized, setAppInitialized] = useState(false);
   const [initializationError, setInitializationError] = useState(null);
@@ -161,7 +183,7 @@ const App = () => {
     if (user && user.theme) {
       const isDark = user.theme === 'dark';
       setDarkMode(isDark);
-      localStorage.setItem('quibish-dark-mode', JSON.stringify(isDark));
+      safeSetStorageItem(localStorage, 'quibish-dark-mode', JSON.stringify(isDark));
     }
   }, [user]);
 
@@ -290,7 +312,7 @@ const App = () => {
   
   // Dark mode persistence and CSS class management
   useEffect(() => {
-    localStorage.setItem('quibish-dark-mode', JSON.stringify(darkMode));
+    safeSetStorageItem(localStorage, 'quibish-dark-mode', JSON.stringify(darkMode));
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     if (darkMode) {
       document.body.classList.add('dark-theme');
@@ -316,7 +338,7 @@ const App = () => {
   const toggleDarkMode = () => setDarkMode(prev => !prev);
   const handleSplashComplete = () => {
     setShowSplash(false);
-    sessionStorage.setItem('quibish-splash-seen', 'true');
+    safeSetStorageItem(sessionStorage, 'quibish-splash-seen', 'true');
   };
   
   if (authLoading) {

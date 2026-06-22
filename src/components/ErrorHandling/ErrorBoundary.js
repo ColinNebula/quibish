@@ -1,4 +1,5 @@
 import React from 'react';
+import { trackException } from '../../services/appInsights';
 import './ErrorBoundary.css';
 
 class ErrorBoundary extends React.Component {
@@ -15,6 +16,11 @@ class ErrorBoundary extends React.Component {
     this.setState({
       error: error,
       errorInfo: errorInfo
+    });
+
+    trackException(error, {
+      source: 'ErrorBoundary',
+      componentStack: errorInfo?.componentStack || ''
     });
 
     // Log error to console in development

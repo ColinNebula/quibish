@@ -4,6 +4,7 @@
   "private": true,
   "homepage": ".",
   "dependencies": {
+    "@microsoft/applicationinsights-web": "^3.4.2",
     "crypto-js": "^4.2.0",
     "prop-types": "^15.8.1",
     "react": "^19.1.1",
@@ -23,6 +24,8 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "smoke-check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/smoke-check.ps1",
+    "test:e2e": "playwright test",
+    "test:e2e:mobile": "playwright test tests/mobile-smoke.spec.js --project=\"Mobile Chrome\"",
     "test": "react-scripts test --watchAll=false",
     "eject": "react-scripts eject",
     "dev": "concurrently \"npm run backend:start\" \"npm run start\" --names \"API,APP\" --prefix-colors \"green,blue\"",
@@ -57,6 +60,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "express": "^4.21.2",

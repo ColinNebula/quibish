@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
+import { initializeAppInsights, trackException, trackEvent } from './services/appInsights';
 import './utils/notchDetector';
 
 // Voice recorder diagnostics - only import if explicitly enabled
@@ -11,6 +12,8 @@ import './utils/notchDetector';
 if (process.env.REACT_APP_ENABLE_DIAGNOSTICS === 'true') {
   import('./test-voice-recorder');
 }
+
+initializeAppInsights();
 
 // Global error handler for browser extension errors
 window.addEventListener('error', (event) => {
@@ -24,6 +27,13 @@ window.addEventListener('error', (event) => {
     event.preventDefault();
     return true;
   }
+
+  trackException(new Error(event.message || 'window.error'), {
+    source: 'window.error',
+    filename: event.filename || '',
+    lineno: String(event.lineno || ''),
+    colno: String(event.colno || '')
+  });
 });
 
 // Suppress unhandled Promise rejections from browser extensions (e.g. MetaMask inpage.js)
@@ -38,7 +48,13 @@ window.addEventListener('unhandledrejection', (event) => {
   ) {
     console.warn('🔌 Browser extension promise rejection (ignored):', message);
     event.preventDefault();
+    return;
   }
+
+  trackException(event.reason || new Error('Unhandled promise rejection'), {
+    source: 'window.unhandledrejection',
+    message
+  });
 });
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -49,6 +65,8 @@ root.render(
     </AuthProvider>
   </React.StrictMode>
 );
+
+trackEvent('app-rendered');
 
 // ========== PWA SERVICE WORKER REGISTRATION ==========
 
