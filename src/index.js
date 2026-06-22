@@ -57,16 +57,27 @@ window.addEventListener('unhandledrejection', (event) => {
   });
 });
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </React.StrictMode>
-);
+const mountNode = document.getElementById('root');
 
-trackEvent('app-rendered');
+try {
+  const root = ReactDOM.createRoot(mountNode);
+  root.render(
+    <React.StrictMode>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </React.StrictMode>
+  );
+
+  trackEvent('app-rendered');
+} catch (bootstrapError) {
+  trackException(bootstrapError, { source: 'bootstrap.render' });
+  console.error('❌ App bootstrap failed:', bootstrapError);
+
+  if (mountNode) {
+    mountNode.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a;text-align:center"><div><h2 style="margin:0 0 10px">Quibish failed to start</h2><p style="margin:0 0 12px">Please refresh the page. If the issue continues, clear site data and try again.</p><button onclick="window.location.reload()" style="border:none;border-radius:8px;padding:10px 14px;background:#2563eb;color:#fff;cursor:pointer">Reload</button></div></div>';
+  }
+}
 
 // ========== PWA SERVICE WORKER REGISTRATION ==========
 
