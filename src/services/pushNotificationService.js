@@ -8,12 +8,22 @@ class PushNotificationService {
     this.isSupported = 'serviceWorker' in navigator && 'PushManager' in window;
     this.permission = 'default';
     this.userId = null;
+    this.presenceEndpoint = 'users/presence';
+    this.presenceDisabled = false;
+    this.presenceListenersAttached = false;
+    this.lastPresenceSentAt = 0;
   }
 
   // Initialize the push notification service
   async initialize(userId) {
     console.log('🔔 Initializing push notification service...');
     this.userId = userId;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('Push notifications skipped: missing auth token');
+      return false;
+    }
 
     if (!this.isSupported) {
       console.warn('Push notifications not supported');
@@ -96,7 +106,10 @@ class PushNotificationService {
       console.log('✅ Push subscription created');
 
       // Send subscription to backend
-      await this.sendSubscriptionToBackend(subscription);
+      const synced = await this.sendSubscriptionToBackend(subscription);
+      if (!synced) {
+        console.warn('⚠️ Push subscription created locally but backend sync failed; will retry later.');
+      }
       
       return subscription;
     } catch (error) {
@@ -132,8 +145,9 @@ class PushNotificationService {
 
   // Send subscription to backend
   async sendSubscriptionToBackend(subscription) {
+    const url = buildApiUrl('notifications/subscribe');
     try {
-      const response = await fetch(buildApiUrl('notifications/subscribe'), {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -150,9 +164,16 @@ class PushNotificationService {
       }
 
       console.log('✅ Subscription sent to backend');
+      return true;
     } catch (error) {
-      console.error('Failed to send subscription to backend:', error);
-      throw error;
+      // CSP/network failures should not disable local push subscription.
+      this.pendingBackendSync = true;
+      console.warn('⚠️ Failed to send subscription to backend:', {
+        message: error?.message || String(error),
+        url,
+        hasToken: !!localStorage.getItem('token')
+      });
+      return false;
     }
   }
 
@@ -297,6 +318,8 @@ class PushNotificationService {
 
   // Setup visibility change listener for presence detection
   setupPresenceDetection() {
+    if (this.presenceListenersAttached) return;
+
     document.addEventListener('visibilitychange', () => {
       const isVisible = document.visibilityState === 'visible';
       console.log('User visibility changed:', isVisible ? 'visible' : 'hidden');
@@ -315,25 +338,63 @@ class PushNotificationService {
       console.log('User went offline');
       this.updateUserPresence(false);
     });
+
+    this.presenceListenersAttached = true;
   }
 
   // Update user presence on backend
   async updateUserPresence(isOnline) {
+    if (this.presenceDisabled) return false;
+
+    const now = Date.now();
+    if (now - this.lastPresenceSentAt < 3000) return false;
+    this.lastPresenceSentAt = now;
+
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+
+    const endpointCandidates = [
+      this.presenceEndpoint,
+      'users/presence',
+      'notifications/presence'
+    ].filter((value, index, arr) => arr.indexOf(value) === index);
+
     try {
-      await fetch(buildApiUrl('users/presence'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userId: this.userId,
-          isOnline,
-          lastSeen: new Date().toISOString()
-        })
-      });
+      for (const endpoint of endpointCandidates) {
+        const response = await fetch(buildApiUrl(endpoint), {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: this.userId,
+            isOnline,
+            lastSeen: new Date().toISOString()
+          })
+        });
+
+        if (response.ok) {
+          this.presenceEndpoint = endpoint;
+          return true;
+        }
+
+        // Try fallback endpoint when API route is missing.
+        if (response.status === 404) {
+          continue;
+        }
+
+        console.warn(`Presence update failed (${response.status}) via ${endpoint}`);
+        return false;
+      }
+
+      // Presence is optional in some environments; stop retry noise after both 404.
+      this.presenceDisabled = true;
+      console.info('Presence API not available (404). Presence updates disabled for this session.');
+      return false;
     } catch (error) {
-      console.error('Failed to update user presence:', error);
+      console.warn('Failed to update user presence:', error);
+      return false;
     }
   }
 }

@@ -79,14 +79,19 @@ const ProChat = ({
   
   // Use authenticated user if available, otherwise fall back to prop user
   const user = authUser || propUser;
+  const appDebugEnabled = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).has('appDebug');
+  const debugLog = (...args) => {
+    if (appDebugEnabled) console.log(...args);
+  };
   
   // Ensure user data is saved to persistent storage
   useEffect(() => {
     if (user && user.id) {
       persistentStorageService.updateUserData(user);
-      console.log('💾 User data synced to persistent storage');
+      debugLog('💾 User data synced to persistent storage');
     }
-  }, [user]);
+  }, [user, appDebugEnabled]);
 
   // ── Real-time service: connect/disconnect lifecycle ──
   useEffect(() => {
@@ -345,7 +350,7 @@ const ProChat = ({
     if (typeof window === 'undefined') return undefined;
 
     const urlParams = new URLSearchParams(window.location.search);
-    const debugEnabled = process.env.NODE_ENV !== 'production' || urlParams.has('layoutDebug');
+    const debugEnabled = urlParams.has('layoutDebug');
     if (!debugEnabled) return undefined;
 
     let headerResizeObserver = null;
@@ -432,16 +437,16 @@ const ProChat = ({
   // This bypasses the entire CSS cascade and works even when iOS Safari miscomputes flex heights.
   useLayoutEffect(() => {
     if (window.innerWidth > 768) {
-      console.log('📱 Skipping applyHeight - desktop mode (width:', window.innerWidth, ')');
+      debugLog('📱 Skipping applyHeight - desktop mode (width:', window.innerWidth, ')');
       return;
     }
 
-    console.log('📱 Mobile detected - applying height fixes');
+    debugLog('📱 Mobile detected - applying height fixes');
 
     const applyHeight = () => {
       const list = messagesContainerRef.current;
       if (!list) {
-        console.warn('⚠️ messagesContainerRef.current is null - cannot apply height');
+        debugLog('⚠️ messagesContainerRef.current is null - cannot apply height');
         return;
       }
       const proMainEl  = list.closest('.pro-main');
@@ -449,11 +454,11 @@ const ProChat = ({
       const header     = proMainEl?.querySelector('.pro-header, .enhanced-chat-header');
       const input      = proMainEl?.querySelector('.pro-chat-input-container');
       if (!proMainEl) {
-        console.warn('⚠️ pro-main element not found');
+        debugLog('⚠️ pro-main element not found');
         return;
       }
 
-      console.log('✅ Applying mobile layout fixes...');
+      debugLog('✅ Applying mobile layout fixes...');
 
       // visualViewport accounts for iOS keyboard and collapsing Safari chrome.
       const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -526,7 +531,7 @@ const ProChat = ({
       list.style.justifyContent = 'flex-start';
       list.style.willChange = '';
       
-      console.log('✅ Mobile layout applied:', {
+      debugLog('✅ Mobile layout applied:', {
         flex: list.style.flex,
         justifyContent: list.style.justifyContent,
         height: list.style.height,
@@ -552,7 +557,7 @@ const ProChat = ({
       window.removeEventListener('resize', applyHeight);
       ro.disconnect();
     };
-  }, []);
+  }, [appDebugEnabled]);
 
   // Chat messages state - loaded from database
   const [chatMessages, setChatMessages] = useState([]);
@@ -614,7 +619,7 @@ const ProChat = ({
         if (encryptionInit) {
           const status = encryptedMessageService.getEncryptionStatus();
           setEncryptionStatus(status);
-          console.log('🔒 Encryption initialized for ProChat');
+          debugLog('🔒 Encryption initialized for ProChat');
         }
       } catch (encryptError) {
         console.warn('⚠️ Encryption initialization failed:', encryptError);
@@ -625,7 +630,7 @@ const ProChat = ({
     };
 
     initEncryption();
-  }, [user.id]);
+  }, [user.id, appDebugEnabled]);
 
   // Auto-scroll to bottom function
   // Using direct scrollTop on the container avoids scrollIntoView picking the wrong
@@ -739,44 +744,18 @@ const ProChat = ({
   // Initialize push notifications and presence detection
   useEffect(() => {
     const updatePresence = async (isOnline) => {
-      try {
-        const response = await fetch(buildApiUrl('/users/presence'), {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            userId: user.id,
-            isOnline,
-            lastSeen: new Date().toISOString()
-          })
-        });
-
-        if (!response.ok) {
-          // Presence endpoint is optional in some local environments.
-          if (response.status !== 404) {
-            console.warn(`⚠️ Presence update failed (${response.status})`);
-          }
-          return false;
-        }
-
-        return true;
-      } catch (presenceError) {
-        console.warn('⚠️ Failed to update presence:', presenceError);
-        return false;
-      }
+      return pushNotificationService.updateUserPresence(isOnline);
     };
 
     const initializeNotifications = async () => {
       try {
-        console.log('🔔 Initializing notification system...');
+        debugLog('🔔 Initializing notification system...');
         
         // Initialize push notification service
         const notificationInit = await pushNotificationService.initialize(user.id);
         
         if (notificationInit) {
-          console.log('✅ Push notification service initialized');
+          debugLog('✅ Push notification service initialized');
           
           // Setup presence detection
           pushNotificationService.setupPresenceDetection();
@@ -784,7 +763,7 @@ const ProChat = ({
           // Update user as online on backend
           const updated = await updatePresence(true);
           if (updated) {
-            console.log('✅ User presence set to online');
+            debugLog('✅ User presence set to online');
           }
         }
       } catch (error) {
@@ -803,19 +782,19 @@ const ProChat = ({
         updatePresence(false).catch(() => {});
       }
     };
-  }, [user?.id]);
+  }, [user?.id, appDebugEnabled]);
 
   // Initialize search index on mount
   useEffect(() => {
     const initializeSearchIndex = async () => {
       try {
-        console.log('🔍 Initializing search index...');
+        debugLog('🔍 Initializing search index...');
         
         // Build search index from existing messages
         const messages = persistentStorageService.getMessages();
         await searchService.buildSearchIndex(messages);
         
-        console.log('✅ Search index built successfully');
+        debugLog('✅ Search index built successfully');
         
         // Notify service worker to build background index
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -833,7 +812,7 @@ const ProChat = ({
     };
 
     initializeSearchIndex();
-  }, []);
+  }, [appDebugEnabled]);
 
   // Handle notification quick reply URL parameters
   useEffect(() => {
@@ -845,7 +824,7 @@ const ProChat = ({
         const messageId = urlParams.get('message');
 
         if (action === 'reply' && conversationId) {
-          console.log('📬 Opening conversation from notification:', conversationId);
+          debugLog('📬 Opening conversation from notification:', conversationId);
           
           // Find and select the conversation
           const conversation = conversations.find(c => c.id === conversationId);
@@ -863,7 +842,7 @@ const ProChat = ({
               if (messageInput) {
                 messageInput.focus();
                 messageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                console.log('✅ Quick reply ready - input focused');
+                debugLog('✅ Quick reply ready - input focused');
               }
             }, 500);
 
@@ -873,7 +852,7 @@ const ProChat = ({
                 const messageElement = document.getElementById(`message-${messageId}`);
                 if (messageElement) {
                   messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  console.log('✅ Scrolled to message:', messageId);
+                  debugLog('✅ Scrolled to message:', messageId);
                 }
               }, 700);
             }
@@ -886,7 +865,7 @@ const ProChat = ({
           window.history.replaceState({}, document.title, newUrl);
         } else if (conversationId && !action) {
           // Just open conversation (from "Open Chat" action)
-          console.log('💬 Opening conversation:', conversationId);
+          debugLog('💬 Opening conversation:', conversationId);
           const conversation = conversations.find(c => c.id === conversationId);
           if (conversation) {
             setSelectedConversation(conversationId);
@@ -939,7 +918,7 @@ const ProChat = ({
         navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
       };
     }
-  }, [conversations]);
+  }, [conversations, appDebugEnabled]);
 
   // Add keyboard shortcuts (including Ctrl+F for search)
   useEffect(() => {
@@ -3969,7 +3948,7 @@ const ProChat = ({
                             }}
                             onError={(e) => {
                               console.error('Video playback error:', e);
-                              console.log('Video details:', {
+                              debugLog('Video details:', {
                                 src: message.file.url,
                                 type: message.file.type,
                                 poster: message.file.thumbnail ? 'Has thumbnail' : 'No thumbnail',
@@ -3977,16 +3956,16 @@ const ProChat = ({
                               });
                             }}
                             onLoadedMetadata={(e) => {
-                              console.log('Video loaded for playback:', {
+                              debugLog('Video loaded for playback:', {
                                 duration: e.target.duration,
                                 videoWidth: e.target.videoWidth,
                                 videoHeight: e.target.videoHeight,
                                 readyState: e.target.readyState
                               });
                             }}
-                            onLoadStart={() => console.log('Video load started')}
-                            onCanPlay={() => console.log('Video can play')}
-                            onCanPlayThrough={() => console.log('Video can play through')}
+                            onLoadStart={() => debugLog('Video load started')}
+                            onCanPlay={() => debugLog('Video can play')}
+                            onCanPlayThrough={() => debugLog('Video can play through')}
                             style={{
                               maxWidth: '400px',
                               maxHeight: '300px',
@@ -4729,13 +4708,12 @@ const ProChat = ({
       {/* Profile Modal */}
       {profileModal.open && (
         <>
-          {console.log('🔍 Rendering UserProfileModal:', { profileModal, user })}
           <UserProfileModal 
             isOpen={profileModal.open}
             user={user}
             onClose={handleCloseProfileModal}
             onUpdateProfile={(updatedProfile) => {
-              console.log('Profile updated:', updatedProfile);
+              debugLog('Profile updated:', updatedProfile);
               // You can add additional update logic here if needed
             }}
           />
@@ -4745,7 +4723,6 @@ const ProChat = ({
       {/* Settings Modal */}
       {settingsModal.open && (
         <>
-          {console.log('🔧 Rendering SettingsModal:', { settingsModal })}
           <SettingsModal 
             isOpen={settingsModal.open}
             onClose={handleCloseSettingsModal}

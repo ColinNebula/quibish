@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import persistentStorageService from '../../services/persistentStorageService';
 import './UserProfileModal.css';
 
 const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
@@ -97,7 +98,9 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
       setAvatarPreview(previewUrl);
 
       // ── 2. Upload to the dedicated avatar endpoint ────────────────────────
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token = persistentStorageService.getAuthToken()
+        || localStorage.getItem('token')
+        || sessionStorage.getItem('token');
       const formData = new FormData();
       formData.append('avatar', compressedBlob, 'avatar.jpg');
 
@@ -171,7 +174,9 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token = persistentStorageService.getAuthToken()
+        || localStorage.getItem('token')
+        || sessionStorage.getItem('token');
 
       // Call the real profile update API
       const response = await fetch('http://localhost:5001/api/users/profile', {
@@ -188,12 +193,15 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
         throw new Error(err.error || `Server error ${response.status}`);
       }
 
+      const responseData = await response.json().catch(() => ({}));
+      const canonicalUser = responseData?.user || responseData?.data?.user || profile;
+
       // Update user in AuthContext so all components reflect the change immediately
-      updateUser(profile);
+      updateUser(canonicalUser);
 
       // Update local storage for persistence
       const currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
-      const updatedUser = { ...currentUser, ...profile };
+      const updatedUser = { ...currentUser, ...canonicalUser };
       if (localStorage.getItem('user')) {
         localStorage.setItem('user', JSON.stringify(updatedUser));
       }
@@ -202,7 +210,7 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
       }
 
       if (onUpdateProfile) {
-        onUpdateProfile(profile);
+        onUpdateProfile(canonicalUser);
       }
 
       setIsEditing(false);

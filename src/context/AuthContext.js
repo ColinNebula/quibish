@@ -6,6 +6,33 @@ import persistentStorageService from '../services/persistentStorageService';
 // Create the auth context
 const AuthContext = createContext();
 
+// Merge backend user data with locally persisted profile/settings.
+// Backend wins when it provides a non-empty value; local data is preserved otherwise.
+const mergeUserData = (storedUser = {}, backendUser = {}) => {
+  const merged = { ...storedUser, ...backendUser };
+
+  const preserveIfMissing = [
+    'avatar',
+    'bio',
+    'phone',
+    'theme',
+    'language',
+    'notifications',
+    'privacy',
+    'status'
+  ];
+
+  preserveIfMissing.forEach((field) => {
+    const backendValue = backendUser?.[field];
+    const isMissing = backendValue === undefined || backendValue === null || backendValue === '';
+    if (isMissing && storedUser?.[field] !== undefined) {
+      merged[field] = storedUser[field];
+    }
+  });
+
+  return merged;
+};
+
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -75,8 +102,9 @@ export const AuthProvider = ({ children }) => {
               if (response.ok) {
                 const profileData = await response.json();
                 if (profileData.success && profileData.user) {
-                  // Use fresh profile data from backend
-                  const freshUserData = profileData.user;
+                  // Use backend profile while preserving locally persisted fields
+                  // when backend returns partial data.
+                  const freshUserData = mergeUserData(storedUser, profileData.user);
                   setCurrentUser(freshUserData);
                   
                   // Update persistent storage with fresh profile
@@ -213,7 +241,8 @@ export const AuthProvider = ({ children }) => {
         if (response.ok) {
           const profileData = await response.json();
           if (profileData.success && profileData.user) {
-            const freshUserData = profileData.user;
+            const storedUser = persistentStorageService.getUserData() || currentUser || {};
+            const freshUserData = mergeUserData(storedUser, profileData.user);
             setCurrentUser(freshUserData);
             persistentStorageService.updateUserData(freshUserData);
             console.log('✅ User data refreshed from backend');
