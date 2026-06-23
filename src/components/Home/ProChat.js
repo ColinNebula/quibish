@@ -174,6 +174,19 @@ const ProChat = ({
       offTyping();
       clearTimeout(typingTimerRef.current);
       realtimeService.disconnect();
+      
+      // Expose diagnostics to window for mobile troubleshooting
+      if (window.__quibish_debug !== true) {
+        window.__quibish_debug = true;
+        window.checkConnection = () => {
+          console.log('🔍 Connection Diagnostics:');
+          const diag = realtimeService.logDiagnostics();
+          console.log('Hint: If "connected" is false, check if backend server is running.');
+          console.log('For mobile: Make sure the WebSocket URL points to your actual server, not localhost.');
+          return diag;
+        };
+        console.log('💡 Tip: Type checkConnection() in console to troubleshoot connection issues');
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);

@@ -1,13 +1,30 @@
 // RealtimeService — WebSocket client for live messaging and call signaling
 // Handles connect/reconnect, event subscription, and message dispatch.
 
-const WS_URL = (() => {
+// Determine WebSocket URL dynamically (mobile-friendly)
+const getWsUrl = () => {
   const raw = process.env.REACT_APP_WEBSOCKET_URL;
-  if (raw) return raw.replace(/^http/, 'ws') + '/ws';
+  if (raw) {
+    const url = raw.replace(/^http/, 'ws') + '/ws';
+    console.log('📡 Using explicit WS_URL from env:', url);
+    return url;
+  }
+  
   // Derive from API base URL
-  const api = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
-  return api.replace('/api', '').replace(/^http/, 'ws') + '/ws';
-})();
+  let api = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
+  
+  // On mobile, if pointing to localhost, try to use the actual server
+  if (api.includes('localhost') && window.location.hostname !== 'localhost') {
+    console.warn('⚠️ Mobile detected - API URL points to localhost. Using current host instead.');
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const host = window.location.host;
+    api = `${protocol}://${host}/api`;
+  }
+  
+  const wsUrl = api.replace('/api', '').replace(/^http/, 'ws') + '/ws';
+  console.log('📡 Computed WebSocket URL:', wsUrl);
+  return wsUrl;
+};
 
 class RealtimeService {
   constructor() {
@@ -35,12 +52,15 @@ class RealtimeService {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return;
 
     try {
-      this.ws = new WebSocket(WS_URL);
+      const wsUrl = getWsUrl();
+      console.log(`🔗 Attempting WebSocket connection to: ${wsUrl}`);
+      
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         this.connected = true;
         this.reconnectDelay = 2000; // reset backoff
-        console.log('🔌 RealtimeService connected');
+        console.log('✅ RealtimeService connected successfully');
         // Authenticate this socket
         this._send({ type: 'join', userId: this.userId, username: this.username });
         // Flush queued messages
@@ -53,6 +73,7 @@ class RealtimeService {
       this.ws.onclose = () => {
         this.connected = false;
         this._emit('disconnect', {});
+        console.warn('🔌 WebSocket closed');
         if (this.shouldReconnect) {
           console.log(`🔄 Reconnecting in ${this.reconnectDelay / 1000}s…`);
           this.reconnectTimer = setTimeout(() => {
@@ -63,7 +84,11 @@ class RealtimeService {
       };
 
       this.ws.onerror = (err) => {
-        console.warn('⚠️ RealtimeService WS error:', err.message || err);
+        console.error('❌ RealtimeService WS error:', {
+          message: err.message || err,
+          type: err.type,
+          code: err.code
+        });
       };
 
       this.ws.onmessage = (event) => {
@@ -72,7 +97,10 @@ class RealtimeService {
         this._emit(data.type, data);
       };
     } catch (e) {
-      console.warn('⚠️ Could not open WebSocket:', e.message);
+      console.error('❌ Could not open WebSocket:', {
+        message: e.message,
+        stack: e.stack
+      });
       // Retry via backoff even if constructor threw
       if (this.shouldReconnect) {
         this.reconnectTimer = setTimeout(() => this._open(), this.reconnectDelay);
@@ -141,6 +169,37 @@ class RealtimeService {
 
   isConnected() {
     return this.connected && this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  // Diagnostic method for troubleshooting connection issues
+  getDiagnostics() {
+    return {
+      connected: this.connected,
+      wsState: this.ws?.readyState,
+      wsStateLabel: {
+        0: 'CONNECTING',
+        1: 'OPEN',
+        2: 'CLOSING',
+        3: 'CLOSED'
+      }[this.ws?.readyState] || 'UNKNOWN',
+      wsUrl: getWsUrl(),
+      userId: this.userId,
+      username: this.username,
+      shouldReconnect: this.shouldReconnect,
+      reconnectDelay: this.reconnectDelay,
+      pendingMessages: this.pendingMessages.length,
+      listeners: Array.from(this.listeners.keys()),
+      internetOnline: navigator.onLine,
+      hostname: window.location.hostname,
+      protocol: window.location.protocol
+    };
+  }
+
+  // Log diagnostics to console
+  logDiagnostics() {
+    const diag = this.getDiagnostics();
+    console.table(diag);
+    return diag;
   }
 }
 
