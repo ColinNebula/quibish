@@ -3309,27 +3309,10 @@ const ProChat = ({
   }, [voiceCallState.withUser?.id, voiceCallState.callStartTime]);
 
   const handleStartVoiceCall = useCallback(async () => {
-    // Show contact selection modal if no contact selected and no current conversation
-    if (!currentSelectedConversation && !currentConversation) {
-      setCallMode('voice');
-      setShowCallSelectionModal(true);
-      return;
-    }
-
-    let currentUser = currentSelectedConversation || currentConversation;
-    
-    // If no current user, show selection modal
-    if (!currentUser && conversations.length > 0) {
-      setCallMode('voice');
-      setShowCallSelectionModal(true);
-      return;
-    }
-    
-    // Proceed with call if we have a user
-    if (currentUser) {
-      await initiateVoiceCall(currentUser);
-    }
-  }, [currentSelectedConversation, currentConversation, conversations]);
+    // Always show contact selection modal so the user can choose who to call
+    setCallMode('voice');
+    setShowCallSelectionModal(true);
+  }, []);
 
   const initiateVoiceCall = useCallback(async (targetUser) => {
     console.log('📞 Initiating voice call with user:', targetUser.name || targetUser.username);
@@ -3588,23 +3571,10 @@ const ProChat = ({
 
   // Handle video call
   const handleVideoCall = useCallback(async () => {
-    // Show contact selection modal if no contact selected
-    if (!currentSelectedConversation && !currentConversation) {
-      setCallMode('video');
-      setShowCallSelectionModal(true);
-      return;
-    }
-
-    const currentUser = currentSelectedConversation || currentConversation;
-    if (!currentUser) {
-      setCallMode('video');
-      setShowCallSelectionModal(true);
-      return;
-    }
-
-    // Proceed with video call if we have a user
-    await initiateVideoCall(currentUser);
-  }, [currentSelectedConversation, currentConversation]);
+    // Always show contact selection modal so the user can choose who to call
+    setCallMode('video');
+    setShowCallSelectionModal(true);
+  }, []);
 
   const initiateVideoCall = useCallback(async (currentUser) => {
     try {

@@ -13,6 +13,8 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
   const [filters, setFilters] = useState(null);
   const [activePreset, setActivePreset] = useState('none');
   const [connectionQuality, setConnectionQuality] = useState('good');
+  const [permissionStatus, setPermissionStatus] = useState('pending'); // 'pending' | 'granted' | 'denied' | 'error'
+  const [permissionError, setPermissionError] = useState(null);
   const [swipeStartY, setSwipeStartY] = useState(0);
   const [swipeDistance, setSwipeDistance] = useState(0);
   const [isScreenRecording, setIsScreenRecording] = useState(false);
@@ -141,12 +143,44 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
 
   const initializeCall = async () => {
     try {
+      // Step 1: Explicitly request camera + mic permission upfront
+      let rawStream = null;
+      try {
+        rawStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        setPermissionStatus('granted');
+      } catch (permErr) {
+        // Try audio-only as fallback
+        try {
+          rawStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          setPermissionStatus('granted');
+        } catch (audioErr) {
+          const isDenied = permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError';
+          setPermissionStatus('denied');
+          setPermissionError(
+            isDenied
+              ? 'Camera and microphone access was denied. Please allow access in your browser settings and try again.'
+              : `Could not access camera/microphone: ${permErr.message}`
+          );
+          setFilters(videoFiltersService.getFilters());
+          updateCallState();
+          updateDevices();
+          return;
+        }
+      }
+
+      // Step 2: Set raw stream directly on local video immediately (guaranteed to show)
+      if (localVideoRef.current && rawStream) {
+        localVideoRef.current.srcObject = rawStream;
+      }
+
+      // Step 3: Initialize the video call service with the same stream
       const initialized = await enhancedVideoCallService.initialize();
       
       if (!initialized) {
         console.warn('⚠️ Video call service could not be fully initialized');
-        // Still allow the UI to load
         setFilters(videoFiltersService.getFilters());
+        updateCallState();
+        updateDevices();
         return;
       }
       
@@ -157,33 +191,46 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
       });
 
       if (result.success) {
-        // Initialize filters service first
         setFilters(videoFiltersService.getFilters());
         
-        // Initialize filters with hidden video element
-        if (hiddenVideoRef.current) {
-          hiddenVideoRef.current.srcObject = result.stream;
-          await hiddenVideoRef.current.play();
-          
-          videoFiltersService.initialize(hiddenVideoRef.current);
-          const filteredStream = videoFiltersService.startProcessing();
-          
-          if (localVideoRef.current && filteredStream) {
-            localVideoRef.current.srcObject = filteredStream;
+        // Step 4: Try to apply filters pipeline; fall back to raw stream if it fails
+        try {
+          if (hiddenVideoRef.current && result.stream) {
+            hiddenVideoRef.current.srcObject = result.stream;
+            await hiddenVideoRef.current.play().catch(() => {});
+            
+            videoFiltersService.initialize(hiddenVideoRef.current);
+            const filteredStream = videoFiltersService.startProcessing();
+            
+            if (localVideoRef.current && filteredStream) {
+              localVideoRef.current.srcObject = filteredStream;
+            } else if (localVideoRef.current && result.stream) {
+              // Filter pipeline failed — fall back to raw stream
+              localVideoRef.current.srcObject = result.stream;
+            }
+          } else if (localVideoRef.current && result.stream) {
+            localVideoRef.current.srcObject = result.stream;
           }
+        } catch (filterErr) {
+          console.warn('⚠️ Filter pipeline failed, using raw stream:', filterErr);
+          if (localVideoRef.current && result.stream) {
+            localVideoRef.current.srcObject = result.stream;
+          }
+        }
+
+        // Stop the raw stream we got for permission — service has its own now
+        if (rawStream && result.stream && rawStream !== result.stream) {
+          rawStream.getTracks().forEach(t => t.stop());
         }
       } else {
         console.warn('⚠️ Call start failed:', result.error);
-        // Still initialize filters state even if call fails
+        // Keep the raw stream we already have on localVideoRef
         setFilters(videoFiltersService.getFilters());
       }
     } catch (error) {
       console.error('❌ Failed to initialize call:', error.message || error);
-      // Show user-friendly error for missing devices
-      if (error.message && error.message.includes('No camera or microphone')) {
-        console.info('ℹ️ Tip: Connect a camera or microphone to use video calling features');
-      }
-      // Initialize filters state even on error
+      setPermissionStatus('error');
+      setPermissionError(`Failed to start video call: ${error.message}`);
       setFilters(videoFiltersService.getFilters());
     }
 
@@ -557,13 +604,48 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
     filters.arEffect !== 'none'
   );
 
-  if (!callState) {
+  if (!callState || permissionStatus === 'pending') {
     return (
       <>
         <div className="video-call-backdrop" onClick={handleBackdropClick}></div>
         <div className="video-call-panel loading">
           <div className="loading-spinner"></div>
-          <p>Starting video call...</p>
+          <p>Requesting camera & microphone access...</p>
+          <small style={{ opacity: 0.7, marginTop: 8, display: 'block' }}>
+            Please allow access when prompted by your browser.
+          </small>
+        </div>
+      </>
+    );
+  }
+
+  if (permissionStatus === 'denied' || permissionStatus === 'error') {
+    return (
+      <>
+        <div className="video-call-backdrop" onClick={onClose}></div>
+        <div className="video-call-panel loading">
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
+          <p style={{ fontWeight: 600, marginBottom: 8 }}>Camera access required</p>
+          <p style={{ opacity: 0.8, fontSize: 14, maxWidth: 300, textAlign: 'center', marginBottom: 20 }}>
+            {permissionError || 'Camera and microphone access was denied.'}
+          </p>
+          <p style={{ opacity: 0.6, fontSize: 12, maxWidth: 300, textAlign: 'center', marginBottom: 20 }}>
+            To fix this, click the camera icon in your browser's address bar and allow access, then try again.
+          </p>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '10px 24px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'rgba(255,255,255,0.2)',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: 15
+            }}
+          >
+            Close
+          </button>
         </div>
       </>
     );
