@@ -3,18 +3,17 @@ import enhancedVoiceRecorderService from '../services/enhancedVoiceRecorderServi
 import './VoiceRecorder.css';
 
 // Animated live waveform bars driven by volume
-function LiveWaveform({ volume, isRecording, isPaused, barCount = 32 }) {
+function LiveWaveform({ volume, isRecording, isPaused, barCount = 40 }) {
   const [bars, setBars] = useState(() => Array(barCount).fill(5));
   const animFrameRef = useRef(null);
   const heightsRef = useRef(Array(barCount).fill(5));
 
   useEffect(() => {
     if (!isRecording || isPaused) {
-      // Decay all bars to rest
       const decay = () => {
         let changed = false;
         heightsRef.current = heightsRef.current.map(h => {
-          if (h > 5) { changed = true; return Math.max(5, h - 3); }
+          if (h > 5) { changed = true; return Math.max(5, h - 4); }
           return h;
         });
         setBars([...heightsRef.current]);
@@ -25,14 +24,13 @@ function LiveWaveform({ volume, isRecording, isPaused, barCount = 32 }) {
     }
 
     const animate = () => {
-      // Shift bars left, push a new one based on current volume + noise
-      const noise = (Math.random() * 0.4 + 0.8);
-      const newH = Math.max(8, Math.min(95, (volume * noise) + (Math.random() * 15)));
+      const noise = (Math.random() * 0.5 + 0.75);
+      const newH = Math.max(10, Math.min(98, (volume * noise) + (Math.random() * 20)));
       heightsRef.current = [...heightsRef.current.slice(1), newH];
       setBars([...heightsRef.current]);
     };
 
-    const id = setInterval(animate, 60);
+    const id = setInterval(animate, 50);
     return () => clearInterval(id);
   }, [isRecording, isPaused, volume, barCount]);
 
@@ -490,28 +488,43 @@ const VoiceRecorder = ({
 
   return (
     <div className={`voice-recorder ${isRecording ? 'recording' : ''} ${isPaused ? 'paused' : ''} ${compact ? 'compact' : ''} ${className}`}>
-      {onClose && (
-        <button className="recorder-close-btn" onClick={onClose} title="Close">
-          ✕
-        </button>
-      )}
-      {/* Recording Status */}
-      {isRecording && (
-        <div className="recording-status">
-          <div className="recording-indicator">
-            <div className="recording-dot"></div>
-            <span className="recording-text">
-              {isPaused ? 'Paused' : 'Recording'}
-            </span>
-          </div>
-          
-          <div className="recording-duration">
-            {formatDuration(duration)}
-          </div>
+      {/* Header row */}
+      <div className="recorder-header">
+        <div className="recorder-title">
+          {isRecording ? (
+            <>
+              <span className={`rec-dot ${isPaused ? 'paused' : ''}`} />
+              <span className="rec-label">{isPaused ? 'Paused' : 'Recording'}</span>
+            </>
+          ) : audioPreview ? (
+            <>
+              <span className="preview-icon">🎵</span>
+              <span className="rec-label">Preview</span>
+            </>
+          ) : (
+            <>
+              <span className="mic-icon">
+                <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                  <rect x="9" y="2" width="6" height="13" rx="3" fill="currentColor"/>
+                  <path d="M5 11a7 7 0 0 0 14 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </span>
+              <span className="rec-label">Voice Message</span>
+            </>
+          )}
         </div>
-      )}
+        <div className="recorder-right">
+          {isRecording && (
+            <span className="recording-duration">{formatDuration(duration)}</span>
+          )}
+          {onClose && (
+            <button className="recorder-close-btn" onClick={onClose} title="Close">✕</button>
+          )}
+        </div>
+      </div>
 
-      {/* Volume Visualization */}
+      {/* Live waveform while recording */}
       {isRecording && !compact && (
         <LiveWaveform
           volume={volume}
@@ -520,156 +533,108 @@ const VoiceRecorder = ({
         />
       )}
 
-      {/* Progress Bar */}
+      {/* Progress bar */}
       {isRecording && (
         <div className="recording-progress">
-          <div 
-            className="progress-bar"
-            style={{ width: `${getProgress()}%` }}
-          ></div>
-          <div className="progress-time">
-            {formatDuration(maxDuration - duration)} remaining
-          </div>
+          <div className="progress-bar" style={{ width: `${getProgress()}%` }} />
+          <span className="progress-time">{formatDuration(maxDuration - duration)} left</span>
         </div>
       )}
 
-      {/* Audio Preview Player */}
+      {/* Audio preview player */}
       {audioPreview && !isRecording && (
         <div className="audio-preview">
-          <div className="preview-header">
-            <span className="preview-title">🎵 Recording Preview</span>
-            <span className="preview-info">
-              {formatDuration(audioPreview.duration)} • {(audioPreview.size / 1024).toFixed(0)}KB
-            </span>
+          <div className="preview-meta">
+            <span>{formatDuration(audioPreview.duration)}</span>
+            <span>{(audioPreview.size / 1024).toFixed(0)} KB</span>
           </div>
-          <VoiceMessagePlayer 
+          <VoiceMessagePlayer
             audioUrl={audioPreview.url}
             duration={audioPreview.duration}
             compact={false}
           />
           <div className="preview-actions">
-            <button 
-              className="preview-btn save-btn"
-              onClick={handleSavePreview}
-              title="Save recording"
-            >
-              <span className="btn-icon">✅</span>
-              <span className="btn-text">Save & Send</span>
+            <button className="preview-btn send-btn" onClick={handleSavePreview}>
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M22 2L15 22 11 13 2 9l20-7z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+              </svg>
+              Send
             </button>
-            <button 
-              className="preview-btn discard-btn"
-              onClick={handleDiscardPreview}
-              title="Record again"
-            >
-              <span className="btn-icon">🔄</span>
-              <span className="btn-text">Record Again</span>
+            <button className="preview-btn redo-btn" onClick={handleDiscardPreview}>
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                <path d="M3 12a9 9 0 1 1 2.636 6.364" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M3 6v6h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Re-record
             </button>
           </div>
         </div>
       )}
 
-      {/* Recording Quality Selector */}
+      {/* Quality chips — only on idle, non-compact */}
       {!isRecording && !audioPreview && !compact && (
-        <div className="quality-selector">
-          <label className="quality-label">Recording Quality:</label>
-          <div className="quality-options">
-            <button 
-              className={`quality-btn ${quality === 'low' ? 'active' : ''}`}
-              onClick={() => setQuality('low')}
-              title="Low quality - Smaller file size"
+        <div className="quality-row">
+          {['low', 'standard', 'high'].map(q => (
+            <button
+              key={q}
+              className={`quality-chip ${quality === q ? 'active' : ''}`}
+              onClick={() => setQuality(q)}
             >
-              📉 Low
+              {q.charAt(0).toUpperCase() + q.slice(1)}
             </button>
-            <button 
-              className={`quality-btn ${quality === 'standard' ? 'active' : ''}`}
-              onClick={() => setQuality('standard')}
-              title="Standard quality - Balanced"
-            >
-              📊 Standard
-            </button>
-            <button 
-              className={`quality-btn ${quality === 'high' ? 'active' : ''}`}
-              onClick={() => setQuality('high')}
-              title="High quality - Larger file size"
-            >
-              📈 High
-            </button>
-          </div>
-          <div className="quality-info">
-            {quality === 'low' && '22kHz, 64kbps - Best for voice notes'}
-            {quality === 'standard' && '44kHz, 128kbps - Recommended'}
-            {quality === 'high' && '48kHz, 256kbps - Best quality'}
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Recording Controls */}
+      {/* Controls */}
       <div className="recording-controls">
-        {!isRecording ? (
-          <button 
-            className="control-btn record-btn"
-            onClick={handleStartRecording}
-            title="Start recording"
-          >
-            <span className="btn-icon">🎤</span>
-            <span className="btn-text">Record</span>
+        {!isRecording && !audioPreview ? (
+          <button className="control-btn record-btn" onClick={handleStartRecording}>
+            <span className="btn-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                <rect x="9" y="2" width="6" height="13" rx="3" fill="currentColor"/>
+                <path d="M5 11a7 7 0 0 0 14 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </span>
+            <span>Record</span>
           </button>
-        ) : (
+        ) : isRecording ? (
           <>
-            {/* Pause/Resume */}
-            <button 
+            <button
               className="control-btn pause-resume-btn"
               onClick={isPaused ? handleResumeRecording : handlePauseRecording}
-              title={isPaused ? 'Resume recording' : 'Pause recording'}
             >
-              <span className="btn-icon">{isPaused ? '▶️' : '⏸️'}</span>
-              <span className="btn-text">{isPaused ? 'Resume' : 'Pause'}</span>
+              {isPaused ? (
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+              )}
+              <span>{isPaused ? 'Resume' : 'Pause'}</span>
             </button>
 
-            {/* Stop */}
-            <button 
-              className="control-btn stop-btn"
-              onClick={handleStopRecording}
-              title="Stop and save recording"
-            >
-              <span className="btn-icon">⏹️</span>
-              <span className="btn-text">Stop</span>
+            <button className="control-btn stop-btn" onClick={handleStopRecording}>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+              <span>Stop</span>
             </button>
 
-            {/* Cancel */}
-            <button 
-              className="control-btn cancel-btn"
-              onClick={handleCancelRecording}
-              title="Cancel recording"
-            >
-              <span className="btn-icon">❌</span>
-              <span className="btn-text">Cancel</span>
+            <button className="control-btn cancel-btn" onClick={handleCancelRecording}>
+              <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+                <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <span>Cancel</span>
             </button>
           </>
-        )}
+        ) : null}
       </div>
 
-      {/* Error Display */}
+      {/* Error */}
       {error && (
         <div className="recorder-error">
-          <span className="error-icon">⚠️</span>
-          <span className="error-text">{error}</span>
-        </div>
-      )}
-
-      {/* Recording Info */}
-      {!isRecording && !compact && (
-        <div className="recorder-info">
-          <div className="info-item">
-            <span className="info-label">Max Duration:</span>
-            <span className="info-value">{formatDuration(maxDuration)}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Format:</span>
-            <span className="info-value">
-              {enhancedVoiceRecorderService.config.mimeType.split(';')[0]}
-            </span>
-          </div>
+          <span>⚠️</span>
+          <span>{error}</span>
         </div>
       )}
     </div>
