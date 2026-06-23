@@ -128,7 +128,14 @@ const ProChat = ({
     notificationService.attachRealtime(realtimeService);
 
     const offConnect = realtimeService.on('connect', () => setIsConnected(true));
-    const offDisconnect = realtimeService.on('disconnect', () => setIsConnected(false));
+    // On disconnect, only show offline if actually no internet
+    const offDisconnect = realtimeService.on('disconnect', () => setIsConnected(navigator.onLine));
+
+    // Also track browser-level online/offline events
+    const handleOnline = () => setIsConnected(true);
+    const handleOffline = () => setIsConnected(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     // Incoming message from another user
     const offMessage = realtimeService.on('message', async (msg) => {
@@ -181,6 +188,8 @@ const ProChat = ({
       offPresence();
       offTyping();
       clearTimeout(typingTimerRef.current);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       realtimeService.disconnect();
       
       // Expose diagnostics to window for mobile troubleshooting
@@ -200,7 +209,8 @@ const ProChat = ({
   }, [user?.id]);
 
   // Basic state — real-time connection status
-  const [isConnected, setIsConnected] = useState(false);
+  // Initialize from navigator.onLine so mobile shows correct status immediately
+  const [isConnected, setIsConnected] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     // Initialize sidebar based on screen size
     if (typeof window !== 'undefined') {
@@ -3618,13 +3628,12 @@ const ProChat = ({
         realtimeService.sendSignal('call-offer', targetUserId, { offer, audioOnly: false });
       }
 
-      // Preserve current user's avatar by reading from storage to ensure it's not lost
-      const storedUserData = persistentStorageService.getUserData() || {};
-      const userAvatarForCall = currentUser.avatar || storedUserData.avatar || null;
+      // Use only the contact's own avatar — do NOT fall back to the logged-in user's avatar
+      const contactAvatar = currentUser.avatar || null;
 
       setVideoCallState({
         active: true,
-        withUser: { name: currentUser.name, avatar: userAvatarForCall, id: currentUser.id },
+        withUser: { name: currentUser.name, avatar: contactAvatar, id: currentUser.id, username: currentUser.username },
         minimized: false,
         audioOnly: false,
         callId: `call_${Date.now()}`
@@ -4020,7 +4029,7 @@ const ProChat = ({
                   }
                 }}
               />
-              <div className={`online-indicator ${isConnected ? 'online' : 'offline'}`}></div>
+              <div className={`online-indicator ${(isConnected || navigator.onLine) ? 'online' : 'offline'}`}></div>
             </div>
             <div className="conversation-info">
               <div className="conversation-status">
@@ -4030,8 +4039,8 @@ const ProChat = ({
                     {typingUser} is typing...
                   </span>
                 ) : (
-                  <span className={`connection-status ${(currentSelectedConversation?.isOnline || currentConversation?.isOnline) ? 'connected' : isConnected ? 'connected' : 'disconnected'}`}>
-                    {(currentSelectedConversation?.isOnline || currentConversation?.isOnline) ? '\u25cf Online' : isConnected ? '\u25cf Away' : '\u25cf Offline'}
+                  <span className={`connection-status ${(currentSelectedConversation?.isOnline || currentConversation?.isOnline) ? 'connected' : (isConnected || navigator.onLine) ? 'connected' : 'disconnected'}`}>
+                    {(currentSelectedConversation?.isOnline || currentConversation?.isOnline) ? '\u25cf Online' : (isConnected || navigator.onLine) ? '\u25cf Online' : '\u25cf Offline'}
                   </span>
                 )}
                 <span className="participant-count">

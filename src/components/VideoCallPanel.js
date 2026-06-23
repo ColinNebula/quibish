@@ -581,6 +581,23 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
         <div className="video-call-header" ref={headerRef}>
           <div className="call-info">
             <span className="call-status">🔴 {callState.isRecording ? 'Recording' : 'Live'}</span>
+            {participants.length > 0 && (
+              <span className="call-with-name">
+                {participants[0].avatar ? (
+                  <img
+                    src={participants[0].avatar}
+                    alt={participants[0].name}
+                    className="call-header-avatar"
+                    onError={e => { e.target.style.display = 'none'; }}
+                  />
+                ) : (
+                  <span className="call-header-avatar-placeholder">
+                    {(participants[0].name || '?').charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span>{participants[0].name || participants[0].username || 'Unknown'}</span>
+              </span>
+            )}
             <span className="participant-badge">
               <span className="badge-icon">👥</span>
               {participantCount}
