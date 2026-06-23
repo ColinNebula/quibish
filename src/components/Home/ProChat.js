@@ -1945,6 +1945,9 @@ const ProChat = ({
 
   // Handle adding reactions to messages
   const handleReactionAdd = useCallback(async (messageId, emoji) => {
+    // Get the message to check its type
+    const message = chatMessages.find(m => m.id === messageId);
+    
     // Update local state immediately for responsive UI
     setChatMessages(prev => prev.map(message => {
       if (message.id === messageId) {
@@ -1972,7 +1975,18 @@ const ProChat = ({
       return message;
     }));
 
-    // Try to sync with backend
+    // Skip backend sync for local-only message types (calls, etc.)
+    const isLocalOnlyMessage = message?.type && (
+      message.type.includes('call') || 
+      message.type === 'system'
+    );
+    
+    if (isLocalOnlyMessage) {
+      console.log('✨ Reaction added locally (message type is local-only)');
+      return;
+    }
+
+    // Try to sync with backend for regular messages
     try {
       if (messageService.addReaction) {
         await messageService.addReaction(messageId, emoji);
