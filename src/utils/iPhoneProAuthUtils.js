@@ -178,7 +178,9 @@ export const iPhoneProUtils = {
   }
 };
 
-export default {
+const iPhoneProAuthUtils = {
   initializeIPhoneProAuth,
   iPhoneProUtils
 };
+
+export default iPhoneProAuthUtils;

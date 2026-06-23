@@ -155,7 +155,8 @@ const VoiceRecorder = ({
     enhancedVoiceRecorderService.on('onError', handleError);
 
     // Auto-start if requested
-  if (autoStart && isInitialized) {
+    // eslint-disable-next-line no-use-before-define
+    if (autoStart && isInitialized) {
       handleStartRecording();
     }
 
@@ -172,7 +173,7 @@ const VoiceRecorder = ({
         clearInterval(durationTimerRef.current);
       }
     };
-  }, [autoStart, onRecordingStart, onRecordingComplete]);
+  }, [autoStart, onRecordingStart, onRecordingComplete, isInitialized, handleStartRecording]); // eslint-disable-line react-hooks/exhaustive-deps, no-use-before-define
 
   // Duration timer
   useEffect(() => {
@@ -183,6 +184,7 @@ const VoiceRecorder = ({
         
         // Auto-stop if max duration reached
         if (currentDuration >= maxDuration) {
+          // eslint-disable-next-line no-use-before-define
           handleStopRecording();
         }
       }, 100);
@@ -198,7 +200,7 @@ const VoiceRecorder = ({
         clearInterval(durationTimerRef.current);
       }
     };
-  }, [isRecording, isPaused, maxDuration]);
+  }, [isRecording, isPaused, maxDuration, handleStopRecording]); // eslint-disable-line react-hooks/exhaustive-deps, no-use-before-define
 
   // Check microphone permissions
   const checkMicrophonePermission = useCallback(async () => {
@@ -421,14 +423,6 @@ const VoiceRecorder = ({
   // Get progress percentage
   const getProgress = () => {
     return Math.min(100, (duration / maxDuration) * 100);
-  };
-
-  // Get volume color based on level
-  const getVolumeColor = () => {
-    if (volume < 20) return '#6b7280';
-    if (volume < 50) return '#22c55e';
-    if (volume < 80) return '#f59e0b';
-    return '#ef4444';
   };
 
   if (!isInitialized) {

@@ -14,7 +14,7 @@ class ConnectionService {
   // Initialize connection monitoring
   async connect(options = {}) {
     try {
-      const { autoReconnect = true, websocketUrl = null } = options;
+      const { websocketUrl = null } = options;
       
       // Monitor network status
       this.setupNetworkMonitoring();
@@ -89,10 +89,11 @@ class ConnectionService {
       const startTime = Date.now();
       
       // Simple ping test
-      const response = await fetch('/api/ping', {
+      const pingResponse = await fetch('/api/ping', {
         method: 'HEAD',
         cache: 'no-cache'
       });
+      void pingResponse;
       
       const latency = Date.now() - startTime;
       
@@ -305,4 +306,6 @@ class ConnectionService {
   }
 }
 
-export default new ConnectionService();
+const connectionService = new ConnectionService();
+
+export default connectionService;

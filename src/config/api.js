@@ -1,6 +1,7 @@
 // Build safe runtime defaults that work in both local dev and deployed environments.
 const getDefaultApiBaseUrl = () => {
   if (process.env.REACT_APP_API_BASE_URL) return process.env.REACT_APP_API_BASE_URL;
+  if (process.env.REACT_APP_BACKEND_URL) return `${process.env.REACT_APP_BACKEND_URL.replace(/\/$/, '')}/api`;
 
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;

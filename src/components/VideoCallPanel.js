@@ -23,7 +23,6 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
   const [callStats, setCallStats] = useState(null);
   const [noiseCancellation, setNoiseCancellation] = useState(true);
   const [gestures, setGestures] = useState([]);
-  const [activeSpeaker, setActiveSpeaker] = useState(null);
   const [spotlightMode, setSpotlightMode] = useState(false);
   const [batterySaver, setBatterySaver] = useState(false);
   const [recordingPaused, setRecordingPaused] = useState(false);
@@ -512,7 +511,7 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
     } else {
       handleChangeQuality('auto');
     }
-  }, [batterySaver]);
+  }, [batterySaver]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pause/Resume Recording
   const handlePauseResumeRecording = useCallback(() => {

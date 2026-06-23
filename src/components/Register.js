@@ -18,11 +18,6 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
   const [formTouched, setFormTouched] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverStatus, setServerStatus] = useState('checking');
-  const [demoMode, setDemoMode] = useState(false);
-  
-  // Email verification states
-  const [verificationData, setVerificationData] = useState(null);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [] });
   
   const usernameRef = useRef(null);
@@ -157,7 +152,7 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
     setError(null);
     
     // Handle demo mode
-    if (demoMode) {
+    if (serverStatus === 'offline') {
       setTimeout(() => {
         console.log('Using demo mode registration');
         
@@ -184,41 +179,22 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
         username,
         password // This will be encrypted in production
       );
-      
-      if (verificationResult.success) {
-        setVerificationData({
-          verificationId: verificationResult.verificationId,
-          email: email,
-          expiresAt: verificationResult.expiresAt
-        });
-        setShowVerificationModal(true);
-      }
-    } catch (err) {
-      console.error('Register Component - Email verification error:', err);
-      setError(err.message || 'Failed to send verification email. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Handle successful email verification
-  const handleVerificationSuccess = async (userData) => {
-    try {
-      setLoading(true);
-      
-      // Now complete the registration with the backend
-      const data = await authService.register(userData.username, userData.email, userData.password);
-      
+      if (!verificationResult.success) {
+        throw new Error('Failed to send verification email. Please try again.');
+      }
+
+      const data = await authService.register(username, email, password);
+
       if (data && data.user && data.token) {
-        setShowVerificationModal(false);
+        authService.saveUserSession(data.user, data.token, true);
         onRegisterSuccess(data.user, data.token);
       } else {
         throw new Error('Registration failed after email verification');
       }
     } catch (err) {
-      console.error('Register Component - Registration completion error:', err);
-      setError(err.message || 'Failed to complete registration. Please try again.');
-      setShowVerificationModal(false);
+      console.error('Register Component - Email verification error:', err);
+      setError(err.message || 'Failed to send verification email. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -388,33 +364,7 @@ const Register = ({ onRegisterSuccess, switchToLogin }) => {
             Log In
           </button>
         </div>
-        
-        <div className="demo-mode-switch">
-          <label className="checkbox-container">
-            <input
-              type="checkbox"
-              checked={demoMode}
-              onChange={e => setDemoMode(e.target.checked)}
-            />
-            <span className="checkmark"></span>
-            Use Demo Mode {demoMode && "(Account will be stored locally)"}
-          </label>
-        </div>
       </div>
-      
-      {/* Email Verification Modal - Temporarily disabled */}
-      {/* {verificationData && (
-        <EmailVerificationModal
-          isOpen={showVerificationModal}
-          onClose={() => {
-            setShowVerificationModal(false);
-            setVerificationData(null);
-          }}
-          verificationId={verificationData.verificationId}
-          email={verificationData.email}
-          onVerificationSuccess={handleVerificationSuccess}
-        />
-      )} */}
     </div>
   );
 };

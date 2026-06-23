@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './NewChatModal.css';
 import { contactService } from '../../services/contactService';
 
@@ -10,14 +10,7 @@ const NewChatModal = ({ isOpen, onClose, onCreateChat }) => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Load contacts when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      loadContacts();
-    }
-  }, [isOpen]);
-
-  const loadContacts = async () => {
+  const loadContacts = useCallback(async () => {
     setLoading(true);
     try {
       const result = await contactService.getContacts({ search: searchTerm });
@@ -27,7 +20,25 @@ const NewChatModal = ({ isOpen, onClose, onCreateChat }) => {
       setContacts([]);
     }
     setLoading(false);
-  };
+  }, [searchTerm]);
+
+  // Load contacts when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadContacts();
+    }
+  }, [isOpen, loadContacts]);
+
+  // Debounced search while the modal is open
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const timeoutId = setTimeout(() => {
+      loadContacts();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [isOpen, searchTerm, loadContacts]);
 
   // Handle contact selection
   const handleContactSelect = (contact) => {
@@ -132,8 +143,6 @@ const NewChatModal = ({ isOpen, onClose, onCreateChat }) => {
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              // Debounce search
-              setTimeout(() => loadContacts(), 300);
             }}
             className="contact-search-input"
           />

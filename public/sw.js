@@ -1,4 +1,4 @@
-const VERSION = '2.1.0';
+const VERSION = '2.1.1';
 const CACHE_NAME = `quibish-v${VERSION}`;
 const STATIC_CACHE = `quibish-static-v${VERSION}`;
 const DYNAMIC_CACHE = `quibish-dynamic-v${VERSION}`;
@@ -17,6 +17,8 @@ const STATIC_ASSETS = [
   '/quibish/logo512.png',
   '/quibish/offline.html',
 ];
+
+const APP_SHELL_URL = '/quibish/index.html';
 
 // Queue for offline messages/actions
 const OFFLINE_QUEUE = 'offline-queue';
@@ -197,9 +199,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML pages - Stale while revalidate
+  // HTML pages - Network first to avoid stale cached shell after deployment.
   if (request.destination === 'document') {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(networkFirst(request));
     return;
   }
 
@@ -249,7 +251,7 @@ async function networkFirst(request) {
     
     // Return offline page for navigation requests
     if (request.destination === 'document') {
-      return caches.match('/') || new Response('Offline', { status: 503 });
+      return caches.match(APP_SHELL_URL) || new Response('Offline', { status: 503 });
     }
     
     return new Response('Offline - resource not available', { status: 503 });

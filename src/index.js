@@ -15,6 +15,33 @@ if (process.env.REACT_APP_ENABLE_DIAGNOSTICS === 'true') {
 
 initializeAppInsights();
 
+// Emergency recovery: append ?resetCache=1 once to force clear stale SW/caches.
+async function resetPwaCachesIfRequested() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('resetCache') !== '1') return;
+
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((reg) => reg.unregister()));
+    }
+
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+
+    params.delete('resetCache');
+    const nextQuery = params.toString();
+    const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+    window.location.replace(nextUrl);
+  } catch (error) {
+    console.warn('⚠️ Cache reset failed:', error);
+  }
+}
+
+resetPwaCachesIfRequested();
+
 // Global error handler for browser extension errors
 window.addEventListener('error', (event) => {
   // Ignore errors from browser extensions (contentScript.js, inpage.js, etc.)

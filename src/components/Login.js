@@ -19,11 +19,6 @@ const Login = ({ onLogin, switchToRegister }) => {
 
   const [serverStatus, setServerStatus] = useState('checking');
   
-  // 2FA specific state
-  const [showTwoFactor, setShowTwoFactor] = useState(false);
-  const [twoFactorUserId, setTwoFactorUserId] = useState(null);
-  const [twoFactorUsername, setTwoFactorUsername] = useState('');
-  
   const usernameRef = useRef(null);
   
   // Focus username field on component mount and check server connection
@@ -42,8 +37,7 @@ const Login = ({ onLogin, switchToRegister }) => {
       
       if (!isConnected) {
         console.log('API server appears to be offline');
-        setError('🌐 Unable to connect to server. Please check your connection and try again.');
-        setServerStatus('offline');
+        setServerStatus(window.location.hostname.includes('github.io') ? 'demo' : 'offline');
       } else {
         console.log('API server is online');
         setServerStatus('online');
@@ -105,10 +99,8 @@ const Login = ({ onLogin, switchToRegister }) => {
 
       // Check if 2FA is required
       if (data.requiresTwoFactor) {
-        console.log('Login Component - 2FA required for user:', data.userId);
-        setTwoFactorUserId(data.userId);
-        setTwoFactorUsername(username);
-        setShowTwoFactor(true);
+        console.log('Login Component - 2FA required but disabled in this build');
+        setError('Two-factor authentication is temporarily unavailable. Please sign in again later or contact support.');
         setLoading(false);
         return;
       }
@@ -127,6 +119,9 @@ const Login = ({ onLogin, switchToRegister }) => {
       console.log('Login Component - Login successful, saving session');
       login(data.user, data.token, rememberMe); // Use AuthContext login
       onLogin(data.user, data.token);
+
+      const usedDemoMode = data?.user?.isDemo || /offline mode/i.test(data?.message || '');
+      setServerStatus(usedDemoMode ? 'demo' : 'online');
       
       console.log('Login Component - Session saved and parent notified');
     } catch (err) {
@@ -157,7 +152,10 @@ const Login = ({ onLogin, switchToRegister }) => {
         // Let's check API connection and provide more helpful message
         checkApiConnection().then(isConnected => {
           if (!isConnected) {
-            setError('Server appears to be offline. Please try again later.');
+            setServerStatus(window.location.hostname.includes('github.io') ? 'demo' : 'offline');
+            if (!window.location.hostname.includes('github.io')) {
+              setError('Server appears to be offline. Please try again later.');
+            }
           }
         });
       } else {
@@ -168,54 +166,6 @@ const Login = ({ onLogin, switchToRegister }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Handle 2FA verification
-  const handleTwoFactorVerify = async (verificationCode, isBackupCode) => {
-    try {
-      setLoading(true);
-      
-      // Verify the 2FA code - temporarily disabled
-      // const verifyResponse = await userDataService.api.verifyTwoFactor(
-      //   twoFactorUserId, 
-      //   verificationCode, 
-      //   isBackupCode
-      // );
-      
-      const verifyResponse = { success: true }; // Temporary mock
-      
-      if (!verifyResponse.success) {
-        throw new Error(verifyResponse.error || '2FA verification failed');
-      }
-      
-      // Complete the login process - temporarily disabled
-      // const loginResponse = await userDataService.api.completeTwoFactorLogin(twoFactorUserId);
-      
-      const loginResponse = { success: true, user: { id: 1, name: 'Test User' }, token: 'test-token' }; // Temporary mock
-      
-      if (!loginResponse.success || !loginResponse.user || !loginResponse.token) {
-        throw new Error('Failed to complete login after 2FA verification');
-      }
-      
-      // Save user session and notify parent component
-      console.log('Login Component - 2FA successful, completing login');
-      login(loginResponse.user, loginResponse.token, rememberMe); // Use AuthContext login
-      onLogin(loginResponse.user, loginResponse.token);
-      
-    } catch (error) {
-      console.error('2FA verification error:', error);
-      throw error; // Let TwoFactorVerify component handle the error display
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle 2FA cancellation
-  const handleTwoFactorCancel = () => {
-    setShowTwoFactor(false);
-    setTwoFactorUserId(null);
-    setTwoFactorUsername('');
-    setError(null);
   };
 
   return (
@@ -238,7 +188,7 @@ const Login = ({ onLogin, switchToRegister }) => {
           <div className={`server-status ${serverStatus}`}>
             <div className="status-indicator"></div>
             <div className="status-text">
-              {serverStatus === 'online' ? 'Server Online' : 'Server Offline'}
+              {serverStatus === 'online' ? 'Server Online' : serverStatus === 'demo' ? 'Demo Mode' : 'Server Offline'}
             </div>
           </div>
         )}
@@ -350,16 +300,6 @@ const Login = ({ onLogin, switchToRegister }) => {
 
       </div>
       
-      {/* Two-Factor Authentication Modal - Temporarily disabled */}
-      {/* {showTwoFactor && (
-        <TwoFactorVerify
-          userId={twoFactorUserId}
-          username={twoFactorUsername}
-          onVerify={handleTwoFactorVerify}
-          onCancel={handleTwoFactorCancel}
-          loading={loading}
-        />
-      )} */}
     </div>
   );
 };

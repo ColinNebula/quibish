@@ -32,42 +32,8 @@ const NewsFeed = ({ user, className = '' }) => {
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
 
-  // Load initial feed
-  useEffect(() => {
-    loadFeed(true);
-  }, [sortBy, visibility]);
-
-  // Infinite scroll observer
-  useEffect(() => {
-    if (!hasMore || loading) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore();
-        }
-      },
-      {
-        root: null,
-        rootMargin: '100px',
-        threshold: 0.1
-      }
-    );
-
-    if (loadingRef.current) {
-      observer.observe(loadingRef.current);
-    }
-
-    observerRef.current = observer;
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [hasMore, loading, page]);
-
-  const loadFeed = async (reset = false) => {
+  // Define loadFeed callback first
+  const loadFeed = useCallback(async (reset = false) => {
     if (loading) return;
 
     setLoading(true);
@@ -112,13 +78,48 @@ const NewsFeed = ({ user, className = '' }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loading, page, user.id, visibility, sortBy]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
       loadFeed(false);
     }
-  }, [loading, hasMore, page]);
+  }, [loading, hasMore, loadFeed]);
+
+  // Load initial feed
+  useEffect(() => {
+    loadFeed(true);
+  }, [loadFeed]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!hasMore || loading) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '100px',
+        threshold: 0.1
+      }
+    );
+
+    if (loadingRef.current) {
+      observer.observe(loadingRef.current);
+    }
+
+    observerRef.current = observer;
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [hasMore, loading, loadMore]);
 
   const handlePostCreated = (newPost) => {
     setPosts(prev => {

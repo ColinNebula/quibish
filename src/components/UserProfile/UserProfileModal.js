@@ -150,7 +150,7 @@ const UserProfileModal = ({ isOpen, onClose, user, onUpdateProfile }) => {
       errors.email = 'Please enter a valid email address';
     }
     
-    if (profile.phone && !/^[\+]?[0-9\s\-\(\)]{10,}$/.test(profile.phone)) {
+    if (profile.phone && !/^[+]?[0-9\s\-()]{10,}$/.test(profile.phone)) {
       errors.phone = 'Please enter a valid phone number';
     }
     

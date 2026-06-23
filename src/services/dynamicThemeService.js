@@ -274,6 +274,8 @@ class DynamicThemeService {
         case 'falling-leaves':
           this.createFallingLeaves();
           break;
+        default:
+          break;
       }
     });
   }

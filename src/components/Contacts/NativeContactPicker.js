@@ -8,7 +8,7 @@ const NativeContactPicker = ({ isOpen, onClose, onContactsSelected, multiple = t
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [hasPermission, setHasPermission] = useState(null);
+  const [hasPermission, setHasPermission] = useState(null); // eslint-disable-line no-unused-vars
   const [supportInfo, setSupportInfo] = useState(null);
 
   // Check browser support and permissions
@@ -16,7 +16,7 @@ const NativeContactPicker = ({ isOpen, onClose, onContactsSelected, multiple = t
     if (isOpen) {
       checkContactsSupport();
     }
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter contacts based on search term
   useEffect(() => {

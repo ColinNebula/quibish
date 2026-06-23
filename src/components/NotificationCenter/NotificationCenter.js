@@ -95,6 +95,9 @@ const NotificationCenter = ({ isOpen, onClose, onNotificationClick }) => {
         case 'unreadCountUpdated':
           setUnreadCount(data);
           break;
+
+        default:
+          break;
       }
     };
 

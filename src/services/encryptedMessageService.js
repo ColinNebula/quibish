@@ -205,4 +205,6 @@ class EncryptedMessageService {
   async getMessages() { return []; }
 }
 
-export default new EncryptedMessageService();
+const encryptedMessageService = new EncryptedMessageService();
+
+export default encryptedMessageService;

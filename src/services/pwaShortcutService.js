@@ -86,4 +86,6 @@ export const pwaUtils = {
   }
 };
 
-export default new PWAShortcutService();
+const pwaShortcutService = new PWAShortcutService();
+
+export default pwaShortcutService;

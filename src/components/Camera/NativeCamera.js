@@ -8,7 +8,7 @@ const NativeCamera = ({ isOpen, onClose, onCapture, mode = 'photo' }) => {
   const [stream, setStream] = useState(null);
   const [facingMode, setFacingMode] = useState('user'); // 'user' for front, 'environment' for back
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedChunks, setRecordedChunks] = useState([]);
+  const [recordedChunks, setRecordedChunks] = useState([]); // eslint-disable-line no-unused-vars
   const [flashMode, setFlashMode] = useState('off');
   
   const videoRef = useRef(null);
@@ -27,7 +27,7 @@ const NativeCamera = ({ isOpen, onClose, onCapture, mode = 'photo' }) => {
     return () => {
       stopCamera();
     };
-  }, [isOpen, facingMode]);
+  }, [isOpen, facingMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize camera access
   const initializeCamera = async () => {

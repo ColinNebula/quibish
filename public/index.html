@@ -237,17 +237,21 @@
           }
         };
         
-        // Aggressive extension script blocking
+        // Extension script blocking (fail-open for app bundles)
         const scriptObserver = new MutationObserver(function(mutations) {
           mutations.forEach(function(mutation) {
             mutation.addedNodes.forEach(function(node) {
               if (node.nodeType === 1) {
-                // Block any script that looks like an extension
-                if (node.tagName === 'SCRIPT' && 
-                    (!node.hasAttribute('data-app-script') && 
-                     !node.src?.includes('localhost') &&
-                     !node.src?.includes('react') &&
-                     !node.innerHTML?.includes('quibish'))) {
+                // Only block explicit browser-extension scripts.
+                // Never block normal app bundles based on hostname heuristics.
+                const src = (node.getAttribute && node.getAttribute('src')) ? node.getAttribute('src') : '';
+                const lowerSrc = (src || '').toLowerCase();
+                const isExtensionScript =
+                  lowerSrc.startsWith('chrome-extension://') ||
+                  lowerSrc.startsWith('moz-extension://') ||
+                  lowerSrc.startsWith('safari-extension://');
+
+                if (node.tagName === 'SCRIPT' && isExtensionScript) {
                   
                   console.warn('🚀 Nuclear protection: Extension script blocked');
                   

@@ -20,7 +20,7 @@ const SmartRepliesPanel = ({
       generateReplies();
       analyzeSentiment();
     }
-  }, [lastMessage, isVisible]);
+  }, [lastMessage, isVisible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Generate smart reply suggestions
   const generateReplies = useCallback(async () => {

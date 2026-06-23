@@ -53,6 +53,9 @@ const NotificationButton = ({ onClick, className = '', style = {} }) => {
         case 'unreadCountUpdated':
           setUnreadCount(data);
           break;
+
+        default:
+          break;
       }
     };
 

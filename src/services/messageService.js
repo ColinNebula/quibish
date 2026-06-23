@@ -163,4 +163,6 @@ class MessageService {
   }
 }
 
-export default new MessageService();
+const messageService = new MessageService();
+
+export default messageService;

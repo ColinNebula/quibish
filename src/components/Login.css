@@ -208,6 +208,11 @@
     color: #27ae60;
   }
   
+  .server-status.demo {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+  }
+
   .server-status.offline {
     background: rgba(255, 87, 87, 0.1);
     color: #d63031;

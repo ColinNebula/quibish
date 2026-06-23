@@ -476,6 +476,8 @@ class VideoFiltersService {
       case 'mustache':
         this.drawMustache(faceX, faceY + faceHeight / 3, faceWidth);
         break;
+      default:
+        break;
     }
 
     this.ctx.restore();

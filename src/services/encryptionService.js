@@ -270,4 +270,55 @@ class EncryptionService {
   }
 }
 
-export default new EncryptionService();
+// Lazy initialization to avoid circular dependency issues at startup
+let instance = null;
+
+export default {
+  getInstance() {
+    if (!instance) {
+      instance = new EncryptionService();
+    }
+    return instance;
+  },
+  
+  // Forward common methods for backward compatibility
+  initialize() {
+    return this.getInstance().initialize();
+  },
+  
+  generateKey() {
+    return this.getInstance().generateKey();
+  },
+  
+  storeKey(key, keyId) {
+    return this.getInstance().storeKey(key, keyId);
+  },
+  
+  loadKey(keyId) {
+    return this.getInstance().loadKey(keyId);
+  },
+  
+  encrypt(message, key) {
+    return this.getInstance().encrypt(message, key);
+  },
+  
+  decrypt(encrypted, key) {
+    return this.getInstance().decrypt(encrypted, key);
+  },
+  
+  encryptMessage(message, conversationId) {
+    return this.getInstance().encryptMessage(message, conversationId);
+  },
+  
+  decryptMessage(encrypted, conversationId) {
+    return this.getInstance().decryptMessage(encrypted, conversationId);
+  },
+  
+  setEncryptionEnabled(conversationId, enabled) {
+    return this.getInstance().setEncryptionEnabled(conversationId, enabled);
+  },
+  
+  isEncryptionEnabled(conversationId) {
+    return this.getInstance().isEncryptionEnabled(conversationId);
+  }
+};

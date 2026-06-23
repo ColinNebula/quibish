@@ -207,7 +207,6 @@ class EnhancedVideoCallService {
     try {
       const {
         callId = `call_${Date.now()}`,
-        participants = [],
         quality = 'auto'
       } = options;
 

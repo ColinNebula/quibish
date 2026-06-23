@@ -224,4 +224,6 @@ class ImageProcessorService {
 }
 
 // Export singleton instance
-export default new ImageProcessorService();
+const imageProcessorService = new ImageProcessorService();
+
+export default imageProcessorService;

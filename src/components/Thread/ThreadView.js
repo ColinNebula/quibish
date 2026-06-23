@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import messageThreadService from '../../services/messageThreadService';
 import './ThreadView.css';
 

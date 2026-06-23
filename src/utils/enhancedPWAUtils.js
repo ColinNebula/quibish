@@ -409,4 +409,6 @@ class EnhancedPWAUtils {
   }
 }
 
-export default new EnhancedPWAUtils();
+const enhancedPWAUtils = new EnhancedPWAUtils();
+
+export default enhancedPWAUtils;

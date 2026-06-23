@@ -328,4 +328,6 @@ class EnhancedVoiceCallService {
   }
 }
 
-export default new EnhancedVoiceCallService();
+const enhancedVoiceCallService = new EnhancedVoiceCallService();
+
+export default enhancedVoiceCallService;

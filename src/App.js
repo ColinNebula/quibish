@@ -33,7 +33,6 @@ import enhancedPWAUtils from './utils/enhancedPWAUtils';
 import pwaShortcutService from './services/pwaShortcutService';
 import dataMigrationManager from './services/dataMigrationManager';
 import persistentStorageService from './services/persistentStorageService';
-import imageProcessor from './services/imageProcessorService';
 
 const safeGetStorageItem = (storage, key) => {
   try {

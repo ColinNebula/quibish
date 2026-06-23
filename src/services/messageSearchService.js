@@ -156,4 +156,47 @@ class MessageSearchService {
   }
 }
 
-export default new MessageSearchService();
+// Lazy initialization to avoid circular dependency issues at startup
+let instance = null;
+
+export default {
+  getInstance() {
+    if (!instance) {
+      instance = new MessageSearchService();
+    }
+    return instance;
+  },
+  
+  // Forward common methods for backward compatibility
+  initialize() {
+    return this.getInstance().initialize();
+  },
+  
+  indexMessages(messages) {
+    return this.getInstance().indexMessages(messages);
+  },
+  
+  search(query) {
+    return this.getInstance().search(query);
+  },
+  
+  fuzzySearch(query, maxDistance) {
+    return this.getInstance().fuzzySearch(query, maxDistance);
+  },
+  
+  patternSearch(pattern) {
+    return this.getInstance().patternSearch(pattern);
+  },
+  
+  searchBySender(sender) {
+    return this.getInstance().searchBySender(sender);
+  },
+  
+  multiFieldSearch(query) {
+    return this.getInstance().multiFieldSearch(query);
+  },
+  
+  getIndexStatus() {
+    return this.getInstance().getIndexStatus();
+  }
+};

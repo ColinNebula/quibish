@@ -393,4 +393,6 @@ class NativeDeviceFeaturesService {
   }
 }
 
-export default new NativeDeviceFeaturesService();
+const nativeDeviceFeaturesService = new NativeDeviceFeaturesService();
+
+export default nativeDeviceFeaturesService;

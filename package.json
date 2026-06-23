@@ -18,9 +18,9 @@
     "start:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./start-all.ps1",
     "stop:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./stop-all.ps1",
     "start:memory": "node memory-start.js --frontend",
-    "build": "set GENERATE_SOURCEMAP=false&& set INLINE_RUNTIME_CHUNK=false&& react-scripts build",
+    "build": "cross-env PUBLIC_URL=. GENERATE_SOURCEMAP=false INLINE_RUNTIME_CHUNK=false react-scripts build && node scripts/verify-build-urls.js",
     "build:analyze": "npm run build && npx bundle-analyzer build/static/js/*.js",
-    "build:original": "react-scripts build",
+    "build:original": "cross-env PUBLIC_URL=. react-scripts build && node scripts/verify-build-urls.js",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "smoke-check": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/smoke-check.ps1",
@@ -62,7 +62,9 @@
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "express": "^4.21.2",
     "gh-pages": "^6.3.0"
   }

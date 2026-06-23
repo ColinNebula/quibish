@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import persistentStorageService from '../../services/persistentStorageService';
@@ -34,7 +34,6 @@ import encryptedMessageService from '../../services/encryptedMessageService';
 import enhancedVoiceCallService from '../../services/enhancedVoiceCallService';
 import enhancedVideoCallService from '../../services/enhancedVideoCallService';
 import connectionService from '../../services/connectionService';
-import { buildApiUrl } from '../../config/api';
 import nativeDeviceFeaturesService from '../../services/nativeDeviceFeaturesService';
 import pushNotificationService from '../../services/pushNotificationService';
 import { feedbackService } from '../../services/feedbackService';
@@ -42,7 +41,8 @@ import { contactService } from '../../services/contactService';
 import { conversationService } from '../../services/conversationService';
 import realtimeService from '../../services/realtimeService';
 
-// All service implementations are now properly imported above
+// VoiceCallConnectionMonitor will be imported dynamically when needed
+// to avoid potential circular dependency issues at startup
 
 import PropTypes from 'prop-types';
 
@@ -75,7 +75,7 @@ const ProChat = ({
   onToggleDarkMode = () => {}
 }) => {
   // Get authenticated user from context
-  const { user: authUser, updateUser, isAuthenticated } = useAuth();
+  const { user: authUser } = useAuth();
   
   // Use authenticated user if available, otherwise fall back to prop user
   const user = authUser || propUser;
@@ -2318,7 +2318,10 @@ const ProChat = ({
     active: false, 
     withUser: null, 
     minimized: false, 
-    audioOnly: true 
+    audioOnly: true,
+    connectionStatus: null,        // ← ENHANCED: Track connection state
+    connectionQuality: 'unknown',  // ← ENHANCED: Track quality
+    callStartTime: null            // ← ENHANCED: Track call duration
   });
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [availableCallMethods, setAvailableCallMethods] = useState([]);
@@ -2327,34 +2330,141 @@ const ProChat = ({
   // ── WebRTC peer connection ref for signaling ──────────
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
+  const voiceCallMonitorRef = useRef(null);  // ← ENHANCED: Connection monitor
 
-  // ── Incoming call signaling via WebSocket ─────────────
+  // ── Incoming call signaling via WebSocket with Enhanced Monitoring ─────────────
   useEffect(() => {
     const offOffer = realtimeService.on('call-offer', async (data) => {
-      // Another user is calling us — show their call
-      const accept = window.confirm(`📞 Incoming ${data.audioOnly ? 'voice' : 'video'} call from ${data.fromUsername || 'Someone'}. Accept?`);
+      // Show incoming call dialog
+      const accept = window.confirm(
+        `📞 Incoming ${data.audioOnly ? 'voice' : 'video'} call from ${data.fromUser?.name || 'Someone'}. Accept?`
+      );
+      
       if (!accept) {
-        realtimeService.sendSignal('call-reject', data.fromUserId);
+        realtimeService.sendSignal('call-reject', data.fromUser?.id);
         return;
       }
+
       try {
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        peerConnectionRef.current = pc;
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: !data.audioOnly }).catch(() => null);
-        if (stream) {
-          localStreamRef.current = stream;
-          stream.getTracks().forEach(t => pc.addTrack(t, stream));
-        }
-        pc.onicecandidate = e => {
-          if (e.candidate) realtimeService.sendSignal('ice-candidate', data.fromUserId, { candidate: e.candidate });
+        // Create connection with multiple STUN servers (ENHANCED)
+        const config = {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' },
+            { urls: 'stun:stun.services.mozilla.com:3478' }
+          ],
+          iceTransportPolicy: 'all',
+          iceCandidatePoolSize: 10,
+          bundlePolicy: 'max-bundle',
+          rtcpMuxPolicy: 'require'
         };
+
+        const pc = new RTCPeerConnection(config);
+        peerConnectionRef.current = pc;
+
+        // Initialize connection monitor (ENHANCED)
+        try {
+          const { default: VoiceCallConnectionMonitor } = await import('../../services/voiceCallConnectionMonitor');
+          const monitor = new VoiceCallConnectionMonitor(pc, { checkInterval: 1000 });
+          voiceCallMonitorRef.current = monitor;
+          monitor.initialize();
+        } catch (monitorError) {
+          console.warn('Failed to initialize monitor:', monitorError);
+        }
+
+        // Handle connection state changes (ENHANCED)
+        if (voiceCallMonitorRef.current) {
+          voiceCallMonitorRef.current.on('connectionEstablished', () => {
+            console.log('✅ Call connection established!');
+            setVoiceCallState(prev => ({ 
+              ...prev, 
+              connectionStatus: 'connected' 
+            }));
+          });
+
+          voiceCallMonitorRef.current.on('connectionFailed', ({ attempt }) => {
+            console.error(`❌ Connection failed (attempt ${attempt})`);
+          });
+
+          voiceCallMonitorRef.current.on('statsUpdate', (stats) => {
+            if (voiceCallState.active || data.audioOnly) {
+              setVoiceCallState(prev => ({ 
+                ...prev, 
+                connectionQuality: stats.quality 
+              }));
+            }
+          });
+        }
+
+        // Get audio/video stream with enhancements (ENHANCED)
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: { 
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true 
+            }, 
+            video: !data.audioOnly ? true : false 
+          });
+        } catch (mediaError) {
+          console.warn('Failed to get media with enhancement, trying basic:', mediaError);
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: true, 
+            video: !data.audioOnly 
+          });
+        }
+
+        localStreamRef.current = stream;
+        stream.getTracks().forEach(track => {
+          pc.addTrack(track, stream);
+          
+          // Monitor track state (ENHANCED)
+          track.addEventListener('ended', () => {
+            console.warn('🔴 Audio/video track ended unexpectedly');
+            handleEndVoiceCall();
+            alert('Call disconnected: media stream ended');
+          });
+        });
+
+        // Handle ICE candidates with better error handling (ENHANCED)
+        pc.onicecandidate = (e) => {
+          if (e.candidate) {
+            realtimeService.sendSignal('ice-candidate', data.fromUser?.id, { 
+              candidate: e.candidate 
+            }).catch(err => console.warn('Failed to send ICE candidate:', err));
+          }
+        };
+
+        // Set remote description and create answer
         await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        realtimeService.sendSignal('call-answer', data.fromUserId, { answer });
-        setVideoCallState({ active: true, withUser: { id: data.fromUserId, name: data.fromUsername }, minimized: false, audioOnly: !!data.audioOnly });
+        
+        realtimeService.sendSignal('call-answer', data.fromUser?.id, { answer });
+
+        // Update UI state (ENHANCED)
+        setVoiceCallState({
+          active: true,
+          withUser: { 
+            id: data.fromUser?.id, 
+            name: data.fromUser?.name || data.fromUsername,
+            avatar: data.fromUser?.avatar
+          },
+          minimized: false,
+          audioOnly: !!data.audioOnly,
+          connectionStatus: 'connecting',
+          connectionQuality: 'unknown',
+          callStartTime: Date.now()
+        });
+
       } catch (e) {
         console.error('Failed to handle incoming call:', e);
+        alert(`Failed to accept call: ${e.message}`);
       }
     });
 
@@ -2371,10 +2481,17 @@ const ProChat = ({
     });
 
     const offEnd = realtimeService.on('call-end', () => {
+      // Clean up monitor (ENHANCED)
+      if (voiceCallMonitorRef.current) {
+        voiceCallMonitorRef.current.destroy();
+        voiceCallMonitorRef.current = null;
+      }
+      
       if (peerConnectionRef.current) { peerConnectionRef.current.close(); peerConnectionRef.current = null; }
       if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
+      
       setVideoCallState({ active: false, withUser: null, minimized: false, audioOnly: false });
-      setVoiceCallState({ active: false, withUser: null, minimized: false, audioOnly: true });
+      setVoiceCallState({ active: false, withUser: null, minimized: false, audioOnly: true, connectionStatus: null });
     });
 
     return () => { offOffer(); offAnswer(); offIce(); offEnd(); };
@@ -3102,35 +3219,140 @@ const ProChat = ({
     try {
       console.log('🚀 Starting enhanced voice call - targetUser:', targetUser, 'method:', method);
 
-      // Attempt real WebRTC voice call via signaling
+      // Create peer connection with improved configuration (ENHANCED)
+      const config = {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' },
+          { urls: 'stun:stun.services.mozilla.com:3478' }
+        ],
+        iceTransportPolicy: 'all',
+        iceCandidatePoolSize: 10,
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require'
+      };
+
+      const pc = new RTCPeerConnection(config);
+      peerConnectionRef.current = pc;
+
+      // Initialize connection monitor (ENHANCED)
       try {
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        peerConnectionRef.current = pc;
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        localStreamRef.current = stream;
-        stream.getTracks().forEach(track => pc.addTrack(track, stream));
-        pc.onicecandidate = (e) => {
-          if (e.candidate) realtimeService.sendSignal('ice-candidate', targetUser.id, { candidate: e.candidate });
-        };
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        realtimeService.sendSignal('call-offer', targetUser.id, {
-          offer,
-          fromUser: { id: user?.id, name: user?.name || user?.username },
-          audioOnly: true
+        const { default: VoiceCallConnectionMonitor } = await import('../../services/voiceCallConnectionMonitor');
+        const monitor = new VoiceCallConnectionMonitor(pc, {
+          checkInterval: 1000,
+          iceTimeout: 10000,
+          failureThreshold: 3
         });
-      } catch (rtcErr) {
-        console.warn('WebRTC voice call setup failed, falling back to stub:', rtcErr);
+        
+        voiceCallMonitorRef.current = monitor;
+        monitor.initialize();
+      } catch (monitorError) {
+        console.warn('Failed to initialize monitor for outgoing call:', monitorError);
       }
 
-      const callInstance = await enhancedVoiceCallService.initiateEnhancedCall(targetUser, method);
-      console.log('📞 Call instance result:', callInstance);
-      
-      if (!callInstance.success) {
-        throw new Error(callInstance.error || 'Failed to initiate call');
+      // Handle connection state changes (ENHANCED)
+      if (voiceCallMonitorRef.current) {
+        voiceCallMonitorRef.current.on('connectionEstablished', () => {
+          console.log('✅ Call connection established!');
+          setVoiceCallState(prev => ({ 
+            ...prev, 
+            connectionStatus: 'connected',
+            connectionQuality: voiceCallMonitorRef.current?.getStats().networkQuality 
+          }));
+        });
+
+        voiceCallMonitorRef.current.on('connectionDisconnected', () => {
+          console.log('⚠️ Call disconnected, attempting reconnection...');
+          setVoiceCallState(prev => ({ 
+            ...prev, 
+            connectionStatus: 'reconnecting' 
+          }));
+        });
+
+        voiceCallMonitorRef.current.on('connectionFailed', ({ attempt }) => {
+          console.error(`❌ Connection failed (attempt ${attempt})`);
+          if (attempt >= 3) {
+            handleEndVoiceCall();
+            alert('Call connection failed. Please try again.');
+          }
+        });
+
+        voiceCallMonitorRef.current.on('statsUpdate', (stats) => {
+          setVoiceCallState(prev => ({
+            ...prev,
+            connectionQuality: stats.quality
+          }));
+          
+          if (stats.quality === 'poor' || stats.quality === 'very-poor') {
+            console.warn(`📊 Poor network quality: ${stats.quality}`, {
+              latency: `${stats.latency.toFixed(0)}ms`,
+              packetLoss: `${stats.packetLoss.toFixed(1)}%`,
+              jitter: `${stats.audio?.jitter?.toFixed(2)}ms`
+            });
+          }
+        });
       }
-      
-      // Update voice call state
+
+      // Get user media with error handling (ENHANCED)
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { 
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true 
+          }, 
+          video: false 
+        });
+      } catch (mediaError) {
+        console.warn('Failed to get audio with enhancement, trying basic audio:', mediaError);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      }
+
+      localStreamRef.current = stream;
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+        
+        // Monitor track state (ENHANCED)
+        track.addEventListener('ended', () => {
+          console.warn('🔴 Audio track ended unexpectedly');
+          handleEndVoiceCall();
+          alert('Call audio disconnected');
+        });
+      });
+
+      // Handle ICE candidates with better error handling (ENHANCED)
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          const candidate = {
+            candidate: e.candidate.candidate,
+            sdpMLineIndex: e.candidate.sdpMLineIndex,
+            sdpMid: e.candidate.sdpMid
+          };
+          realtimeService.sendSignal('ice-candidate', targetUser.id, { candidate })
+            .catch(err => console.warn('Failed to send ICE candidate:', err));
+        }
+      };
+
+      // Create and send offer
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: false
+      });
+      await pc.setLocalDescription(offer);
+
+      realtimeService.sendSignal('call-offer', targetUser.id, {
+        offer,
+        fromUser: { id: user?.id, name: user?.name || user?.username },
+        audioOnly: true,
+        timestamp: Date.now()
+      });
+
+      // Update UI state (ENHANCED)
       setVoiceCallState({
         active: true,
         withUser: {
@@ -3141,40 +3363,98 @@ const ProChat = ({
         },
         minimized: false,
         audioOnly: true,
-        callInstance
+        connectionStatus: 'connecting',
+        connectionQuality: 'unknown',
+        callStartTime: Date.now()
       });
 
-      // Add enhanced voice call message to chat
+      // Try enhanced call service
+      try {
+        const callInstance = await enhancedVoiceCallService.initiateEnhancedCall(targetUser, method);
+        if (callInstance.success) {
+          setVoiceCallState(prev => ({ ...prev, callInstance }));
+        }
+      } catch (err) {
+        console.warn('Enhanced call service failed, continuing with basic call:', err);
+      }
+
       const voiceCallMessage = {
-        id: callInstance.callId,
-        text: `📞 ${callInstance.method.description} with ${targetUser.name || targetUser.username}`,
+        id: `call_${Date.now()}`,
+        text: `📞 Voice call with ${targetUser.name || targetUser.username}`,
         user: 'You',
         timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         type: 'voice_call_enhanced',
-        callStatus: callInstance.status,
-        callMethod: callInstance.method,
-        connectionQuality: callInstance.connectionStatus.quality,
+        status: 'connecting',
+        connectionQuality: 'unknown',
         isSystemMessage: true
       };
 
-      console.log('📞 Adding voice call message to chat:', voiceCallMessage);
       setChatMessages(prev => [...prev, voiceCallMessage]);
       setShowCallMethodSelector(false);
-      
-      alert('📞 Voice call initiated successfully!\n\nNote: This is a demo implementation. In a real app, you would hear audio and see call controls.');
+
     } catch (error) {
       console.error('❌ Failed to start enhanced voice call:', error);
       alert(`Failed to start voice call: ${error.message}`);
+      handleEndVoiceCall();
     }
-  }, [user]);
+  }, [user, handleEndVoiceCall]);
 
   const handleEndVoiceCall = useCallback(() => {
-    const remoteId = voiceCallState.withUser?.id;
-    if (remoteId) realtimeService.sendSignal('call-end', remoteId);
-    if (peerConnectionRef.current) { peerConnectionRef.current.close(); peerConnectionRef.current = null; }
-    if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
-    setVoiceCallState(prev => ({ ...prev, active: false }));
-  }, [voiceCallState.withUser?.id]);
+    try {
+      const remoteId = voiceCallState.withUser?.id;
+      
+      // Calculate call duration (ENHANCED)
+      if (voiceCallState.callStartTime) {
+        const duration = Math.round((Date.now() - voiceCallState.callStartTime) / 1000);
+        console.log(`📊 Call ended. Duration: ${duration}s`);
+      }
+      
+      // Stop monitor (ENHANCED)
+      if (voiceCallMonitorRef.current) {
+        voiceCallMonitorRef.current.destroy();
+        voiceCallMonitorRef.current = null;
+      }
+      
+      // Send call-end signal
+      if (remoteId && realtimeService.isConnected?.()) {
+        realtimeService.sendSignal('call-end', remoteId)
+          .catch(err => console.warn('Failed to send call-end signal:', err));
+      }
+      
+      // Close peer connection properly (ENHANCED)
+      if (peerConnectionRef.current) {
+        try {
+          // Stop all transceiver sends before closing
+          peerConnectionRef.current.getSenders().forEach(sender => {
+            try { sender.track?.stop(); } catch (e) {}
+          });
+          peerConnectionRef.current.close();
+        } catch (e) {
+          console.warn('Error closing peer connection:', e);
+        }
+        peerConnectionRef.current = null;
+      }
+      
+      // Stop local stream tracks (ENHANCED)
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(t => {
+          try { t.stop(); } catch (e) {}
+        });
+        localStreamRef.current = null;
+      }
+      
+      setVoiceCallState({ 
+        active: false, 
+        withUser: null, 
+        minimized: false, 
+        audioOnly: true,
+        connectionStatus: null 
+      });
+      
+    } catch (error) {
+      console.error('Error ending voice call:', error);
+    }
+  }, [voiceCallState.withUser?.id, voiceCallState.callStartTime]);
 
   // Unified call handler for both international and app calls
   const handleUnifiedCall = useCallback(() => {

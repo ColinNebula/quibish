@@ -144,4 +144,6 @@ class RealtimeService {
   }
 }
 
-export default new RealtimeService();
+const realtimeService = new RealtimeService();
+
+export default realtimeService;

@@ -147,6 +147,8 @@ class EnhancedVoiceRecorderService {
         case 'NotReadableError':
           message = 'Microphone is already in use by another application.';
           break;
+        default:
+          break;
       }
       
       return { success: false, error: error.name, message };
