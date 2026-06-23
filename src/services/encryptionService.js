@@ -270,4 +270,23 @@ class EncryptionService {
   }
 }
 
-export default new EncryptionService();
+let encryptionServiceInstance;
+
+export default {
+  getInstance() {
+    if (!encryptionServiceInstance) {
+      encryptionServiceInstance = new EncryptionService();
+    }
+    return encryptionServiceInstance;
+  },
+  initialize(...args) { return this.getInstance().initialize(...args); },
+  generateKey(...args) { return this.getInstance().generateKey(...args); },
+  storeKey(...args) { return this.getInstance().storeKey(...args); },
+  loadKey(...args) { return this.getInstance().loadKey(...args); },
+  encrypt(...args) { return this.getInstance().encrypt(...args); },
+  decrypt(...args) { return this.getInstance().decrypt(...args); },
+  encryptMessage(...args) { return this.getInstance().encryptMessage(...args); },
+  decryptMessage(...args) { return this.getInstance().decryptMessage(...args); },
+  setEncryptionEnabled(...args) { return this.getInstance().setEncryptionEnabled(...args); },
+  isEncryptionEnabled(...args) { return this.getInstance().isEncryptionEnabled(...args); }
+};

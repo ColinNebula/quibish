@@ -156,4 +156,21 @@ class MessageSearchService {
   }
 }
 
-export default new MessageSearchService();
+let messageSearchServiceInstance;
+
+export default {
+  getInstance() {
+    if (!messageSearchServiceInstance) {
+      messageSearchServiceInstance = new MessageSearchService();
+    }
+    return messageSearchServiceInstance;
+  },
+  initialize(...args) { return this.getInstance().initialize(...args); },
+  indexMessages(...args) { return this.getInstance().indexMessages(...args); },
+  search(...args) { return this.getInstance().search(...args); },
+  fuzzySearch(...args) { return this.getInstance().fuzzySearch(...args); },
+  patternSearch(...args) { return this.getInstance().patternSearch(...args); },
+  searchBySender(...args) { return this.getInstance().searchBySender(...args); },
+  multiFieldSearch(...args) { return this.getInstance().multiFieldSearch(...args); },
+  getIndexStatus(...args) { return this.getInstance().getIndexStatus(...args); }
+};

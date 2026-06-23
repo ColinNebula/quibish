@@ -86,6 +86,25 @@ export const pwaUtils = {
   }
 };
 
-const pwaShortcutService = new PWAShortcutService();
+// Lazy initialization to prevent circular dependencies
+let pwaShortcutServiceInstance;
+
+function getPwaShortcutService() {
+  if (!pwaShortcutServiceInstance) {
+    pwaShortcutServiceInstance = new PWAShortcutService();
+  }
+  return pwaShortcutServiceInstance;
+}
+
+// Create a proxy that lazily delegates to the instance
+const pwaShortcutService = new Proxy({}, {
+  get: (target, prop) => {
+    const instance = getPwaShortcutService();
+    if (typeof instance[prop] === 'function') {
+      return instance[prop].bind(instance);
+    }
+    return instance[prop];
+  }
+});
 
 export default pwaShortcutService;

@@ -394,7 +394,25 @@ class DataMigrationManager {
   }
 }
 
-// Create singleton instance
-const dataMigrationManager = new DataMigrationManager();
+// Lazy initialization to prevent circular dependencies
+let dataMigrationManagerInstance;
+
+function getDataMigrationManager() {
+  if (!dataMigrationManagerInstance) {
+    dataMigrationManagerInstance = new DataMigrationManager();
+  }
+  return dataMigrationManagerInstance;
+}
+
+// Create a proxy that lazily delegates to the instance
+const dataMigrationManager = new Proxy({}, {
+  get: (target, prop) => {
+    const instance = getDataMigrationManager();
+    if (typeof instance[prop] === 'function') {
+      return instance[prop].bind(instance);
+    }
+    return instance[prop];
+  }
+});
 
 export default dataMigrationManager;

@@ -345,4 +345,19 @@ class P2PMessagingService {
   }
 }
 
-export default new P2PMessagingService();
+let p2pMessagingServiceInstance;
+
+export default {
+  getInstance() {
+    if (!p2pMessagingServiceInstance) {
+      p2pMessagingServiceInstance = new P2PMessagingService();
+    }
+    return p2pMessagingServiceInstance;
+  },
+  connectToPeer(...args) { return this.getInstance().connectToPeer(...args); },
+  disconnectFromPeer(...args) { return this.getInstance().disconnectFromPeer(...args); },
+  sendMessage(...args) { return this.getInstance().sendMessage(...args); },
+  on(...args) { return this.getInstance().on(...args); },
+  off(...args) { return this.getInstance().off(...args); },
+  getStatus(...args) { return this.getInstance().getStatus(...args); }
+};

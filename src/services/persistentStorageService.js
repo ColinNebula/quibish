@@ -490,7 +490,25 @@ class PersistentStorageService {
   }
 }
 
-// Create singleton instance
-const persistentStorageService = new PersistentStorageService();
+// Lazy initialization to prevent circular dependencies
+let persistentStorageServiceInstance;
+
+function getPersistentStorageService() {
+  if (!persistentStorageServiceInstance) {
+    persistentStorageServiceInstance = new PersistentStorageService();
+  }
+  return persistentStorageServiceInstance;
+}
+
+// Create a proxy that lazily delegates to the instance
+const persistentStorageService = new Proxy({}, {
+  get: (target, prop) => {
+    const instance = getPersistentStorageService();
+    if (typeof instance[prop] === 'function') {
+      return instance[prop].bind(instance);
+    }
+    return instance[prop];
+  }
+});
 
 export default persistentStorageService;

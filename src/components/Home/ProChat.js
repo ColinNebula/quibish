@@ -3164,7 +3164,64 @@ const ProChat = ({
     setVideoCallState(prev => ({ ...prev, minimized: !prev.minimized }));
   }, []);
 
-  // Enhanced voice call handlers
+  // Enhanced voice call handlers - MOVED BEFORE startEnhancedVoiceCall to fix TDZ
+  const handleEndVoiceCall = useCallback(() => {
+    try {
+      const remoteId = voiceCallState.withUser?.id;
+      
+      // Calculate call duration (ENHANCED)
+      if (voiceCallState.callStartTime) {
+        const duration = Math.round((Date.now() - voiceCallState.callStartTime) / 1000);
+        console.log(`📊 Call ended. Duration: ${duration}s`);
+      }
+      
+      // Stop monitor (ENHANCED)
+      if (voiceCallMonitorRef.current) {
+        voiceCallMonitorRef.current.destroy();
+        voiceCallMonitorRef.current = null;
+      }
+      
+      // Send call-end signal
+      if (remoteId && realtimeService.isConnected?.()) {
+        realtimeService.sendSignal('call-end', remoteId)
+          .catch(err => console.warn('Failed to send call-end signal:', err));
+      }
+      
+      // Close peer connection properly (ENHANCED)
+      if (peerConnectionRef.current) {
+        try {
+          // Stop all transceiver sends before closing
+          peerConnectionRef.current.getSenders().forEach(sender => {
+            try { sender.track?.stop(); } catch (e) {}
+          });
+          peerConnectionRef.current.close();
+        } catch (e) {
+          console.warn('Error closing peer connection:', e);
+        }
+        peerConnectionRef.current = null;
+      }
+      
+      // Stop local stream tracks (ENHANCED)
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(t => {
+          try { t.stop(); } catch (e) {}
+        });
+        localStreamRef.current = null;
+      }
+      
+      setVoiceCallState({ 
+        active: false, 
+        withUser: null, 
+        minimized: false, 
+        audioOnly: true,
+        connectionStatus: null 
+      });
+      
+    } catch (error) {
+      console.error('Error ending voice call:', error);
+    }
+  }, [voiceCallState.withUser?.id, voiceCallState.callStartTime]);
+
   const handleStartVoiceCall = useCallback(async () => {
     let currentUser = currentSelectedConversation || currentConversation;
     
@@ -3398,63 +3455,6 @@ const ProChat = ({
       handleEndVoiceCall();
     }
   }, [user, handleEndVoiceCall]);
-
-  const handleEndVoiceCall = useCallback(() => {
-    try {
-      const remoteId = voiceCallState.withUser?.id;
-      
-      // Calculate call duration (ENHANCED)
-      if (voiceCallState.callStartTime) {
-        const duration = Math.round((Date.now() - voiceCallState.callStartTime) / 1000);
-        console.log(`📊 Call ended. Duration: ${duration}s`);
-      }
-      
-      // Stop monitor (ENHANCED)
-      if (voiceCallMonitorRef.current) {
-        voiceCallMonitorRef.current.destroy();
-        voiceCallMonitorRef.current = null;
-      }
-      
-      // Send call-end signal
-      if (remoteId && realtimeService.isConnected?.()) {
-        realtimeService.sendSignal('call-end', remoteId)
-          .catch(err => console.warn('Failed to send call-end signal:', err));
-      }
-      
-      // Close peer connection properly (ENHANCED)
-      if (peerConnectionRef.current) {
-        try {
-          // Stop all transceiver sends before closing
-          peerConnectionRef.current.getSenders().forEach(sender => {
-            try { sender.track?.stop(); } catch (e) {}
-          });
-          peerConnectionRef.current.close();
-        } catch (e) {
-          console.warn('Error closing peer connection:', e);
-        }
-        peerConnectionRef.current = null;
-      }
-      
-      // Stop local stream tracks (ENHANCED)
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(t => {
-          try { t.stop(); } catch (e) {}
-        });
-        localStreamRef.current = null;
-      }
-      
-      setVoiceCallState({ 
-        active: false, 
-        withUser: null, 
-        minimized: false, 
-        audioOnly: true,
-        connectionStatus: null 
-      });
-      
-    } catch (error) {
-      console.error('Error ending voice call:', error);
-    }
-  }, [voiceCallState.withUser?.id, voiceCallState.callStartTime]);
 
   // Unified call handler for both international and app calls
   const handleUnifiedCall = useCallback(() => {

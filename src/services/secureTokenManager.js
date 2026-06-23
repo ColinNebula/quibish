@@ -340,6 +340,25 @@ class SecureTokenManager {
   }
 }
 
-// Export singleton instance
-export const secureTokenManager = new SecureTokenManager();
+// Lazy initialization to prevent circular dependencies
+let secureTokenManagerInstance;
+
+function getSecureTokenManager() {
+  if (!secureTokenManagerInstance) {
+    secureTokenManagerInstance = new SecureTokenManager();
+  }
+  return secureTokenManagerInstance;
+}
+
+// Create a proxy object that lazily delegates to the instance
+export const secureTokenManager = new Proxy({}, {
+  get: (target, prop) => {
+    const instance = getSecureTokenManager();
+    if (typeof instance[prop] === 'function') {
+      return instance[prop].bind(instance);
+    }
+    return instance[prop];
+  }
+});
+
 export default secureTokenManager;

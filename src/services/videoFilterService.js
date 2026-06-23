@@ -122,4 +122,18 @@ class VideoFilterService {
   }
 }
 
-export default new VideoFilterService();
+let videoFilterServiceInstance;
+
+export default {
+  getInstance() {
+    if (!videoFilterServiceInstance) {
+      videoFilterServiceInstance = new VideoFilterService();
+    }
+    return videoFilterServiceInstance;
+  },
+  initialize(...args) { return this.getInstance().initialize(...args); },
+  applyFilter(...args) { return this.getInstance().applyFilter(...args); },
+  removeFilter(...args) { return this.getInstance().removeFilter(...args); },
+  getAvailableFilters(...args) { return this.getInstance().getAvailableFilters(...args); },
+  optimizeVideoStream(...args) { return this.getInstance().optimizeVideoStream(...args); }
+};
