@@ -102,10 +102,17 @@ const ProChat = ({
   };
   
   // Ensure user data is saved to persistent storage
+  // Also preserve avatar to prevent loss on refresh
   useEffect(() => {
     if (user && user.id) {
-      persistentStorageService.updateUserData(user);
-      debugLog('💾 User data synced to persistent storage');
+      // Merge with existing data to preserve avatar
+      const existingData = persistentStorageService.getUserData() || {};
+      const mergedUser = {
+        ...user,
+        avatar: user.avatar || existingData.avatar || null
+      };
+      persistentStorageService.updateUserData(mergedUser);
+      debugLog('💾 User data synced to persistent storage', { avatar: mergedUser.avatar });
     }
   }, [user, appDebugEnabled]);
 
@@ -670,6 +677,14 @@ const ProChat = ({
     }
   }, []);
 
+  // Normalize messages to ensure reactions is always an array
+  const normalizeMessages = useCallback((messages) => {
+    return Array.isArray(messages) ? messages.map(msg => ({
+      ...msg,
+      reactions: Array.isArray(msg?.reactions) ? msg.reactions : []
+    })) : [];
+  }, []);
+
   // Auto-scroll when messages change, and ensure no residual body/window scroll accumulates
   useEffect(() => {
     scrollToBottom();
@@ -719,14 +734,20 @@ const ProChat = ({
         const stored = localStorage.getItem(`quibish_conv_messages_${selectedConversation}`);
         if (stored) {
           const msgs = JSON.parse(stored);
-          if (Array.isArray(msgs) && msgs.length > 0) setChatMessages(msgs);
+          if (Array.isArray(msgs) && msgs.length > 0) {
+            // Normalize messages to ensure reactions is always an array
+            setChatMessages(normalizeMessages(msgs));
+          }
         }
       } catch (_) {}
       setPtrRefreshing(false);
     }, 800);
-  }, [selectedConversation]);
+  }, [selectedConversation, normalizeMessages]);
   // ─────────────────────────────────────────────────────────────────────────
 
+  // On mount: restore messages for whichever conversation is auto-selected.
+  // This handles the case where selectedConversation is initialised from
+  // conversations[0]?.id so the user never explicitly clicks it.
   // On mount: restore messages for whichever conversation is auto-selected.
   // This handles the case where selectedConversation is initialised from
   // conversations[0]?.id so the user never explicitly clicks it.
@@ -737,18 +758,24 @@ const ProChat = ({
       if (stored) {
         const msgs = JSON.parse(stored);
         if (Array.isArray(msgs) && msgs.length > 0) {
-          setChatMessages(msgs);
+          // Normalize messages to ensure reactions is always an array
+          setChatMessages(normalizeMessages(msgs));
         }
       }
     } catch (_) {}
-  }, []); // intentionally empty — run once on mount only
+  }, [normalizeMessages]); // intentionally empty — run once on mount only
 
   // Persist text messages to localStorage whenever they change for the active conversation.
   // File/media messages (data URLs) are skipped to avoid quota exhaustion.
   useEffect(() => {
     if (!selectedConversation || chatMessages.length === 0) return;
     try {
-      const toStore = chatMessages.filter(m => !m.file?.url?.startsWith('data:'));
+      // Ensure all messages have reactions before storing
+      const normalizedMessages = chatMessages.map(m => ({
+        ...m,
+        reactions: Array.isArray(m?.reactions) ? m.reactions : []
+      }));
+      const toStore = normalizedMessages.filter(m => !m.file?.url?.startsWith('data:'));
       localStorage.setItem(`quibish_conv_messages_${selectedConversation}`, JSON.stringify(toStore));
     } catch (e) {
       console.warn('Failed to persist messages:', e);
@@ -1088,7 +1115,8 @@ const ProChat = ({
       } catch (_) {}
       
       if (Array.isArray(localMessages) && localMessages.length > 0) {
-        setChatMessages(localMessages);
+        // Normalize messages to ensure reactions is always an array
+        setChatMessages(normalizeMessages(localMessages));
         console.log('Loaded', localMessages.length, 'messages from localStorage for', conversation.name);
       } else {
         setChatMessages([]);
@@ -1109,7 +1137,7 @@ const ProChat = ({
         setSidebarCollapsed(true);
       }
     }
-  }, [conversations, messageService, scrollToBottom]);
+  }, [conversations, messageService, scrollToBottom, normalizeMessages]);
 
   const handleSearchChange = useCallback((e) => {
     try {
@@ -1919,12 +1947,14 @@ const ProChat = ({
     // Update local state immediately for responsive UI
     setChatMessages(prev => prev.map(message => {
       if (message.id === messageId) {
-        const existingReaction = message?.reactions?.find(r => r?.emoji === emoji);
+        // Ensure reactions is always an array
+        const reactions = Array.isArray(message?.reactions) ? message.reactions : [];
+        const existingReaction = reactions.find(r => r?.emoji === emoji);
         if (existingReaction) {
           // Toggle existing reaction
           return {
             ...message,
-            reactions: message.reactions.map(r => 
+            reactions: reactions.map(r => 
               r.emoji === emoji 
                 ? { ...r, count: r.count + 1 }
                 : r
@@ -1934,7 +1964,7 @@ const ProChat = ({
           // Add new reaction
           return {
             ...message,
-            reactions: [...message.reactions, { emoji, count: 1, userId: user.id }]
+            reactions: [...reactions, { emoji, count: 1, userId: user.id }]
           };
         }
       }
@@ -3544,9 +3574,13 @@ const ProChat = ({
         realtimeService.sendSignal('call-offer', targetUserId, { offer, audioOnly: false });
       }
 
+      // Preserve current user's avatar by reading from storage to ensure it's not lost
+      const storedUserData = persistentStorageService.getUserData() || {};
+      const userAvatarForCall = currentUser.avatar || storedUserData.avatar || null;
+
       setVideoCallState({
         active: true,
-        withUser: { name: currentUser.name, avatar: currentUser.avatar, id: currentUser.id },
+        withUser: { name: currentUser.name, avatar: userAvatarForCall, id: currentUser.id },
         minimized: false,
         audioOnly: false,
         callId: `call_${Date.now()}`
@@ -4422,7 +4456,7 @@ const ProChat = ({
                     </span>
                   )}
                 </div>
-                {message.reactions && message.reactions.length > 0 && (
+                {Array.isArray(message?.reactions) && message.reactions.length > 0 && (
                   <div className="message-reactions-inline">
                     {message.reactions.map((reaction, index) => (
                       <button

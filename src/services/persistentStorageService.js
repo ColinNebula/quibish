@@ -172,18 +172,38 @@ class PersistentStorageService {
       persistent = this.getRememberMe();
     }
     
-    const success = this.setItem(this.STORAGE_KEYS.USER_DATA, userData, persistent);
+    // Preserve avatar from existing data if not provided
+    const existingData = this.getUserData() || {};
+    const mergedData = {
+      ...existingData,
+      ...userData,
+      avatar: userData?.avatar || existingData?.avatar || null
+    };
+    
+    const success = this.setItem(this.STORAGE_KEYS.USER_DATA, mergedData, persistent);
     
     // Also update profile data
     if (success) {
-      this.setUserProfile(userData, persistent);
+      this.setUserProfile(mergedData, persistent);
+      // Store avatar separately for recovery
+      if (mergedData.avatar) {
+        this.setAvatarCache(mergedData.avatar);
+      }
     }
     
     return success;
   }
 
   getUserData() {
-    return this.getItem(this.STORAGE_KEYS.USER_DATA);
+    const userData = this.getItem(this.STORAGE_KEYS.USER_DATA);
+    // If no avatar in user data but cached avatar exists, restore it
+    if (userData && !userData.avatar) {
+      const cachedAvatar = this.getAvatarCache();
+      if (cachedAvatar) {
+        userData.avatar = cachedAvatar;
+      }
+    }
+    return userData;
   }
 
   updateUserData(updates) {
@@ -283,6 +303,29 @@ class PersistentStorageService {
 
   getAuthToken() {
     return this.getItem(this.STORAGE_KEYS.AUTH_TOKEN, false); // Don't parse token
+  }
+
+  // Avatar cache operations (separate backup for avatar recovery)
+  setAvatarCache(avatar) {
+    try {
+      if (avatar && typeof avatar === 'string') {
+        localStorage.setItem('quibish_avatar_cache', avatar);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.warn('Failed to cache avatar:', error);
+      return false;
+    }
+  }
+
+  getAvatarCache() {
+    try {
+      return localStorage.getItem('quibish_avatar_cache');
+    } catch (error) {
+      console.warn('Failed to retrieve cached avatar:', error);
+      return null;
+    }
   }
 
   // Remember me setting

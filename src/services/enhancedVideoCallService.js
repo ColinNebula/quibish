@@ -24,6 +24,10 @@ class EnhancedVideoCallService {
     this.screenStream = null;
     this.mediaRecorder = null;
     this.recordedChunks = [];
+    
+    // Development mode for testing without devices
+    this.developmentMode = false;
+    this.useMockDevices = false;
 
     // Call state
     this.callState = {
@@ -139,6 +143,63 @@ class EnhancedVideoCallService {
       this.emitEvent('onError', { error: 'Failed to initialize devices' });
       return false;
     }
+  }
+
+  /**
+   * Create a mock audio stream for development/testing
+   */
+  async createMockStream() {
+    try {
+      // Create an empty audio context
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const destination = audioContext.createMediaStreamDestination();
+      
+      // Create a mock audio track
+      const stream = destination.stream;
+      
+      // For video, we'll use a canvas-based mock
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 480;
+      const ctx = canvas.getContext('2d');
+      
+      // Draw a gradient placeholder
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#3b82f6');
+      gradient.addColorStop(1, '#8b5cf6');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add text
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 36px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('📷 Mock Video Stream', canvas.width / 2, canvas.height / 2 - 20);
+      ctx.font = '16px sans-serif';
+      ctx.fillText('(Development Mode)', canvas.width / 2, canvas.height / 2 + 30);
+      
+      // Get canvas stream
+      const canvasStream = canvas.captureStream(30);
+      
+      // Combine audio and video tracks
+      const mockStream = new MediaStream();
+      canvasStream.getTracks().forEach(track => mockStream.addTrack(track));
+      stream.getTracks().forEach(track => mockStream.addTrack(track));
+      
+      return mockStream;
+    } catch (error) {
+      console.error('Failed to create mock stream:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Enable development mode (allows mock devices)
+   */
+  setDevelopmentMode(enabled) {
+    this.developmentMode = enabled;
+    this.useMockDevices = enabled;
+    console.log('Development mode:', enabled ? '✓ Enabled' : '✗ Disabled');
   }
 
   /**
@@ -261,7 +322,13 @@ class EnhancedVideoCallService {
               try {
                 this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
               } catch (audioError) {
-                throw new Error('No camera or microphone found. Please connect a device and try again.');
+                // If development mode is enabled, use mock stream
+                if (this.developmentMode || this.useMockDevices) {
+                  console.warn('⚠️ Using mock stream for development');
+                  this.localStream = await this.createMockStream();
+                } else {
+                  throw new Error('No camera or microphone found. Please connect a device or enable development mode.');
+                }
               }
             } else {
               throw fallbackError;
