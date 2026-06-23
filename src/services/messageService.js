@@ -90,10 +90,10 @@ class MessageService {
   // Add reaction to message
   async addReaction(messageId, emoji) {
     try {
-      const response = await fetch(`/api/messages/${messageId}/reactions`, {
+      const response = await fetch(`/api/messages/${messageId}/react`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emoji })
+        body: JSON.stringify({ reaction: emoji })
       });
 
       if (response.ok) {

@@ -53,6 +53,7 @@ import '../../styles/DynamicBackground.css';
 import './ProSidebar.css';
 import './ProHeader.css';
 import './ProChat.css';
+import './EnhancedMessageDisplay.css';
 import './SearchHighlight.css';
 import './ResponsiveFix.css';
 import './EncryptionStyles.css';
