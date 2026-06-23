@@ -583,24 +583,21 @@
               return originalFind.call(this, callback, thisArg);
             };
             
-            // Enhanced console error filtering
-            console.error = function(...args) {
-              const errorStr = args.join(' ');
-              
-              // Block specific contentScript errors
-              if (isContentScriptCall() || 
-                  errorStr.includes('contentScript') ||
-                  errorStr.includes('indexOf') && errorStr.includes('null') ||
-                  errorStr.includes('chrome-extension://')) {
-                console.warn('🚫 NUCLEAR: ContentScript error blocked:', ...args);
-                return;
-              }
-              
-              // Allow legitimate errors through
-              originalConsoleError.apply(console, args);
-            };
+            // Enhanced console error filtering - DISABLED to allow React errors through
+            // This was too aggressive and was suppressing legitimate app errors
+            // console.error = function(...args) {
+            //   const errorStr = args.join(' ');
+            //   if (isContentScriptCall() || 
+            //       errorStr.includes('contentScript') ||
+            //       errorStr.includes('indexOf') && errorStr.includes('null') ||
+            //       errorStr.includes('chrome-extension://')) {
+            //     console.warn('🚫 NUCLEAR: ContentScript error blocked:', ...args);
+            //     return;
+            //   }
+            //   originalConsoleError.apply(console, args);
+            // };
             
-            console.log('🚫 Enhanced Nuclear ContentScript isolation activated');
+            console.log('🔧 ContentScript isolation active (optimized)');
           },
           
           // Initialize all protection systems

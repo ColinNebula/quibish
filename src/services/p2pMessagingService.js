@@ -345,39 +345,4 @@ class P2PMessagingService {
   }
 }
 
-// Lazy initialization to avoid circular dependency issues at startup
-let instance = null;
-
-export default {
-  getInstance() {
-    if (!instance) {
-      instance = new P2PMessagingService();
-    }
-    return instance;
-  },
-  
-  // Forward common methods for backward compatibility
-  connectToPeer(peerId, isInitiator) {
-    return this.getInstance().connectToPeer(peerId, isInitiator);
-  },
-  
-  disconnectFromPeer(peerId) {
-    return this.getInstance().disconnectFromPeer(peerId);
-  },
-  
-  sendMessage(peerId, message) {
-    return this.getInstance().sendMessage(peerId, message);
-  },
-  
-  on(event, callback) {
-    return this.getInstance().on(event, callback);
-  },
-  
-  off(event, callback) {
-    return this.getInstance().off(event, callback);
-  },
-  
-  getStatus() {
-    return this.getInstance().getStatus();
-  }
-};
+export default new P2PMessagingService();
