@@ -14,6 +14,7 @@ import './components/EnhancedAvatar.css';
 import './components/PresenceManager.css';
 import './components/InteractiveMessageFeatures.css';
 import './components/MessageReactions.css';
+import './styles/liquid-glass-effects-2026.css'; // Advanced glassmorphism & liquid effects
 import './styles/mobile-final-override.css'; // MUST BE ABSOLUTELY LAST - Final mobile fix
 
 import ProChat from './components/Home/ProChat';
@@ -30,9 +31,11 @@ import { useAuth } from './context/AuthContext';
 import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 import pwaUtils from './utils/pwaUtils';
 import enhancedPWAUtils from './utils/enhancedPWAUtils';
+import liquidGlassEffects from './utils/liquidGlassEffects';
 import pwaShortcutService from './services/pwaShortcutService';
 import dataMigrationManager from './services/dataMigrationManager';
 import persistentStorageService from './services/persistentStorageService';
+import { contactService } from './services/contactService';
 
 const safeGetStorageItem = (storage, key) => {
   try {
@@ -193,6 +196,10 @@ const App = () => {
       try {
         console.log('🚀 Starting Quibish App...');
         
+        // Initialize contact service first - loads contacts from storage on refresh
+        console.log('📱 Initializing contact service...');
+        await contactService.initialize();
+        
         // Initialize data persistence and migration
         const persistenceInitialized = await dataMigrationManager.initializePersistence();
         
@@ -203,6 +210,12 @@ const App = () => {
         // Verify storage health
         const storageHealth = persistentStorageService.healthCheck();
         console.log('💾 Storage health:', storageHealth);
+        
+        // Liquid Glass Effects initialized automatically - console debug:
+        console.log('🌊 Liquid Glass Effects System Ready');
+        console.log('💡 Tip: Use liquidGlassEffects API for haptic feedback, gestures, and effects');
+        console.log('   Example: liquidGlassEffects.haptic.success()');
+        console.log('   Example: window.showDynamicIslandNotification("Hello!", {icon: "✨", type: "success"})');
         
         console.log('✅ App initialization completed');
         setAppInitialized(true);

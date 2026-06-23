@@ -966,5 +966,19 @@ class ContactService {
   }
 }
 
-export const contactService = new ContactService();
+let contactServiceInstance;
+
+export const contactService = new Proxy({}, {
+  get: (target, prop) => {
+    if (!contactServiceInstance) {
+      contactServiceInstance = new ContactService();
+    }
+    const value = contactServiceInstance[prop];
+    if (typeof value === 'function') {
+      return value.bind(contactServiceInstance);
+    }
+    return value;
+  }
+});
+
 export default contactService;

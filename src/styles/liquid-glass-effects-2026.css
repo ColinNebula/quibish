@@ -1,0 +1,610 @@
+/* ============================================
+   LIQUID GLASS EFFECTS 2026
+   Modern Glassmorphism, Liquid Animations & 
+   Advanced Smartphone Visual Effects
+   ============================================ */
+
+:root {
+  /* === GLASSMORPHISM VARIABLES === */
+  --glass-blur: 16px;
+  --glass-blur-subtle: 8px;
+  --glass-blur-heavy: 24px;
+  
+  --glass-opacity: 0.8;
+  --glass-opacity-subtle: 0.6;
+  --glass-opacity-heavy: 0.95;
+  
+  --glass-border-color: rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --glass-shadow-heavy: 0 20px 60px rgba(0, 0, 0, 0.15);
+  --glass-inner-border: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  
+  /* === LIQUID ANIMATION VARIABLES === */
+  --liquid-speed: 0.6s;
+  --liquid-speed-slow: 1s;
+  --liquid-speed-fast: 0.4s;
+  
+  /* === INTERACTIVE EFFECTS === */
+  --glass-hover-scale: 1.02;
+  --glass-active-scale: 0.98;
+  --glass-focus-blur: 20px;
+}
+
+[data-theme="dark"] {
+  --glass-blur: 16px;
+  --glass-opacity: 0.85;
+  --glass-border-color: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-shadow-heavy: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --glass-inner-border: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   SECTION 1: GLASSMORPHISM BASE MIXINS
+   ============================================ */
+
+/* Base glass effect - use as foundation */
+.glass-base {
+  background: rgba(255, 255, 255, var(--glass-opacity));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border-color);
+  box-shadow: var(--glass-shadow);
+  border-radius: 12px;
+}
+
+/* Subtle glass effect - for overlays, secondary elements */
+.glass-subtle {
+  background: rgba(255, 255, 255, var(--glass-opacity-subtle));
+  backdrop-filter: blur(var(--glass-blur-subtle));
+  -webkit-backdrop-filter: blur(var(--glass-blur-subtle));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+/* Heavy glass effect - for prominent cards, modals */
+.glass-heavy {
+  background: rgba(255, 255, 255, var(--glass-opacity-heavy));
+  backdrop-filter: blur(var(--glass-blur-heavy));
+  -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+  border: 1px solid var(--glass-border-color);
+  box-shadow: var(--glass-shadow-heavy);
+  border-radius: 16px;
+}
+
+/* Interactive glass - responds to user interaction */
+.glass-interactive {
+  @apply glass-base;
+  transition: all var(--transition-base) cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-interactive:hover {
+  transform: scale(var(--glass-hover-scale)) translateY(-2px);
+  box-shadow: var(--glass-shadow-heavy);
+  backdrop-filter: blur(var(--glass-blur-heavy));
+  -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+}
+
+.glass-interactive:active {
+  transform: scale(var(--glass-active-scale));
+}
+
+.glass-interactive:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   SECTION 2: LIQUID ANIMATIONS
+   ============================================ */
+
+/* Liquid blob animation - morphing shapes */
+@keyframes liquidBlob {
+  0% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+    transform: translate(20px, -10px) scale(1.02);
+  }
+  50% {
+    border-radius: 40% 60% 30% 70% / 40% 50% 60% 50%;
+    transform: translate(0, 10px) scale(1);
+  }
+  75% {
+    border-radius: 70% 30% 66% 33% / 33% 66% 33% 66%;
+    transform: translate(-20px, -5px) scale(0.98);
+  }
+  100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+/* Liquid wave effect */
+@keyframes liquidWave {
+  0% {
+    transform: translateX(-100%) translateY(0);
+  }
+  50% {
+    transform: translateX(0) translateY(-3px);
+  }
+  100% {
+    transform: translateX(100%) translateY(0);
+  }
+}
+
+/* Liquid swipe transition */
+@keyframes liquidSwipe {
+  0% {
+    clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+  }
+  50% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+  100% {
+    clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%);
+  }
+}
+
+/* Liquid morphing gradient */
+@keyframes liquidGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Fluid expansion */
+@keyframes fluidExpand {
+  0% {
+    transform: scale(0) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 0;
+  }
+}
+
+/* Smooth float up */
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) rotateZ(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotateZ(180deg);
+    opacity: 0;
+  }
+}
+
+/* Glass shimmer - subtle shine effect */
+@keyframes glassShimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Gradient shift */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}
+
+/* Color transition wave */
+@keyframes colorWave {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* ============================================
+   SECTION 3: LIQUID GLASS COMPONENTS
+   ============================================ */
+
+/* Liquid glass card - perfect for messages, conversations */
+.liquid-glass-card {
+  @apply glass-base;
+  padding: 16px;
+  margin: 8px;
+  transition: all var(--transition-base) cubic-bezier(0.4, 0.6, 0.4, 1);
+}
+
+.liquid-glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--glass-shadow-heavy);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(var(--glass-blur-heavy));
+  -webkit-backdrop-filter: blur(var(--glass-blur-heavy));
+}
+
+/* Animated liquid glass card */
+.liquid-glass-card.animated {
+  animation: liquidBlob 8s ease-in-out infinite;
+  position: relative;
+}
+
+/* Floating glass element */
+.glass-float {
+  @apply glass-base;
+  position: relative;
+  animation: floatUp 3s ease-out forwards;
+}
+
+/* Glass shimmer effect */
+.glass-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: glassShimmer 3s infinite;
+  pointer-events: none;
+}
+
+/* Liquid morph button */
+.button-liquid-morph {
+  @apply glass-interactive;
+  padding: 12px 24px;
+  font-weight: 600;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.button-liquid-morph::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.button-liquid-morph:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* ============================================
+   SECTION 4: SMARTPHONE-INSPIRED EFFECTS
+   ============================================ */
+
+/* Dynamic Island style notification */
+.dynamic-island {
+  @apply glass-heavy;
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 20px;
+  max-width: 90vw;
+  z-index: 1700;
+  animation: slideInDown var(--transition-base);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dynamic-island.dismiss {
+  animation: slideOutUp var(--transition-base) forwards;
+}
+
+/* Floating action button with spring physics */
+.fab-spring {
+  @apply glass-interactive;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1200;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-600));
+  color: white;
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+  animation: fabSpring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fabSpring {
+  0% {
+    transform: scale(0) rotate(0deg);
+  }
+  70% {
+    transform: scale(1.15) rotate(180deg);
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+  }
+}
+
+.fab-spring:hover {
+  transform: scale(1.1) translateY(-4px);
+  box-shadow: 0 12px 24px rgba(99, 102, 241, 0.4);
+}
+
+.fab-spring:active {
+  transform: scale(0.95);
+  animation: pulse 0.5s ease-out;
+}
+
+/* ============================================
+   SECTION 5: ADVANCED BLEND MODES
+   ============================================ */
+
+/* Screen blend mode - luminous effect */
+.blend-screen {
+  mix-blend-mode: screen;
+  opacity: 0.7;
+}
+
+/* Multiply blend mode - deepens colors */
+.blend-multiply {
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+
+/* Overlay blend mode - dynamic contrast */
+.blend-overlay {
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+}
+
+/* Soft light for subtle depth */
+.blend-soft-light {
+  mix-blend-mode: soft-light;
+  opacity: 0.4;
+}
+
+/* Color dodge for bright highlights */
+.blend-color-dodge {
+  mix-blend-mode: color-dodge;
+  opacity: 0.3;
+}
+
+/* ============================================
+   SECTION 6: PARALLAX & DEPTH EFFECTS
+   ============================================ */
+
+/* 3D perspective container */
+.parallax-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+/* Parallax layer - scrolls at different speeds */
+.parallax-layer {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.parallax-layer.depth-1 {
+  transform: translateZ(50px);
+}
+
+.parallax-layer.depth-2 {
+  transform: translateZ(25px);
+}
+
+.parallax-layer.depth-3 {
+  transform: translateZ(0);
+}
+
+.parallax-layer.depth-minus {
+  transform: translateZ(-50px) scale(1.05);
+}
+
+/* 3D tilt effect on hover */
+.tilt-3d {
+  perspective: 1000px;
+  transition: transform 0.3s ease-out;
+}
+
+.tilt-3d:hover {
+  transform: rotateX(10deg) rotateY(10deg);
+}
+
+/* ============================================
+   SECTION 7: INTERACTIVE GLASS SURFACES
+   ============================================ */
+
+/* Liquid surface with wave effect */
+.liquid-surface {
+  position: relative;
+  overflow: hidden;
+  min-height: 100px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.1));
+}
+
+.liquid-surface::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    url('data:image/svg+xml,<svg viewBox="0 0 1200 200" xmlns="http://www.w3.org/2000/svg"><path d="M0,100 Q150,50 300,100 T600,100 T900,100 T1200,100 L1200,200 L0,200 Z" fill="rgba(99,102,241,0.1)"/></svg>');
+  background-repeat: repeat-x;
+  background-size: 600px 200px;
+  animation: liquidWave var(--liquid-speed) linear infinite;
+  pointer-events: none;
+}
+
+/* ============================================
+   SECTION 8: HAPTIC & FEEDBACK EFFECTS
+   ============================================ */
+
+/* Soft haptic feedback visual */
+.haptic-soft {
+  animation: pulse 0.3s ease-out;
+}
+
+.haptic-medium {
+  animation: shake 0.4s ease-out;
+}
+
+.haptic-strong {
+  animation: bounce 0.5s ease-out;
+}
+
+/* ============================================
+   SECTION 9: RESPONSIVE GLASS EFFECTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --glass-blur: 12px;
+    --glass-blur-subtle: 6px;
+    --glass-blur-heavy: 18px;
+  }
+  
+  .dynamic-island {
+    top: 8px;
+    padding: 10px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+  }
+  
+  .fab-spring {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+  }
+  
+  .liquid-glass-card {
+    margin: 6px;
+    padding: 12px;
+  }
+  
+  /* Reduce animations for battery life on mobile */
+  @media (prefers-reduced-motion: reduce) {
+    .glass-interactive,
+    .liquid-glass-card,
+    .button-liquid-morph,
+    .fab-spring {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+/* ============================================
+   SECTION 10: DARK MODE GLASS ADJUSTMENTS
+   ============================================ */
+
+[data-theme="dark"] {
+  .glass-shimmer::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.15),
+      transparent
+    );
+  }
+  
+  .button-liquid-morph::before {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  
+  .liquid-surface {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(16, 185, 129, 0.15));
+  }
+  
+  .fab-spring {
+    background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-600));
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.5);
+  }
+  
+  .fab-spring:hover {
+    box-shadow: 0 12px 24px rgba(99, 102, 241, 0.6);
+  }
+}
+
+/* ============================================
+   SECTION 11: PERFORMANCE OPTIMIZATION
+   ============================================ */
+
+/* GPU acceleration for smooth animations */
+.glass-base,
+.glass-interactive,
+.liquid-glass-card,
+.fab-spring,
+.dynamic-island {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Reduce animation complexity on low-end devices */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High refresh rate optimization */
+@supports (animation-timeline: view()) {
+  .parallax-layer {
+    animation: parallax linear;
+    animation-timeline: view();
+  }
+}
