@@ -289,6 +289,11 @@ const ProChat = ({
   const [showCallOptions, setShowCallOptions] = useState(false);
   const [showInternationalDialer, setShowInternationalDialer] = useState(false);
 
+  // Call selection modal state
+  const [showCallSelectionModal, setShowCallSelectionModal] = useState(false);
+  const [callMode, setCallMode] = useState(null); // 'voice' or 'video'
+  const [selectedCallContact, setSelectedCallContact] = useState(null);
+
   // Donation modal state
   const [showDonationModal, setShowDonationModal] = useState(false);
 
@@ -1687,6 +1692,19 @@ const ProChat = ({
       });
     }
   }, []);
+
+  // Handle contact selection for calls
+  const handleSelectCallContact = useCallback((contact) => {
+    setSelectedCallContact(contact);
+    setShowCallSelectionModal(false);
+    
+    // Initiate the call based on the selected mode
+    if (callMode === 'voice') {
+      initiateVoiceCall(contact);
+    } else if (callMode === 'video') {
+      initiateVideoCall(contact);
+    }
+  }, [callMode]);
 
   // Handle avatar image loading errors
   const handleAvatarError = useCallback(() => {
@@ -3281,36 +3299,34 @@ const ProChat = ({
   }, [voiceCallState.withUser?.id, voiceCallState.callStartTime]);
 
   const handleStartVoiceCall = useCallback(async () => {
+    // Show contact selection modal if no contact selected and no current conversation
+    if (!currentSelectedConversation && !currentConversation) {
+      setCallMode('voice');
+      setShowCallSelectionModal(true);
+      return;
+    }
+
     let currentUser = currentSelectedConversation || currentConversation;
     
-    // If no current user, create a demo user for testing
+    // If no current user, show selection modal
     if (!currentUser && conversations.length > 0) {
-      currentUser = conversations[0];
-      console.log('ï¿½ Using first conversation as fallback:', currentUser);
+      setCallMode('voice');
+      setShowCallSelectionModal(true);
+      return;
     }
     
-    // Last resort: create a demo user
-    if (!currentUser) {
-      currentUser = {
-        id: 'demo-user',
-        name: 'Demo User',
-        username: 'demo',
-        avatar: null,
-        phone: '+1-555-0123'
-      };
-      console.log('📞 Using demo user for voice call test');
+    // Proceed with call if we have a user
+    if (currentUser) {
+      await initiateVoiceCall(currentUser);
     }
-    
-    console.log('ï¿½🔍 Voice call debug - currentUser:', currentUser);
-    console.log('🔍 Voice call debug - currentSelectedConversation:', currentSelectedConversation);
-    console.log('🔍 Voice call debug - currentConversation:', currentConversation);
-    console.log('🔍 Voice call debug - conversations:', conversations);
+  }, [currentSelectedConversation, currentConversation, conversations]);
+
+  const initiateVoiceCall = useCallback(async (targetUser) => {
+    console.log('📞 Initiating voice call with user:', targetUser.name || targetUser.username);
     
     try {
-      console.log('📞 Starting voice call with user:', currentUser.name || currentUser.username);
-      
       // Get available call methods
-      const methods = await enhancedVoiceCallService.getAvailableCallMethods(currentUser);
+      const methods = await enhancedVoiceCallService.getAvailableCallMethods(targetUser);
       console.log('📞 Available call methods:', methods);
       setAvailableCallMethods(methods);
       
@@ -3323,12 +3339,12 @@ const ProChat = ({
       
       // Start call with best method
       console.log('📞 Starting enhanced voice call with auto method');
-      await startEnhancedVoiceCall(currentUser, 'auto');
+      await startEnhancedVoiceCall(targetUser, 'auto');
     } catch (error) {
       console.error('❌ Failed to start voice call:', error);
       alert(`Failed to start voice call: ${error.message}`);
     }
-  }, [currentSelectedConversation, currentConversation, conversations]);
+  }, []);
 
   const startEnhancedVoiceCall = useCallback(async (targetUser, method = 'auto') => {
     try {
@@ -3562,12 +3578,25 @@ const ProChat = ({
 
   // Handle video call
   const handleVideoCall = useCallback(async () => {
-    const currentUser = currentSelectedConversation || currentConversation;
-    if (!currentUser) {
-      alert('Please select a conversation to start a video call');
+    // Show contact selection modal if no contact selected
+    if (!currentSelectedConversation && !currentConversation) {
+      setCallMode('video');
+      setShowCallSelectionModal(true);
       return;
     }
 
+    const currentUser = currentSelectedConversation || currentConversation;
+    if (!currentUser) {
+      setCallMode('video');
+      setShowCallSelectionModal(true);
+      return;
+    }
+
+    // Proceed with video call if we have a user
+    await initiateVideoCall(currentUser);
+  }, [currentSelectedConversation, currentConversation]);
+
+  const initiateVideoCall = useCallback(async (currentUser) => {
     try {
       await enhancedVideoCallService.initialize();
 
@@ -3615,7 +3644,7 @@ const ProChat = ({
       console.error('Failed to start video call:', error);
       alert('Failed to start video call. Please check your camera and microphone permissions.');
     }
-  }, [currentSelectedConversation, currentConversation]);
+  }, []);
 
   // Video call component - Temporarily disabled
   const MemoizedVideoCall = useMemo(() => (
@@ -5420,6 +5449,64 @@ const ProChat = ({
           onContactSelect={handleContactSelect}
           onClose={handleCloseContactPicker}
         />
+      )}
+
+      {/* Call Selection Modal */}
+      {showCallSelectionModal && (
+        <div className="modal-overlay" onClick={() => setShowCallSelectionModal(false)}>
+          <div className="call-selection-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>
+                {callMode === 'voice' ? '📞 Select contact for voice call' : '📹 Select contact for video call'}
+              </h2>
+              <button 
+                className="close-btn" 
+                onClick={() => setShowCallSelectionModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="contacts-list">
+              {conversations && conversations.length > 0 ? (
+                conversations.map(contact => (
+                  <div
+                    key={contact.id}
+                    className="contact-item"
+                    onClick={() => handleSelectCallContact(contact)}
+                  >
+                    <div className="contact-avatar">
+                      {contact.avatar ? (
+                        <img src={contact.avatar} alt={contact.name} />
+                      ) : (
+                        <div className="avatar-placeholder">
+                          {contact.name?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="contact-info">
+                      <div className="contact-name">
+                        {contact.name || contact.username || 'Unknown'}
+                      </div>
+                      {contact.status && (
+                        <div className="contact-status">
+                          {contact.status}
+                        </div>
+                      )}
+                    </div>
+                    <div className="call-icon">
+                      {callMode === 'voice' ? '📞' : '📹'}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="no-contacts">
+                  <p>No contacts available</p>
+                  <small>Start a new conversation first</small>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Contact Manager Component */}
