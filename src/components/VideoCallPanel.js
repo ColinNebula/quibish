@@ -670,14 +670,25 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
                     src={participants[0].avatar}
                     alt={participants[0].name}
                     className="call-header-avatar"
-                    onError={e => { e.target.style.display = 'none'; }}
+                    onError={e => { 
+                      // If avatar fails to load, show placeholder instead
+                      e.target.style.display = 'none';
+                      e.target.nextSibling?.style?.setProperty('display', 'flex');
+                    }}
                   />
-                ) : (
-                  <span className="call-header-avatar-placeholder">
-                    {(participants[0].name || '?').charAt(0).toUpperCase()}
-                  </span>
-                )}
-                <span>{participants[0].name || participants[0].username || 'Unknown'}</span>
+                ) : null}
+                <span className="call-header-avatar-placeholder" style={{display: participants[0].avatar ? 'none' : 'flex'}}>
+                  {(participants[0].name || participants[0].username || '?').charAt(0).toUpperCase()}
+                </span>
+                <span className="contact-name-in-call">
+                  {participants[0].name || participants[0].username || 'Unknown Contact'}
+                </span>
+              </span>
+            )}
+            {participants.length === 0 && (
+              <span className="call-with-name">
+                <span className="call-header-avatar-placeholder">?</span>
+                <span className="contact-name-in-call">No participant</span>
               </span>
             )}
             <span className="participant-badge">

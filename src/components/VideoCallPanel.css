@@ -176,6 +176,17 @@
   flex-shrink: 0;
 }
 
+/* Contact name display in call header */
+.contact-name-in-call {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Participant Count Badge */
 .participant-badge {
   display: flex;

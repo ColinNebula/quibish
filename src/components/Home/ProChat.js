@@ -1705,16 +1705,35 @@ const ProChat = ({
 
   // Handle contact selection for calls
   const handleSelectCallContact = useCallback((contact) => {
+    if (!contact || !contact.id) {
+      console.error('❌ Invalid contact selected for call:', contact);
+      alert('Invalid contact selected. Please try again.');
+      return;
+    }
+
+    console.log('✅ Contact selected for call:', {
+      id: contact.id,
+      name: contact.name,
+      username: contact.username,
+      hasAvatar: !!contact.avatar,
+      status: contact.status
+    });
+
     setSelectedCallContact(contact);
     setShowCallSelectionModal(false);
     
     // Initiate the call based on the selected mode
     if (callMode === 'voice') {
+      console.log('📞 Initiating voice call with contact:', contact.name);
       initiateVoiceCall(contact);
     } else if (callMode === 'video') {
+      console.log('📹 Initiating video call with contact:', contact.name);
       initiateVideoCall(contact);
+    } else {
+      console.error('❌ Unknown call mode:', callMode);
+      alert('Unknown call mode. Please try again.');
     }
-  }, [callMode]);
+  }, [callMode, initiateVoiceCall, initiateVideoCall]);
 
   // Handle avatar image loading errors
   const handleAvatarError = useCallback(() => {
@@ -3314,12 +3333,27 @@ const ProChat = ({
     setShowCallSelectionModal(true);
   }, []);
 
-  const initiateVoiceCall = useCallback(async (targetUser) => {
-    console.log('📞 Initiating voice call with user:', targetUser.name || targetUser.username);
+  const initiateVoiceCall = useCallback(async (contactData) => {
+    if (!contactData || !contactData.id) {
+      console.error('❌ Invalid contact data for voice call:', contactData);
+      alert('Invalid contact data. Please select a valid contact.');
+      return;
+    }
+
+    // Validate and ensure contact data is properly structured
+    const callContact = {
+      id: contactData.id,
+      name: contactData.name || contactData.username || 'Unknown Contact',
+      username: contactData.username || contactData.name || '',
+      avatar: contactData.avatar || null,
+      status: contactData.status || 'offline'
+    };
+
+    console.log('📞 Initiating voice call with:', { name: callContact.name, id: callContact.id, hasAvatar: !!callContact.avatar });
     
     try {
       // Get available call methods
-      const methods = await enhancedVoiceCallService.getAvailableCallMethods(targetUser);
+      const methods = await enhancedVoiceCallService.getAvailableCallMethods(callContact);
       console.log('📞 Available call methods:', methods);
       setAvailableCallMethods(methods);
       
@@ -3332,7 +3366,7 @@ const ProChat = ({
       
       // Start call with best method
       console.log('📞 Starting enhanced voice call with auto method');
-      await startEnhancedVoiceCall(targetUser, 'auto');
+      await startEnhancedVoiceCall(callContact, 'auto');
     } catch (error) {
       console.error('❌ Failed to start voice call:', error);
       alert(`Failed to start voice call: ${error.message}`);
@@ -3576,12 +3610,28 @@ const ProChat = ({
     setShowCallSelectionModal(true);
   }, []);
 
-  const initiateVideoCall = useCallback(async (currentUser) => {
+  const initiateVideoCall = useCallback(async (contactData) => {
     try {
+      // Validate contact data
+      if (!contactData || !contactData.id) {
+        throw new Error('Invalid contact data for video call');
+      }
+
+      // Ensure we have all necessary contact info, never use logged-in user's data
+      const callContact = {
+        id: contactData.id,
+        name: contactData.name || contactData.username || 'Unknown Contact',
+        username: contactData.username || contactData.name || '',
+        avatar: contactData.avatar || null, // Use contact's avatar ONLY, no fallback to current user
+        status: contactData.status || 'offline'
+      };
+
+      console.log('🎥 Initiating video call with:', { name: callContact.name, id: callContact.id, hasAvatar: !!callContact.avatar });
+
       await enhancedVideoCallService.initialize();
 
       // ── WebRTC offer via signaling ──
-      const targetUserId = currentUser.id;
+      const targetUserId = callContact.id;
       if (targetUserId && realtimeService.isConnected()) {
         const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
         peerConnectionRef.current = pc;
@@ -3598,12 +3648,10 @@ const ProChat = ({
         realtimeService.sendSignal('call-offer', targetUserId, { offer, audioOnly: false });
       }
 
-      // Use only the contact's own avatar — do NOT fall back to the logged-in user's avatar
-      const contactAvatar = currentUser.avatar || null;
-
+      // Store the complete contact data in video call state to preserve avatar throughout call
       setVideoCallState({
         active: true,
-        withUser: { name: currentUser.name, avatar: contactAvatar, id: currentUser.id, username: currentUser.username },
+        withUser: callContact,
         minimized: false,
         audioOnly: false,
         callId: `call_${Date.now()}`
@@ -3611,7 +3659,7 @@ const ProChat = ({
 
       const videoCallMessage = {
         id: `call_${Date.now()}`,
-        text: `📹 Video call with ${currentUser.name}`,
+        text: `📹 Video call with ${callContact.name}`,
         user: 'You',
         timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         type: 'video_call',
@@ -3620,8 +3668,8 @@ const ProChat = ({
       };
       setChatMessages(prev => [...prev, videoCallMessage]);
     } catch (error) {
-      console.error('Failed to start video call:', error);
-      alert('Failed to start video call. Please check your camera and microphone permissions.');
+      console.error('❌ Failed to start video call:', error);
+      alert(`Failed to start video call: ${error.message || 'Please check your camera and microphone permissions.'}`);
     }
   }, []);
 

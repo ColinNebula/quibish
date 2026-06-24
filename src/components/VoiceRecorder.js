@@ -73,7 +73,68 @@ const VoiceRecorder = ({
   const waveformCanvasRef = useRef(null);
   const volumeBarRef = useRef(null);
 
-  // Initialize the voice recorder service
+  // ── Callbacks declared first to avoid TDZ in useEffect deps ──────────
+
+  // Cancel recording
+  const handleCancelRecording = useCallback(() => {
+    enhancedVoiceRecorderService.cancelRecording();
+    setDuration(0);
+    setVolume(0);
+    setAudioPreview(null);
+    setError(null);
+    if (onRecordingCancel) onRecordingCancel();
+  }, [onRecordingCancel]);
+
+  // Stop recording
+  const handleStopRecording = useCallback(async () => {
+    if (duration < minDuration) {
+      setError(`Recording too short. Minimum is ${minDuration / 1000}s.`);
+      setTimeout(() => setError(null), 3000);
+      handleCancelRecording();
+      return;
+    }
+    try {
+      const recordingData = await enhancedVoiceRecorderService.stopRecording();
+      if (recordingData && recordingData.url) setAudioPreview(recordingData);
+    } catch (err) {
+      setError(`Stop failed: ${err.message}`);
+      setTimeout(() => setError(null), 5000);
+    }
+  }, [duration, minDuration, handleCancelRecording]);
+
+  // Start recording
+  const handleStartRecording = useCallback(async () => {
+    if (!isInitialized) {
+      try {
+        const initialized = await enhancedVoiceRecorderService.initialize();
+        setIsInitialized(initialized);
+        if (!initialized) { setError('Failed to initialize voice recorder'); return; }
+      } catch (err) {
+        setError(`Initialization failed: ${err.message}`); return;
+      }
+    }
+    try {
+      setError('Testing microphone access...');
+      const testResult = await enhancedVoiceRecorderService.testMicrophoneAccess();
+      if (!testResult.success) { setError(testResult.message); return; }
+      setError(null);
+      setRetryCount(0);
+      const qualityConfig = {
+        low:      { bitrate: 64000,  sampleRate: 22050 },
+        standard: { bitrate: 128000, sampleRate: 44100 },
+        high:     { bitrate: 256000, sampleRate: 48000 }
+      }[quality];
+      const success = await enhancedVoiceRecorderService.startRecording(qualityConfig);
+      if (!success) throw new Error('Failed to start recording');
+    } catch (err) {
+      setError(`Recording failed: ${err.message}`);
+      setIsRecording(false);
+    }
+  }, [isInitialized, quality]);
+
+  // ── Effects ───────────────────────────────────────────────────────────
+
+  // Initialize the voice recorder service + event listeners
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -236,98 +297,6 @@ const VoiceRecorder = ({
     }
   }, [isInitialized, checkMicrophonePermission]);
 
-  // Start recording
-  const handleStartRecording = useCallback(async () => {
-    if (!isInitialized) {
-      console.log('🔄 Service not initialized, initializing now...');
-      try {
-        const initialized = await enhancedVoiceRecorderService.initialize();
-        setIsInitialized(initialized);
-        
-        if (!initialized) {
-          setError('Failed to initialize voice recorder');
-          return;
-        }
-      } catch (error) {
-        console.error('❌ Initialization failed:', error);
-        setError(`Initialization failed: ${error.message}`);
-        return;
-      }
-    }
-
-    try {
-      console.log('🎤 Testing microphone access first...');
-      setError('Testing microphone access...');
-      
-      // Test microphone access first
-      const testResult = await enhancedVoiceRecorderService.testMicrophoneAccess();
-      
-      if (!testResult.success) {
-        console.error('❌ Microphone test failed:', testResult.message);
-        setError(testResult.message);
-        return;
-      }
-      
-      console.log('✅ Microphone test passed, starting recording...');
-      setError(null);
-      setRetryCount(0);
-      
-      // Configure quality before starting
-      const qualityConfig = {
-        low: { bitrate: 64000, sampleRate: 22050 },
-        standard: { bitrate: 128000, sampleRate: 44100 },
-        high: { bitrate: 256000, sampleRate: 48000 }
-      }[quality];
-      
-      const success = await enhancedVoiceRecorderService.startRecording(qualityConfig);
-      
-      if (!success) {
-        throw new Error('Failed to start recording - unknown error');
-      }
-      
-      console.log('✅ Recording started successfully');
-    } catch (error) {
-      console.error('❌ Recording start error:', error);
-      setError(`Recording failed: ${error.message}`);
-      setIsRecording(false);
-    }
-  }, [isInitialized, quality]);
-
-  // Cancel recording - defined before handleStopRecording to avoid use-before-define
-  const handleCancelRecording = useCallback(() => {
-    enhancedVoiceRecorderService.cancelRecording();
-    setDuration(0);
-    setVolume(0);
-    setAudioPreview(null);
-    setError(null);
-    if (onRecordingCancel) onRecordingCancel();
-  }, [onRecordingCancel]);
-
-  // Stop recording
-  const handleStopRecording = useCallback(async () => {
-    if (duration < minDuration) {
-      setError(`Recording too short. Minimum duration is ${minDuration / 1000} seconds.`);
-      setTimeout(() => setError(null), 3000);
-      handleCancelRecording();
-      return;
-    }
-
-    try {
-      console.log('🛑 Stopping recording...');
-      const recordingData = await enhancedVoiceRecorderService.stopRecording();
-      
-      if (recordingData && recordingData.url) {
-        setAudioPreview(recordingData);
-      }
-      
-      console.log('✅ Recording stopped successfully');
-    } catch (error) {
-      console.error('❌ Stop recording error:', error);
-      setError(`Stop failed: ${error.message}`);
-      setTimeout(() => setError(null), 5000);
-    }
-  }, [duration, minDuration, handleCancelRecording]);
-
   // Pause recording
   const handlePauseRecording = useCallback(() => {
     enhancedVoiceRecorderService.pauseRecording();
@@ -342,16 +311,12 @@ const VoiceRecorder = ({
   const handleRetryRecording = useCallback(async () => {
     const attempt = retryCount + 1;
     setRetryCount(attempt);
-    
     if (attempt > 3) {
       setError('Too many failed attempts. Please check your microphone settings and refresh the page.');
       return;
     }
-    
     setError('Retrying...');
-    setTimeout(() => {
-      handleStartRecording();
-    }, attempt * 1000); // Exponential backoff: 1s, 2s, 3s
+    setTimeout(() => handleStartRecording(), attempt * 1000);
   }, [retryCount, handleStartRecording]);
 
   // Save preview recording
@@ -364,9 +329,7 @@ const VoiceRecorder = ({
 
   // Discard preview and record again
   const handleDiscardPreview = useCallback(() => {
-    if (audioPreview && audioPreview.url) {
-      URL.revokeObjectURL(audioPreview.url);
-    }
+    if (audioPreview && audioPreview.url) URL.revokeObjectURL(audioPreview.url);
     setAudioPreview(null);
   }, [audioPreview]);
 
