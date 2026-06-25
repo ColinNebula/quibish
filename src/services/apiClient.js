@@ -126,8 +126,10 @@ export const authService = {
         }
         return response;
       } else {
-        // Offline mode: Create a demo user for testing
-        console.log('🔄 Backend unavailable - using offline mode login');
+        // ⚠️ OFFLINE FALLBACK MODE (Backend unavailable)
+        // This is a fallback-only mode for testing when backend is not accessible.
+        // In production, users should not see this mode.
+        console.warn('⚠️ Backend unavailable - using offline fallback mode (demo user)');
         
         // Simple validation for demo purposes
         if (!username || !password) {
@@ -154,7 +156,7 @@ export const authService = {
         // Generate a demo token
         const demoToken = btoa(JSON.stringify({ userId: demoUser.id, username: username, timestamp: Date.now() }));
         
-        console.log('✅ Offline login successful for demo user:', username);
+        console.warn('⚠️ Offline login successful (fallback mode) for user:', username);
         
         return {
           success: true,
@@ -215,8 +217,10 @@ export const authService = {
         }
         return response;
       } else {
-        // Offline mode: Create a demo user
-        console.log('🔄 Backend unavailable - using offline mode registration');
+        // ⚠️ OFFLINE FALLBACK MODE (Backend unavailable)
+        // This is a fallback-only mode for testing when backend is not accessible.
+        // In production, users should not see this mode.
+        console.warn('⚠️ Backend unavailable - using offline fallback mode (demo user registration)');
         
         const { username, email, password, confirmPassword } = userData;
         

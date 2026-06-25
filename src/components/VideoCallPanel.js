@@ -3,11 +3,12 @@ import enhancedVideoCallService from '../services/enhancedVideoCallService';
 import videoFiltersService from '../services/videoFiltersService';
 import './VideoCallPanel.css';
 
-const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
+const VideoCallPanel = ({ onClose, callId, participants = [], availableContacts = [], onAddParticipant = () => {} }) => {
   const [callState, setCallState] = useState(null);
   const [devices, setDevices] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [layout, setLayout] = useState('grid');
   const [isMinimized, setIsMinimized] = useState(false);
   const [filters, setFilters] = useState(null);
@@ -708,6 +709,13 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
           
           <div className="header-actions">
             <button
+              className="header-btn"
+              onClick={() => setShowAddContactModal(true)}
+              title="Add Contact to Call"
+            >
+              👥
+            </button>
+            <button
               className={`header-btn ${hasActiveFilters ? 'has-filters' : ''}`}
               onClick={() => {
                 console.log('Filters button clicked. Current state:', showFilters, 'Filters:', filters);
@@ -1153,6 +1161,66 @@ const VideoCallPanel = ({ onClose, callId, participants = [] }) => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Add Contact to Call Modal */}
+      {showAddContactModal && (
+        <div className="modal-overlay" onClick={() => setShowAddContactModal(false)}>
+          <div className="call-add-contact-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>👥 Add Contact to Call</h3>
+              <button 
+                className="close-btn" 
+                onClick={() => setShowAddContactModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="contacts-list">
+              {availableContacts && availableContacts.length > 0 ? (
+                availableContacts
+                  .filter(contact => !participants.some(p => p.id === contact.id))
+                  .map(contact => (
+                    <div
+                      key={contact.id}
+                      className="contact-item"
+                      onClick={() => {
+                        console.log('🎥 Adding contact to call:', contact.name);
+                        onAddParticipant(contact);
+                        setShowAddContactModal(false);
+                      }}
+                    >
+                      <div className="contact-avatar">
+                        {contact.avatar ? (
+                          <img src={contact.avatar} alt={contact.name} />
+                        ) : (
+                          <div className="avatar-placeholder">
+                            {(contact.name || contact.username || '?').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="contact-info">
+                        <div className="contact-name">
+                          {contact.name || contact.username || 'Unknown'}
+                        </div>
+                        {contact.status && (
+                          <div className="contact-status">
+                            {contact.status}
+                          </div>
+                        )}
+                      </div>
+                      <div className="call-icon">📞</div>
+                    </div>
+                  ))
+              ) : (
+                <div className="no-contacts">
+                  <p>No contacts available</p>
+                  <small>All available contacts are already in the call</small>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

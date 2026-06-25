@@ -191,6 +191,7 @@ app.use((req, res, next) => {
 });
 
 // Import route modules
+const authRoutes = require('./routes/auth');
 const notificationsRoutes = require('./routes/notifications');
 const encryptionRoutes    = require('./routes/encryption');
 
@@ -222,6 +223,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Register API routes
+app.use('/api/auth',           authRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/encryption',    encryptionRoutes);
 
@@ -244,139 +246,8 @@ app.post('/api/users/presence', (req, res) => {
   res.json({ success: true });
 });
 
-// Auth endpoints
-app.post('/api/auth/register', (req, res) => {
-  const { username, email, password } = req.body;
-  
-  // Simple validation
-  if (!username || !email || !password) {
-    return res.status(400).json({ 
-      success: false,
-      error: 'Username, email, and password are required' 
-    });
-  }
-  
-  // For demo purposes, simulate successful registration
-  const user = {
-    id: Date.now(),
-    username,
-    email,
-    createdAt: new Date().toISOString(),
-    role: username === 'admin' ? 'admin' : 'user'
-  };
-  
-  const token = 'jwt-token-' + Date.now();
-  
-  res.json({
-    success: true,
-    user,
-    token,
-    message: 'Registration successful'
-  });
-});
-
-app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body;
-  
-  if (!username || !password) {
-    return res.status(400).json({ 
-      success: false,
-      error: 'Username and password are required' 
-    });
-  }
-  
-  // For demo purposes, accept any credentials
-  const user = {
-    id: Date.now(),
-    username,
-    email: `${username}@example.com`,
-    createdAt: new Date().toISOString(),
-    role: username === 'admin' ? 'admin' : 'user'
-  };
-  
-  const token = 'jwt-token-' + Date.now();
-  
-  res.json({
-    success: true,
-    user,
-    token,
-    message: 'Login successful'
-  });
-});
-
-// Email verification endpoints
-app.post('/api/auth/send-verification', (req, res) => {
-  const { email } = req.body;
-  
-  if (!email) {
-    return res.status(400).json({
-      success: false,
-      error: 'Email is required'
-    });
-  }
-  
-  // Simulate sending verification email
-  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-  
-  res.json({
-    success: true,
-    message: 'Verification email sent',
-    // In development, return the code for testing
-    verificationCode: process.env.NODE_ENV === 'development' ? verificationCode : undefined
-  });
-});
-
-app.post('/api/auth/verify-email', (req, res) => {
-  const { email, code } = req.body;
-  
-  if (!email || !code) {
-    return res.status(400).json({
-      success: false,
-      error: 'Email and verification code are required'
-    });
-  }
-  
-  // For demo purposes, accept any 6-digit code
-  if (!/^\d{6}$/.test(code)) {
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid verification code format'
-    });
-  }
-  
-  res.json({
-    success: true,
-    message: 'Email verified successfully'
-  });
-});
-
-// User profile endpoint
-app.get('/api/user/profile', (req, res) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      error: 'Authorization token required'
-    });
-  }
-  
-  const token = authHeader.substring(7);
-  
-  // For demo purposes, extract user info from token
-  const user = {
-    id: 1,
-    username: 'admin',
-    email: 'admin@example.com',
-    role: 'admin',
-    createdAt: new Date().toISOString()
-  };
-  
-  res.json({
-    success: true,
-    user
-  });
-});
+// ✅ Auth endpoints are now handled by real routes (see /api/auth routing above)
+// All authentication logic has been moved to backend/routes/auth.js
 
 // Signaling endpoint for WebRTC connections
 app.get('/signaling', (req, res) => {

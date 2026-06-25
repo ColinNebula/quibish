@@ -13401,6 +13401,29 @@ html body .pro-main > .enhanced-chat-header {
   color: #333;
 }
 
+/* Add Contact Button in Call Selection Modal */
+.call-selection-modal .add-contact-btn {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  color: #667eea;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.call-selection-modal .add-contact-btn:hover {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: rgba(102, 126, 234, 0.6);
+}
+
+.call-selection-modal .add-contact-btn:active {
+  background: rgba(102, 126, 234, 0.3);
+}
+
 .contacts-list {
   flex: 1;
   overflow-y: auto;
@@ -13519,6 +13542,22 @@ html body .pro-main > .enhanced-chat-header {
 .dark-theme .call-selection-modal .close-btn:hover {
   background-color: #3a3a3a;
   color: #fff;
+}
+
+/* Dark theme - Add Contact Button */
+.dark-theme .call-selection-modal .add-contact-btn {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.4);
+  color: #7c8dff;
+}
+
+.dark-theme .call-selection-modal .add-contact-btn:hover {
+  background: rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.6);
+}
+
+.dark-theme .call-selection-modal .add-contact-btn:active {
+  background: rgba(102, 126, 234, 0.35);
 }
 
 .dark-theme .contact-item {
