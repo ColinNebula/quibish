@@ -1,5 +1,5 @@
 {
-  "id": "/quibish/",
+  "id": "./",
   "short_name": "Quibish",
   "name": "Quibish — Chat, Calls & More",
   "description": "A modern messaging app with video calls, file sharing, GIF support, and offline-ready PWA features.",
@@ -16,7 +16,7 @@
       "purpose": "any"
     },
     {
-      "src": "logo192.png",
+      "src": "logo192-maskable.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "maskable"
@@ -28,19 +28,19 @@
       "purpose": "any"
     },
     {
-      "src": "logo512.png",
+      "src": "logo512-maskable.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "maskable"
     }
   ],
-  "start_url": "/quibish/?source=pwa",
+  "start_url": "./?source=pwa",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "theme_color": "#6366f1",
   "background_color": "#ffffff",
-  "scope": "/quibish/",
+  "scope": "./",
   "lang": "en",
   "dir": "ltr",
   "categories": ["social", "communication"],
@@ -66,26 +66,26 @@
       "name": "New Chat",
       "short_name": "Chat",
       "description": "Start a new conversation",
-      "url": "/quibish/?action=new-chat&source=shortcut",
+      "url": "./?action=new-chat&source=shortcut",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     },
     {
       "name": "Video Call",
       "short_name": "Call",
       "description": "Start a video call",
-      "url": "/quibish/?action=video-call&source=shortcut",
+      "url": "./?action=video-call&source=shortcut",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     },
     {
       "name": "Contacts",
       "short_name": "Contacts",
       "description": "View your contacts",
-      "url": "/quibish/?action=contacts&source=shortcut",
+      "url": "./?action=contacts&source=shortcut",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     }
   ],
   "share_target": {
-    "action": "/quibish/share",
+    "action": "./share",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
@@ -103,7 +103,7 @@
   "protocol_handlers": [
     {
       "protocol": "web+quibish",
-      "url": "/quibish/?protocol=%s"
+      "url": "./?protocol=%s"
     }
   ]
 }
