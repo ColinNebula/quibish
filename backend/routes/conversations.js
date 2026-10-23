@@ -32,8 +32,7 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
     
-    // For now, return empty array or implement conversation logic based on messages
-    const conversations = [];
+    const conversations = getStore().filter(c => c.participants.includes(String(userId)));
     
     res.json({
       success: true,
@@ -70,22 +69,71 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create a new conversation
+const getStore = () => {
+  if (!global.inMemoryStorage) global.inMemoryStorage = {};
+  if (!global.inMemoryStorage.conversations) global.inMemoryStorage.conversations = [];
+  return global.inMemoryStorage.conversations;
+};
+
+const MAX_AVATAR_LENGTH = 200000;
+const isSafeAvatar = (a) =>
+  typeof a === 'string' && a.length <= MAX_AVATAR_LENGTH && /^(data:image\/(png|jpeg|webp|gif);base64,|https:\/\/)/.test(a);
+
+// Create a new conversation (direct or group), optionally with a first message
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { participants } = req.body;
-    
+    const { id, type, name, avatar, participants, firstMessage } = req.body;
+    const userId = String(req.user.userId || req.user.id);
+    const kind = type === 'group' ? 'group' : 'direct';
+
+    const members = Array.isArray(participants)
+      ? [...new Set(participants.map(String))].slice(0, 100)
+      : [];
+    if (!members.includes(userId)) members.unshift(userId);
+
+    if (members.length < 2) {
+      return res.status(400).json({ success: false, error: 'At least one other participant is required' });
+    }
+    const groupName = typeof name === 'string' ? name.trim().slice(0, 50) : '';
+    if (kind === 'group' && !groupName) {
+      return res.status(400).json({ success: false, error: 'Group name is required' });
+    }
+    if (avatar && !isSafeAvatar(avatar)) {
+      return res.status(400).json({ success: false, error: 'Invalid avatar' });
+    }
+
+    const store = getStore();
+    const clientId = typeof id === 'string' && /^[\w-]{1,64}$/.test(id) ? id : null;
+    const existing = clientId && store.find(c => c.id === clientId && c.participants.includes(userId));
+    if (existing) {
+      return res.json({ success: true, data: existing });
+    }
+
     const conversation = {
-      id: Date.now().toString(),
-      participants: participants || [],
-      createdAt: new Date(),
-      createdBy: req.user.userId
+      id: clientId || Date.now().toString(),
+      type: kind,
+      name: kind === 'group' ? groupName : null,
+      avatar: avatar || null,
+      participants: members,
+      createdAt: new Date().toISOString(),
+      createdBy: userId,
+      messages: []
     };
-    
-    res.status(201).json({
-      success: true,
-      data: conversation
-    });
+
+    if (typeof firstMessage === 'string' && firstMessage.trim()) {
+      conversation.messages.push({
+        id: `${Date.now()}`,
+        text: firstMessage.trim().slice(0, 1000),
+        senderId: userId,
+        senderName: req.user.username,
+        timestamp: new Date().toISOString(),
+        type: 'text'
+      });
+    }
+
+    store.push(conversation);
+
+    res.status(201).json({ success: true, data: conversation });
   } catch (error) {
     console.error('Error creating conversation:', error);
     res.status(500).json({
@@ -94,5 +142,4 @@ router.post('/', authenticateToken, async (req, res) => {
     });
   }
 });
-
 module.exports = router;

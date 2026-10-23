@@ -8,17 +8,13 @@ const IMAGE_CACHE = `quibish-images-v${VERSION}`;
 // Stable files that always exist at these exact paths.
 // Avoid hardcoding content-hashed filenames here — they change every build
 // and will cause install() to fail with a 404.
-const STATIC_ASSETS = [
-  '/quibish/',
-  '/quibish/index.html',
-  '/quibish/manifest.json',
-  '/quibish/favicon.ico',
-  '/quibish/logo192.png',
-  '/quibish/logo512.png',
-  '/quibish/offline.html',
-];
+// Base path comes from the registration scope so this works at / and /quibish/.
+const BASE = new URL(self.registration.scope).pathname;
+const STATIC_ASSETS = ['', 'index.html', 'manifest.json', 'favicon.ico', 'logo192.png', 'logo512.png', 'offline.html']
+  .map(p => BASE + p);
 
-const APP_SHELL_URL = '/quibish/index.html';
+const APP_SHELL_URL = BASE + 'index.html';
+const OFFLINE_URL = BASE + 'offline.html';
 
 // Queue for offline messages/actions
 const OFFLINE_QUEUE = 'offline-queue';
@@ -185,6 +181,26 @@ self.addEventListener('fetch', (event) => {
   }
 
   // API requests (same-origin) - Network first strategy
+  // Web Share Target: the manifest POSTs shared content here; hand it to the app via query params.
+  if (request.method === 'POST' && url.pathname === BASE + 'share') {
+    event.respondWith((async () => {
+      const form = await request.formData();
+      const target = new URL(BASE, self.location.origin);
+      ['title', 'text', 'url'].forEach(k => {
+        const v = form.get(k);
+        if (typeof v === 'string' && v) target.searchParams.set(k, v.slice(0, 1000));
+      });
+      target.searchParams.set('source', 'share');
+      return Response.redirect(target.href, 303);
+    })());
+    return;
+  }
+
+  // Only GET requests can be cached or replayed
+  if (request.method !== 'GET') {
+    return;
+  }
+
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(request));
     return;
@@ -251,7 +267,7 @@ async function networkFirst(request) {
     
     // Return offline page for navigation requests
     if (request.destination === 'document') {
-      return caches.match(APP_SHELL_URL) || new Response('Offline', { status: 503 });
+      return (await caches.match(APP_SHELL_URL)) || (await caches.match(OFFLINE_URL)) || new Response('Offline', { status: 503 });
     }
     
     return new Response('Offline - resource not available', { status: 503 });
@@ -281,7 +297,7 @@ async function staleWhileRevalidate(request) {
 self.addEventListener('sync', (event) => {
   console.log('🔄 Service Worker: Background sync triggered', event.tag);
   
-  if (event.tag === 'background-sync-messages') {
+  if (event.tag === 'background-sync-messages' || event.tag === MESSAGE_SYNC_TAG) {
     event.waitUntil(syncMessages());
   }
   
@@ -548,7 +564,7 @@ self.addEventListener('notificationclick', (event) => {
 
       if (event.action === 'reply') {
         // Handle quick reply
-        const replyUrl = `/quibish?action=reply&conversation=${notificationData.conversationId}&message=${notificationData.messageId}`;
+        const replyUrl = `${BASE}?action=reply&conversation=${notificationData.conversationId}&message=${notificationData.messageId}`;
         
         if (appClient) {
           appClient.focus();
@@ -567,8 +583,8 @@ self.addEventListener('notificationclick', (event) => {
       } else {
         // Default action - open conversation
         const chatUrl = notificationData.conversationId 
-          ? `/quibish?conversation=${notificationData.conversationId}`
-          : '/quibish';
+          ? `${BASE}?conversation=${notificationData.conversationId}`
+          : BASE;
         
         if (appClient) {
           appClient.focus();

@@ -99,8 +99,8 @@ const generateToken = (user, req) => {
     role: user.role,
     iat: Math.floor(Date.now() / 1000),
     jti: uuidv4(), // Unique token identifier
-    ip: req.ip || req.connection.remoteAddress,
-    userAgent: req.get('User-Agent')
+    ip: req ? (req.ip || (req.connection && req.connection.remoteAddress)) : undefined,
+    userAgent: req && req.get ? req.get('User-Agent') : undefined
   };
   
   return jwt.sign(payload, JWT_SECRET, { 
@@ -198,7 +198,7 @@ router.post('/login', sanitizeInput, validateAuthInput, async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(user);
+    const token = generateToken(user, req);
 
     // Return user data (excluding password)
     let userObject;
@@ -279,7 +279,7 @@ router.post('/complete-login', async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(user);
+    const token = generateToken(user, req);
 
     // Return user data (excluding password)
     let userObject;
@@ -431,7 +431,7 @@ router.post('/register', sanitizeInput, validateAuthInput, async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(newUser);
+    const token = generateToken(newUser, req);
     
     console.log('Registration successful for:', username);
     
@@ -578,3 +578,9 @@ router.get('/storage-mode', (req, res) => {
 // Export router and seedInitialUsers
 module.exports = router;
 module.exports.seedInitialUsers = seedInitialUsers;
+// Used by the WebSocket layer to authenticate a socket with the same secret that signs login tokens
+module.exports.verifyToken = (token) => jwt.verify(token, JWT_SECRET, {
+  algorithms: ['HS256'],
+  issuer: 'quibish-app',
+  audience: 'quibish-users'
+});

@@ -370,7 +370,7 @@ const PostCard = ({ post: initialPost, currentUser, onPostDeleted, onPostUpdated
                 placeholder="Write a comment..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleComment()}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleComment(); } }}
                 disabled={isCommenting}
               />
               {commentText && (
@@ -495,7 +495,7 @@ const Comment = ({ comment, currentUser, postId }) => {
               placeholder="Write a reply..."
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleReply()}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleReply(); } }}
               disabled={isReplying}
             />
             {replyText && (

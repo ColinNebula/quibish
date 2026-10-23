@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './GifPicker.css';
 
-// â”€â”€ Tenor API (v2) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Tenor API (v2) ──────────────────────────────────────────────────────────
 // Uses the official demo key for development. Set REACT_APP_TENOR_API_KEY in
 // your .env to replace it in production.
 const TENOR_KEY = process.env.REACT_APP_TENOR_API_KEY || 'LIVDSRZULELA';
@@ -25,7 +25,7 @@ const fetchTenor = async (endpoint) => {
   return (data.results || []).map(normalizeTenor);
 };
 
-// â”€â”€ localStorage helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── localStorage helpers ────────────────────────────────────────────────────
 const RECENT_KEY = 'quibish_recent_gifs';
 const FAVS_KEY   = 'quibish_fav_gifs';
 const MAX_RECENT = 16;
@@ -38,7 +38,7 @@ const writeLS = (key, val) => {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch (_) {}
 };
 
-// â”€â”€ Category chips â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Category chips ──────────────────────────────────────────────────────────
 const CATEGORIES = [
   { query: 'trending',   label: '\uD83D\uDD25 Trending' },
   { query: 'reactions',  label: '\uD83D\uDE02 Reactions' },
@@ -52,7 +52,7 @@ const CATEGORIES = [
   { query: 'thumbs up',  label: '\uD83D\uDC4D Approve' },
 ];
 
-// â”€â”€ Fallback mock GIFs (shown when Tenor is unreachable) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Fallback mock GIFs (shown when Tenor is unreachable) ────────────────────
 const MOCK_GIFS = [
   { id: 'm1', url: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif', previewUrl: 'https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif', name: 'Happy Dance',   width: 480, height: 270, size: 1024000 },
   { id: 'm2', url: 'https://media.giphy.com/media/l0MYrLAFex1R71l0A/giphy.gif', previewUrl: 'https://media.giphy.com/media/l0MYrLAFex1R71l0A/giphy.gif', name: 'Funny Cat',    width: 480, height: 360, size: 856000  },
@@ -64,7 +64,7 @@ const MOCK_GIFS = [
   { id: 'm8', url: 'https://media.giphy.com/media/3o6Zt0hNCfak3QCqsw/giphy.gif', previewUrl: 'https://media.giphy.com/media/3o6Zt0hNCfak3QCqsw/giphy.gif', name: 'Crying Sad',   width: 400, height: 400, size: 623000  },
 ];
 
-// â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Component ───────────────────────────────────────────────────────────────
 const GifPicker = ({ isOpen, onClose, onGifSelect }) => {
   const [tab, setTab]           = useState('trending'); // 'trending' | 'recent' | 'favorites'
   const [searchTerm, setSearchTerm] = useState('');

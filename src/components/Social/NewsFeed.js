@@ -3,6 +3,7 @@ import './NewsFeed.css';
 import PostComposer from './PostComposer';
 import PostCard from './PostCard';
 import postsService from '../../services/postsService';
+import { buildApiUrl } from '../../config/api';
 
 const POSTS_CACHE_KEY = 'quibish_posts_feed';
 
@@ -25,22 +26,27 @@ const NewsFeed = ({ user, className = '' }) => {
   const [posts, setPosts] = useState(() => loadCachedPosts());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [sortBy, setSortBy] = useState('recent');
   const [visibility, setVisibility] = useState('public');
   const observerRef = useRef(null);
   const loadingRef = useRef(null);
+  // Refs keep loadFeed stable so it doesn't re-trigger the initial-load effect
+  const inFlightRef = useRef(false);
+  const pageRef = useRef(1);
+  const requestIdRef = useRef(0);
 
   // Define loadFeed callback first
   const loadFeed = useCallback(async (reset = false) => {
-    if (loading) return;
+    if (inFlightRef.current && !reset) return;
 
+    const requestId = ++requestIdRef.current;
+    inFlightRef.current = true;
     setLoading(true);
     setError('');
 
     try {
-      const currentPage = reset ? 1 : page;
+      const currentPage = reset ? 1 : pageRef.current;
       const result = await postsService.getFeed({
         page: currentPage,
         limit: 10,
@@ -49,24 +55,28 @@ const NewsFeed = ({ user, className = '' }) => {
         sortBy
       });
 
+      // A newer request (e.g. changed sort) supersedes this one
+      if (requestId !== requestIdRef.current) return;
+
       if (result.success) {
         if (reset) {
           setPosts(result.posts);
           savePosts(result.posts);
-          setPage(2);
+          pageRef.current = 2;
         } else {
           setPosts(prev => {
             const merged = [...prev, ...result.posts];
             savePosts(merged);
             return merged;
           });
-          setPage(prev => prev + 1);
+          pageRef.current += 1;
         }
         setHasMore(result.pagination.hasMore);
       } else {
         setError(result.error || 'Failed to load feed');
       }
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       // Fall back to cached posts so the feed isn't blank after a refresh
       const cached = loadCachedPosts();
       if (cached.length > 0 && reset) {
@@ -76,15 +86,18 @@ const NewsFeed = ({ user, className = '' }) => {
         setError(err.message || 'Failed to load feed');
       }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        inFlightRef.current = false;
+        setLoading(false);
+      }
     }
-  }, [loading, page, user.id, visibility, sortBy]);
+  }, [user.id, visibility, sortBy]);
 
   const loadMore = useCallback(() => {
-    if (!loading && hasMore) {
+    if (!inFlightRef.current && hasMore) {
       loadFeed(false);
     }
-  }, [loading, hasMore, loadFeed]);
+  }, [hasMore, loadFeed]);
 
   // Load initial feed
   useEffect(() => {
@@ -93,7 +106,7 @@ const NewsFeed = ({ user, className = '' }) => {
 
   // Infinite scroll observer
   useEffect(() => {
-    if (!hasMore || loading) return;
+    if (!hasMore || loading || error) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -119,7 +132,7 @@ const NewsFeed = ({ user, className = '' }) => {
         observerRef.current.disconnect();
       }
     };
-  }, [hasMore, loading, loadMore]);
+  }, [hasMore, loading, error, loadMore]);
 
   const handlePostCreated = (newPost) => {
     setPosts(prev => {
@@ -148,7 +161,6 @@ const NewsFeed = ({ user, className = '' }) => {
   };
 
   const handleRefresh = () => {
-    setPage(1);
     loadFeed(true);
   };
 
@@ -159,7 +171,7 @@ const NewsFeed = ({ user, className = '' }) => {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:5001/api/posts/seed', {
+      const response = await fetch(buildApiUrl('posts/seed'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -188,12 +200,10 @@ const NewsFeed = ({ user, className = '' }) => {
 
   const handleSortChange = (newSortBy) => {
     setSortBy(newSortBy);
-    setPage(1);
   };
 
   const handleVisibilityChange = (newVisibility) => {
     setVisibility(newVisibility);
-    setPage(1);
   };
 
   return (
@@ -289,7 +299,8 @@ const NewsFeed = ({ user, className = '' }) => {
         )}
 
         {/* Infinite Scroll Trigger */}
-        {hasMore && !loading && (
+        {hasMore && (
+
           <div ref={loadingRef} className="scroll-trigger"></div>
         )}
 

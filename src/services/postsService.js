@@ -1,8 +1,31 @@
-import apiClient from './apiClient';
+import baseClient from './apiClient';
+
+// postsService is written against an axios-style API (`{ data }` responses,
+// `params`, DELETE bodies, PATCH). This adapter maps it onto the fetch-based client.
+const withQuery = (url, params) => {
+  const entries = Object.entries(params || {}).filter(([, v]) => v !== null && v !== undefined);
+  if (entries.length === 0) return url;
+  const qs = new URLSearchParams(entries.map(([k, v]) => [k, String(v)])).toString();
+  return `${url}${url.includes('?') ? '&' : '?'}${qs}`;
+};
+const call = async (method, url, body, options = {}) => {
+  const data = await baseClient.request(withQuery(url, options.params), {
+    method,
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {})
+  });
+  return { data };
+};
+const apiClient = {
+  get: (url, options) => call('GET', url, undefined, options),
+  post: (url, body, options) => call('POST', url, body, options),
+  put: (url, body, options) => call('PUT', url, body, options),
+  patch: (url, body, options) => call('PATCH', url, body, options),
+  delete: (url, options = {}) => call('DELETE', url, options.data, options)
+};
 
 class PostsService {
   constructor() {
-    this.baseURL = '/api/posts';
+    this.baseURL = '/posts';
   }
 
   // ============= POST OPERATIONS =============

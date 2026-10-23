@@ -16,7 +16,6 @@ import UserSearchModal from '../Search/UserSearchModal';
 import AdvancedSearchModal from '../Search/AdvancedSearchModal';
 import SmartRepliesPanel from '../AI/SmartRepliesPanel';
 import AIEnhancementPanel from '../AI/AIEnhancementPanel';
-import InternationalDialer from '../Dialer/InternationalDialer';
 import ThreadView from '../Thread/ThreadView';
 import ThreadIndicator from '../Thread/ThreadIndicator';
 import DonationModal from '../Donation/DonationModal';
@@ -28,6 +27,7 @@ import FilePreview from '../FilePreview';
 import VideoCallPanel from '../VideoCallPanel';
 import messageService from '../../services/messageService';
 import searchService from '../../services/searchService';
+import pythonServices from '../../services/pythonServices';
 import aiService from '../../services/aiService';
 import messageThreadService from '../../services/messageThreadService';
 import encryptedMessageService from '../../services/encryptedMessageService';
@@ -40,6 +40,7 @@ import { feedbackService } from '../../services/feedbackService';
 import { contactService } from '../../services/contactService';
 import { conversationService } from '../../services/conversationService';
 import realtimeService from '../../services/realtimeService';
+import { startRingtone, stopRingtone } from '../../utils/ringtone';
 
 // VoiceCallConnectionMonitor will be imported dynamically when needed
 // to avoid potential circular dependency issues at startup
@@ -67,6 +68,31 @@ import NotificationButton from '../NotificationCenter/NotificationButton';
 import NotificationPermissionPrompt from '../NotificationPermissionPrompt';
 import notificationService from '../../services/notificationService';
 import { NewsFeed } from '../Social';
+
+const RTC_CONFIG = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' }
+  ],
+  iceTransportPolicy: 'all',
+  iceCandidatePoolSize: 10,
+  bundlePolicy: 'max-bundle',
+  rtcpMuxPolicy: 'require'
+};
+
+const newCallId = () => `call_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+// Plays the remote party's audio through a hidden <audio> element
+const bindRemoteAudio = (pc, audioRef) => {
+  pc.ontrack = (event) => {
+    const el = audioRef.current;
+    if (el && event.streams[0]) {
+      el.srcObject = event.streams[0];
+      el.play?.().catch(() => {});
+    }
+  };
+};
 
 const ProChat = ({ 
   user: propUser = { id: 'user1', name: 'Current User', avatar: null },
@@ -140,30 +166,67 @@ const ProChat = ({
 
     // Incoming message from another user
     const offMessage = realtimeService.on('message', async (msg) => {
-      // Decrypt if the sender marked the message as E2E encrypted
       let displayText = msg.text;
       if (msg.encrypted && msg.senderId) {
         try {
           displayText = await encryptedMessageService.decryptFrom(msg.text, String(msg.senderId));
         } catch (err) {
-          console.warn('[E2E] Decryption failed for message from', msg.senderId, '—', err.message);
-          displayText = '🔒 [Encrypted message — could not decrypt]';
+          console.warn('[E2E] Decryption failed for message from', msg.senderId, '-', err.message);
+          displayText = '[Encrypted message - could not decrypt]';
         }
       }
 
-      setChatMessages(prev => {
-        // Deduplicate by id
-        if (prev.some(m => m.id === msg.id)) return prev;
-        return [...prev, {
-          id: msg.id,
-          text: displayText,
-          user: { id: msg.senderId, name: msg.senderName },
-          timestamp: msg.timestamp,
-          reactions: [],
-          conversationId: msg.conversationId
-        }];
+      // Resolve (or create) the local direct conversation for this sender
+      let conv = conversationService.getAllConversations().find(c =>
+        c.type !== 'group' && String(c.participantId) === String(msg.senderId));
+      if (!conv) {
+        const res = conversationService.createConversationWithUser(
+          { id: msg.senderId, name: msg.senderName, username: msg.senderName }, user?.id);
+        conv = res.conversation;
+      }
+      const convId = conv.id;
+      const isOpen = String(selectedConversationRef.current) === String(convId);
+
+      const incoming = {
+        id: msg.id,
+        text: displayText,
+        user: { id: msg.senderId, name: msg.senderName },
+        timestamp: msg.timestamp,
+        reactions: [],
+        isEncrypted: !!msg.encrypted,
+        conversationId: convId
+      };
+      searchService.indexMessage(incoming);
+
+      if (isOpen) {
+        setChatMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [...prev, incoming]));
+      } else {
+        try {
+          const key = `quibish_conv_messages_${convId}`;
+          const stored = JSON.parse(localStorage.getItem(key) || '[]');
+          if (!stored.some(m => m.id === msg.id)) {
+            localStorage.setItem(key, JSON.stringify([...stored, incoming]));
+          }
+        } catch (_) {}
+      }
+
+      conversationService.updateConversation(convId, {
+        lastMessage: displayText,
+        lastMessageTime: 'now',
+        timestamp: new Date(),
+        unreadCount: isOpen ? 0 : (conv.unreadCount || 0) + 1
       });
+      setConversations([...conversationService.getAllConversations()]);
     });
+    // Delivery acknowledgements for messages this user sent
+    const applyStatus = (clientId, status) => {
+      if (!clientId) return;
+      ackStatusRef.current[clientId] = status;
+      setChatMessages(prev => prev.map(m => (m.clientId === clientId && m.status !== 'delivered') ? { ...m, status } : m));
+    };
+    const offSent = realtimeService.on('message-sent', (d) => applyStatus(d.clientId, d.delivered ? 'delivered' : 'sent'));
+    const offDelivered = realtimeService.on('message-delivered', (d) => applyStatus(d.clientId, 'delivered'));
+    const offFailed = realtimeService.on('message-failed', (d) => applyStatus(d.clientId, 'failed'));
 
     // Presence updates
     const offPresence = realtimeService.on('presence', (data) => {
@@ -186,6 +249,9 @@ const ProChat = ({
       offConnect();
       offDisconnect();
       offMessage();
+      offSent();
+      offDelivered();
+      offFailed();
       offPresence();
       offTyping();
       clearTimeout(typingTimerRef.current);
@@ -236,6 +302,9 @@ const ProChat = ({
   });
   
   const [selectedConversation, setSelectedConversation] = useState(conversations[0]?.id || null);
+  const selectedConversationRef = useRef(selectedConversation);
+  const ackStatusRef = useRef({});
+  selectedConversationRef.current = selectedConversation;
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState('conversations'); // 'conversations' or 'users'
   const [showUserSearch, setShowUserSearch] = useState(false);
@@ -296,9 +365,6 @@ const ProChat = ({
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
   
-  // International dialer state
-  const [showCallOptions, setShowCallOptions] = useState(false);
-  const [showInternationalDialer, setShowInternationalDialer] = useState(false);
 
   // Call selection modal state
   const [showCallSelectionModal, setShowCallSelectionModal] = useState(false);
@@ -658,6 +724,12 @@ const ProChat = ({
   const currentSelectedConversation = selectedConversation 
     ? conversations.find(conv => conv.id === selectedConversation) || null
     : null;
+  const conversationParticipants = currentSelectedConversation?.participants;
+  const participantCount = Array.isArray(conversationParticipants)
+    ? conversationParticipants.length
+    : Number.isFinite(conversationParticipants)
+      ? conversationParticipants
+      : currentSelectedConversation ? 2 : 0;
   
   // Load messages from database on component mount
   useEffect(() => {
@@ -1420,50 +1492,105 @@ const ProChat = ({
     console.log('Create group clicked - opening new chat modal');
   }, []);
 
-  const handleCreateChat = useCallback(async (conversation) => {
-    try {
-      console.log('New chat created:', conversation);
-      
-      // In a real app, the conversation is already created by the API
-      // Format it for the UI
-      const newConversation = {
-        id: conversation.id || `conv_${Date.now()}`,
-        name: conversation?.name || conversation?.participants?.find(p => p?.id !== user?.id)?.name || 'New Chat',
-        type: conversation.type,
-        participants: conversation.participants,
-        lastMessage: {
-          text: 'Chat created',
-          timestamp: conversation.createdAt || new Date().toISOString(),
-          user: { name: 'System' }
-        },
+  // Most recently active direct-chat partners for the New Message modal
+  const recentContacts = useMemo(() => (
+    (conversations || [])
+      .filter(c => c.type !== 'group' && c.participantId)
+      .sort((a, b) => new Date(b.updatedAt || b.timestamp || 0) - new Date(a.updatedAt || a.timestamp || 0))
+      .slice(0, 8)
+      .map(c => ({ id: c.participantId, name: c.name, avatar: c.avatar, email: c.user?.email }))
+  ), [conversations]);
+
+  const handleCreateChat = useCallback(async (chatData) => {
+    const others = (chatData?.participants || []).filter(p => p && String(p.id) !== String(user?.id));
+    if (others.length === 0) return;
+
+    let conversation;
+    if (chatData.type === 'group') {
+      const groupName = chatData.name?.trim() || others.map(p => p.name).join(', ');
+      const now = new Date().toISOString();
+      conversation = {
+        id: `group_${Date.now()}`,
+        name: groupName,
+        avatar: chatData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(groupName)}&background=10b981&color=fff&size=40`,
+        customAvatar: chatData.avatar || undefined,
+        lastMessage: '',
+        lastMessageTime: 'now',
         unreadCount: 0,
-        isOnline: true,
-        avatar: conversation.type === 'group' 
-          ? null 
-          : conversation?.participants?.find(p => p?.id !== user?.id)?.avatar
+        isOnline: false,
+        isPinned: false,
+        isMuted: false,
+        timestamp: new Date(),
+        participants: [user?.id, ...others.map(p => p.id)],
+        type: 'group',
+        createdAt: now,
+        updatedAt: now,
+        messages: []
       };
-
-      console.log('Formatted conversation:', newConversation);
-      
-      // Here you would typically:
-      // 1. Add to conversations state if you have one
-      // 2. Navigate to the new chat
-      // 3. Refresh conversation list
-      
-      // For now, we'll just select this conversation if we have a way to do it
-      setSelectedConversation(newConversation.id);
-      
-      // You could also trigger a callback to parent component
-      // if (onConversationCreated) {
-      //   onConversationCreated(newConversation);
-      // }
-      
-    } catch (error) {
-      console.error('Failed to handle new chat:', error);
-      throw error; // Re-throw so modal can handle the error
+      conversationService.conversations = [conversation, ...conversationService.getAllConversations()];
+      conversationService.saveConversationsToStorage();
+    } else {
+      const result = conversationService.createConversationWithUser(others[0], user?.id);
+      if (!result.success) return;
+      conversation = result.conversation;
     }
-  }, [user]);
 
+    // Seed the optional first message locally so the new pane shows it immediately
+    const firstText = (chatData.firstMessage || '').trim();
+    let seededMessages = null;
+    if (firstText) {
+      const sentAt = new Date().toISOString();
+      seededMessages = [{
+        id: Date.now(),
+        text: firstText,
+        user,
+        timestamp: sentAt,
+        reactions: [],
+        conversationId: conversation.id
+      }];
+      try {
+        const key = `quibish_conv_messages_${conversation.id}`;
+        const prev = JSON.parse(localStorage.getItem(key) || '[]');
+        localStorage.setItem(key, JSON.stringify([...prev, ...seededMessages]));
+      } catch (_) {}
+      conversation = { ...conversation, lastMessage: firstText, lastMessageTime: 'now', updatedAt: sentAt, timestamp: new Date() };
+      conversationService.conversations = conversationService.getAllConversations().map(c => c.id === conversation.id ? conversation : c);
+      conversationService.saveConversationsToStorage();
+    }
+
+    setConversations([...conversationService.getAllConversations()]);
+    setSearchQuery('');
+    setActiveFilter('all');
+    setSelectedConversation(conversation.id);
+    setMessagesError(null);
+
+    // Existing chats keep their history; brand-new chats start from a blank pane
+    let history = [];
+    try {
+      const stored = localStorage.getItem(`quibish_conv_messages_${conversation.id}`);
+      history = stored ? JSON.parse(stored) : [];
+    } catch (_) {}
+    setChatMessages(normalizeMessages(history));
+
+    // Persist to the backend (groups are otherwise local-only); realtime delivery for the first message
+    if (chatData.type === 'group' || firstText) {
+      conversationService.syncConversationToBackend(conversation, firstText);
+    }
+    if (firstText && chatData.type !== 'group') {
+      realtimeService.sendMessage({
+        text: firstText,
+        conversationId: conversation.id,
+        recipientId: others[0].id,
+        encrypted: false
+      });
+    }
+
+    if (window.innerWidth <= 768) setSidebarCollapsed(true);
+    setTimeout(() => {
+      scrollToBottom();
+      document.querySelector('[data-testid="message-input"]')?.focus();
+    }, 150);
+  }, [user, normalizeMessages, scrollToBottom]);
   const handleQuickSettings = useCallback(() => {
     console.log('⚙️ Settings button clicked!');
     setSettingsModal({ open: true, section: 'general' });
@@ -1488,7 +1615,7 @@ const ProChat = ({
             const imageProcessor = (await import('../../services/imageProcessorService')).default;
             
             // Optimize image for chat (max 1920x1080, 85% quality)
-            const optimizedBlob = await imageProcessor.optimizeChatImage(file);
+            const optimizedBlob = (await pythonServices.optimizeImage(file)) || await imageProcessor.optimizeChatImage(file);
             
             // Show optimization stats
             const reduction = ((1 - optimizedBlob.size / file.size) * 100).toFixed(1);
@@ -2438,174 +2565,228 @@ const ProChat = ({
   const peerConnectionRef = useRef(null);
   const localStreamRef = useRef(null);
   const voiceCallMonitorRef = useRef(null);  // ← ENHANCED: Connection monitor
+  const remoteAudioRef = useRef(null);
+  const callIdRef = useRef(null);
+  const pendingIceRef = useRef([]);       // ICE candidates received before the remote description is set
+  const ringTimeoutRef = useRef(null);
+  const incomingCallRef = useRef(null);
+  const resetCallRef = useRef(() => {});
+  const [incomingCall, setIncomingCall] = useState(null);
 
-  // ── Incoming call signaling via WebSocket with Enhanced Monitoring ─────────────
+  const addCallNote = useCallback((text) => {
+    setChatMessages(prev => [...prev, {
+      id: `call_${Date.now()}`,
+      text,
+      user: 'You',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'voice_call_enhanced',
+      isSystemMessage: true
+    }]);
+  }, []);
+
+  const acceptIncomingCall = async () => {
+    const incoming = incomingCallRef.current;
+    if (!incoming) return;
+    clearTimeout(ringTimeoutRef.current);
+    stopRingtone();
+    incomingCallRef.current = null;
+    setIncomingCall(null);
+
+    try {
+      const pc = new RTCPeerConnection(RTC_CONFIG);
+      peerConnectionRef.current = pc;
+      bindRemoteAudio(pc, remoteAudioRef);
+
+      try {
+        const { default: VoiceCallConnectionMonitor } = await import('../../services/voiceCallConnectionMonitor');
+        const monitor = new VoiceCallConnectionMonitor(pc, { checkInterval: 1000 });
+        voiceCallMonitorRef.current = monitor;
+        monitor.initialize();
+        monitor.on('connectionEstablished', () => {
+          setVoiceCallState(prev => ({ ...prev, connectionStatus: 'connected' }));
+        });
+        monitor.on('statsUpdate', (stats) => {
+          setVoiceCallState(prev => ({ ...prev, connectionQuality: stats.quality }));
+        });
+      } catch (monitorError) {
+        console.warn('Failed to initialize monitor:', monitorError);
+      }
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: !incoming.audioOnly
+        });
+      } catch (mediaError) {
+        console.warn('Failed to get media with enhancement, trying basic:', mediaError);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: !incoming.audioOnly });
+      }
+
+      localStreamRef.current = stream;
+      stream.getTracks().forEach(track => {
+        pc.addTrack(track, stream);
+        track.addEventListener('ended', () => {
+          console.warn('🔴 Audio/video track ended unexpectedly');
+          handleEndVoiceCall();
+        });
+      });
+
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          realtimeService.sendSignal('ice-candidate', incoming.from.id, { callId: incoming.callId, candidate: e.candidate });
+        }
+      };
+
+      await pc.setRemoteDescription(new RTCSessionDescription(incoming.offer));
+      const queued = pendingIceRef.current;
+      pendingIceRef.current = [];
+      for (const candidate of queued) {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => console.warn('ICE add failed:', err));
+      }
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      realtimeService.sendSignal('call-answer', incoming.from.id, { callId: incoming.callId, answer });
+
+      setVoiceCallState({
+        active: true,
+        withUser: { id: incoming.from.id, name: incoming.from.name },
+        minimized: false,
+        audioOnly: incoming.audioOnly,
+        connectionStatus: 'connecting',
+        connectionQuality: 'unknown',
+        callStartTime: Date.now()
+      });
+    } catch (e) {
+      console.error('Failed to accept call:', e);
+      realtimeService.sendSignal('call-end', incoming.from.id, { callId: incoming.callId });
+      resetCallRef.current();
+      alert(`Could not start the call: ${e.name === 'NotAllowedError' ? 'microphone permission was denied' : e.message}`);
+    }
+  };
+
+  const declineIncomingCall = () => {
+    const incoming = incomingCallRef.current;
+    if (!incoming) return;
+    realtimeService.sendSignal('call-reject', incoming.from.id, { callId: incoming.callId });
+    resetCallRef.current();
+  };
+
+  // ── Call signaling via WebSocket ─────────────────────────────────────────────
   useEffect(() => {
-    const offOffer = realtimeService.on('call-offer', async (data) => {
-      // Show incoming call dialog
-      const accept = window.confirm(
-        `📞 Incoming ${data.audioOnly ? 'voice' : 'video'} call from ${data.fromUser?.name || 'Someone'}. Accept?`
-      );
-      
-      if (!accept) {
-        realtimeService.sendSignal('call-reject', data.fromUser?.id);
+    // Ignore signals that belong to a different call (callId is optional for older senders)
+    const sameCall = (id) => !id || !callIdRef.current || id === callIdRef.current;
+
+    const resetCall = () => {
+      clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = null;
+      stopRingtone();
+      callIdRef.current = null;
+      pendingIceRef.current = [];
+      incomingCallRef.current = null;
+      setIncomingCall(null);
+      if (voiceCallMonitorRef.current) { voiceCallMonitorRef.current.destroy(); voiceCallMonitorRef.current = null; }
+      if (peerConnectionRef.current) { peerConnectionRef.current.close(); peerConnectionRef.current = null; }
+      if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
+      if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+      setVideoCallState({ active: false, withUser: null, minimized: false, audioOnly: false });
+      setVoiceCallState({ active: false, withUser: null, minimized: false, audioOnly: true, connectionStatus: null });
+    };
+    resetCallRef.current = resetCall;
+
+    const offOffer = realtimeService.on('call-offer', (data) => {
+      const caller = data.fromUser || { id: data.fromUserId, name: data.fromUsername };
+      if (!caller.id) return;
+
+      if (peerConnectionRef.current || incomingCallRef.current) {
+        realtimeService.sendSignal('call-busy', caller.id, { callId: data.callId });
         return;
       }
 
-      try {
-        // Create connection with multiple STUN servers (ENHANCED)
-        const config = {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' },
-            { urls: 'stun:global.stun.twilio.com:3478' },
-            { urls: 'stun:stun.services.mozilla.com:3478' }
-          ],
-          iceTransportPolicy: 'all',
-          iceCandidatePoolSize: 10,
-          bundlePolicy: 'max-bundle',
-          rtcpMuxPolicy: 'require'
-        };
+      const incoming = {
+        callId: data.callId || null,
+        from: { id: caller.id, name: caller.name || 'Someone' },
+        offer: data.offer,
+        audioOnly: !!data.audioOnly
+      };
+      incomingCallRef.current = incoming;
+      callIdRef.current = incoming.callId;
+      pendingIceRef.current = [];
+      setIncomingCall(incoming);
+      startRingtone();
 
-        const pc = new RTCPeerConnection(config);
-        peerConnectionRef.current = pc;
-
-        // Initialize connection monitor (ENHANCED)
-        try {
-          const { default: VoiceCallConnectionMonitor } = await import('../../services/voiceCallConnectionMonitor');
-          const monitor = new VoiceCallConnectionMonitor(pc, { checkInterval: 1000 });
-          voiceCallMonitorRef.current = monitor;
-          monitor.initialize();
-        } catch (monitorError) {
-          console.warn('Failed to initialize monitor:', monitorError);
-        }
-
-        // Handle connection state changes (ENHANCED)
-        if (voiceCallMonitorRef.current) {
-          voiceCallMonitorRef.current.on('connectionEstablished', () => {
-            console.log('✅ Call connection established!');
-            setVoiceCallState(prev => ({ 
-              ...prev, 
-              connectionStatus: 'connected' 
-            }));
-          });
-
-          voiceCallMonitorRef.current.on('connectionFailed', ({ attempt }) => {
-            console.error(`❌ Connection failed (attempt ${attempt})`);
-          });
-
-          voiceCallMonitorRef.current.on('statsUpdate', (stats) => {
-            if (voiceCallState.active || data.audioOnly) {
-              setVoiceCallState(prev => ({ 
-                ...prev, 
-                connectionQuality: stats.quality 
-              }));
-            }
-          });
-        }
-
-        // Get audio/video stream with enhancements (ENHANCED)
-        let stream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            audio: { 
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true 
-            }, 
-            video: !data.audioOnly ? true : false 
-          });
-        } catch (mediaError) {
-          console.warn('Failed to get media with enhancement, trying basic:', mediaError);
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            audio: true, 
-            video: !data.audioOnly 
-          });
-        }
-
-        localStreamRef.current = stream;
-        stream.getTracks().forEach(track => {
-          pc.addTrack(track, stream);
-          
-          // Monitor track state (ENHANCED)
-          track.addEventListener('ended', () => {
-            console.warn('🔴 Audio/video track ended unexpectedly');
-            handleEndVoiceCall();
-            alert('Call disconnected: media stream ended');
-          });
-        });
-
-        // Handle ICE candidates with better error handling (ENHANCED)
-        pc.onicecandidate = (e) => {
-          if (e.candidate) {
-            realtimeService.sendSignal('ice-candidate', data.fromUser?.id, { 
-              candidate: e.candidate 
-            }).catch(err => console.warn('Failed to send ICE candidate:', err));
-          }
-        };
-
-        // Set remote description and create answer
-        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        
-        realtimeService.sendSignal('call-answer', data.fromUser?.id, { answer });
-
-        // Update UI state (ENHANCED)
-        setVoiceCallState({
-          active: true,
-          withUser: { 
-            id: data.fromUser?.id, 
-            name: data.fromUser?.name || data.fromUsername,
-            avatar: data.fromUser?.avatar
-          },
-          minimized: false,
-          audioOnly: !!data.audioOnly,
-          connectionStatus: 'connecting',
-          connectionQuality: 'unknown',
-          callStartTime: Date.now()
-        });
-
-      } catch (e) {
-        console.error('Failed to handle incoming call:', e);
-        alert(`Failed to accept call: ${e.message}`);
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        try { new Notification(`Incoming call from ${incoming.from.name}`, { tag: 'incoming-call' }); } catch (_) {}
       }
+
+      clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = setTimeout(() => {
+        if (incomingCallRef.current === incoming) {
+          realtimeService.sendSignal('call-reject', incoming.from.id, { callId: incoming.callId, reason: 'timeout' });
+          addCallNote(`📞 Missed call from ${incoming.from.name}`);
+          resetCall();
+        }
+      }, 30000);
     });
 
     const offAnswer = realtimeService.on('call-answer', async (data) => {
-      if (peerConnectionRef.current) {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(console.error);
+      const pc = peerConnectionRef.current;
+      if (!pc || !sameCall(data.callId)) return;
+      clearTimeout(ringTimeoutRef.current);
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        const queued = pendingIceRef.current;
+        pendingIceRef.current = [];
+        for (const candidate of queued) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(err => console.warn('ICE add failed:', err));
+        }
+      } catch (err) {
+        console.error('Failed to apply call answer:', err);
       }
     });
 
     const offIce = realtimeService.on('ice-candidate', async (data) => {
-      if (peerConnectionRef.current && data.candidate) {
-        await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(console.error);
+      if (!data.candidate || !sameCall(data.callId)) return;
+      const pc = peerConnectionRef.current;
+      if (pc && pc.remoteDescription) {
+        await pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(err => console.warn('ICE add failed:', err));
+      } else if (pc || incomingCallRef.current) {
+        pendingIceRef.current.push(data.candidate);
       }
     });
 
-    const offEnd = realtimeService.on('call-end', () => {
-      // Clean up monitor (ENHANCED)
-      if (voiceCallMonitorRef.current) {
-        voiceCallMonitorRef.current.destroy();
-        voiceCallMonitorRef.current = null;
-      }
-      
-      if (peerConnectionRef.current) { peerConnectionRef.current.close(); peerConnectionRef.current = null; }
-      if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(t => t.stop()); localStreamRef.current = null; }
-      
-      setVideoCallState({ active: false, withUser: null, minimized: false, audioOnly: false });
-      setVoiceCallState({ active: false, withUser: null, minimized: false, audioOnly: true, connectionStatus: null });
+    const offEnd = realtimeService.on('call-end', (data) => {
+      if (!sameCall(data.callId)) return;
+      const ringing = incomingCallRef.current;
+      if (ringing) addCallNote(`📞 Missed call from ${ringing.from.name}`);
+      resetCall();
     });
 
-    return () => { offOffer(); offAnswer(); offIce(); offEnd(); };
+    const outcome = (type, note) => realtimeService.on(type, (data) => {
+      if (!peerConnectionRef.current || !sameCall(data.callId)) return;
+      addCallNote(note);
+      resetCall();
+    });
+    const offReject = outcome('call-reject', '📞 Call declined');
+    const offBusy = outcome('call-busy', '📞 The other person is on another call');
+    const offUnavailable = outcome('call-unavailable', '📞 Not available right now — they appear to be offline');
+
+    return () => {
+      offOffer(); offAnswer(); offIce(); offEnd(); offReject(); offBusy(); offUnavailable();
+      clearTimeout(ringTimeoutRef.current);
+      stopRingtone();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   // Reaction system state already defined above
+
+  // Show "john.doe@mail.com" as "John Doe"
+  const friendlyName = (name) => {
+    if (!name || !String(name).includes('@')) return name;
+    return String(name).split('@')[0].split(/[._-]+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
 
   // Message input handlers
   const handleSendMessage = useCallback(async () => {
@@ -2630,7 +2811,7 @@ const ProChat = ({
       }
 
       // ── 2. Broadcast over WebSocket for real-time delivery ──
-      realtimeService.sendMessage({
+      const clientId = realtimeService.sendMessage({
         text: textToSend,
         conversationId: selectedConversation,
         recipientId,
@@ -2657,8 +2838,10 @@ const ProChat = ({
         timestamp: sentMessage.timestamp || new Date().toISOString(),
         reactions: sentMessage.reactions || [],
         conversationId: selectedConversation,
-        isEncrypted: sentMessage.isEncrypted || false,
-        encryptionStatus: sentMessage.encryptionStatus
+        isEncrypted: sentMessage.isEncrypted || isEncrypted,
+        encryptionStatus: sentMessage.encryptionStatus,
+        clientId,
+        status: ackStatusRef.current[clientId] || 'sending'
       };
       
       setChatMessages(prev => [...prev, newMessage]);
@@ -3290,9 +3473,12 @@ const ProChat = ({
       
       // Send call-end signal
       if (remoteId && realtimeService.isConnected?.()) {
-        realtimeService.sendSignal('call-end', remoteId)
-          .catch(err => console.warn('Failed to send call-end signal:', err));
+        realtimeService.sendSignal('call-end', remoteId, { callId: callIdRef.current });
       }
+      clearTimeout(ringTimeoutRef.current);
+      callIdRef.current = null;
+      pendingIceRef.current = [];
+      if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
       
       // Close peer connection properly (ENHANCED)
       if (peerConnectionRef.current) {
@@ -3396,8 +3582,16 @@ const ProChat = ({
         rtcpMuxPolicy: 'require'
       };
 
+      if (peerConnectionRef.current || incomingCallRef.current) {
+        throw new Error('You are already in a call');
+      }
+
       const pc = new RTCPeerConnection(config);
       peerConnectionRef.current = pc;
+      const callId = newCallId();
+      callIdRef.current = callId;
+      pendingIceRef.current = [];
+      bindRemoteAudio(pc, remoteAudioRef);
 
       // Initialize connection monitor (ENHANCED)
       try {
@@ -3493,8 +3687,7 @@ const ProChat = ({
             sdpMLineIndex: e.candidate.sdpMLineIndex,
             sdpMid: e.candidate.sdpMid
           };
-          realtimeService.sendSignal('ice-candidate', targetUser.id, { candidate })
-            .catch(err => console.warn('Failed to send ICE candidate:', err));
+          realtimeService.sendSignal('ice-candidate', targetUser.id, { callId, candidate });
         }
       };
 
@@ -3505,12 +3698,25 @@ const ProChat = ({
       });
       await pc.setLocalDescription(offer);
 
-      realtimeService.sendSignal('call-offer', targetUser.id, {
+      const offerSent = realtimeService.sendSignal('call-offer', targetUser.id, {
+        callId,
         offer,
         fromUser: { id: user?.id, name: user?.name || user?.username },
         audioOnly: true,
         timestamp: Date.now()
       });
+      if (!offerSent) {
+        throw new Error('Not connected to the server. Please try again in a moment.');
+      }
+
+      clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = setTimeout(() => {
+        if (callIdRef.current === callId) {
+          realtimeService.sendSignal('call-end', targetUser.id, { callId });
+          addCallNote('📞 No answer');
+          resetCallRef.current();
+        }
+      }, 45000);
 
       // Update UI state (ENHANCED)
       setVoiceCallState({
@@ -3559,47 +3765,9 @@ const ProChat = ({
     }
   }, [user, handleEndVoiceCall]);
 
-  // Unified call handler for both international and app calls
+  // Phone button: app-to-app voice call with another Quibish user
   const handleUnifiedCall = useCallback(() => {
-    setShowCallOptions(true);
-  }, []);
-
-  const handleInternationalCall = useCallback(() => {
-    setShowCallOptions(false);
-    setShowInternationalDialer(true);
-  }, []);
-
-  // Handle international call initiation
-  const handleInternationalCallInitiated = useCallback((callData) => {
-    console.log('📞 International call initiated:', callData);
-    
-    // Add call message to chat
-    const callMessage = {
-      id: `call_${Date.now()}`,
-      text: `📞 Calling ${callData.number} (${callData.country.name})`,
-      user: 'You',
-      timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-      type: 'international_call',
-      callData: callData,
-      isSystemMessage: true
-    };
-
-    setChatMessages(prev => [...prev, callMessage]);
-
-    // Show success notification
-    console.log('📞 International call initiated:', callData);
-    alert(`📞 Calling ${callData.number}\n\nCall initiated successfully!`);
-    
-    // Close the dialer
-    setShowInternationalDialer(false);
-  }, []);
-
-  const handleAppCall = useCallback(async () => {
-    console.log('🎯 handleAppCall called');
-    alert('App call clicked! Check console for debug info.');
-    
-    setShowCallOptions(false);
-    await handleStartVoiceCall();
+    handleStartVoiceCall();
   }, [handleStartVoiceCall]);
 
   const handleToggleVoiceMinimize = useCallback(() => {
@@ -3812,7 +3980,19 @@ const ProChat = ({
         </div>
 
         {/* Simplified User Profile Section */}
-        <div className="sidebar-user-profile simplified">
+        <div
+          className="sidebar-user-profile simplified"
+          role="button"
+          tabIndex={0}
+          title="View your profile"
+          onClick={() => setContactProfilePopup(true)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              setContactProfilePopup(true);
+            }
+          }}
+        >
           <div 
             className={`user-avatar ${user?.role === 'admin' ? 'admin-user' : ''}`} 
             data-tooltip={user?.role === 'admin' ? `${user?.name || 'Admin'} (Administrator)` : user?.name || 'User Profile'}
@@ -3855,74 +4035,77 @@ const ProChat = ({
           )}
         </div>
 
-        {/* Quick Actions */}
+        {/* Search + quick actions on one row */}
         {!sidebarCollapsed && (
-          <div className="sidebar-actions">
-            <button className="action-btn primary" onClick={handleNewChat}>
-              <span className="icon">➕</span>
-              <span className="text">New Chat</span>
-            </button>
-            <button className="action-btn secondary" onClick={handleUserSearchClick}>
-              <span className="icon">🔍</span>
-              <span className="text">Find Users</span>
-            </button>
-          </div>
-        )}
-
-        {/* Simple Search */}
-        {!sidebarCollapsed && (
-          <div className="sidebar-search simplified">
-            <div className="search-container">
-              <span className="search-icon">🔍</span>
-              <input 
-                type="text" 
-                placeholder="Search conversations..."
-                className="search-input"
+          <div className="sb-toolbar">
+            <div className="sb-search">
+              <span className="sb-search-icon" aria-hidden="true">🔍</span>
+              <input
+                type="text"
+                placeholder="Search"
+                aria-label="Search conversations"
+                className="sb-search-input"
                 value={searchQuery}
                 onChange={handleSearchChange}
               />
+              {searchQuery && (
+                <button type="button" className="sb-search-clear" aria-label="Clear search" onClick={() => setSearchQuery('')}>✕</button>
+              )}
             </div>
+            <button type="button" className="sb-icon-btn primary" onClick={handleNewChat} title="New chat" aria-label="New chat">✏️</button>
+            <button type="button" className="sb-icon-btn" onClick={handleUserSearchClick} title="Find users" aria-label="Find users">👤</button>
           </div>
         )}
 
-        {/* Simple Filter Tabs */}
+        {/* Filters + sort on one row */}
         {!sidebarCollapsed && (
-          <div className="sidebar-filters simplified">
-            <button 
-              className={`filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
+          <div className="sb-filters">
+            <button
+              type="button"
+              className={`sb-chip ${activeFilter === 'all' ? 'active' : ''}`}
               onClick={() => handleFilterChange('all')}
             >
-              All ({getFilterCounts.all})
+              All
             </button>
-            <button 
-              className={`filter-tab ${activeFilter === 'unread' ? 'active' : ''}`}
+            <button
+              type="button"
+              className={`sb-chip ${activeFilter === 'unread' ? 'active' : ''}`}
               onClick={() => handleFilterChange('unread')}
             >
-              Unread ({getFilterCounts.unread})
+              Unread{getFilterCounts.unread > 0 && <span className="sb-chip-count">{getFilterCounts.unread}</span>}
             </button>
-          </div>
-        )}
-
-        {/* Essential Toolbar - Sort Only */}
-        {!sidebarCollapsed && (
-          <div className="sidebar-toolbar simplified">
-            <select 
-              className="sort-select"
+            <select
+              className="sb-sort"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               title="Sort conversations"
+              aria-label="Sort conversations"
             >
               <option value="recent">Recent</option>
-              <option value="unread">Unread</option>
-              <option value="alphabetical">A-Z</option>
+              <option value="unread">Unread first</option>
+              <option value="alphabetical">A–Z</option>
             </select>
           </div>
         )}
-
         {/* Simplified Conversations List */}
         <div className="pro-sidebar-content">
           <div className="conversations-list simplified">
-            {filteredConversations.map((conv, index) => (
+            {filteredConversations.length === 0 ? (
+              <div className="conversation-empty-state" role="status">
+                <span className="conversation-empty-icon" aria-hidden="true">⌕</span>
+                <strong>{searchQuery.trim() ? 'No matches found' : 'No conversations yet'}</strong>
+                <p>
+                  {searchQuery.trim()
+                    ? 'Try another name or message.'
+                    : activeFilter === 'unread'
+                      ? 'You’re all caught up.'
+                      : 'Start a conversation to see it here.'}
+                </p>
+                {searchQuery.trim() && (
+                  <button type="button" onClick={() => setSearchQuery('')}>Clear search</button>
+                )}
+              </div>
+            ) : filteredConversations.map((conv) => (
               <div 
                 key={conv.id} 
                 className={`conversation-item simple ${selectedConversation === conv.id ? 'active' : ''}`}
@@ -3941,9 +4124,9 @@ const ProChat = ({
                   <div className="conversation-details">
                     <div className="conversation-header">
                       <h5 className="conversation-name">{conv.name}</h5>
-                      <span className="conversation-time">{conv.lastMessageTime || '2m'}</span>
+                      <span className="conversation-time">{conv.lastMessageTime || ''}</span>
                     </div>
-                    <p className="last-message">{conv.lastMessage || 'Hey there! How are you doing?'}</p>
+                    <p className="last-message">{conv.lastMessage || 'No messages yet'}</p>
                   </div>
                 )}
               </div>
@@ -4025,34 +4208,26 @@ const ProChat = ({
               ☰
             </button>
             
-            <div 
-              className="conversation-avatar"
-              onClick={() => setContactProfilePopup(true)}
-              style={{ cursor: 'pointer' }}
-              title={`${user?.name || 'My profile'}`}
-            >
-              <img 
-                src={
-                  avatarError
-                    ? '/default-avatar.png'
-                    : user?.avatar ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&size=80&bold=true&format=png`
-                }
-                alt={user?.name || 'Me'}
-                onError={(e) => {
-                  if (!avatarError) {
-                    handleAvatarError();
-                    if (!e.target.src.includes('ui-avatars.com')) {
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&size=80&bold=true&format=png`;
-                    } else {
-                      e.target.src = '/default-avatar.png';
-                    }
-                  }
-                }}
-              />
-              <div className={`online-indicator ${(isConnected || navigator.onLine) ? 'online' : 'offline'}`}></div>
+            <div className="conversation-avatar header-conversation-avatar">
+              {currentSelectedConversation?.avatar ? (
+                <img
+                  src={currentSelectedConversation.avatar}
+                  alt={currentSelectedConversation.name}
+                />
+              ) : currentSelectedConversation ? (
+                <img
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentSelectedConversation.name || 'Conversation')}&background=4f46e5&color=fff&size=80&bold=true&format=png`}
+                  alt={currentSelectedConversation.name || 'Conversation'}
+                />
+              ) : (
+                <span aria-hidden="true">💬</span>
+              )}
+              {currentSelectedConversation?.isOnline && <div className="online-indicator online" />}
             </div>
             <div className="conversation-info">
+              <h2 className="conversation-title">
+                {currentSelectedConversation?.name || 'Your messages'}
+              </h2>
               <div className="conversation-status">
                 {typingUser ? (
                   <span className="typing-indicator">
@@ -4060,13 +4235,33 @@ const ProChat = ({
                     {typingUser} is typing...
                   </span>
                 ) : (
-                  <span className={`connection-status ${(currentSelectedConversation?.isOnline || currentConversation?.isOnline) ? 'connected' : (isConnected || navigator.onLine) ? 'connected' : 'disconnected'}`}>
-                    {(currentSelectedConversation?.isOnline || currentConversation?.isOnline) ? '\u25cf Online' : (isConnected || navigator.onLine) ? '\u25cf Online' : '\u25cf Offline'}
+                  <span className={`connection-status ${
+                    currentSelectedConversation?.isOnline === true
+                      ? 'connected'
+                      : currentSelectedConversation?.isOnline === false
+                        ? 'disconnected'
+                        : ''
+                  }`}>
+                    {currentSelectedConversation?.isOnline
+                      ? 'Online'
+                      : currentSelectedConversation?.isOnline === false
+                        ? 'Offline'
+                        : currentSelectedConversation
+                          ? 'Conversation'
+                        : 'Select a conversation'}
                   </span>
                 )}
-                <span className="participant-count">
-                  {currentSelectedConversation?.participants || currentConversation?.participants || (currentSelectedConversation ? 2 : 0)} participants
-                </span>
+                {currentSelectedConversation && participantCount > 0 && (
+                  <span className="participant-count">
+                    {participantCount} {participantCount === 1 ? 'participant' : 'participants'}
+                  </span>
+                )}
+                <span
+                  className={`chat-connection-indicator ${isConnected ? 'connected' : 'reconnecting'}`}
+                  role="img"
+                  aria-label={isConnected ? 'Chat connected' : 'Reconnecting to chat'}
+                  title={isConnected ? 'Chat connected' : 'Reconnecting to chat'}
+                />
               </div>
             </div>
           </div>
@@ -4086,7 +4281,7 @@ const ProChat = ({
               </button>
               <button 
                 className="action-btn unified-call-btn" 
-                title="📞 Make Calls - International phone calls & app-to-app voice calls"
+                title="📞 Voice call - call another Quibish user"
                 onClick={handleUnifiedCall}
               >
                 📞
@@ -4244,7 +4439,7 @@ const ProChat = ({
               )}
               <div 
                 id={`message-${message.id}`}
-                className={`pro-message-blurb ${highlightedMessageId === message.id ? 'search-highlighted' : ''}`}
+                className={`pro-message-blurb ${String(message.user?.id) === String(user?.id) ? 'own' : 'other'} ${highlightedMessageId === message.id ? 'search-highlighted' : ''}`}
                 data-message-id={message.id}
                 onTouchStart={!selectMode ? (e) => handleMsgSwipeStart(e, message.id) : undefined}
                 onTouchMove={!selectMode ? (e) => handleMsgSwipeMove(e, message.id) : undefined}
@@ -4270,7 +4465,7 @@ const ProChat = ({
                 }}
               >
                 <div className="message-header">
-                  <span className="user-name">{message.user.name}</span>
+                  <span className="user-name" title={message.user.name}>{friendlyName(message.user.name)}</span>
                   {/* Encryption Status Indicator */}
                   {message.isEncrypted && (
                     <span 
@@ -4523,10 +4718,10 @@ const ProChat = ({
               {/* Message Timestamp with Reactions */}
               <div className="message-timestamp-with-reactions">
                 <div className="message-timestamp">
-                  {new Date(message.timestamp).toLocaleTimeString()}
+                  {new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                   {String(message.user?.id) === String(user?.id) && (
-                    <span className={`message-delivery-status ${message.pending ? 'pending' : 'sent'}`} title={message.pending ? 'Sending…' : 'Sent'}>
-                      {message.pending ? '○' : '✓'}
+                    <span className={`message-delivery-status ${message.status || (message.pending ? 'pending' : 'sent')}`} title={message.status === 'delivered' ? 'Delivered' : message.status === 'failed' ? 'Failed to send' : message.pending || message.status === 'sending' ? 'Sending...' : 'Sent'}>
+                      {message.status === 'delivered' ? '✓✓' : message.status === 'failed' ? '!' : message.pending || message.status === 'sending' ? '○' : '✓'}
                     </span>
                   )}
                 </div>
@@ -4798,7 +4993,7 @@ const ProChat = ({
                       // Force focus
                       e.target.focus();
                     }}
-                    placeholder="Type your message..."
+                    placeholder={`Message ${currentSelectedConversation?.name || 'a conversation'}...`}
                     className="message-input enhanced mobile-message-input touch-target clickable-input"
                     rows="1"
                     autoComplete="off"
@@ -5394,6 +5589,7 @@ const ProChat = ({
         isOpen={newChatModal}
         onClose={() => setNewChatModal(false)}
         onCreateChat={handleCreateChat}
+        recentContacts={recentContacts}
         currentUser={user}
         darkMode={darkMode}
       />
@@ -5583,48 +5779,28 @@ const ProChat = ({
 
       {/* Mobile Global Voice Calls Modal - Removed - Using internet-based calling only */}
 
-      {/* Call Options Modal */}
-      {showCallOptions && (
-        <div className="modal-overlay" onClick={() => setShowCallOptions(false)}>
-          <div className="modal-content call-options-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Choose Call Type</h3>
-              <button className="close-btn" onClick={() => setShowCallOptions(false)}>×</button>
+      {/* Remote call audio */}
+      <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: 'none' }} />
+
+      {/* Incoming call */}
+      {incomingCall && (
+        <div className="incoming-call-overlay" role="alertdialog" aria-modal="true" aria-labelledby="incoming-call-title">
+          <div className="incoming-call-card">
+            <div className="incoming-call-avatar" aria-hidden="true">
+              {incomingCall.from.name.charAt(0).toUpperCase()}
             </div>
-            <div className="call-options-content">
-              <button 
-                className="call-option-btn international-option"
-                onClick={handleInternationalCall}
-              >
-                <span className="call-option-icon">🌍</span>
-                <div className="call-option-info">
-                  <h4>International Phone Call</h4>
-                  <p>Call any phone number worldwide - completely FREE!</p>
-                </div>
+            <h3 id="incoming-call-title">{incomingCall.from.name}</h3>
+            <p>Incoming {incomingCall.audioOnly ? 'voice' : 'video'} call…</p>
+            <div className="incoming-call-actions">
+              <button type="button" className="incoming-call-btn decline" onClick={declineIncomingCall}>
+                Decline
               </button>
-              <button 
-                className="call-option-btn app-call-option"
-                onClick={handleAppCall}
-              >
-                <span className="call-option-icon">💬</span>
-                <div className="call-option-info">
-                  <h4>App-to-App Voice Call</h4>
-                  <p>High-quality voice call with other Quibish users</p>
-                </div>
+              <button type="button" className="incoming-call-btn accept" onClick={acceptIncomingCall} autoFocus>
+                Accept
               </button>
             </div>
           </div>
         </div>
-      )}
-
-      {/* International Dialer Modal */}
-      {showInternationalDialer && (
-        <InternationalDialer
-          isOpen={showInternationalDialer}
-          onClose={() => setShowInternationalDialer(false)}
-          onCall={handleInternationalCallInitiated}
-          darkMode={darkMode}
-        />
       )}
 
       {/* Donation Modal */}

@@ -13,11 +13,12 @@ const likes = new Map();
 
 // Helper: Get user from in-memory storage or create mock user
 function getUser(userId) {
-  if (global.inMemoryStorage && global.inMemoryStorage.users) {
-    return global.inMemoryStorage.users.get(userId);
-  }
-  // Return mock user for development
-  return {
+  const users = global.inMemoryStorage && global.inMemoryStorage.users;
+  const found = Array.isArray(users)
+    ? users.find(u => String(u.id) === String(userId))
+    : (users && typeof users.get === 'function' ? users.get(userId) : null);
+  // Fall back to a placeholder so posts by unknown ids still render
+  return found || {
     id: userId,
     username: 'user' + userId,
     displayName: 'User ' + userId,

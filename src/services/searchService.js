@@ -1,5 +1,6 @@
 // Advanced Search Service with Full-Text Indexing
 import persistentStorageService from './persistentStorageService';
+import pythonServices from './pythonServices';
 
 class SearchService {
   constructor() {
@@ -193,9 +194,23 @@ class SearchService {
       }
     }
 
+    // Add meaning-based matches from the optional Python service (no-op when it isn't configured)
+    if (pythonServices.isConfigured() && query.trim().length > 1) {
+      const remote = await pythonServices.search(query, { conversationId, limit: 30 });
+      results.unshift(...remote.map(r => ({
+        messageId: r.id,
+        conversationId: r.conversationId,
+        timestamp: r.timestamp || new Date(0).toISOString(),
+        text: r.text,
+        type: 'text',
+        semanticMatch: true,
+        score: r.score
+      })));
+    }
+
     // Remove duplicates based on messageId
     const uniqueResults = Array.from(
-      new Map(results.map(item => [item.messageId, item])).values()
+      new Map(results.map(item => [String(item.messageId), item])).values()
     );
 
     // Apply filters
@@ -363,6 +378,8 @@ class SearchService {
   // Update search index when new message is added
   async indexMessage(message) {
     if (!message.text) return;
+
+    pythonServices.indexMessage(message);
 
     const tokens = this.tokenize(message.text);
     

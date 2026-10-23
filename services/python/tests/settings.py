@@ -1,0 +1,1 @@
+JWT_SECRET = "pytest-secret-pytest-secret-pytest-secret-1234"

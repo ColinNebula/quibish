@@ -1,6 +1,7 @@
 // Contact Service - Complete Implementation
 import { secureTokenManager } from './secureTokenManager';
 import { contactPersistenceManager } from './contactPersistenceManager';
+import { buildApiUrl } from '../config/api';
 
 class ContactService {
   constructor() {
@@ -310,7 +311,7 @@ class ContactService {
     
     try {
       // Try to fetch from API first
-      const response = await fetch(`/api/contacts?limit=${limit}&offset=${offset}${search ? `&search=${encodeURIComponent(search)}` : ''}${group ? `&group=${encodeURIComponent(group)}` : ''}`, {
+      const response = await fetch(buildApiUrl(`contacts?limit=${limit}&offset=${offset}${search ? `&search=${encodeURIComponent(search)}` : ''}${group ? `&group=${encodeURIComponent(group)}` : ''}`), {
         headers: {
           'Authorization': `Bearer ${await secureTokenManager.getTokenForRequest()}`
         }
@@ -380,7 +381,7 @@ class ContactService {
 
       // Try to add via API
       try {
-        const response = await fetch('/api/contacts', {
+        const response = await fetch(buildApiUrl('contacts'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -457,7 +458,7 @@ class ContactService {
 
       // Try to update via API
       try {
-        const response = await fetch(`/api/contacts/${contactId}`, {
+        const response = await fetch(buildApiUrl(`contacts/${contactId}`), {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -515,7 +516,7 @@ class ContactService {
 
       // Try to delete via API
       try {
-        const response = await fetch(`/api/contacts/${contactId}`, {
+        const response = await fetch(buildApiUrl(`contacts/${contactId}`), {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${await secureTokenManager.getTokenForRequest()}`

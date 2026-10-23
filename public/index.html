@@ -631,24 +631,7 @@
           console.warn('⚠️ QUIBISH protection initialization skipped:', initError && initError.message);
         }
         
-        // Service Worker Registration - Fixed for proper messaging
-        if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-            // Use relative path to work with subdirectories (./sw.js works in both / and /quibish/)
-            navigator.serviceWorker.register('./sw.js', { scope: './' })
-              .then((registration) => {
-                console.log('✅ QUIBISH: Service Worker registered at:', registration.scope);
-                
-                // Set up message listener for service worker responses
-                navigator.serviceWorker.addEventListener('message', (event) => {
-                  console.log('📨 SW Response:', event.data);
-                });
-              })
-              .catch((error) => {
-                console.log('❌ QUIBISH: Service Worker registration failed:', error);
-              });
-          });
-        }
+        // Service worker registration lives in src/index.js (production only).
         
       })();
     </script>

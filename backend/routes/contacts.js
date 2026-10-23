@@ -6,6 +6,7 @@ const router = express.Router();
 // In-memory storage for contacts (since we're using fallback mode)
 // In production, this would use the same database service as users
 let contacts = [];
+const seededUsers = new Set();
 
 // Helper function to generate contact ID
 const generateContactId = () => {
@@ -44,7 +45,22 @@ router.get('/', authenticateToken, async (req, res) => {
     const { limit = 100, offset = 0, search, group } = req.query;
     const userId = req.user.id;
 
-    // Filter contacts by user ID
+    // Seed a new user's list with the other registered users once
+    if (!seededUsers.has(String(userId))) {
+      seededUsers.add(String(userId));
+      const others = (global.inMemoryStorage?.users || []).filter(u => String(u.id) !== String(userId));
+      if (!contacts.some(c => c.userId === userId)) {
+        others.forEach(u => contacts.push({
+          id: String(u.id),
+          userId,
+          name: u.displayName || u.name || u.username,
+          email: u.email,
+          avatar: u.avatar || null,
+          groups: [],
+          createdAt: new Date().toISOString()
+        }));
+      }
+    }
     let userContacts = contacts.filter(contact => contact.userId === userId);
 
     // Apply search filter

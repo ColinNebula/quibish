@@ -1,6 +1,8 @@
 // RealtimeService — WebSocket client for live messaging and call signaling
 // Handles connect/reconnect, event subscription, and message dispatch.
 
+import secureTokenManager from './secureTokenManager';
+
 // Determine WebSocket URL dynamically (mobile-friendly)
 const getWsUrl = () => {
   const raw = process.env.REACT_APP_WEBSOCKET_URL;
@@ -32,6 +34,7 @@ class RealtimeService {
     this.userId = null;
     this.username = null;
     this.connected = false;
+    this.joined = false; // true once the server accepted our token
     this.reconnectDelay = 2000;
     this.maxReconnectDelay = 30000;
     this.reconnectTimer = null;
@@ -61,17 +64,25 @@ class RealtimeService {
         this.connected = true;
         this.reconnectDelay = 2000; // reset backoff
         console.log('✅ RealtimeService connected successfully');
-        // Authenticate this socket
-        this._send({ type: 'join', userId: this.userId, username: this.username });
-        // Flush queued messages
-        while (this.pendingMessages.length > 0) {
-          this._send(this.pendingMessages.shift());
-        }
-        this._emit('connect', {});
+        // Authenticate this socket with the login token; the server decides who we are
+        const socket = this.ws;
+        secureTokenManager.getToken().then((token) => {
+          if (!token) {
+            console.warn('No auth token available - realtime messaging disabled');
+            this.shouldReconnect = false;
+            socket.close();
+            return;
+          }
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'join', token, username: this.username }));
+          }
+        });
       };
 
-      this.ws.onclose = () => {
+      this.ws.onclose = (ev) => {
         this.connected = false;
+        this.joined = false;
+        if (ev && ev.code === 4401) this.shouldReconnect = false; // bad token: retrying won't help
         this._emit('disconnect', {});
         console.warn('🔌 WebSocket closed');
         if (this.shouldReconnect) {
@@ -94,6 +105,13 @@ class RealtimeService {
       this.ws.onmessage = (event) => {
         let data;
         try { data = JSON.parse(event.data); } catch { return; }
+        if (data.type === 'joined') {
+          this.joined = true;
+          while (this.pendingMessages.length > 0) {
+            this._send(this.pendingMessages.shift());
+          }
+          this._emit('connect', {});
+        }
         this._emit(data.type, data);
       };
     } catch (e) {
@@ -121,7 +139,7 @@ class RealtimeService {
 
   // ── Send ─────────────────────────────────────────────
   _send(payload) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    if (this.joined && this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(payload));
       return true;
     }
@@ -132,7 +150,7 @@ class RealtimeService {
 
   /** Send a chat message. Returns a clientId you can match against 'message-sent'. */
   sendMessage({ text, conversationId, recipientId, encrypted = false }) {
-    const clientId = Date.now().toString();
+    const clientId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const payload = { type: 'message', text, conversationId, recipientId, encrypted, clientId };
     if (!this._send(payload)) {
       this.pendingMessages.push(payload); // queue for when connected
@@ -147,7 +165,7 @@ class RealtimeService {
 
   /** Send WebRTC call signaling. */
   sendSignal(type, targetUserId, payload = {}) {
-    this._send({ type, targetUserId, ...payload });
+    return this._send({ type, targetUserId, ...payload });
   }
 
   // ── Event subscription ───────────────────────────────

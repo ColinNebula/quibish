@@ -4,6 +4,22 @@
 
 Analysis of top social media platforms and implementation roadmap for Quibish enhancements based on proven engagement patterns and 2026 user expectations.
 
+## Product Patterns Verified from Official Sources (October 2026)
+
+These are concrete product behaviors documented by the platforms, rather than engagement estimates:
+
+- **Instagram Direct:** Notes appear at the top of the messaging inbox, are limited to 60 characters, and are shared with a chosen audience. This makes the inbox a place for lightweight social context as well as message history. [Instagram Direct features](https://about.instagram.com/features/direct)
+- **Discord:** Direct messages and group DMs are distinct private conversation types; DMs support voice, video, and screen sharing. Conversation type and available actions should therefore be apparent without obscuring the conversation itself. [What is Discord?](https://discord.com/safety/360044149331-what-is-discord)
+
+### Applied to Quibish
+
+- Keep the selected person or group, their avatar, and their presence status visible in the conversation header.
+- Distinguish a contact's presence from the app's network connection; being online does not mean the recipient is online.
+- Keep inbox search and unread filtering available, and explain empty results with a direct way to clear the search.
+- Keep messaging and call actions close to the active conversation, while preserving the existing message, thread, and media features.
+
+The platform-specific examples above were checked against the linked official pages. Audience sizes, engagement rates, and market estimates elsewhere in this document are not verified by this snapshot and should be re-sourced before being used for product decisions.
+
 ---
 
 ## 📊 Top Social Media Platforms Analysis (2026)
@@ -819,4 +835,3 @@ const calculatePostScore = (post, user) => {
 **Next Review:** March 22, 2026
 
 ---
-

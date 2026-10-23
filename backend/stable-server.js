@@ -165,7 +165,7 @@ app.use((req, res, next) => {
     
     // Log slow requests
     if (responseTime > 1000) {
-      console.warn(`⚠️  SLOW REQUEST: ${req.method} ${req.path} took ${responseTime}ms`);
+      console.warn(`Ã¢Å¡Â Ã¯Â¸Â  SLOW REQUEST: ${req.method} ${req.path} took ${responseTime}ms`);
     }
   });
   
@@ -191,7 +191,13 @@ app.use((req, res, next) => {
 });
 
 // Import route modules
+// Auth uses the in-memory user store (seeded demo users) in this lightweight server
+require('./inMemoryStorage').initInMemoryStorage();
+global.inMemoryStorage.usingInMemory = true;
+global.inMemoryStorage.seedDefaultUsers();
 const authRoutes = require('./routes/auth');
+const { verifyToken } = authRoutes;
+const { attachRealtime } = require('./realtime');
 const notificationsRoutes = require('./routes/notifications');
 const encryptionRoutes    = require('./routes/encryption');
 
@@ -234,6 +240,7 @@ app.use('/api/social-profiles', socialProfilesRoutes);
 // Posts routes
 const postsRoutes = require('./routes/posts');
 app.use('/api/posts', postsRoutes);
+app.use('/api/contacts', require('./routes/contacts'));
 
 // User presence endpoint
 const userPresenceMap = new Map(); // userId -> { isOnline, lastSeen }
@@ -246,7 +253,7 @@ app.post('/api/users/presence', (req, res) => {
   res.json({ success: true });
 });
 
-// ✅ Auth endpoints are now handled by real routes (see /api/auth routing above)
+// Ã¢Å“â€¦ Auth endpoints are now handled by real routes (see /api/auth routing above)
 // All authentication logic has been moved to backend/routes/auth.js
 
 // Signaling endpoint for WebRTC connections
@@ -302,200 +309,11 @@ const serverOptions = {
 // Create enhanced HTTP server
 const server = http.createServer(serverOptions, app);
 
-// ───────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Real-time WebSocket layer (messaging + signaling)
-// ───────────────────────────────────────────────
-const wss = new WebSocket.Server({ server, path: '/ws' });
-
-// userId -> WebSocket instance
-const userSockets = new Map();
-
-function broadcast(senderWs, payload) {
-  const raw = JSON.stringify(payload);
-  wss.clients.forEach(client => {
-    if (client !== senderWs && client.readyState === WebSocket.OPEN) {
-      client.send(raw);
-    }
-  });
-}
-
-function sendToUser(targetUserId, payload) {
-  const ws = userSockets.get(String(targetUserId));
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(payload));
-    return true;
-  }
-  return false;
-}
-global.sendToUser = sendToUser;
-
-wss.on('connection', (ws) => {
-  ws.isAlive = true;
-  ws.userId = null;
-  ws.username = null;
-
-  ws.on('pong', () => { ws.isAlive = true; });
-
-  ws.on('message', (raw) => {
-    let data;
-    try { data = JSON.parse(raw); } catch { return; }
-
-    switch (data.type) {
-
-      // ── Auth / presence ──────────────────────────────
-      case 'join': {
-        ws.userId = String(data.userId);
-        ws.username = data.username || 'User';
-        userSockets.set(ws.userId, ws);
-        ws.send(JSON.stringify({ type: 'joined', userId: ws.userId }));
-        // Tell others this user is online
-        broadcast(ws, { type: 'presence', userId: ws.userId, online: true });
-        // Send this user the list of currently online users
-        const online = [];
-        userSockets.forEach((_, uid) => { if (uid !== ws.userId) online.push(uid); });
-        ws.send(JSON.stringify({ type: 'online-users', users: online }));
-        break;
-      }
-
-      // ── Chat messages ────────────────────────────────
-      case 'message': {
-        const msg = {
-          type: 'message',
-          id: Date.now().toString(),
-          text: data.text,
-          encrypted: data.encrypted === true, // pass flag so recipient knows to decrypt
-          senderId: ws.userId,
-          senderName: ws.username,
-          conversationId: data.conversationId || null,
-          recipientId: data.recipientId || null,
-          timestamp: new Date().toISOString(),
-          reactions: {}
-        };
-
-        // Route to specific user if recipientId given, otherwise broadcast
-        let delivered = false;
-        if (data.recipientId) {
-          delivered = sendToUser(data.recipientId, msg);
-        }
-        if (!delivered) {
-          broadcast(ws, msg);
-        }
-
-        // Push a notification to the recipient so they see it in the notification centre
-        if (data.recipientId) {
-          const notifPayload = {
-            type: 'notification',
-            notification: {
-              id: `notif_msg_${msg.id}`,
-              type: 'message',
-              title: `New message from ${ws.username}`,
-              // Never include ciphertext in notification previews
-              message: data.encrypted
-                ? '🔒 Encrypted message'
-                : (data.text ? (data.text.length > 80 ? data.text.slice(0, 77) + '...' : data.text) : '📎 Attachment'),
-              read: false,
-              createdAt: msg.timestamp,
-              data: {
-                senderId: ws.userId,
-                senderName: ws.username,
-                conversationId: data.conversationId || null,
-                messageId: msg.id
-              }
-            }
-          };
-          sendToUser(data.recipientId, notifPayload);
-        }
-
-        // Confirm delivery to sender with server-assigned ID
-        ws.send(JSON.stringify({ type: 'message-sent', id: msg.id, clientId: data.clientId }));
-        break;
-      }
-
-      // ── Typing indicators ────────────────────────────
-      case 'typing': {
-        const target = { type: 'typing', userId: ws.userId, username: ws.username, conversationId: data.conversationId };
-        if (data.recipientId) {
-          sendToUser(data.recipientId, target);
-        } else {
-          broadcast(ws, target);
-        }
-        break;
-      }
-
-      // ── WebRTC call signaling ────────────────────────
-      case 'call-offer':
-      case 'call-answer':
-      case 'ice-candidate':
-      case 'call-end':
-      case 'call-busy':
-      case 'call-reject': {
-        if (data.targetUserId) {
-          sendToUser(data.targetUserId, { ...data, fromUserId: ws.userId, fromUsername: ws.username });
-        }
-        break;
-      }
-
-      // ── Post created — notify contacts who are online ─
-      case 'post-created': {
-        const { postId, postContent, contactIds } = data;
-        if (!Array.isArray(contactIds) || contactIds.length === 0) break;
-
-        const preview = postContent
-          ? (postContent.length > 100 ? postContent.slice(0, 97) + '...' : postContent)
-          : 'Shared a new post';
-
-        const postNotif = {
-          type: 'notification',
-          notification: {
-            id: `notif_post_${postId || Date.now()}`,
-            type: 'post',
-            title: `${ws.username} made a new post`,
-            message: preview,
-            read: false,
-            createdAt: new Date().toISOString(),
-            data: {
-              authorId: ws.userId,
-              authorName: ws.username,
-              postId: postId || null
-            }
-          }
-        };
-
-        contactIds.forEach(uid => {
-          if (String(uid) !== ws.userId) {
-            sendToUser(String(uid), postNotif);
-          }
-        });
-        break;
-      }
-
-      default: break;
-    }
-  });
-
-  ws.on('close', () => {
-    if (ws.userId) {
-      userSockets.delete(ws.userId);
-      broadcast(ws, { type: 'presence', userId: ws.userId, online: false });
-    }
-  });
-});
-
-// Heartbeat to detect broken connections
-const heartbeat = setInterval(() => {
-  wss.clients.forEach(ws => {
-    if (!ws.isAlive) { ws.terminate(); return; }
-    ws.isAlive = false;
-    ws.ping();
-  });
-}, 30000);
-wss.on('close', () => clearInterval(heartbeat));
-
-// Online users count endpoint
-app.get('/api/users/online-count', (req, res) => {
-  res.json({ count: userSockets.size, userIds: [...userSockets.keys()] });
-});
-// ───────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+attachRealtime(server, app, verifyToken);
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 // Enhanced server configuration
 server.keepAliveTimeout = 120000; // 2 minutes
@@ -507,7 +325,7 @@ server.maxHeadersCount = 2000; // Maximum number of headers
 
 // Connection event handlers
 server.on('connection', (socket) => {
-  console.log(`📡 New connection from ${socket.remoteAddress}:${socket.remotePort}`);
+  console.log(`Ã°Å¸â€œÂ¡ New connection from ${socket.remoteAddress}:${socket.remotePort}`);
   
   // Set socket options for better performance
   socket.setKeepAlive(true, 30000); // Keep alive with 30s interval
@@ -541,55 +359,55 @@ server.on('clientError', (err, socket) => {
 
 // Start the enhanced stable server
 server.listen(PORT, '0.0.0.0', () => {
-  console.log('🚀 ====================================');
-  console.log(`✅ Enhanced Stable Server v1.0`);
-  console.log(`🌐 Running on port ${PORT}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🔐 Authentication endpoints ready`);
-  console.log(`📧 Email verification enabled`);
-  console.log(`🛡️ Enhanced security features active`);
-  console.log(`⚡ Performance optimizations enabled`);
-  console.log(`🔄 Connection pooling and keep-alive active`);
-  console.log(`📈 Network monitoring enabled`);
-  console.log(`�️ Response compression active`);
-  console.log(`🔒 Rate limiting configured`);
-  console.log('🚀 ====================================');
+  console.log('Ã°Å¸Å¡â‚¬ ====================================');
+  console.log(`Ã¢Å“â€¦ Enhanced Stable Server v1.0`);
+  console.log(`Ã°Å¸Å’Â Running on port ${PORT}`);
+  console.log(`Ã°Å¸â€â€” Health check: http://localhost:${PORT}/api/health`);
+  console.log(`Ã°Å¸â€Â Authentication endpoints ready`);
+  console.log(`Ã°Å¸â€œÂ§ Email verification enabled`);
+  console.log(`Ã°Å¸â€ºÂ¡Ã¯Â¸Â Enhanced security features active`);
+  console.log(`Ã¢Å¡Â¡ Performance optimizations enabled`);
+  console.log(`Ã°Å¸â€â€ž Connection pooling and keep-alive active`);
+  console.log(`Ã°Å¸â€œË† Network monitoring enabled`);
+  console.log(`Ã¯Â¿Â½Ã¯Â¸Â Response compression active`);
+  console.log(`Ã°Å¸â€â€™ Rate limiting configured`);
+  console.log('Ã°Å¸Å¡â‚¬ ====================================');
 });
 
 // Enhanced error handling - prevent crashes
 process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception (but continuing):', error);
+  console.error('Ã¢ÂÅ’ Uncaught Exception (but continuing):', error);
   // Don't exit - just log the error
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection (but continuing):', reason);
+  console.error('Ã¢ÂÅ’ Unhandled Rejection (but continuing):', reason);
   // Don't exit - just log the error
 });
 
 // Only handle explicit shutdown signals
 process.on('SIGTERM', () => {
-  console.log('🛑 SIGTERM received - shutting down gracefully');
+  console.log('Ã°Å¸â€ºâ€˜ SIGTERM received - shutting down gracefully');
   server.close(() => {
-    console.log('✅ Server closed');
+    console.log('Ã¢Å“â€¦ Server closed');
     process.exit(0);
   });
 });
 
 // Don't automatically exit on SIGINT (Ctrl+C) - let user explicitly stop
 process.on('SIGINT', () => {
-  console.log('\n⚠️  SIGINT received - Press Ctrl+C again within 5 seconds to force shutdown');
+  console.log('\nÃ¢Å¡Â Ã¯Â¸Â  SIGINT received - Press Ctrl+C again within 5 seconds to force shutdown');
   let forceShutdown = false;
   
   const forceHandler = () => {
     if (forceShutdown) {
-      console.log('🛑 Force shutdown initiated');
+      console.log('Ã°Å¸â€ºâ€˜ Force shutdown initiated');
       process.exit(0);
     } else {
       forceShutdown = true;
       setTimeout(() => {
         forceShutdown = false;
-        console.log('📝 Shutdown cancelled - server continues running');
+        console.log('Ã°Å¸â€œÂ Shutdown cancelled - server continues running');
       }, 5000);
     }
   };
@@ -601,7 +419,7 @@ process.on('SIGINT', () => {
 setInterval(() => {
   // This prevents the process from being idle and helps maintain stability
   const used = process.memoryUsage();
-  console.log(`💓 Server heartbeat - Memory: ${Math.round(used.rss / 1024 / 1024 * 100) / 100} MB`);
+  console.log(`Ã°Å¸â€™â€œ Server heartbeat - Memory: ${Math.round(used.rss / 1024 / 1024 * 100) / 100} MB`);
 }, 30000); // Every 30 seconds
 
 module.exports = { app, server };

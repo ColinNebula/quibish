@@ -1,3 +1,8 @@
+import { secureTokenManager } from './secureTokenManager';
+
+// Both participants derive the same id for a direct chat
+export const directConversationId = (a, b) => `dm_${[String(a), String(b)].sort().join('_')}`;
+
 // Conversation Service
 class ConversationService {
   constructor() {
@@ -35,12 +40,59 @@ class ConversationService {
     return this.conversations.find(conv => conv.id === id);
   }
 
+  // Best-effort: persist a locally created conversation (and optional first message) to the backend.
+
+  // Never throws; local storage remains the source of truth when offline.
+
+  async syncConversationToBackend(conversation, firstMessage) {
+
+    try {
+      const token = await secureTokenManager.getTokenForRequest();
+      if (!token) return { success: false, error: 'Not authenticated' };
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({
+
+          id: String(conversation.id),
+
+          type: conversation.type,
+
+          name: conversation.type === 'group' ? conversation.name : undefined,
+
+          avatar: conversation.type === 'group' ? conversation.customAvatar : undefined,
+
+          participants: (conversation.participants || []).map(String),
+
+          firstMessage: firstMessage || undefined
+
+        })
+
+      });
+
+      if (!response.ok) return { success: false, error: `HTTP ${response.status}` };
+
+      return { success: true, data: (await response.json()).data };
+
+    } catch (error) {
+
+      console.warn('Conversation sync failed, kept locally:', error);
+
+      return { success: false, error: error.message };
+
+    }
+
+  }
+
+
+
   // Create a new conversation with a user
   createConversationWithUser(user, currentUserId) {
     // Check if conversation already exists
-    const existingConv = this.conversations.find(conv => 
-      conv.participantId === user.id || 
-      (conv.participants && conv.participants.includes(user.id))
+    const existingConv = this.conversations.find(conv =>
+      conv.type !== 'group' &&
+      (conv.participantId === user.id ||
+        (conv.participants && conv.participants.includes(user.id)))
     );
 
     if (existingConv) {
@@ -53,7 +105,7 @@ class ConversationService {
 
     // Create new conversation
     const newConversation = {
-      id: Date.now().toString(),
+      id: directConversationId(currentUserId, user.id),
       name: user.name || user.username,
       avatar: user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.username)}&background=667eea&color=fff&size=40`,
       lastMessage: '',

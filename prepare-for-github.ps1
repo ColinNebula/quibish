@@ -102,7 +102,7 @@ foreach ($p in @(".env.example", "backend\.env.example")) {
 # CHECK 3 -- No tracked .env files
 # ----------------------------------------------------------------
 Write-Header "CHECK 3 -- Tracked .env files"
-$trackedEnv = Invoke-Git ls-files --cached |
+$trackedEnv = Invoke-Git ls-files --cached --others --exclude-standard |
               Where-Object { ($_ -match '(^|/)\.env($|\.)') -and ($_ -notmatch '\.env\.example$') }
 if ($trackedEnv) {
     foreach ($f in $trackedEnv) {
@@ -111,7 +111,7 @@ if ($trackedEnv) {
     }
     Write-Info "Run:  git rm --cached FILENAME    to stop tracking it"
 } else {
-    Write-Pass "No .env files are tracked by git"
+    Write-Pass "No .env files are tracked or unignored"
 }
 
 # ----------------------------------------------------------------
@@ -148,7 +148,7 @@ $secretPatterns = @(
     }
 )
 
-$searchDirs = @('src','backend\routes','backend\services','backend\middleware','backend\config')
+$searchDirs = @('src','backend\routes','backend\services','backend\middleware','backend\config','services\python')
 $secretHits = [System.Collections.Generic.List[string]]::new()
 
 foreach ($dir in $searchDirs) {
